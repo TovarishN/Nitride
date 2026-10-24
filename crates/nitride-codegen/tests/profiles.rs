@@ -94,3 +94,32 @@ fn shared_operator_is_generated() {
     });
     nitride_codegen::generate(&data.to_string()).unwrap();
 }
+
+#[test]
+fn only_points_with_shared_first_characters_memoize() {
+    let hash = "0".repeat(64);
+    let language = |second: serde_json::Value| {
+        serde_json::json!({
+            "version": 1, "mode": "syntax", "source_hash": hash, "catalog_hash": hash,
+            "start": "M.E", "builtins": [], "symbol_kinds": [],
+            "catalog": {"types": [], "operations": [], "statements": {}},
+            "rules": [
+                {"name":"M.Digits","lexical":true,"expr":{"kind":"repeat","min":1,"max":2147483647,"inner":{"kind":"class","negated":false,"ranges":[[48,57]]}},"clauses":[],"except":[]},
+                {"name":"M.Num","lexical":false,"expr":{"kind":"label","label":"Value","inner":{"kind":"ref","name":"M.Digits"}},"clauses":[],"except":[],"owner":"M.E","precedence":null},
+                {"name":"M.Paren","lexical":false,"expr":{"kind":"sequence","items":[{"kind":"literal","text":"("},{"kind":"ref","name":"M.E"},{"kind":"literal","text":")"}]},"clauses":[],"except":[],"owner":"M.E","precedence":null},
+                {"name":"M.Other","lexical":false,"expr":second,"clauses":[],"except":[],"owner":"M.E","precedence":null},
+                {"name":"M.E","lexical":false,"expr":{"kind":"pratt","prefixes":["M.Num","M.Paren","M.Other"],"infixes":[]},"clauses":[],"except":[]}
+            ]
+        })
+    };
+    let disjoint = nitride_codegen::generate(
+        &language(serde_json::json!({"kind":"sequence","items":[{"kind":"literal","text":"-"},{"kind":"ref","name":"M.E"}]})).to_string(),
+    )
+    .unwrap();
+    assert!(disjoint.contains("memoize:false"), "{disjoint}");
+    let shared = nitride_codegen::generate(
+        &language(serde_json::json!({"kind":"sequence","items":[{"kind":"literal","text":"("},{"kind":"ref","name":"M.Digits"},{"kind":"literal","text":")"},{"kind":"ref","name":"M.E"}]})).to_string(),
+    )
+    .unwrap();
+    assert!(shared.contains("memoize:true"), "{shared}");
+}

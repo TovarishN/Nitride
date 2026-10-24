@@ -1,7 +1,7 @@
 {
   "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
-  "native_executable_bytes": 1501968,
-  "profiler_executable_bytes": 954416,
+  "native_executable_bytes": 1535488,
+  "profiler_executable_bytes": 987872,
   "measurements": [
     {
       "pairs": 10,
@@ -14,14 +14,14 @@
           "execution": {
             "allocation_count": 13,
             "baseline_live_bytes": 17772,
-            "elapsed_ns": 21000,
+            "elapsed_ns": 39000,
             "peak_bytes": 1280,
             "retained_bytes": 256
           },
           "hir": {
             "allocation_count": 93,
             "baseline_live_bytes": 13420,
-            "elapsed_ns": 102584,
+            "elapsed_ns": 102209,
             "peak_bytes": 6896,
             "retained_bytes": 4352
           },
@@ -31,7 +31,7 @@
           "parse": {
             "allocation_count": 26,
             "baseline_live_bytes": 1556,
-            "elapsed_ns": 117833,
+            "elapsed_ns": 177333,
             "peak_bytes": 13360,
             "retained_bytes": 11864
           },
@@ -45,14 +45,14 @@
           "execution": {
             "allocation_count": 13,
             "baseline_live_bytes": 17772,
-            "elapsed_ns": 3917,
+            "elapsed_ns": 9208,
             "peak_bytes": 1280,
             "retained_bytes": 256
           },
           "hir": {
             "allocation_count": 93,
             "baseline_live_bytes": 13420,
-            "elapsed_ns": 17750,
+            "elapsed_ns": 38125,
             "peak_bytes": 6896,
             "retained_bytes": 4352
           },
@@ -62,7 +62,7 @@
           "parse": {
             "allocation_count": 26,
             "baseline_live_bytes": 1556,
-            "elapsed_ns": 28042,
+            "elapsed_ns": 77500,
             "peak_bytes": 13360,
             "retained_bytes": 11864
           },
@@ -76,14 +76,14 @@
           "execution": {
             "allocation_count": 13,
             "baseline_live_bytes": 17772,
-            "elapsed_ns": 3875,
+            "elapsed_ns": 5584,
             "peak_bytes": 1280,
             "retained_bytes": 256
           },
           "hir": {
             "allocation_count": 93,
             "baseline_live_bytes": 13420,
-            "elapsed_ns": 17833,
+            "elapsed_ns": 24708,
             "peak_bytes": 6896,
             "retained_bytes": 4352
           },
@@ -93,7 +93,7 @@
           "parse": {
             "allocation_count": 26,
             "baseline_live_bytes": 1556,
-            "elapsed_ns": 29416,
+            "elapsed_ns": 39875,
             "peak_bytes": 13360,
             "retained_bytes": 11864
           },
@@ -115,14 +115,14 @@
           "execution": {
             "allocation_count": 22,
             "baseline_live_bytes": 138966,
-            "elapsed_ns": 15250,
+            "elapsed_ns": 17917,
             "peak_bytes": 10768,
             "retained_bytes": 2048
           },
           "hir": {
             "allocation_count": 654,
             "baseline_live_bytes": 104150,
-            "elapsed_ns": 76416,
+            "elapsed_ns": 73458,
             "peak_bytes": 58256,
             "retained_bytes": 34816
           },
@@ -132,7 +132,7 @@
           "parse": {
             "allocation_count": 35,
             "baseline_live_bytes": 7497,
-            "elapsed_ns": 193416,
+            "elapsed_ns": 263584,
             "peak_bytes": 102960,
             "retained_bytes": 96653
           },
@@ -146,14 +146,14 @@
           "execution": {
             "allocation_count": 22,
             "baseline_live_bytes": 138966,
-            "elapsed_ns": 17583,
+            "elapsed_ns": 21500,
             "peak_bytes": 10768,
             "retained_bytes": 2048
           },
           "hir": {
             "allocation_count": 654,
             "baseline_live_bytes": 104150,
-            "elapsed_ns": 74625,
+            "elapsed_ns": 67375,
             "peak_bytes": 58256,
             "retained_bytes": 34816
           },
@@ -163,7 +163,7 @@
           "parse": {
             "allocation_count": 35,
             "baseline_live_bytes": 7497,
-            "elapsed_ns": 189375,
+            "elapsed_ns": 247833,
             "peak_bytes": 102960,
             "retained_bytes": 96653
           },
@@ -177,14 +177,14 @@
           "execution": {
             "allocation_count": 22,
             "baseline_live_bytes": 138966,
-            "elapsed_ns": 16834,
+            "elapsed_ns": 17625,
             "peak_bytes": 10768,
             "retained_bytes": 2048
           },
           "hir": {
             "allocation_count": 654,
             "baseline_live_bytes": 104150,
-            "elapsed_ns": 72500,
+            "elapsed_ns": 70666,
             "peak_bytes": 58256,
             "retained_bytes": 34816
           },
@@ -194,7 +194,7 @@
           "parse": {
             "allocation_count": 35,
             "baseline_live_bytes": 7497,
-            "elapsed_ns": 187833,
+            "elapsed_ns": 250042,
             "peak_bytes": 102960,
             "retained_bytes": 96653
           },
@@ -216,14 +216,14 @@
           "execution": {
             "allocation_count": 33,
             "baseline_live_bytes": 1863960,
-            "elapsed_ns": 140458,
+            "elapsed_ns": 144417,
             "peak_bytes": 153616,
             "retained_bytes": 16384
           },
           "hir": {
             "allocation_count": 6077,
             "baseline_live_bytes": 1585432,
-            "elapsed_ns": 565625,
+            "elapsed_ns": 599542,
             "peak_bytes": 524560,
             "retained_bytes": 278528
           },
@@ -233,7 +233,7 @@
           "parse": {
             "allocation_count": 46,
             "baseline_live_bytes": 72298,
-            "elapsed_ns": 1842416,
+            "elapsed_ns": 2427584,
             "peak_bytes": 1540656,
             "retained_bytes": 1513134
           },
@@ -247,14 +247,14 @@
           "execution": {
             "allocation_count": 33,
             "baseline_live_bytes": 1863960,
-            "elapsed_ns": 140917,
+            "elapsed_ns": 141375,
             "peak_bytes": 153616,
             "retained_bytes": 16384
           },
           "hir": {
             "allocation_count": 6077,
             "baseline_live_bytes": 1585432,
-            "elapsed_ns": 577958,
+            "elapsed_ns": 579000,
             "peak_bytes": 524560,
             "retained_bytes": 278528
           },
@@ -264,7 +264,7 @@
           "parse": {
             "allocation_count": 46,
             "baseline_live_bytes": 72298,
-            "elapsed_ns": 1802041,
+            "elapsed_ns": 2428834,
             "peak_bytes": 1540656,
             "retained_bytes": 1513134
           },
@@ -278,14 +278,14 @@
           "execution": {
             "allocation_count": 33,
             "baseline_live_bytes": 1863960,
-            "elapsed_ns": 158834,
+            "elapsed_ns": 141875,
             "peak_bytes": 153616,
             "retained_bytes": 16384
           },
           "hir": {
             "allocation_count": 6077,
             "baseline_live_bytes": 1585432,
-            "elapsed_ns": 577583,
+            "elapsed_ns": 596958,
             "peak_bytes": 524560,
             "retained_bytes": 278528
           },
@@ -295,7 +295,7 @@
           "parse": {
             "allocation_count": 46,
             "baseline_live_bytes": 72298,
-            "elapsed_ns": 1821041,
+            "elapsed_ns": 2429250,
             "peak_bytes": 1540656,
             "retained_bytes": 1513134
           },

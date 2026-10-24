@@ -129,3 +129,33 @@ fn unused_ill_typed_function_is_rejected() {
         error.message
     );
 }
+
+#[test]
+fn exponential_expansion_is_bounded() {
+    let start = std::time::Instant::now();
+    let error = prepare(
+        "function D(n: Grammar.Int) : Grammar.Rule = if n == 0 then \"a\" else D(n - 1) D(n - 1);\ntoken T = D(40);\nsyntax Start = Value:T;",
+    )
+    .unwrap_err();
+    assert!(
+        error.message.contains("exceeds 1000000 nodes"),
+        "{}",
+        error.message
+    );
+    assert!(start.elapsed().as_secs() < 10, "took {:?}", start.elapsed());
+}
+
+#[test]
+fn checker_errors_follow_source_order() {
+    for _ in 0..16 {
+        let error = prepare(
+            "function A(n: Grammar.Int) : Grammar.Rule = [n] (if n then \"a\" else \"b\");\nfunction B(n: Grammar.Int) : Grammar.Rule = Missing(n);\ntoken T = \"t\";\nsyntax Start = Value:T;",
+        )
+        .unwrap_err();
+        assert!(
+            error.message.contains("expected a condition"),
+            "{}",
+            error.message
+        );
+    }
+}

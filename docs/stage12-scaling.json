@@ -4,38 +4,38 @@
   "measurements": [
     {
       "bytes": 65828,
-      "native_parse_seconds": 0.090411708,
-      "native_parse_allocations": 111,
-      "native_parse_peak_bytes": 2949412,
+      "native_parse_seconds": 0.1044265,
+      "native_parse_allocations": 178,
+      "native_parse_peak_bytes": 4075316,
       "native_tree_bytes": 2949412,
-      "nitrogen_parse_seconds": 0.0631655,
+      "nitrogen_parse_seconds": 0.0637861,
       "nitrogen_parse_allocated_bytes": 656
     },
     {
       "bytes": 1048613,
-      "native_parse_seconds": 1.410529708,
-      "native_parse_allocations": 123,
-      "native_parse_peak_bytes": 47185957,
+      "native_parse_seconds": 1.615700042,
+      "native_parse_allocations": 211,
+      "native_parse_peak_bytes": 64631348,
       "native_tree_bytes": 47185957,
-      "nitrogen_parse_seconds": 0.2263649,
+      "nitrogen_parse_seconds": 0.2221872,
       "nitrogen_parse_allocated_bytes": 126449840
     },
     {
       "bytes": 4194492,
-      "native_parse_seconds": 5.595587125,
-      "native_parse_allocations": 129,
-      "native_parse_peak_bytes": 188743868,
+      "native_parse_seconds": 6.417547042,
+      "native_parse_allocations": 231,
+      "native_parse_peak_bytes": 242782772,
       "native_tree_bytes": 188743868,
-      "nitrogen_parse_seconds": 0.8432846,
+      "nitrogen_parse_seconds": 0.8468751,
       "nitrogen_parse_allocated_bytes": 505227008
     },
     {
       "bytes": 16777292,
-      "native_parse_seconds": 22.104312875,
-      "native_parse_allocations": 135,
-      "native_parse_peak_bytes": 754974796,
+      "native_parse_seconds": 25.399977834,
+      "native_parse_allocations": 243,
+      "native_parse_peak_bytes": 858296884,
       "native_tree_bytes": 754974796,
-      "nitrogen_parse_seconds": 3.642975,
+      "nitrogen_parse_seconds": 3.6168967,
       "nitrogen_parse_allocated_bytes": 1882461264
     }
   ],

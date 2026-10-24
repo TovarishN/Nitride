@@ -29,6 +29,7 @@ fn language() -> &'static Language {
                     Expr::Pratt {
                         prefixes: &[2, 3],
                         infixes: &[],
+                        memoize: false,
                     },
                     false,
                     None,

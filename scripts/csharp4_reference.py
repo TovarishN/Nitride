@@ -43,6 +43,16 @@ def cases():
         ("supplementary", "class C { int \U0001D465; int \\U0001D465x; }"),
         ("supplementary", "class \U0001D465 { }"),
     ]
+    # Shapes from the final review: nesting, long chains, postfix composition.
+    chain = "".join(f"if (x == {i}) return {i}; else " for i in range(200))
+    rows += [
+        ("nesting", "class C { object M() { return " + "(" * 30 + "1" + ")" * 30 + "; } }"),
+        ("nesting", "class C { object M() { return " + "(int)(" * 20 + "1" + ")" * 20 + "; } }"),
+        ("nesting", "class C { int M(int x) { " + chain + "return -1; } }"),
+        ("nesting", "class C { void M() { " + "{ " * 60 + "M();" + " }" * 60 + " } }"),
+        ("postfix", "class C { object M() { return f(x)(y)[z].w; } }"),
+        ("postfix", "class C { object M() { return -a.b(c)[d] + e(f)[g].h * 2; } }"),
+    ]
     seen, unique = set(), []
     for kind, source in rows:
         if source not in seen:

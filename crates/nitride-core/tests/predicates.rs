@@ -98,6 +98,7 @@ fn prefix_language(prefixes: &'static [u16], second: Expr) -> &'static Language 
                     Expr::Pratt {
                         prefixes,
                         infixes: &[],
+                        memoize: false,
                     },
                 ),
                 rule("Short", Expr::Literal("a")),

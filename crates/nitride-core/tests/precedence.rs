@@ -22,6 +22,7 @@ fn language() -> Language {
                     Expr::Pratt {
                         prefixes: &[1, 2, 3],
                         infixes: &[4, 5],
+                        memoize: false,
                     },
                     0,
                     None,
@@ -113,6 +114,7 @@ fn call_language() -> &'static Language {
                     Expr::Pratt {
                         prefixes: &[1],
                         infixes: &[2, 3],
+                        memoize: false,
                     },
                     0,
                     None,
@@ -202,6 +204,7 @@ fn shared_operator_alternatives_take_longest_match() {
                     Expr::Pratt {
                         prefixes: &[1],
                         infixes: &[2, 3],
+                        memoize: false,
                     },
                     0,
                     None,

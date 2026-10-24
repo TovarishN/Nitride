@@ -6,10 +6,12 @@ fn invalid_pratt_rule_ids_return_diagnostics() {
         Expr::Pratt {
             prefixes: &[99],
             infixes: &[],
+            memoize: false,
         },
         Expr::Pratt {
             prefixes: &[1],
             infixes: &[99],
+            memoize: false,
         },
     ] {
         let rule = |name, expr| Rule {

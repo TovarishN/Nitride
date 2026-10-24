@@ -81,13 +81,8 @@ fn csharp4_parse_scales_linearly() {
         "(".repeat(300),
         ")".repeat(300)
     );
-    let error = nitride_core::parse(
-        &nitride_cli::csharp4::LANGUAGE,
-        &deep,
-        nitride_core::Limits::default(),
-    )
-    .unwrap_err();
-    assert_eq!(error.category, "limit");
+    // Nesting that parses (300 levels) stays cheap.
+    assert!(parse_seconds(&deep) < 1.0);
 }
 
 #[test]
@@ -127,4 +122,106 @@ fn default_limits_parse_large_files() {
     let source = generated_csharp(256 * 1024);
     let observation = nitride_cli::syntax_observe(&nitride_cli::csharp4::LANGUAGE, &source);
     assert_eq!(observation["ok"], true, "{observation}");
+}
+
+fn parses_with_default_limits(source: &str) -> bool {
+    nitride_core::parse(
+        &nitride_cli::csharp4::LANGUAGE,
+        source,
+        nitride_core::Limits::default(),
+    )
+    .is_ok()
+}
+
+#[test]
+fn nested_expressions_parse_in_linear_time() {
+    let start = std::time::Instant::now();
+    for depth in [8, 20] {
+        let open = "(".repeat(depth);
+        let close = ")".repeat(depth);
+        for body in [
+            format!("return {open}1{close};"),
+            format!("return {}1{};", "(int)(".repeat(depth), close),
+            format!(
+                "System.Func<int, int> f = {}x{};",
+                "x => (".repeat(depth),
+                close
+            ),
+            format!("return {}a ? b : c{};", "(a ? b : ".repeat(depth), close),
+            format!("return {}0{};", "a[".repeat(depth), "]".repeat(depth)),
+            format!(
+                "object v = new {}int{}();",
+                "G<".repeat(depth),
+                ">".repeat(depth)
+            ),
+        ] {
+            let source = format!("class C {{ object M(int x) {{ {body} }} }}");
+            assert!(parses_with_default_limits(&source), "{source}");
+        }
+    }
+    assert!(
+        start.elapsed().as_secs() < 20,
+        "nested parsing took {:?}",
+        start.elapsed()
+    );
+}
+
+#[test]
+fn long_else_if_chains_and_deep_blocks_parse() {
+    let chain: String = (0..1000)
+        .map(|i| format!("if (x == {i}) return {i}; else "))
+        .collect();
+    let blocks = format!("{}x++;{}", "{ ".repeat(100), " }".repeat(100));
+    let classes = format!("{}{}", "class C { ".repeat(50), "}".repeat(50));
+    for source in [
+        format!("class C {{ int M(int x) {{ {chain}return -1; }} }}"),
+        format!("class C {{ void M(int x) {{ {blocks} }} }}"),
+        classes,
+    ] {
+        assert!(parses_with_default_limits(&source), "{}", &source[..80]);
+    }
+}
+
+/// Deep input on a small (2 MiB) thread never overflows: the measured stack
+/// budget spills to a large-stack thread, and without a spill it is a `limit`.
+#[test]
+fn deep_csharp_is_stack_safe_on_small_threads() {
+    let chain: String = (0..2000)
+        .map(|i| format!("if (x == {i}) return {i}; else "))
+        .collect();
+    let chain = format!("class C {{ int M(int x) {{ {chain}return -1; }} }}");
+    let deep = format!(
+        "class C {{ int F() {{ return {}1{}; }} }}",
+        "(".repeat(20_000),
+        ")".repeat(20_000)
+    );
+    std::thread::Builder::new()
+        .stack_size(2 * 1024 * 1024)
+        .spawn(move || {
+            let language = &nitride_cli::csharp4::LANGUAGE;
+            assert!(nitride_core::parse(language, &chain, nitride_core::Limits::default()).is_ok());
+            let no_spill = nitride_core::Limits {
+                parser_spill_stack_bytes: 0,
+                ..nitride_core::Limits::default()
+            };
+            assert_eq!(
+                nitride_core::parse(language, &chain, no_spill)
+                    .unwrap_err()
+                    .category,
+                "limit"
+            );
+            let small_spill = nitride_core::Limits {
+                parser_spill_stack_bytes: 8 * 1024 * 1024,
+                ..nitride_core::Limits::default()
+            };
+            assert_eq!(
+                nitride_core::parse(language, &deep, small_spill)
+                    .unwrap_err()
+                    .category,
+                "limit"
+            );
+        })
+        .unwrap()
+        .join()
+        .unwrap();
 }

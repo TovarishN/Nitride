@@ -368,10 +368,18 @@ fn evaluate(
     }
     // Every function body is checked once, used or not.
     let mut errors = Vec::new();
-    let all: Vec<_> = registry
-        .functions
-        .values()
-        .flat_map(|f| f.values().copied())
+    // Source order keeps the reported (first) error deterministic.
+    let mut seen_modules = HashSet::new();
+    let all: Vec<_> = modules
+        .iter()
+        .enumerate()
+        .filter(|(_, m)| seen_modules.insert(m.name.as_str()))
+        .flat_map(|(mi, m)| m.functions.iter().map(move |f| (mi, f)))
+        .filter(|(mi, f)| {
+            registry.functions[&modules[*mi].name]
+                .get(&f.name)
+                .is_some_and(|(_, g)| std::ptr::eq(*g, *f))
+        })
         .collect();
     for (mi, function) in &all {
         let before = errors.len();
@@ -810,10 +818,36 @@ impl Checker<'_, '_> {
 
 struct Evaluator<'r, 'a> {
     registry: &'r Registry<'a>,
-    memo: HashMap<String, Value>,
+    // Results with their node counts: a reused result still counts toward
+    // MAX_NODES, since each reuse is copied into the expansion.
+    memo: HashMap<String, (Value, usize)>,
     stack: Vec<String>,
     nodes: usize,
     steps: i64,
+}
+
+/// A comprehension's elements, produced lazily so steps are counted before
+/// any large range is materialized.
+enum Elements {
+    Text(Vec<u16>),
+    Range(std::ops::RangeInclusive<i64>),
+}
+
+impl Elements {
+    fn values(self) -> Box<dyn Iterator<Item = Val>> {
+        match self {
+            Elements::Text(text) => Box::new(text.into_iter().map(Val::Char)),
+            Elements::Range(range) => Box::new(range.map(Val::Int)),
+        }
+    }
+}
+
+/// The number of expression nodes in an expansion.
+fn size(expr: &Value) -> usize {
+    1 + expr["items"]
+        .as_array()
+        .map_or(0, |items| items.iter().map(size).sum())
+        + expr.get("inner").map_or(0, size)
 }
 
 fn strip(expr: &Value) -> Value {
@@ -882,7 +916,11 @@ impl<'a> Evaluator<'_, 'a> {
             function.name,
             arguments.iter().map(Val::key).collect::<Vec<_>>().join(",")
         );
-        if let Some(known) = self.memo.get(&key) {
+        if let Some((known, size)) = self.memo.get(&key) {
+            self.nodes += size;
+            if self.nodes > MAX_NODES {
+                return Err(self.error(format!("the expansion exceeds {MAX_NODES} nodes")));
+            }
             return Ok(known.clone());
         }
         if self.stack.len() >= MAX_DEPTH {
@@ -897,7 +935,7 @@ impl<'a> Evaluator<'_, 'a> {
         }
         let result = self.build(&function.body, &mut scope, mi)?;
         self.stack.pop();
-        self.memo.insert(key, result.clone());
+        self.memo.insert(key, (result.clone(), size(&result)));
         Ok(result)
     }
 
@@ -969,7 +1007,7 @@ impl<'a> Evaluator<'_, 'a> {
             Some("comprehension") => {
                 let elements = self.elements(expr, scope, mi)?;
                 let mut items = Vec::new();
-                for element in elements {
+                for element in elements.values() {
                     self.steps += 1;
                     if self.steps > MAX_STEPS {
                         return Err(
@@ -1009,10 +1047,10 @@ impl<'a> Evaluator<'_, 'a> {
         }
     }
 
-    fn elements(&mut self, expr: &Value, scope: &mut Scope<Val>, mi: usize) -> Outcome<Vec<Val>> {
+    fn elements(&mut self, expr: &Value, scope: &mut Scope<Val>, mi: usize) -> Outcome<Elements> {
         let from = self.eval(&expr["from"], scope, mi)?;
         if expr["to"].is_null() {
-            return Ok(self.as_text(&from)?.into_iter().map(Val::Char).collect());
+            return Ok(Elements::Text(self.as_text(&from)?));
         }
         let first = self.as_int(&from)?;
         let to = self.eval(&expr["to"], scope, mi)?;
@@ -1020,7 +1058,7 @@ impl<'a> Evaluator<'_, 'a> {
         if last.saturating_sub(first) >= MAX_STEPS {
             return Err(self.error(format!("comprehensions take more than {MAX_STEPS} steps")));
         }
-        Ok((first..=last).map(Val::Int).collect())
+        Ok(Elements::Range(first..=last))
     }
 
     /// The block's rule, or None when its `where` condition is false.

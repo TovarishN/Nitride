@@ -74,9 +74,15 @@ pub struct Limits {
     /// Semantic nesting: HIR depth and rewrite expansion depth.
     pub depth: u32,
     pub work: u64,
-    /// Parser recursion frames. Generated wrappers consume frames too, so a
-    /// layered grammar such as C# needs several frames per nesting level.
+    /// Parser recursion frames, a logical cap. Real depth is bounded by
+    /// measured stack use (`parser_stack_bytes`, `parser_spill_stack_bytes`).
     pub parser_frames: u32,
+    /// Stack the parser may use on the caller's thread before it reruns the
+    /// parse on a dedicated thread with a large stack.
+    pub parser_stack_bytes: usize,
+    /// That dedicated thread's stack (reserved, committed as used); 0 never
+    /// spills, so deep input on the caller's thread is a `limit` diagnostic.
+    pub parser_spill_stack_bytes: usize,
     /// The parser may also spend this much work per input byte, so large
     /// files parse while superlinear backtracking still stops.
     pub parser_work_per_byte: u64,
@@ -87,8 +93,10 @@ impl Default for Limits {
         Self {
             depth: 128,
             work: 10_000_000,
-            parser_frames: 512,
-            parser_work_per_byte: 4096,
+            parser_frames: 100_000,
+            parser_stack_bytes: 256 * 1024,
+            parser_spill_stack_bytes: 512 * 1024 * 1024,
+            parser_work_per_byte: 1024,
         }
     }
 }

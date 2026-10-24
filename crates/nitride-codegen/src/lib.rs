@@ -704,7 +704,7 @@ pub fn generate(input: &str) -> Result<String, String> {
             return Err("precedence out of range".into());
         }
         output_rules.push(format!("Rule {{name:{},lexical:{},expr:{},except:{},precedence:{precedence},right_associative:{},transparent:{},owner:{owner},action:{action}}}",
-            quoted(name), rule["lexical"].as_bool().ok_or("invalid lexical flag")?, emit_expr(&pair_surrogates(&rule["expr"]), &ids)?,
+            quoted(name), rule["lexical"].as_bool().ok_or("invalid lexical flag")?, emit_expr_with(&pair_surrogates(&rule["expr"]), &ids, rule["expr"]["kind"] == "pratt" && memoize_point(&rule["expr"], rules, &ids))?,
             list(strings(&rule["except"])?.into_iter().map(quoted)), rule["associativity"] == "Right", rule["transparent"] == true));
     }
 
@@ -974,7 +974,157 @@ pub fn pair_surrogates(e: &Value) -> Value {
     e
 }
 
+/// How an expression can begin: a whole leading literal or a character range.
+#[derive(Clone)]
+enum Start {
+    Text(String),
+    Range(u32, u32),
+}
+
+type Chars = Vec<Start>;
+
+fn starts_overlap(a: &Start, b: &Start) -> bool {
+    let first = |t: &str| t.chars().next().map_or(0, |c| c as u32);
+    match (a, b) {
+        (Start::Text(a), Start::Text(b)) => a.starts_with(b.as_str()) || b.starts_with(a.as_str()),
+        (Start::Text(t), Start::Range(x, y)) | (Start::Range(x, y), Start::Text(t)) => {
+            (*x..=*y).contains(&first(t))
+        }
+        (Start::Range(x, y), Start::Range(p, q)) => x <= q && p <= y,
+    }
+}
+
+/// How an expression can begin; None when unknown, nullable, negated or
+/// predicate-led (conservatively overlapping everything).
+fn first_chars(
+    e: &Value,
+    rules: &[Value],
+    ids: &HashMap<&str, u16>,
+    visiting: &mut HashSet<u16>,
+) -> Option<Chars> {
+    match e["kind"].as_str()? {
+        "literal" => {
+            let text = e["text"].as_str()?;
+            if text.is_empty() {
+                return None;
+            }
+            Some(vec![Start::Text(text.to_owned())])
+        }
+        "class" if e["negated"] != true => Some(
+            e["ranges"]
+                .as_array()?
+                .iter()
+                .map(|r| Some(Start::Range(r[0].as_u64()? as u32, r[1].as_u64()? as u32)))
+                .collect::<Option<_>>()?,
+        ),
+        "label" => first_chars(&e["inner"], rules, ids, visiting),
+        "repeat" if e["min"].as_u64()? >= 1 => first_chars(&e["inner"], rules, ids, visiting),
+        "sequence" => first_chars(e["items"].as_array()?.first()?, rules, ids, visiting),
+        "choice" => {
+            let mut all = Vec::new();
+            for item in e["items"].as_array()? {
+                all.extend(first_chars(item, rules, ids, visiting)?);
+            }
+            Some(all)
+        }
+        "ref" => {
+            let id = *ids.get(e["name"].as_str()?)?;
+            if !visiting.insert(id) {
+                return None;
+            }
+            let result = first_chars(&rules[id as usize]["expr"], rules, ids, visiting);
+            visiting.remove(&id);
+            result
+        }
+        "pratt" => {
+            let mut all = Vec::new();
+            for name in e["prefixes"].as_array()? {
+                let id = *ids.get(name.as_str()?)?;
+                if !visiting.insert(id) {
+                    return None;
+                }
+                let part = first_chars(&rules[id as usize]["expr"], rules, ids, visiting);
+                visiting.remove(&id);
+                all.extend(part?);
+            }
+            Some(all)
+        }
+        _ => None,
+    }
+}
+
+/// Whether `e` can reach an extension point through references.
+fn reaches_point(
+    e: &Value,
+    rules: &[Value],
+    ids: &HashMap<&str, u16>,
+    seen: &mut HashSet<u16>,
+) -> bool {
+    match e {
+        Value::Object(map) => {
+            if map.get("kind").and_then(Value::as_str) == Some("ref") {
+                let Some(&id) = map
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .and_then(|n| ids.get(n))
+                else {
+                    return false;
+                };
+                let expr = &rules[id as usize]["expr"];
+                return expr["kind"] == "pratt"
+                    || (seen.insert(id) && reaches_point(expr, rules, ids, seen));
+            }
+            map.values().any(|v| reaches_point(v, rules, ids, seen))
+        }
+        Value::Array(items) => items.iter().any(|v| reaches_point(v, rules, ids, seen)),
+        _ => false,
+    }
+}
+
+/// Whether two alternatives of an extension point can begin alike while both
+/// parse a nested expression (reach any extension point): prefixes by how they start, infixes by their
+/// operators. Only then can a failed alternative's operand be reparsed by the
+/// next (exponentially, when nested), so only then is memoization worth its cost.
+fn memoize_point(e: &Value, rules: &[Value], ids: &HashMap<&str, u16>) -> bool {
+    let sets = |key: &str, element: usize| -> Vec<Option<Chars>> {
+        e[key]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|name| {
+                let Some(&id) = name.as_str().and_then(|n| ids.get(n)) else {
+                    return Some(None);
+                };
+                let rule = &rules[id as usize];
+                // An infix always parses its operands; a prefix may not.
+                if element == 0 && !reaches_point(&rule["expr"], rules, ids, &mut HashSet::new()) {
+                    return None;
+                }
+                let expr = if element == 0 {
+                    &rule["expr"]
+                } else {
+                    &rule["expr"]["items"][element]
+                };
+                Some(first_chars(expr, rules, ids, &mut HashSet::new()))
+            })
+            .collect()
+    };
+    let overlap = |group: Vec<Option<Chars>>| {
+        group.iter().enumerate().any(|(i, a)| {
+            group[i + 1..].iter().any(|b| match (a, b) {
+                (Some(a), Some(b)) => a.iter().any(|x| b.iter().any(|y| starts_overlap(x, y))),
+                _ => true,
+            })
+        })
+    };
+    overlap(sets("prefixes", 0)) || overlap(sets("infixes", 1))
+}
+
 fn emit_expr(e: &Value, ids: &HashMap<&str, u16>) -> Result<String, String> {
+    emit_expr_with(e, ids, false)
+}
+
+fn emit_expr_with(e: &Value, ids: &HashMap<&str, u16>, memoize: bool) -> Result<String, String> {
     Ok(match text(&e["kind"])? {
         "literal" => format!("Expr::Literal({})", quoted(text(&e["text"])?)),
         "any" => "Expr::Any".into(),
@@ -1054,7 +1204,7 @@ fn emit_expr(e: &Value, ids: &HashMap<&str, u16>) -> Result<String, String> {
                 ))
             };
             format!(
-                "Expr::Pratt {{prefixes:{},infixes:{}}}",
+                "Expr::Pratt {{prefixes:{},infixes:{},memoize:{memoize}}}",
                 refs("prefixes")?,
                 refs("infixes")?
             )

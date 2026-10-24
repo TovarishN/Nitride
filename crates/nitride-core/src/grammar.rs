@@ -20,6 +20,8 @@ pub enum Expr {
     Pratt {
         prefixes: &'static [u16],
         infixes: &'static [u16],
+        /// Alternatives can begin alike, so results are memoized by position.
+        memoize: bool,
     },
 }
 
