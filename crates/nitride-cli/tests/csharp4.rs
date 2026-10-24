@@ -225,3 +225,28 @@ fn deep_csharp_is_stack_safe_on_small_threads() {
         .join()
         .unwrap();
 }
+
+/// Alias rules (Nitrogen's EmitModel.IsAlias) leave no node: the tree holds
+/// the nodes Nitrogen reports, plus operand nodes of alias alternatives that
+/// matched only literals (where Nitrogen keeps an unreported literal leaf),
+/// and the vectors hold no spare capacity.
+#[test]
+fn csharp_tree_holds_only_reported_nodes() {
+    let source = generated_csharp(16 * 1024);
+    let language = &nitride_cli::csharp4::LANGUAGE;
+    let tree = nitride_core::parse(language, &source, nitride_core::Limits::default()).unwrap();
+    let observed = nitride_cli::syntax_observe(language, &source);
+    let literal_operands = tree
+        .nodes
+        .iter()
+        .filter(|n| language.rules[n.rule as usize].alias)
+        .inspect(|n| assert_eq!(n.child_count, 0))
+        .count();
+    assert_eq!(
+        tree.nodes.len() - literal_operands,
+        observed["nodes"].as_array().unwrap().len()
+    );
+    assert_eq!(tree.nodes.capacity(), tree.nodes.len());
+    assert_eq!(tree.edges.capacity(), tree.edges.len());
+    assert_eq!(std::mem::size_of::<nitride_core::Edge>(), 8);
+}

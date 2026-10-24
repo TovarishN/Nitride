@@ -10,6 +10,7 @@ fn language() -> Language {
         except: &[],
         right_associative: false,
         transparent: false,
+        alias: false,
         action: Action::None,
     };
     Language {
@@ -102,6 +103,7 @@ fn call_language() -> &'static Language {
         except: &[],
         right_associative: false,
         transparent: false,
+        alias: false,
         action: Action::None,
     };
     Box::leak(Box::new(Language {
@@ -170,7 +172,7 @@ fn call_postfix_with_reference_operator() {
     let target = |id: u32| {
         tree.children(id)
             .iter()
-            .find(|e| e.label == "Target")
+            .find(|e| tree.label(e) == "Target")
             .unwrap()
             .node
     };
@@ -192,6 +194,7 @@ fn shared_operator_alternatives_take_longest_match() {
         except: &[],
         right_associative: false,
         transparent: false,
+        alias: false,
         action: Action::None,
     };
     let language: &'static Language = Box::leak(Box::new(Language {

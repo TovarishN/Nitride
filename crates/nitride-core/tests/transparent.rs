@@ -10,6 +10,7 @@ fn language() -> &'static Language {
         precedence: 0,
         right_associative: false,
         transparent: false,
+        alias: false,
         owner,
     };
     Box::leak(Box::new(Language {
@@ -36,6 +37,7 @@ fn language() -> &'static Language {
                 ),
                 Rule {
                     transparent: true,
+                    alias: false,
                     ..rule(
                         "Plain",
                         Expr::Label("Body", &Expr::Choice(&[Expr::Ref(4), Expr::Literal(";")])),
@@ -80,7 +82,7 @@ fn transparent_alternative_yields_its_element_node() {
         language.rules[tree.nodes[body.node as usize].rule as usize].name,
         "Var"
     );
-    assert_eq!(body.label, "Body");
+    assert_eq!(tree.label(&body), "Body");
     assert_eq!(tree.nodes[body.node as usize].span, [1, 6]);
     assert!(
         tree.nodes.iter().all(|n| n.rule != 2),

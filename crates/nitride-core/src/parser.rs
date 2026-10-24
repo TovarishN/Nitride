@@ -16,6 +16,9 @@ pub struct ParseOptions {
     /// Keep nodes for rules matched inside a token. Tokens are leaves by
     /// default, as in Nitrogen; the grammar frontend inspects their insides.
     pub token_children: bool,
+    /// Keep nodes for alias rules. Aliases build no node by default, as in
+    /// Nitrogen; the grammar frontend decodes by rule kind.
+    pub alias_nodes: bool,
 }
 
 /// A rule matched inside a token: it consumed input but left no node.
@@ -150,6 +153,8 @@ fn parse_on_stack(
         edge_buffers: Vec::new(),
         node_buffers: Vec::new(),
         holes,
+        labels: vec![""],
+        label_ids: Default::default(),
         in_token: 0,
         work_budget: limits
             .work
@@ -172,11 +177,15 @@ fn parse_on_stack(
     drop(parser.edge_buffers);
     drop(parser.node_buffers);
     drop(parser.memo);
+    // A tree is kept (an editor holds one per document): no growth slack.
+    parser.nodes.shrink_to_fit();
+    parser.edges.shrink_to_fit();
     Ok(SyntaxTree {
         language,
         source: source.into(),
         nodes: parser.nodes,
         edges: parser.edges,
+        labels: parser.labels,
         root: root.unwrap(),
     })
 }
@@ -197,6 +206,8 @@ struct Winner {
 }
 struct Parser<'a> {
     language: &'static Language,
+    labels: Vec<&'static str>,
+    label_ids: std::collections::HashMap<(usize, usize), u16>,
     source: &'a str,
     options: ParseOptions,
     limits: Limits,
@@ -303,6 +314,27 @@ impl Parser<'_> {
         Self::recycle(&mut self.node_buffers, winner.nodes);
         Self::recycle(&mut self.edge_buffers, winner.edges);
         Ok(Some(winner.node))
+    }
+    /// This tree's index for a label; labels are static grammar strings, so
+    /// they are keyed by address (a repeated spelling only costs a slot).
+    fn intern(&mut self, label: &'static str) -> Result<u16, Diagnostic> {
+        if label.is_empty() {
+            return Ok(0);
+        }
+        let key = (label.as_ptr() as usize, label.len());
+        if let Some(&id) = self.label_ids.get(&key) {
+            return Ok(id);
+        }
+        let id = u16::try_from(self.labels.len()).map_err(|_| {
+            Diagnostic::new(
+                "limit",
+                [self.position as u32; 2],
+                "too many distinct labels",
+            )
+        })?;
+        self.labels.push(label);
+        self.label_ids.insert(key, id);
+        Ok(id)
     }
     fn mark(&self) -> Mark {
         Mark {
@@ -485,6 +517,17 @@ impl Parser<'_> {
             Self::recycle(&mut self.edge_buffers, children);
             self.restore(mark);
             return Ok(None);
+        }
+        // An alias builds no node: its one child stands in, labeled by the
+        // reference to the alias. With no child, nothing remains, except for
+        // an extensible alternative, which must yield an operand node.
+        if rule.alias
+            && !self.options.alias_nodes
+            && (children.len() == 1 || (children.is_empty() && rule.owner.is_none()))
+        {
+            let node = children.first().map_or(NO_NODE, |edge| edge.node);
+            Self::recycle(&mut self.edge_buffers, children);
+            return Ok(Some(node));
         }
         let result = self.add_node(id, start, &children).map(Some);
         Self::recycle(&mut self.edge_buffers, children);
@@ -677,6 +720,7 @@ impl Parser<'_> {
                 let mark = self.mark();
                 let start = self.nodes[left as usize].span[0] as usize;
                 let mut children = self.edge_buffers.pop().unwrap_or_default();
+                let label = self.intern(label)?;
                 children.push(Edge { label, node: left });
                 let power = rule
                     .precedence
@@ -789,7 +833,7 @@ impl Parser<'_> {
                     self.rule(*id, if Some(*id) == owner { power } else { 0 }, depth + 1)?
                 {
                     if node != NO_NODE {
-                        out.push(Edge { label: "", node });
+                        out.push(Edge { label: 0, node });
                     }
                     true
                 } else {
@@ -799,8 +843,11 @@ impl Parser<'_> {
             Expr::Label(label, inner) => {
                 let from = out.len();
                 let matched = self.expression(inner, lexical, owner, power, depth + 1, out)?;
-                for edge in &mut out[from..] {
-                    edge.label = label;
+                if out.len() > from {
+                    let label = self.intern(label)?;
+                    for edge in &mut out[from..] {
+                        edge.label = label;
+                    }
                 }
                 matched
             }

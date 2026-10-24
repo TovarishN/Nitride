@@ -1,0 +1,63 @@
+{
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "measurements": [
+    {
+      "bytes": 65828,
+      "native_parse_seconds": 0.108308,
+      "native_parse_allocations": 181,
+      "native_parse_peak_bytes": 1647776,
+      "native_tree_bytes": 869968,
+      "native_nodes": 28683,
+      "nitrogen_parse_seconds": 0.0692221,
+      "nitrogen_parse_allocated_bytes": 656,
+      "nitrogen_nodes": 52556,
+      "nitrogen_tree_array_bytes": 1441792,
+      "nitrogen_text_bytes": 131656,
+      "nitrogen_heap_growth_bytes": 9320
+    },
+    {
+      "bytes": 1048613,
+      "native_parse_seconds": 1.690888458,
+      "native_parse_allocations": 219,
+      "native_parse_peak_bytes": 26646944,
+      "native_tree_bytes": 13466593,
+      "native_nodes": 443463,
+      "nitrogen_parse_seconds": 0.2352638,
+      "nitrogen_parse_allocated_bytes": 126449840,
+      "nitrogen_nodes": 812540,
+      "nitrogen_tree_array_bytes": 15209396,
+      "nitrogen_text_bytes": 2097226,
+      "nitrogen_heap_growth_bytes": 15286512
+    },
+    {
+      "bytes": 4194492,
+      "native_parse_seconds": 6.7343795,
+      "native_parse_allocations": 234,
+      "native_parse_peak_bytes": 105005472,
+      "native_tree_bytes": 53372272,
+      "native_nodes": 1756313,
+      "nitrogen_parse_seconds": 0.9385622,
+      "nitrogen_parse_allocated_bytes": 505227008,
+      "nitrogen_nodes": 3218020,
+      "nitrogen_tree_array_bytes": 60235916,
+      "nitrogen_text_bytes": 8388984,
+      "nitrogen_heap_growth_bytes": 60236952
+    },
+    {
+      "bytes": 16777292,
+      "native_parse_seconds": 26.992611333,
+      "native_parse_allocations": 248,
+      "native_parse_peak_bytes": 327172512,
+      "native_tree_bytes": 210043072,
+      "native_nodes": 6902313,
+      "nitrogen_parse_seconds": 3.9331257,
+      "nitrogen_parse_allocated_bytes": 1882461264,
+      "nitrogen_nodes": 12646820,
+      "nitrogen_tree_array_bytes": 236727116,
+      "nitrogen_text_bytes": 33554584,
+      "nitrogen_heap_growth_bytes": 236734296
+    }
+  ],
+  "metric": "Best of 3 parse-phase wall times; native allocations/peak are requested System bytes; native tree bytes are the retained tree including its UTF-8 source copy; Nitrogen allocated bytes are GC.GetAllocatedBytesForCurrentThread over a warm parse (Release build), which omits pooled rentals; Nitrogen retained size is the tree's arrays at their (pooled or exact) length plus its UTF-16 text, cross-checked by managed heap growth while the tree is alive"
+}

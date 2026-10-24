@@ -65,7 +65,27 @@ static class SyntaxOracle
             allocated = GC.GetAllocatedBytesForCurrentThread() - before;
             times.Add(watch.Elapsed.TotalSeconds);
         }
-        return new { bytes = Encoding.UTF8.GetByteCount(source), seconds_min = times.Min(), allocated_bytes = allocated };
+        // Retained: the arrays the tree holds (pooled rentals at their rented length), measured
+        // directly since warm pooled parses allocate almost nothing; and the managed heap growth
+        // while the tree is alive, after full collections, as a cross-check.
+        GC.Collect(); GC.WaitForPendingFinalizers(); GC.Collect();
+        long heapBefore = GC.GetTotalMemory(true);
+        var held = language.Parse(source, start);
+        long heapAfter = GC.GetTotalMemory(true);
+        var tree = held.Tree;
+        long arrays = 0;
+        foreach (var field in typeof(SyntaxTree).GetFields(System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic))
+            if (field.Name != "_kindOf" && field.GetValue(tree) is Array array)
+                arrays += (long)array.Length * System.Runtime.InteropServices.Marshal.SizeOf(array.GetType().GetElementType()!);
+        var result = new
+        {
+            bytes = Encoding.UTF8.GetByteCount(source), seconds_min = times.Min(), allocated_bytes = allocated,
+            nodes = tree.NodeCount, tree_array_bytes = arrays, text_bytes = 2L * source.Length,
+            heap_growth_bytes = heapAfter - heapBefore,
+        };
+        GC.KeepAlive(held);
+        held.Dispose();
+        return result;
     }
 
     // The 30 generated CSharp4 modules, found by namespace rather than listed by hand.
