@@ -193,10 +193,10 @@ XML admission covers syntax only: closing-tag semantic checks and pattern
 warnings remain omitted, explicitly recorded in generated metadata. Equal-rank
 ambiguous parses and conflicting infix operator spellings are rejected.
 
-See [design](docs/design.md), [progress and review fixes](docs/progress.md), and
+See [cross-platform validation](docs/ci-evidence.md), [design](docs/design.md), [progress and review fixes](docs/progress.md), and
 [inference and overload evidence](docs/stage6-evidence.md),
 [namespace compatibility evidence](docs/stage5-evidence.md),
 [native preparation evidence](docs/stage4-evidence.md), and
-[parser allocation evidence](docs/stage3-evidence.md). macOS arm64
-was executed; Linux/Windows CI is configured but has not run. This is a starting slice
+[parser allocation evidence](docs/stage3-evidence.md). The hosted CI matrix passes on macOS, Linux and Windows, including native
+preparation and sample execution. Detailed footprint measurements remain macOS-only. This is a starting slice
 of the rewrite, with no existing Nitrogen tools replaced.

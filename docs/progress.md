@@ -193,3 +193,20 @@ release and source-only offline native builds pass. Actual workspace positive an
 negative controls pass; live editor interaction remains unverified. CLI684,816 B;
 core has zero third-party dependencies. Inference memory report is recorded,
 without RSS or throughput claims. No commits/pushes; Linux/Windows remain unrun.
+
+
+## Published repository and cross-platform CI — complete
+
+The user authorized GitHub creation and push. The project is committed and pushed
+to private TovarishN/Nitride, default branch main. Historical no-publication and
+uncommitted notes above describe the earlier milestones.
+
+Initial CI exposed exact-byte source/catalog hash changes from checkout line
+endings. A clean clone reproduced the failure. Enforced LF attributes and a live
+regenerated composition export repair it without weakening hash checks; provenance
+preserves original upstream hashes. A fresh autocrlf=true clone passes 68 tests.
+
+Commit 2b8dc1a passes the full hosted macOS/Linux/Windows matrix, including native
+preparation, release build, strict clippy, tests and sample execution. Live
+preparation and composition runtime parity remain valid. See ci-evidence.md.
+Platform execution is now verified; cross-platform RSS and live editor use are not.
