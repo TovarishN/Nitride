@@ -13,7 +13,13 @@ pub fn parse(
 #[derive(Debug, Default, Clone, Copy)]
 pub struct ParseOptions {
     pub strict_comments: bool,
+    /// Keep nodes for rules matched inside a token. Tokens are leaves by
+    /// default, as in Nitrogen; the grammar frontend inspects their insides.
+    pub token_children: bool,
 }
+
+/// A rule matched inside a token: it consumed input but left no node.
+const NO_NODE: u32 = u32::MAX;
 
 pub fn parse_with_options(
     language: &'static Language,
@@ -90,6 +96,10 @@ fn parse_from(
         edge_buffers: Vec::new(),
         node_buffers: Vec::new(),
         holes,
+        in_token: 0,
+        work_budget: limits
+            .work
+            .max((source.len() as u64).saturating_mul(limits.parser_work_per_byte)),
     };
     let root = parser.rule(start, 0, 0)?;
     parser.trivia()?;
@@ -139,6 +149,8 @@ struct Parser<'a> {
     node_buffers: Vec<Vec<Node>>,
     // Template mode only: `$Name` stands for one node of the hole's category.
     holes: &'a [&'static Hole],
+    in_token: u32,
+    work_budget: u64,
 }
 
 impl Parser<'_> {
@@ -210,7 +222,7 @@ impl Parser<'_> {
     }
     fn tick(&mut self, depth: u32) -> Result<(), Diagnostic> {
         self.work += 1;
-        if depth > self.limits.parser_frames || self.work > self.limits.work {
+        if depth > self.limits.parser_frames || self.work > self.work_budget {
             return Err(Diagnostic::new(
                 "limit",
                 [self.position as u32; 2],
@@ -283,6 +295,29 @@ impl Parser<'_> {
         .then_some(end + 1)
     }
     fn rule(&mut self, id: u16, minimum: u32, depth: u32) -> Result<Option<u32>, Diagnostic> {
+        let lexical = self
+            .language
+            .rules
+            .get(id as usize)
+            .is_some_and(|r| r.lexical);
+        if !lexical || self.options.token_children {
+            return self.match_rule(id, minimum, depth);
+        }
+        self.in_token += 1;
+        let result = self.match_rule(id, minimum, depth);
+        self.in_token -= 1;
+        match result {
+            // A token inside a token leaves no node: the outermost token is a leaf.
+            Ok(Some(node)) if self.in_token > 0 && node != NO_NODE => {
+                let first_child = self.nodes[node as usize].first_child;
+                self.nodes.pop();
+                self.edges.truncate(first_child as usize);
+                Ok(Some(NO_NODE))
+            }
+            other => other,
+        }
+    }
+    fn match_rule(&mut self, id: u16, minimum: u32, depth: u32) -> Result<Option<u32>, Diagnostic> {
         self.tick(depth)?;
         let rule = self
             .language
@@ -545,7 +580,9 @@ impl Parser<'_> {
                 if let Some(node) =
                     self.rule(*id, if Some(*id) == owner { power } else { 0 }, depth + 1)?
                 {
-                    out.push(Edge { label: "", node });
+                    if node != NO_NODE {
+                        out.push(Edge { label: "", node });
+                    }
                     true
                 } else {
                     false

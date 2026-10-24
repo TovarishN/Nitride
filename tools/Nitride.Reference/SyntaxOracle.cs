@@ -44,6 +44,30 @@ static class SyntaxOracle
         return new { ok = true, profile = "syntax-only", semantic_validation = false, nodes };
     }
 
+    /// Warm parse timing and allocation of Nitrogen's generated parser (JIT warmed by one parse).
+    public static object Bench(string profile, string source, int runs)
+    {
+        if (profile != "csharp4") throw new ArgumentException("unknown benchmark profile");
+        var builder = new LanguageBuilder();
+        foreach (var module in CSharp4Modules()) builder.Add(module);
+        var language = builder.Build();
+        var start = CSharp4Start();
+        using (var warm = language.Parse(source, start)) if (!warm.Success) throw new Exception("benchmark input rejected");
+        var times = new List<double>();
+        long allocated = 0;
+        for (int i = 0; i < runs; i++)
+        {
+            GC.Collect();
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            using var parsed = language.Parse(source, start);
+            watch.Stop();
+            allocated = GC.GetAllocatedBytesForCurrentThread() - before;
+            times.Add(watch.Elapsed.TotalSeconds);
+        }
+        return new { bytes = Encoding.UTF8.GetByteCount(source), seconds_min = times.Min(), allocated_bytes = allocated };
+    }
+
     // The 30 generated CSharp4 modules, found by namespace rather than listed by hand.
     static SyntaxModule[] CSharp4Modules() => typeof(SyntaxOracle).Assembly.GetTypes()
         .Where(t => t.Namespace == "Nitride.Reference.CSharp4" && typeof(SyntaxModule).IsAssignableFrom(t) && !t.IsAbstract)

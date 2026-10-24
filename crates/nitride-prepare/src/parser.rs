@@ -75,6 +75,8 @@ pub fn parse(source: &Source, index: usize) -> Result<Vec<Module>, PrepareError>
         },
         nitride_core::ParseOptions {
             strict_comments: true,
+            // Literal validation inspects quoted text inside opaque blocks.
+            token_children: true,
         },
     )
     .map_err(|e| {

@@ -77,6 +77,9 @@ pub struct Limits {
     /// Parser recursion frames. Generated wrappers consume frames too, so a
     /// layered grammar such as C# needs several frames per nesting level.
     pub parser_frames: u32,
+    /// The parser may also spend this much work per input byte, so large
+    /// files parse while superlinear backtracking still stops.
+    pub parser_work_per_byte: u64,
 }
 
 impl Default for Limits {
@@ -85,6 +88,7 @@ impl Default for Limits {
             depth: 128,
             work: 10_000_000,
             parser_frames: 512,
+            parser_work_per_byte: 4096,
         }
     }
 }

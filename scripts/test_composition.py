@@ -1,5 +1,6 @@
 """Behavioral contracts for ordered multi-module language preparation."""
 import json
+import subprocess
 import pathlib
 import shutil
 import tempfile
@@ -77,7 +78,9 @@ class CompositionTests(unittest.TestCase):
             self.assertEqual(export(root / "relocated/project.json", b).returncode, 0)
             self.assertEqual(a.read_bytes(), b.read_bytes())
 
-    def test_conflicting_extension_operators_are_rejected(self):
+    def test_shared_extension_operators_are_admitted(self):
+        # Alternatives may share an operator, as in Nitrogen: the parser ranks
+        # them, and an exact tie is its ambiguity diagnostic at parse time.
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
             (root / "Base.ngr").write_text('syntax module Base { token N = [\'0\'..\'9\']+; syntax Start = E; extensible syntax E { | Num = N } }')
@@ -86,8 +89,10 @@ class CompositionTests(unittest.TestCase):
             (root / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
             (root / "project.json").write_text(json.dumps({"mode":"syntax","start":"Base.Start","grammars":["Base.ngr","One.ngr","Two.ngr"],"catalog":"catalog.json"}))
             output = root / "out.json"
-            self.assertNotEqual(export(root / "project.json", output).returncode, 0)
-            self.assertFalse(output.exists())
+            self.assertEqual(export(root / "project.json", output).returncode, 0)
+            native = subprocess.run([ROOT / "target/release/nitride", "prepare", root / "project.json"], capture_output=True, text=True)
+            self.assertEqual(native.returncode, 0, native.stderr)
+            self.assertEqual(json.loads(native.stdout), json.loads(output.read_text()))
 
 
 if __name__ == "__main__":
