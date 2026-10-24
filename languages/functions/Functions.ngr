@@ -1,0 +1,23 @@
+syntax module Functions
+{
+  symbols { function parameter }
+  token Number = ['0'..'9']+;
+  token Identifier = ['a'..'z' 'A'..'Z' '_'] ['a'..'z' 'A'..'Z' '0'..'9' '_']* except "def" "alias" "call" "add" "addtime" "duration" "neg";
+  token Type = ['A'..'Z'] ['a'..'z' 'A'..'Z' '.']*;
+  syntax Program = Items:Item*;
+  syntax Item = Definition / Alias / Show;
+  syntax Definition = "def" Name:Identifier "(" Params:(Parameter; ",")* ")" "=" Body:Expr ";"
+    declares function Name export scope lowers template Body(Params);
+  syntax Parameter = Name:Identifier ":" Annotation:Type declares parameter Name type Annotation;
+  syntax Alias = "alias" Name:Identifier ";" declares function Name export;
+  syntax Show = Body:Expr ";";
+  syntax Expr = Num / Ref / Paren / Apply / Add / AddTime / Duration / Neg;
+  syntax Num = Value:Number lowers literal Core.Scalar Value;
+  syntax Ref = Name:Identifier references parameter Name;
+  syntax Paren = "(" Inner:Expr ")";
+  syntax Apply = "call" Name:Identifier "(" Args:(Expr; ",")* ")" references function Name lowers expand Name(Args);
+  syntax Add = "add" "(" Left:Expr "," Right:Expr ")" lowers Functions.Add(Left, Right);
+  syntax AddTime = "addtime" "(" Left:Expr "," Right:Expr ")" lowers Functions.AddTime(Left, Right);
+  syntax Duration = "duration" "(" Amount:Expr ")" lowers Functions.Duration(Amount);
+  syntax Neg = "neg" "(" Amount:Expr ")" lowers Functions.Neg(Amount);
+}

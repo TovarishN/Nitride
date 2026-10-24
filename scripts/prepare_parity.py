@@ -19,7 +19,7 @@ def compare(project, tmp, index):
 def main():
     with tempfile.TemporaryDirectory() as folder:
         tmp = pathlib.Path(folder)
-        for index, profile in enumerate(["portable", "power", "composition", "xml", "namespaces", "inference", "calls"]):
+        for index, profile in enumerate(["portable", "power", "composition", "xml", "namespaces", "inference", "calls", "functions"]):
             compare(ROOT / "languages" / profile / "project.json", tmp, index)
         for index in range(48):
             project = tmp / f"case-{index}"
@@ -58,7 +58,17 @@ def main():
             (project / "catalog.json").write_bytes((ROOT / "languages/portable/catalog.json").read_bytes())
             (project / "project.json").write_text(json.dumps({"mode":"typed","start":"Portable.Program","grammars":["Portable.ngr"],"catalog":"catalog.json"}))
             compare(project / "project.json", tmp, index + 63)
+        for index in range(4):
+            project = tmp / f"separated-{index}";project.mkdir()
+            separator = [",", "|"][index % 2]; suffix = "*" if index < 2 else "+"
+            source = f'syntax module List {{ syntax Start = Items:(Item; "{separator}"){suffix}; syntax Item = "a"; }}'
+            (project / "List.ngr").write_text(source)
+            (project / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
+            (project / "project.json").write_text(json.dumps(dict(mode="syntax",start="List.Start",grammars=["List.ngr"],catalog="catalog.json")))
+            compare(project / "project.json",tmp,index+100)
         rejected = [
+            'syntax module Bad { syntax Start = (Item; Separator)*; syntax Item = "a"; token Separator = ","; }',
+            'syntax module Bad { syntax Start = (Item; "")*; syntax Item = "a"; }',
             'syntax module Bad { syntax Start = Missing; }',
             'syntax module Bad { using Missing; syntax Start = "x"; }',
             'syntax module Bad { syntax Start = Start "x" / "y"; }',
@@ -83,7 +93,7 @@ def main():
             reference = run("export-project", bad / "project.json", bad / "output.json")
             native = subprocess.run([ROOT / "target/release/nitride", "prepare", bad / "project.json"], capture_output=True)
             assert reference.returncode != 0 and native.returncode != 0, source
-    print("71 prepared profiles match live .NET export; 14 invalid grammars are rejected by both")
+    print("76 prepared profiles match live .NET export; 16 invalid grammars are rejected by both")
 
 
 if __name__ == "__main__":

@@ -1,0 +1,48 @@
+{
+  "types": [
+    "Core.Scalar",
+    "Functions.Time"
+  ],
+  "operations": [
+    {
+      "id": "Functions.Add",
+      "inputs": [
+        "Core.Scalar",
+        "Core.Scalar"
+      ],
+      "result": "Core.Scalar",
+      "handler": "add"
+    },
+    {
+      "id": "Functions.AddTime",
+      "inputs": [
+        "Functions.Time",
+        "Functions.Time"
+      ],
+      "result": "Functions.Time",
+      "handler": "add"
+    },
+    {
+      "id": "Functions.Duration",
+      "inputs": [
+        "Core.Scalar"
+      ],
+      "result": "Functions.Time",
+      "handler": "identity"
+    },
+    {
+      "id": "Functions.Neg",
+      "inputs": [
+        "Core.Scalar"
+      ],
+      "result": "Core.Scalar",
+      "handler": "neg"
+    }
+  ],
+  "statements": {
+    "Functions.Show": {
+      "kind": "show",
+      "value": "Body"
+    }
+  }
+}

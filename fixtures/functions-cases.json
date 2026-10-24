@@ -1,0 +1,256 @@
+[
+  {
+    "name": "empty",
+    "source": "",
+    "values": []
+  },
+  {
+    "name": "direct_primitive",
+    "source": "add(2,3);",
+    "values": [
+      5
+    ]
+  },
+  {
+    "name": "definition_only",
+    "source": "def id(x: Scalar)=x;",
+    "values": []
+  },
+  {
+    "name": "identity",
+    "source": "def id(x: Scalar)=x; call id(3);",
+    "values": [
+      3
+    ]
+  },
+  {
+    "name": "sum",
+    "source": "def sum(a: Scalar,b: Scalar)=add(a,b); call sum(2,3);",
+    "values": [
+      5
+    ]
+  },
+  {
+    "name": "forward",
+    "source": "call id(3); def id(x: Scalar)=x;",
+    "values": [
+      3
+    ]
+  },
+  {
+    "name": "nested",
+    "source": "def sum(a: Scalar,b: Scalar)=add(a,b); def twice(x: Scalar)=call sum(x,x); call twice(neg(3));",
+    "values": [
+      -6
+    ]
+  },
+  {
+    "name": "swapped",
+    "source": "def sub(a: Scalar,b: Scalar)=add(a,neg(b)); def reverse(x: Scalar,y: Scalar)=call sub(y,x); call reverse(2,5);",
+    "values": [
+      3
+    ]
+  },
+  {
+    "name": "zero_params",
+    "source": "def answer()=42; call answer();",
+    "values": [
+      42
+    ]
+  },
+  {
+    "name": "nominal",
+    "source": "def offset(t: Functions.Time)=addtime(t,duration(2)); call offset(duration(4));",
+    "values": [
+      6
+    ]
+  },
+  {
+    "name": "duplicate_argument_effects",
+    "source": "def twice(x: Scalar)=add(x,x); call twice(neg(3));",
+    "values": [
+      -6
+    ]
+  },
+  {
+    "name": "unused_argument_effects",
+    "source": "def drop(x: Scalar)=2; call drop(neg(3));",
+    "values": [
+      2
+    ]
+  },
+  {
+    "name": "unused_cycle",
+    "source": "def loop(x: Scalar)=call loop(x);",
+    "values": []
+  },
+  {
+    "name": "unused_mutual_cycle",
+    "source": "def a(x: Scalar)=call b(x); def b(x: Scalar)=call a(x);",
+    "values": []
+  },
+  {
+    "name": "parentheses",
+    "source": "def id(x: Scalar)=(x); call id((3));",
+    "values": [
+      3
+    ]
+  },
+  {
+    "name": "unicode_trivia",
+    "source": "// café 😀\ndef id(x: Scalar)=x; call id(3);",
+    "values": [
+      3
+    ]
+  },
+  {
+    "name": "two_parameter_scopes",
+    "source": "def a(x: Scalar)=x; def b(x: Scalar)=neg(x); call a(2); call b(3);",
+    "values": [
+      2,
+      -3
+    ]
+  },
+  {
+    "name": "unknown_function",
+    "source": "call missing(2);",
+    "error": "binding"
+  },
+  {
+    "name": "unknown_parameter",
+    "source": "def id(x: Scalar)=y;",
+    "error": "binding"
+  },
+  {
+    "name": "outside_scope",
+    "source": "def id(x: Scalar)=x; x;",
+    "error": "binding"
+  },
+  {
+    "name": "binding_before_types",
+    "source": "def a(x: Scalar)=duration(duration(1)); call missing(2);",
+    "error": "binding"
+  },
+  {
+    "name": "arity",
+    "source": "def id(x: Scalar)=x; call id();",
+    "error": "type"
+  },
+  {
+    "name": "too_many",
+    "source": "def id(x: Scalar)=x; call id(1,2);",
+    "error": "type"
+  },
+  {
+    "name": "wrong_type",
+    "source": "def id(x: Functions.Time)=x; call id(2);",
+    "error": "type"
+  },
+  {
+    "name": "bad_unused_body",
+    "source": "def bad(x: Scalar)=addtime(x,x);",
+    "error": "type"
+  },
+  {
+    "name": "unknown_annotation",
+    "source": "def id(x: Missing)=x;",
+    "error": "type"
+  },
+  {
+    "name": "alias_not_template",
+    "source": "alias f; call f(2);",
+    "error": "type"
+  },
+  {
+    "name": "bad_unused_argument",
+    "source": "def drop(x: Scalar)=2; call drop(duration(1));",
+    "error": "type"
+  },
+  {
+    "name": "direct_cycle",
+    "source": "def loop(x: Scalar)=call loop(x); call loop(1);",
+    "error": "lowering"
+  },
+  {
+    "name": "mutual_cycle",
+    "source": "def a(x: Scalar)=call b(x); def b(x: Scalar)=call a(x); call a(1);",
+    "error": "lowering"
+  },
+  {
+    "name": "argument_cycle",
+    "source": "def id(x: Scalar)=x; call id(call id(1));",
+    "error": "lowering"
+  },
+  {
+    "name": "unused_argument_cycle",
+    "source": "def loop(x: Scalar)=call loop(x); def drop(x: Scalar)=2; call drop(call loop(1));",
+    "error": "lowering"
+  },
+  {
+    "name": "missing_comma",
+    "source": "def a(x: Scalar y: Scalar)=x;",
+    "error": "syntax"
+  },
+  {
+    "name": "trailing_comma",
+    "source": "def a(x: Scalar,)=x;",
+    "error": "syntax"
+  },
+  {
+    "name": "duplicate_unused_functions",
+    "source": "def f(x: Scalar)=x; def f(y: Scalar)=y;",
+    "error": "binding"
+  },
+  {
+    "name": "duplicate_used_functions",
+    "source": "def f(x: Scalar)=x; def f(y: Scalar)=y; call f(1);",
+    "error": "binding"
+  },
+  {
+    "name": "duplicate_unused_parameters",
+    "source": "def f(x: Scalar,x: Scalar)=1;",
+    "error": "binding"
+  },
+  {
+    "name": "duplicate_used_parameters",
+    "source": "def f(x: Scalar,x: Scalar)=x;",
+    "error": "binding"
+  },
+  {
+    "name": "parenthesized_wrong_type",
+    "source": "def f(x: Scalar)=neg(x); call f((duration(1)));",
+    "error": "type"
+  },
+  {
+    "name": "nested_argument_origins",
+    "source": "def f(x: Scalar)=add(x,1); def g(y: Scalar)=call f(neg(y)); call g(3);",
+    "values": [
+      -2
+    ]
+  },
+  {
+    "name": "cyclic_unused_body_type",
+    "source": "def f(x: Scalar)=duration(call f(x));",
+    "error": "type"
+  },
+  {
+    "name": "cyclic_used_body_type",
+    "source": "def f(x: Scalar)=duration(call f(x)); call f(1);",
+    "error": "type"
+  },
+  {
+    "name": "mutual_unused_body_type",
+    "source": "def a(x: Scalar)=call b(x); def b(x: Scalar)=duration(call a(x));",
+    "error": "type"
+  },
+  {
+    "name": "mutual_used_body_type",
+    "source": "def a(x: Scalar)=call b(x); def b(x: Scalar)=duration(call a(x)); call b(1);",
+    "error": "type"
+  },
+  {
+    "name": "known_result_cycle_closing_span",
+    "source": "def a(x: Scalar)=call b(x); def b(x: Scalar)=add(call a(x),1); call a(1);",
+    "error": "lowering"
+  }
+]

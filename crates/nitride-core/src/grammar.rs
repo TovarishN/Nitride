@@ -48,6 +48,26 @@ pub enum Action {
         fields: &'static [&'static str],
         builtins: &'static [Builtin],
     },
+    Template {
+        kind: &'static str,
+        field: &'static str,
+        body: &'static str,
+        parameters: &'static str,
+    },
+    Parameter {
+        kind: &'static str,
+        field: &'static str,
+        annotation: &'static str,
+    },
+    Alias {
+        kind: &'static str,
+        field: &'static str,
+    },
+    Expand {
+        kinds: &'static [&'static str],
+        field: &'static str,
+        arguments: &'static str,
+    },
     Declare {
         kind: &'static str,
         field: &'static str,

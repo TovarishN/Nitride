@@ -231,3 +231,28 @@ and noncallable-shadow controls pass. Final independent review found no actionab
 issues; its extra 15 live probes match. CLI734,672 B; core dependencies remain zero.
 The new fixture is included in all three CI jobs; see branch checks for current
 hosted status. Full DateCalc, authored function bodies and live editors are deferred.
+
+
+## Stage eight: typed user-defined templates — complete
+
+Plan: stage8-plan.md; limits and evidence: stage8-evidence.md. Added pure declarative
+function definitions, typed parameter scopes, nested/forward expansion and complete
+origin chains, using fixed catalog operations in a document-local profile.
+
+Ruling: Preserve Nitrogen template substitution effects: repeated parameters repeat
+computation; unused arguments are checked/lowered but emit no executed HIR. Match
+its selected-root API, including the outer-use diagnostic for unknown-result cycles;
+do not claim its registered-root API admits identity-result expansions.
+
+Ruling: Keep full origins in Program side tables. Existing node/binding storage
+and namespace/inference/call phase allocation metrics remain unchanged; expanded
+functions carry explicit origin/expansion storage and work costs.
+
+Final independent review found one cyclic type-cache issue. Five new frozen cases
+reproduced it RED; bounded fixed-point type propagation/constraint checks make them
+GREEN. Full 87-test suite, 15 exporter tests, 189 frozen/384 generated observations,
+and 76 valid/16 invalid preparations pass. Source-only offline native build and
+actual workspace controls pass. CLI801,104 B; core dependencies remain zero.
+The reviewer ran 23 probes; no other actionable findings or deferred minors.
+Stacked draft PR/three-platform CI track hosted validation. No draft PR merge,
+DateCalc admission, mixed global captures or live editor interaction is claimed.

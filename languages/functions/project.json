@@ -1,0 +1,8 @@
+{
+  "mode": "typed",
+  "start": "Functions.Program",
+  "grammars": [
+    "Functions.ngr"
+  ],
+  "catalog": "catalog.json"
+}

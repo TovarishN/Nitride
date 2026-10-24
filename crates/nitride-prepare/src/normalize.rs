@@ -403,7 +403,7 @@ fn validate_fields(rule: &Rule, source: &Source, plain: bool) -> Result<(), Prep
         if !seen.insert(key) {
             return Err(source.error(rule.span, format!("duplicate {key} clause")));
         }
-        if kind != "Lowers" {
+        if kind != "Lowers" && kind != "Scope" {
             let field = clause["field"].as_str().unwrap();
             if field != "this" && !fields.contains(field) {
                 return Err(source.error(rule.span, format!("unknown clause field {field}")));

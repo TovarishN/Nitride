@@ -1,3 +1,6 @@
+pub mod functions {
+    include!(concat!(env!("OUT_DIR"), "/functions.rs"));
+}
 pub mod calls {
     include!(concat!(env!("OUT_DIR"), "/calls.rs"));
 }
@@ -92,6 +95,10 @@ pub fn observe(source: &str) -> Value {
     observe_language(&LANGUAGE, source)
 }
 
+pub fn observe_functions(source: &str) -> Value {
+    observe_with_kinds(&functions::LANGUAGE, source, true)
+}
+
 pub fn observe_calls(source: &str) -> Value {
     observe_with_kinds(&calls::LANGUAGE, source, true)
 }
@@ -134,6 +141,7 @@ fn observe_with_kinds(language: &'static Language, source: &str, include_kinds: 
             || rule.name == "Namespaces.Paren"
             || rule.name == "Inference.Paren"
             || rule.name == "Calls.Paren"
+            || rule.name == "Functions.Paren"
         {
             syntax.push(json!({"kind":rule.name,"span":node.span}));
         }
@@ -141,12 +149,22 @@ fn observe_with_kinds(language: &'static Language, source: &str, include_kinds: 
     }
     let mut hir = Vec::<Value>::with_capacity(program.nodes.len());
     for node in &program.nodes {
-        hir.push(match &node.kind {
-            HirKind::Constant(number) => json!({"kind":"constant","type":node.ty,"span":node.span,"number":number}),
-            HirKind::Reference(symbol) => json!({"kind":"reference","type":node.ty,"span":node.span,"symbol":symbol}),
-            HirKind::Operation { operation, args } => json!({"kind":"operation","type":node.ty,"span":node.span,"operation":language.operations[*operation as usize].id,
-                "args":program.args[args.start as usize..args.end as usize].iter().map(|id| hir[*id as usize].clone()).collect::<Vec<_>>()}),
-        });
+        let mut observation = match &node.kind {
+            HirKind::Constant(number) => {
+                json!({"kind":"constant","type":node.ty,"span":node.span,"number":number})
+            }
+            HirKind::Reference(symbol) => {
+                json!({"kind":"reference","type":node.ty,"span":node.span,"symbol":symbol})
+            }
+            HirKind::Operation { operation, args } => {
+                json!({"kind":"operation","type":node.ty,"span":node.span,"operation":language.operations[*operation as usize].id,
+                "args":program.args[args.start as usize..args.end as usize].iter().map(|id| hir[*id as usize].clone()).collect::<Vec<_>>()})
+            }
+        };
+        if std::ptr::eq(language, &functions::LANGUAGE) {
+            observation["origins"] = json!(program.origins(hir.len() as u32));
+        }
+        hir.push(observation);
     }
     let mut bindings = program
         .bindings
