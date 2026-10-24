@@ -42,6 +42,12 @@ pub enum Action {
         candidates: &'static [u16],
         fields: &'static [&'static str],
     },
+    Call {
+        kinds: &'static [&'static str],
+        field: &'static str,
+        fields: &'static [&'static str],
+        builtins: &'static [Builtin],
+    },
     Declare {
         kind: &'static str,
         field: &'static str,
@@ -51,6 +57,13 @@ pub enum Action {
     Show {
         field: &'static str,
     },
+}
+
+#[derive(Debug)]
+pub struct Builtin {
+    pub kind: &'static str,
+    pub name: &'static str,
+    pub candidates: &'static [u16],
 }
 
 #[derive(Debug)]

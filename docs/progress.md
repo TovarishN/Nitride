@@ -210,3 +210,24 @@ Commit 2b8dc1a passes the full hosted macOS/Linux/Windows matrix, including nati
 preparation, release build, strict clippy, tests and sample execution. Live
 preparation and composition runtime parity remain valid. See ci-evidence.md.
 Platform execution is now verified; cross-platform RSS and live editor use are not.
+
+
+## Stage seven: built-in callable symbols — complete
+
+Plan: stage7-plan.md. Added unscoped builtin inventory, strict catalog-backed call
+rules and exact nominal/arity selection into ordinary concrete-operation HIR.
+Resolution follows real Nitrogen: all locals before builtins, with kind priority
+within each tier; a selected local noncallable does not retry a hidden builtin.
+
+Ruling: Source-ordered binding diagnostics handle unresolved outer call names
+before later argument references. Binding still completes before type checking.
+The separate builtin-binding vector preserves existing per-reference storage;
+ordinary namespace/inference phase allocation/byte metrics remain unchanged.
+
+75 Rust tests, 14 exporter tests, 144 frozen/320 generated runtime comparisons,
+and 71 valid/14 invalid preparation comparisons pass. A clean source-only offline
+native build prepares and runs Calls with no .NET on PATH. Actual workspace valid
+and noncallable-shadow controls pass. Final independent review found no actionable
+issues; its extra 15 live probes match. CLI734,672 B; core dependencies remain zero.
+The new fixture is included in all three CI jobs; see branch checks for current
+hosted status. Full DateCalc, authored function bodies and live editors are deferred.

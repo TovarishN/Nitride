@@ -1,3 +1,6 @@
+pub mod calls {
+    include!(concat!(env!("OUT_DIR"), "/calls.rs"));
+}
 include!(concat!(env!("OUT_DIR"), "/language.rs"));
 pub mod inference {
     include!(concat!(env!("OUT_DIR"), "/inference.rs"));
@@ -70,6 +73,7 @@ pub fn fixture_bindings_for(language: &'static Language) -> Vec<HostBinding> {
         .map(|(signature, handler)| {
             HostBinding::new(*signature, move |a| {
                 Ok(match *handler {
+                    "zero" => 0.0,
                     "identity" => a[0],
                     "neg" => -a[0],
                     "add" => a[0] + a[1],
@@ -86,6 +90,10 @@ pub fn fixture_bindings_for(language: &'static Language) -> Vec<HostBinding> {
 
 pub fn observe(source: &str) -> Value {
     observe_language(&LANGUAGE, source)
+}
+
+pub fn observe_calls(source: &str) -> Value {
+    observe_with_kinds(&calls::LANGUAGE, source, true)
 }
 
 pub fn observe_inference(source: &str) -> Value {
@@ -125,6 +133,7 @@ fn observe_with_kinds(language: &'static Language, source: &str, include_kinds: 
             || rule.name == "Portable.Paren"
             || rule.name == "Namespaces.Paren"
             || rule.name == "Inference.Paren"
+            || rule.name == "Calls.Paren"
         {
             syntax.push(json!({"kind":rule.name,"span":node.span}));
         }
@@ -139,6 +148,24 @@ fn observe_with_kinds(language: &'static Language, source: &str, include_kinds: 
                 "args":program.args[args.start as usize..args.end as usize].iter().map(|id| hir[*id as usize].clone()).collect::<Vec<_>>()}),
         });
     }
-    json!({"ok":true,"syntax":syntax,"bindings":program.bindings.iter().map(|b| if include_kinds {json!({"span":b.span,"symbol":b.symbol,"kind":b.kind})} else {json!({"span":b.span,"symbol":b.symbol})}).collect::<Vec<_>>(),
+    let mut bindings = program
+        .bindings
+        .iter()
+        .map(|b| {
+            if include_kinds {
+                json!({"span":b.span,"symbol":b.symbol,"kind":b.kind})
+            } else {
+                json!({"span":b.span,"symbol":b.symbol})
+            }
+        })
+        .chain(
+            program
+                .builtin_bindings
+                .iter()
+                .map(|b| json!({"span":b.span,"builtin":b.name,"kind":b.kind})),
+        )
+        .collect::<Vec<_>>();
+    bindings.sort_by_key(|b| b["span"][0].as_u64().unwrap());
+    json!({"ok":true,"syntax":syntax,"bindings":bindings,
         "hir":program.statements.iter().map(|s| &hir[s.value as usize]).collect::<Vec<_>>(),"values":report.values,"trace":report.trace})
 }

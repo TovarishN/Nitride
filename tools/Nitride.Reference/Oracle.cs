@@ -10,17 +10,17 @@ namespace Nitride.Reference;
 
 static class Oracle
 {
-    public static object Observe(string source, string catalogText, bool includePower = false, bool namespaces = false, bool inference = false)
+    public static object Observe(string source, string catalogText, bool includePower = false, bool namespaces = false, bool inference = false, bool calls = false)
     {
         var data = JsonNode.Parse(catalogText)!;
         var types = data["types"]!.AsArray().Select(t => (string)t!).ToDictionary(t => t,
             t => SemanticType.Named(t[..t.LastIndexOf('.')], t[(t.LastIndexOf('.') + 1)..]));
         var operations = data["operations"]!.AsArray().Select(o => new OperationSignature((string)o!["id"]!, types[(string)o["result"]!],
             o["inputs"]!.AsArray().Select(t => types[(string)t!]).ToArray())).ToArray();
-        var builder = new LanguageBuilder().Add(inference ? Nitride.Reference.Inference.InferenceModule.Instance : namespaces ? Nitride.Reference.Namespaces.NamespacesModule.Instance : PortableModule.Instance);
+        var builder = new LanguageBuilder().Add(calls ? Nitride.Reference.Calls.CallsModule.Instance : inference ? Nitride.Reference.Inference.InferenceModule.Instance : namespaces ? Nitride.Reference.Namespaces.NamespacesModule.Instance : PortableModule.Instance);
         if (includePower) builder.Add(PowerModule.Instance);
         var language = builder.AddSemantic(new SemanticModule("Portable", [], types.Values, operations)).Build();
-        using var parsed = language.Parse(source, inference ? Nitride.Reference.Inference.InferenceModule.Program : namespaces ? Nitride.Reference.Namespaces.NamespacesModule.Program : PortableModule.Program);
+        using var parsed = language.Parse(source, calls ? Nitride.Reference.Calls.CallsModule.Program : inference ? Nitride.Reference.Inference.InferenceModule.Program : namespaces ? Nitride.Reference.Namespaces.NamespacesModule.Program : PortableModule.Program);
         int[] Span(TextSpan s) => [Encoding.UTF8.GetByteCount(source.AsSpan(0, s.Start)), Encoding.UTF8.GetByteCount(source.AsSpan(0, s.End))];
         object Error(string category, TextSpan span, string message) => new { ok = false, error = category, span = Span(span), message, trace = Array.Empty<string>() };
         if (!parsed.Success) return Error("syntax", parsed.Diagnostics[0].Span, "invalid source");
@@ -56,7 +56,7 @@ static class Oracle
                 return Error("type", diagnostic.Span, diagnostic.Message);
         }
         else if (typeErrors.Count > 0) return Error("type", typeErrors[0].Span, typeErrors[0].Message);
-        var kinds = inference ? new HashSet<int> { Nitride.Reference.Inference.InferenceKinds.LetValue, Nitride.Reference.Inference.InferenceKinds.LetRate, Nitride.Reference.Inference.InferenceKinds.InferValue, Nitride.Reference.Inference.InferenceKinds.InferRate, Nitride.Reference.Inference.InferenceKinds.Show } : namespaces ? new HashSet<int> { Nitride.Reference.Namespaces.NamespacesKinds.LetValue, Nitride.Reference.Namespaces.NamespacesKinds.LetRate, Nitride.Reference.Namespaces.NamespacesKinds.Show }
+        var kinds = calls ? new HashSet<int> { Nitride.Reference.Calls.CallsKinds.Let, Nitride.Reference.Calls.CallsKinds.Local, Nitride.Reference.Calls.CallsKinds.Show } : inference ? new HashSet<int> { Nitride.Reference.Inference.InferenceKinds.LetValue, Nitride.Reference.Inference.InferenceKinds.LetRate, Nitride.Reference.Inference.InferenceKinds.InferValue, Nitride.Reference.Inference.InferenceKinds.InferRate, Nitride.Reference.Inference.InferenceKinds.Show } : namespaces ? new HashSet<int> { Nitride.Reference.Namespaces.NamespacesKinds.LetValue, Nitride.Reference.Namespaces.NamespacesKinds.LetRate, Nitride.Reference.Namespaces.NamespacesKinds.Show }
             : new HashSet<int> { PortableKinds.Let, PortableKinds.Show };
         var lowered = HirLowering.LowerSelected(file, kinds, Guid.NewGuid());
         if (lowered.Diagnostics.Count > 0) return Error("type", lowered.Diagnostics[0].Origin.Span, lowered.Diagnostics[0].Message);
@@ -64,7 +64,7 @@ static class Oracle
         if (statements.Length != lowered.Roots.Count) throw new Exception("reference lowering did not produce one root per statement");
         var declarations = binding.Declarations.ToDictionary(s => s.Node);
         for (int i = 0; i < statements.Length; i++)
-            if (declarations.TryGetValue(statements[i], out var symbol) && !(inference ? Equals(new Nitride.Reference.Inference.InferenceSymbol(file, symbol).Type, lowered.Roots[i].Type) : Equals(file.DeclarativeTypes.TypeOfSymbol(symbol), lowered.Roots[i].Type)))
+            if (declarations.TryGetValue(statements[i], out var symbol) && !(calls ? Equals(new Nitride.Reference.Calls.CallsSymbol(file, symbol).Type, lowered.Roots[i].Type) : inference ? Equals(new Nitride.Reference.Inference.InferenceSymbol(file, symbol).Type, lowered.Roots[i].Type) : Equals(file.DeclarativeTypes.TypeOfSymbol(symbol), lowered.Roots[i].Type)))
                 return Error("type", lowered.Roots[i].Origins[0].Span, "initializer differs from declared type");
         var signatureMap = operations.ToDictionary(o => o.Id);
         // Generic HirEvaluator accepts Scalar/Angle only. Execute nominal Time through an
@@ -87,7 +87,7 @@ static class Oracle
                 var args = op.Arguments.Select(Eval).ToArray();
                 trace.Add(op.Signature.Id);
                 string handler = (string)data["operations"]!.AsArray().Single(o => (string)o!["id"]! == op.Signature.Id)!["handler"]!;
-                value = handler switch { "identity" => args[0], "neg" => -args[0], "add" => args[0] + args[1], "sub" => args[0] - args[1], "mul" => args[0] * args[1], "div" => args[0] / args[1], "pow" => Math.Pow(args[0], args[1]), _ => throw new Exception("unknown handler") };
+                value = handler switch { "zero" => 0, "identity" => args[0], "neg" => -args[0], "add" => args[0] + args[1], "sub" => args[0] - args[1], "mul" => args[0] * args[1], "div" => args[0] / args[1], "pow" => Math.Pow(args[0], args[1]), _ => throw new Exception("unknown handler") };
             }
             else throw new Exception("unsupported HIR " + node.GetType().Name);
             if (!double.IsFinite(value)) throw new ArithmeticException("nonfinite result");
@@ -110,13 +110,13 @@ static class Oracle
             }
         }
         catch (ArithmeticException e) { return new { ok = false, error = "execution", message = e.Message, trace }; }
-        var semanticKinds = new HashSet<string> { "Let", "Show", "Num", "Ref", "Paren", "Duration", "Neg", "Add", "Sub", "Mul", "Div", "Pow", "LetValue", "LetRate", "ValueRef", "RateRef", "AnyRef", "ReverseRef", "InferValue", "InferRate" };
+        var semanticKinds = new HashSet<string> { "Let", "Show", "Num", "Ref", "Paren", "Duration", "Neg", "Add", "Sub", "Mul", "Div", "Pow", "LetValue", "LetRate", "ValueRef", "RateRef", "AnyRef", "ReverseRef", "InferValue", "InferRate", "Local", "Call0", "Call1", "Call2", "AnyCall", "FallbackCall" };
         return new { ok = true,
             syntax = Enumerable.Range(0, tree.NodeCount).Where(n => semanticKinds.Contains(language.GetKindName(tree.Kind(n))))
-                .Select(n => new { kind = (inference ? "Inference." : namespaces ? "Namespaces." : includePower && tree.Kind(n) >> 16 == PowerModule.Instance.Id ? "Portable.Power." : "Portable.") + language.GetKindName(tree.Kind(n)), span = Span(tree.Span(n)) }).ToArray(),
+                .Select(n => new { kind = (calls ? "Calls." : inference ? "Inference." : namespaces ? "Namespaces." : includePower && tree.Kind(n) >> 16 == PowerModule.Instance.Id ? "Portable.Power." : "Portable.") + language.GetKindName(tree.Kind(n)), span = Span(tree.Span(n)) }).ToArray(),
             bindings = binding.References.Select(r => {
                 var selected = project.Resolve(r).Single();
-                return (namespaces || inference) ? (object)new { span = Span(r.NameSpan), symbol = Span(selected.NameSpan)[0], kind = selected.Kind }
+                return calls && selected.IsBuiltin ? (object)new { span = Span(r.NameSpan), builtin = selected.Name, kind = selected.Kind } : (namespaces || inference || calls) ? (object)new { span = Span(r.NameSpan), symbol = Span(selected.NameSpan)[0], kind = selected.Kind }
                     : new { span = Span(r.NameSpan), symbol = Span(selected.NameSpan)[0] };
             }).ToArray(),
             hir = lowered.Roots.Select(Hir).ToArray(), values, trace };

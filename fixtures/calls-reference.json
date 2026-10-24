@@ -1,0 +1,2013 @@
+[
+  {
+    "name": "empty",
+    "source": "",
+    "observation": {
+      "ok": true,
+      "syntax": [],
+      "bindings": [],
+      "hir": [],
+      "values": [],
+      "trace": []
+    }
+  },
+  {
+    "name": "zero",
+    "source": "zero();",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Show",
+          "span": [
+            0,
+            7
+          ]
+        },
+        {
+          "kind": "Calls.Call0",
+          "span": [
+            0,
+            6
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            4
+          ],
+          "builtin": "zero",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            6
+          ],
+          "operation": "Calls.Zero",
+          "args": []
+        }
+      ],
+      "values": [
+        0
+      ],
+      "trace": [
+        "Calls.Zero"
+      ]
+    }
+  },
+  {
+    "name": "unary",
+    "source": "neg(3);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Show",
+          "span": [
+            0,
+            7
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            0,
+            6
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            4,
+            5
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            3
+          ],
+          "builtin": "neg",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            6
+          ],
+          "operation": "Calls.NegScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                4,
+                5
+              ],
+              "number": 3
+            }
+          ]
+        }
+      ],
+      "values": [
+        -3
+      ],
+      "trace": [
+        "Calls.NegScalar"
+      ]
+    }
+  },
+  {
+    "name": "binary",
+    "source": "sum(2,3);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Show",
+          "span": [
+            0,
+            9
+          ]
+        },
+        {
+          "kind": "Calls.Call2",
+          "span": [
+            0,
+            8
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            4,
+            5
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            6,
+            7
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            3
+          ],
+          "builtin": "sum",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            8
+          ],
+          "operation": "Calls.SumScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                4,
+                5
+              ],
+              "number": 2
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                6,
+                7
+              ],
+              "number": 3
+            }
+          ]
+        }
+      ],
+      "values": [
+        5
+      ],
+      "trace": [
+        "Calls.SumScalar"
+      ]
+    }
+  },
+  {
+    "name": "nested",
+    "source": "sum(neg(2),sum(3,4));",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Show",
+          "span": [
+            0,
+            21
+          ]
+        },
+        {
+          "kind": "Calls.Call2",
+          "span": [
+            0,
+            20
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            4,
+            10
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            8,
+            9
+          ]
+        },
+        {
+          "kind": "Calls.Call2",
+          "span": [
+            11,
+            19
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            15,
+            16
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            17,
+            18
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            3
+          ],
+          "builtin": "sum",
+          "kind": "function"
+        },
+        {
+          "span": [
+            4,
+            7
+          ],
+          "builtin": "neg",
+          "kind": "function"
+        },
+        {
+          "span": [
+            11,
+            14
+          ],
+          "builtin": "sum",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            20
+          ],
+          "operation": "Calls.SumScalar",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "span": [
+                4,
+                10
+              ],
+              "operation": "Calls.NegScalar",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    8,
+                    9
+                  ],
+                  "number": 2
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "span": [
+                11,
+                19
+              ],
+              "operation": "Calls.SumScalar",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    15,
+                    16
+                  ],
+                  "number": 3
+                },
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    17,
+                    18
+                  ],
+                  "number": 4
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        5
+      ],
+      "trace": [
+        "Calls.NegScalar",
+        "Calls.SumScalar",
+        "Calls.SumScalar"
+      ]
+    }
+  },
+  {
+    "name": "nominal",
+    "source": "let x=duration(4); sum(x,duration(2)); neg(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Let",
+          "span": [
+            0,
+            18
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            6,
+            17
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            15,
+            16
+          ]
+        },
+        {
+          "kind": "Calls.Show",
+          "span": [
+            19,
+            38
+          ]
+        },
+        {
+          "kind": "Calls.Call2",
+          "span": [
+            19,
+            37
+          ]
+        },
+        {
+          "kind": "Calls.Ref",
+          "span": [
+            23,
+            24
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            25,
+            36
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            34,
+            35
+          ]
+        },
+        {
+          "kind": "Calls.Show",
+          "span": [
+            39,
+            46
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            39,
+            45
+          ]
+        },
+        {
+          "kind": "Calls.Ref",
+          "span": [
+            43,
+            44
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            6,
+            14
+          ],
+          "builtin": "duration",
+          "kind": "function"
+        },
+        {
+          "span": [
+            19,
+            22
+          ],
+          "builtin": "sum",
+          "kind": "function"
+        },
+        {
+          "span": [
+            23,
+            24
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            25,
+            33
+          ],
+          "builtin": "duration",
+          "kind": "function"
+        },
+        {
+          "span": [
+            39,
+            42
+          ],
+          "builtin": "neg",
+          "kind": "function"
+        },
+        {
+          "span": [
+            43,
+            44
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Calls.Time",
+          "span": [
+            6,
+            17
+          ],
+          "operation": "Calls.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                15,
+                16
+              ],
+              "number": 4
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Calls.Time",
+          "span": [
+            19,
+            37
+          ],
+          "operation": "Calls.SumTime",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Calls.Time",
+              "span": [
+                23,
+                24
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "operation",
+              "type": "Calls.Time",
+              "span": [
+                25,
+                36
+              ],
+              "operation": "Calls.Duration",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    34,
+                    35
+                  ],
+                  "number": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Calls.Time",
+          "span": [
+            39,
+            45
+          ],
+          "operation": "Calls.NegTime",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Calls.Time",
+              "span": [
+                43,
+                44
+              ],
+              "symbol": 4
+            }
+          ]
+        }
+      ],
+      "values": [
+        6,
+        -4
+      ],
+      "trace": [
+        "Calls.Duration",
+        "Calls.Duration",
+        "Calls.SumTime",
+        "Calls.NegTime"
+      ]
+    }
+  },
+  {
+    "name": "alias",
+    "source": "sys.neg(7);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Show",
+          "span": [
+            0,
+            11
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            0,
+            10
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            8,
+            9
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            7
+          ],
+          "builtin": "sys.neg",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            10
+          ],
+          "operation": "Calls.NegScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                8,
+                9
+              ],
+              "number": 7
+            }
+          ]
+        }
+      ],
+      "values": [
+        -7
+      ],
+      "trace": [
+        "Calls.NegScalar"
+      ]
+    }
+  },
+  {
+    "name": "paren",
+    "source": "neg((3));",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Show",
+          "span": [
+            0,
+            9
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            0,
+            8
+          ]
+        },
+        {
+          "kind": "Calls.Paren",
+          "span": [
+            4,
+            7
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            5,
+            6
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            3
+          ],
+          "builtin": "neg",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            8
+          ],
+          "operation": "Calls.NegScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                5,
+                6
+              ],
+              "number": 3
+            }
+          ]
+        }
+      ],
+      "values": [
+        -3
+      ],
+      "trace": [
+        "Calls.NegScalar"
+      ]
+    }
+  },
+  {
+    "name": "value_namespace_does_not_hide",
+    "source": "let neg=8; neg(2); neg;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Let",
+          "span": [
+            0,
+            10
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            8,
+            9
+          ]
+        },
+        {
+          "kind": "Calls.Show",
+          "span": [
+            11,
+            18
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            11,
+            17
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            15,
+            16
+          ]
+        },
+        {
+          "kind": "Calls.Show",
+          "span": [
+            19,
+            23
+          ]
+        },
+        {
+          "kind": "Calls.Ref",
+          "span": [
+            19,
+            22
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            11,
+            14
+          ],
+          "builtin": "neg",
+          "kind": "function"
+        },
+        {
+          "span": [
+            19,
+            22
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            8,
+            9
+          ],
+          "number": 8
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            11,
+            17
+          ],
+          "operation": "Calls.NegScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                15,
+                16
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            19,
+            22
+          ],
+          "symbol": 4
+        }
+      ],
+      "values": [
+        -2,
+        8
+      ],
+      "trace": [
+        "Calls.NegScalar"
+      ]
+    }
+  },
+  {
+    "name": "function_forward_builtin",
+    "source": "neg(1); function neg=2;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Show",
+          "span": [
+            0,
+            7
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            0,
+            6
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            4,
+            5
+          ]
+        },
+        {
+          "kind": "Calls.Local",
+          "span": [
+            8,
+            23
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            21,
+            22
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            3
+          ],
+          "builtin": "neg",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            6
+          ],
+          "operation": "Calls.NegScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                4,
+                5
+              ],
+              "number": 1
+            }
+          ]
+        },
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            21,
+            22
+          ],
+          "number": 2
+        }
+      ],
+      "values": [
+        -1
+      ],
+      "trace": [
+        "Calls.NegScalar"
+      ]
+    }
+  },
+  {
+    "name": "ordered_fallback",
+    "source": "call neg(2); fallback neg(3);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Show",
+          "span": [
+            0,
+            12
+          ]
+        },
+        {
+          "kind": "Calls.AnyCall",
+          "span": [
+            0,
+            11
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            9,
+            10
+          ]
+        },
+        {
+          "kind": "Calls.Show",
+          "span": [
+            13,
+            29
+          ]
+        },
+        {
+          "kind": "Calls.FallbackCall",
+          "span": [
+            13,
+            28
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            26,
+            27
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            5,
+            8
+          ],
+          "builtin": "neg",
+          "kind": "function"
+        },
+        {
+          "span": [
+            22,
+            25
+          ],
+          "builtin": "neg",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            11
+          ],
+          "operation": "Calls.NegScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                9,
+                10
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            13,
+            28
+          ],
+          "operation": "Calls.NegScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                26,
+                27
+              ],
+              "number": 3
+            }
+          ]
+        }
+      ],
+      "values": [
+        -2,
+        -3
+      ],
+      "trace": [
+        "Calls.NegScalar",
+        "Calls.NegScalar"
+      ]
+    }
+  },
+  {
+    "name": "initializer_reuse",
+    "source": "let x=neg(2); x; x;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Let",
+          "span": [
+            0,
+            13
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            6,
+            12
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            10,
+            11
+          ]
+        },
+        {
+          "kind": "Calls.Show",
+          "span": [
+            14,
+            16
+          ]
+        },
+        {
+          "kind": "Calls.Ref",
+          "span": [
+            14,
+            15
+          ]
+        },
+        {
+          "kind": "Calls.Show",
+          "span": [
+            17,
+            19
+          ]
+        },
+        {
+          "kind": "Calls.Ref",
+          "span": [
+            17,
+            18
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            6,
+            9
+          ],
+          "builtin": "neg",
+          "kind": "function"
+        },
+        {
+          "span": [
+            14,
+            15
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            17,
+            18
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            6,
+            12
+          ],
+          "operation": "Calls.NegScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                10,
+                11
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            14,
+            15
+          ],
+          "symbol": 4
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            17,
+            18
+          ],
+          "symbol": 4
+        }
+      ],
+      "values": [
+        -2,
+        -2
+      ],
+      "trace": [
+        "Calls.NegScalar"
+      ]
+    }
+  },
+  {
+    "name": "unicode_trivia",
+    "source": "// café 😀\nneg(2);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Show",
+          "span": [
+            14,
+            21
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            14,
+            20
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            18,
+            19
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            14,
+            17
+          ],
+          "builtin": "neg",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            14,
+            20
+          ],
+          "operation": "Calls.NegScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                18,
+                19
+              ],
+              "number": 2
+            }
+          ]
+        }
+      ],
+      "values": [
+        -2
+      ],
+      "trace": [
+        "Calls.NegScalar"
+      ]
+    }
+  },
+  {
+    "name": "different_nominal_results",
+    "source": "duration(3); sum(duration(2),duration(4));",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Show",
+          "span": [
+            0,
+            12
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            0,
+            11
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            9,
+            10
+          ]
+        },
+        {
+          "kind": "Calls.Show",
+          "span": [
+            13,
+            42
+          ]
+        },
+        {
+          "kind": "Calls.Call2",
+          "span": [
+            13,
+            41
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            17,
+            28
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            26,
+            27
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            29,
+            40
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            38,
+            39
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            8
+          ],
+          "builtin": "duration",
+          "kind": "function"
+        },
+        {
+          "span": [
+            13,
+            16
+          ],
+          "builtin": "sum",
+          "kind": "function"
+        },
+        {
+          "span": [
+            17,
+            25
+          ],
+          "builtin": "duration",
+          "kind": "function"
+        },
+        {
+          "span": [
+            29,
+            37
+          ],
+          "builtin": "duration",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Calls.Time",
+          "span": [
+            0,
+            11
+          ],
+          "operation": "Calls.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                9,
+                10
+              ],
+              "number": 3
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Calls.Time",
+          "span": [
+            13,
+            41
+          ],
+          "operation": "Calls.SumTime",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Calls.Time",
+              "span": [
+                17,
+                28
+              ],
+              "operation": "Calls.Duration",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    26,
+                    27
+                  ],
+                  "number": 2
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Calls.Time",
+              "span": [
+                29,
+                40
+              ],
+              "operation": "Calls.Duration",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    38,
+                    39
+                  ],
+                  "number": 4
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        3,
+        6
+      ],
+      "trace": [
+        "Calls.Duration",
+        "Calls.Duration",
+        "Calls.Duration",
+        "Calls.SumTime"
+      ]
+    }
+  },
+  {
+    "name": "unknown",
+    "source": "missing(1);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        0,
+        7
+      ],
+      "message": "unresolved function 'missing'",
+      "trace": []
+    }
+  },
+  {
+    "name": "forward",
+    "source": "f(1); function f=2;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        0,
+        1
+      ],
+      "message": "function 'f' is declared in this file but not visible here",
+      "trace": []
+    }
+  },
+  {
+    "name": "undefined_argument",
+    "source": "neg(missing);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        4,
+        11
+      ],
+      "message": "unresolved value 'missing'",
+      "trace": []
+    }
+  },
+  {
+    "name": "binding_precedes_types",
+    "source": "zero(1); missing(2);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        9,
+        16
+      ],
+      "message": "unresolved function 'missing'",
+      "trace": []
+    }
+  },
+  {
+    "name": "unknown_dotted",
+    "source": "sys.missing(2);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        0,
+        11
+      ],
+      "message": "unresolved function 'sys.missing'",
+      "trace": []
+    }
+  },
+  {
+    "name": "arity_zero",
+    "source": "neg();",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        5
+      ],
+      "message": "no exact callable signature",
+      "trace": []
+    }
+  },
+  {
+    "name": "arity_one",
+    "source": "zero(1);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        7
+      ],
+      "message": "no exact callable signature",
+      "trace": []
+    }
+  },
+  {
+    "name": "arity_two",
+    "source": "neg(1,2);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        8
+      ],
+      "message": "no exact callable signature",
+      "trace": []
+    }
+  },
+  {
+    "name": "binary_one",
+    "source": "sum(1);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        6
+      ],
+      "message": "no exact callable signature",
+      "trace": []
+    }
+  },
+  {
+    "name": "nominal_mismatch",
+    "source": "sum(duration(1),2);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        18
+      ],
+      "message": "no exact callable signature",
+      "trace": []
+    }
+  },
+  {
+    "name": "nested_type",
+    "source": "neg(sum(duration(1),2));",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        23
+      ],
+      "message": "no exact callable signature",
+      "trace": []
+    }
+  },
+  {
+    "name": "local_hides_builtin",
+    "source": "function neg=2; neg(3);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        16,
+        22
+      ],
+      "message": "no exact callable signature",
+      "trace": []
+    }
+  },
+  {
+    "name": "local_value_before_builtin_priority",
+    "source": "let neg=2; call neg(3);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        11,
+        22
+      ],
+      "message": "no exact callable signature",
+      "trace": []
+    }
+  },
+  {
+    "name": "local_value_fallback",
+    "source": "let neg=2; fallback neg(3);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        11,
+        26
+      ],
+      "message": "no exact callable signature",
+      "trace": []
+    }
+  },
+  {
+    "name": "local_function_wrong_result",
+    "source": "function duration=1; duration(2);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        21,
+        32
+      ],
+      "message": "no exact callable signature",
+      "trace": []
+    }
+  },
+  {
+    "name": "later_invalid_zero_effects",
+    "source": "let x=duration(2); zero(x);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        19,
+        26
+      ],
+      "message": "no exact callable signature",
+      "trace": []
+    }
+  },
+  {
+    "name": "missing_comma",
+    "source": "sum(1 2);",
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        6,
+        6
+      ],
+      "message": "invalid source",
+      "trace": []
+    }
+  },
+  {
+    "name": "trailing_comma",
+    "source": "sum(1,);",
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        6,
+        6
+      ],
+      "message": "invalid source",
+      "trace": []
+    }
+  },
+  {
+    "name": "three_arguments",
+    "source": "sum(1,2,3);",
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        7,
+        7
+      ],
+      "message": "invalid source",
+      "trace": []
+    }
+  },
+  {
+    "name": "same_name_multiple_arities",
+    "source": "calc(); calc(2); calc(2,3);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Show",
+          "span": [
+            0,
+            7
+          ]
+        },
+        {
+          "kind": "Calls.Call0",
+          "span": [
+            0,
+            6
+          ]
+        },
+        {
+          "kind": "Calls.Show",
+          "span": [
+            8,
+            16
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            8,
+            15
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            13,
+            14
+          ]
+        },
+        {
+          "kind": "Calls.Show",
+          "span": [
+            17,
+            27
+          ]
+        },
+        {
+          "kind": "Calls.Call2",
+          "span": [
+            17,
+            26
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            22,
+            23
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            24,
+            25
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            4
+          ],
+          "builtin": "calc",
+          "kind": "function"
+        },
+        {
+          "span": [
+            8,
+            12
+          ],
+          "builtin": "calc",
+          "kind": "function"
+        },
+        {
+          "span": [
+            17,
+            21
+          ],
+          "builtin": "calc",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            6
+          ],
+          "operation": "Calls.Zero",
+          "args": []
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            8,
+            15
+          ],
+          "operation": "Calls.NegScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                13,
+                14
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            17,
+            26
+          ],
+          "operation": "Calls.SumScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                22,
+                23
+              ],
+              "number": 2
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                24,
+                25
+              ],
+              "number": 3
+            }
+          ]
+        }
+      ],
+      "values": [
+        0,
+        -2,
+        5
+      ],
+      "trace": [
+        "Calls.Zero",
+        "Calls.NegScalar",
+        "Calls.SumScalar"
+      ]
+    }
+  },
+  {
+    "name": "initializer_sees_builtin_before_shadow",
+    "source": "function neg=neg(2); zero();",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Calls.Local",
+          "span": [
+            0,
+            20
+          ]
+        },
+        {
+          "kind": "Calls.Call1",
+          "span": [
+            13,
+            19
+          ]
+        },
+        {
+          "kind": "Calls.Num",
+          "span": [
+            17,
+            18
+          ]
+        },
+        {
+          "kind": "Calls.Show",
+          "span": [
+            21,
+            28
+          ]
+        },
+        {
+          "kind": "Calls.Call0",
+          "span": [
+            21,
+            27
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            13,
+            16
+          ],
+          "builtin": "neg",
+          "kind": "function"
+        },
+        {
+          "span": [
+            21,
+            25
+          ],
+          "builtin": "zero",
+          "kind": "function"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            13,
+            19
+          ],
+          "operation": "Calls.NegScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                17,
+                18
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            21,
+            27
+          ],
+          "operation": "Calls.Zero",
+          "args": []
+        }
+      ],
+      "values": [
+        0
+      ],
+      "trace": [
+        "Calls.NegScalar",
+        "Calls.Zero"
+      ]
+    }
+  },
+  {
+    "name": "earliest_unresolved_call_before_argument",
+    "source": "missing(other);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        0,
+        7
+      ],
+      "message": "unresolved function 'missing'",
+      "trace": []
+    }
+  }
+]

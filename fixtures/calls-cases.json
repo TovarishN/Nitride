@@ -1,0 +1,219 @@
+[
+  {
+    "name": "empty",
+    "source": "",
+    "values": []
+  },
+  {
+    "name": "zero",
+    "source": "zero();",
+    "values": [
+      0
+    ]
+  },
+  {
+    "name": "unary",
+    "source": "neg(3);",
+    "values": [
+      -3
+    ]
+  },
+  {
+    "name": "binary",
+    "source": "sum(2,3);",
+    "values": [
+      5
+    ]
+  },
+  {
+    "name": "nested",
+    "source": "sum(neg(2),sum(3,4));",
+    "values": [
+      5
+    ]
+  },
+  {
+    "name": "nominal",
+    "source": "let x=duration(4); sum(x,duration(2)); neg(x);",
+    "values": [
+      6,
+      -4
+    ]
+  },
+  {
+    "name": "alias",
+    "source": "sys.neg(7);",
+    "values": [
+      -7
+    ]
+  },
+  {
+    "name": "paren",
+    "source": "neg((3));",
+    "values": [
+      -3
+    ]
+  },
+  {
+    "name": "value_namespace_does_not_hide",
+    "source": "let neg=8; neg(2); neg;",
+    "values": [
+      -2,
+      8
+    ]
+  },
+  {
+    "name": "function_forward_builtin",
+    "source": "neg(1); function neg=2;",
+    "values": [
+      -1
+    ]
+  },
+  {
+    "name": "ordered_fallback",
+    "source": "call neg(2); fallback neg(3);",
+    "values": [
+      -2,
+      -3
+    ]
+  },
+  {
+    "name": "initializer_reuse",
+    "source": "let x=neg(2); x; x;",
+    "values": [
+      -2,
+      -2
+    ]
+  },
+  {
+    "name": "unicode_trivia",
+    "source": "// café 😀\nneg(2);",
+    "values": [
+      -2
+    ]
+  },
+  {
+    "name": "different_nominal_results",
+    "source": "duration(3); sum(duration(2),duration(4));",
+    "values": [
+      3,
+      6
+    ]
+  },
+  {
+    "name": "unknown",
+    "source": "missing(1);",
+    "error": "binding"
+  },
+  {
+    "name": "forward",
+    "source": "f(1); function f=2;",
+    "error": "binding"
+  },
+  {
+    "name": "undefined_argument",
+    "source": "neg(missing);",
+    "error": "binding"
+  },
+  {
+    "name": "binding_precedes_types",
+    "source": "zero(1); missing(2);",
+    "error": "binding"
+  },
+  {
+    "name": "unknown_dotted",
+    "source": "sys.missing(2);",
+    "error": "binding"
+  },
+  {
+    "name": "arity_zero",
+    "source": "neg();",
+    "error": "type"
+  },
+  {
+    "name": "arity_one",
+    "source": "zero(1);",
+    "error": "type"
+  },
+  {
+    "name": "arity_two",
+    "source": "neg(1,2);",
+    "error": "type"
+  },
+  {
+    "name": "binary_one",
+    "source": "sum(1);",
+    "error": "type"
+  },
+  {
+    "name": "nominal_mismatch",
+    "source": "sum(duration(1),2);",
+    "error": "type"
+  },
+  {
+    "name": "nested_type",
+    "source": "neg(sum(duration(1),2));",
+    "error": "type"
+  },
+  {
+    "name": "local_hides_builtin",
+    "source": "function neg=2; neg(3);",
+    "error": "type"
+  },
+  {
+    "name": "local_value_before_builtin_priority",
+    "source": "let neg=2; call neg(3);",
+    "error": "type"
+  },
+  {
+    "name": "local_value_fallback",
+    "source": "let neg=2; fallback neg(3);",
+    "error": "type"
+  },
+  {
+    "name": "local_function_wrong_result",
+    "source": "function duration=1; duration(2);",
+    "error": "type"
+  },
+  {
+    "name": "later_invalid_zero_effects",
+    "source": "let x=duration(2); zero(x);",
+    "error": "type"
+  },
+  {
+    "name": "missing_comma",
+    "source": "sum(1 2);",
+    "error": "syntax"
+  },
+  {
+    "name": "trailing_comma",
+    "source": "sum(1,);",
+    "error": "syntax"
+  },
+  {
+    "name": "three_arguments",
+    "source": "sum(1,2,3);",
+    "error": "syntax"
+  },
+  {
+    "name": "same_name_multiple_arities",
+    "source": "calc(); calc(2); calc(2,3);",
+    "values": [
+      0,
+      -2,
+      5
+    ]
+  },
+  {
+    "name": "initializer_sees_builtin_before_shadow",
+    "source": "function neg=neg(2); zero();",
+    "values": [
+      0
+    ]
+  },
+  {
+    "name": "earliest_unresolved_call_before_argument",
+    "source": "missing(other);",
+    "error": "binding"
+  }
+]

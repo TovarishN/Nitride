@@ -30,6 +30,18 @@ class ExportTests(unittest.TestCase):
             self.assertEqual(len(data["source_hash"]), 64)
             self.assertEqual(data["start"], "Portable.Program")
 
+    def test_unscoped_builtins_export_kind_and_dotted_names(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=pathlib.Path(tmp); grammar=root/'test.ngr';output=root/'out.json'
+            grammar.write_text('syntax module B { symbols { function } builtin function { neg sys.neg } syntax Start = "x"; }')
+            result=run('export',grammar,ROOT/'languages/portable/catalog.json',output)
+            self.assertEqual(result.returncode,0,result.stderr)
+            self.assertEqual(json.loads(output.read_text())['builtins'],[dict(kind='function',name='neg'),dict(kind='function',name='sys.neg')])
+
+    def test_duplicate_and_scoped_builtins_are_rejected(self):
+        for declaration in ['builtin value in Start { x }','builtin missing { x }','builtin value { x x }']:
+            self.reject('syntax module Bad { symbols { value } '+declaration+' syntax Start = "x"; }')
+
     def test_csharp_blocks_are_rejected(self):
         self.reject('syntax module Bad { syntax Start = "x" { check BAD false : "bad"; } }')
 

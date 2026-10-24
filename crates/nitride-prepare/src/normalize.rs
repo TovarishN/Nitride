@@ -117,6 +117,28 @@ pub fn prepare(
             );
         }
     }
+    let mut builtin_keys = HashSet::new();
+    let mut builtins = Vec::new();
+    for module in &modules {
+        let kinds: HashSet<_> = module
+            .symbols
+            .iter()
+            .chain(module.imports.iter().flat_map(|import| {
+                modules
+                    .iter()
+                    .filter(move |m| &m.name == import)
+                    .flat_map(|m| m.symbols.iter())
+            }))
+            .collect();
+        for (kind, name) in &module.builtins {
+            if !kinds.contains(kind) || !builtin_keys.insert((kind, name)) {
+                return Err(
+                    sources[module.source].error(module.span, "unknown kind or duplicate builtin")
+                );
+            }
+            builtins.push(json!({"kind":kind,"name":name}));
+        }
+    }
     let mut rules = Vec::new();
     let mut omitted = Vec::new();
     let mut add = |module: &Module,
@@ -256,7 +278,7 @@ pub fn prepare(
             }
         }
     }
-    let output = json!({"version":1,"symbol_kinds":symbol_kinds,"mode":mode,"omitted_semantics":omitted,
+    let output = json!({"version":1,"symbol_kinds":symbol_kinds,"builtins":builtins,"mode":mode,"omitted_semantics":omitted,
         "modules":modules.iter().map(|m|json!({"name":m.name,"imports":m.imports})).collect::<Vec<_>>(),
         "source_hash":hash(&identity),"catalog_hash":hash(catalog),"start":start,"rules":rules,"catalog":catalog_value});
     nitride_codegen::generate(&output.to_string())

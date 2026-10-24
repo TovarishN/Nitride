@@ -27,12 +27,19 @@ pub struct Binding {
     pub symbol: u32,
 }
 #[derive(Debug)]
+pub struct BuiltinBinding {
+    pub kind: &'static str,
+    pub name: &'static str,
+    pub span: [u32; 2],
+}
+#[derive(Debug)]
 pub struct Program {
     pub language: &'static Language,
     pub nodes: Vec<HirNode>,
     pub args: Vec<u32>,
     pub statements: Vec<Statement>,
     pub bindings: Vec<Binding>,
+    pub builtin_bindings: Vec<BuiltinBinding>,
 }
 
 pub fn compile(
@@ -94,6 +101,7 @@ fn compile_checked(
         args: Vec::new(),
         statements: Vec::new(),
         bindings: Vec::new(),
+        builtin_bindings: Vec::new(),
     };
     if tree.nodes.len() as u64 > limits.work {
         return Err(Diagnostic::new(
@@ -105,6 +113,8 @@ fn compile_checked(
     let mut environment = HashMap::<(&'static str, &str), (u32, u32)>::new();
     let mut references = HashMap::<u32, (u32, u32)>::new();
     let mut type_errors = Vec::new();
+    let mut binding_errors = Vec::new();
+    let mut call_targets = HashMap::<u32, &'static [u16]>::new();
     let field = |id, label| {
         tree.field(id, label)
             .ok_or_else(|| Diagnostic::new("grammar", [0, 0], format!("missing field {label}")))
@@ -119,32 +129,66 @@ fn compile_checked(
             Action::Reference {
                 field: label,
                 kinds,
+            }
+            | Action::Call {
+                field: label,
+                kinds,
+                ..
             } => {
                 let name = field(id as u32, label)?;
                 let text = tree.text(name).ok_or_else(|| {
                     Diagnostic::new("grammar", node.span, "invalid identifier span")
                 })?;
-                let (kind, binding) = kinds
+                // All local kinds precede all builtins, matching Nitrogen Project.Lookup.
+                if let Some((kind, binding)) = kinds
                     .iter()
-                    .find_map(|kind| {
-                        environment
-                            .get(&(*kind, text))
-                            .copied()
-                            .map(|binding| (*kind, binding))
-                    })
-                    .ok_or_else(|| {
-                        Diagnostic::new(
+                    .find_map(|kind| environment.get(&(*kind, text)).copied().map(|b| (*kind, b)))
+                {
+                    references.insert(id as u32, binding);
+                    program.bindings.push(Binding {
+                        kind,
+                        span: tree.nodes[name as usize].span,
+                        symbol: binding.0,
+                    });
+                } else if let Action::Call { builtins, .. } = rule.action {
+                    for (i, builtin) in builtins.iter().enumerate() {
+                        if builtin.kind.is_empty()
+                            || builtin.name.is_empty()
+                            || !kinds.contains(&builtin.kind)
+                            || builtins[..i]
+                                .iter()
+                                .any(|b| b.kind == builtin.kind && b.name == builtin.name)
+                        {
+                            return Err(Diagnostic::new(
+                                "grammar",
+                                node.span,
+                                "invalid builtin call table",
+                            ));
+                        }
+                    }
+                    if let Some(builtin) = kinds.iter().find_map(|kind| {
+                        builtins.iter().find(|b| b.kind == *kind && b.name == text)
+                    }) {
+                        call_targets.insert(id as u32, builtin.candidates);
+                        program.builtin_bindings.push(BuiltinBinding {
+                            kind: builtin.kind,
+                            name: builtin.name,
+                            span: tree.nodes[name as usize].span,
+                        });
+                    } else {
+                        binding_errors.push(Diagnostic::new(
                             "binding",
                             tree.nodes[name as usize].span,
                             format!("unresolved name {text}"),
-                        )
-                    })?;
-                references.insert(id as u32, binding);
-                program.bindings.push(Binding {
-                    kind,
-                    span: tree.nodes[name as usize].span,
-                    symbol: binding.0,
-                });
+                        ));
+                    }
+                } else {
+                    binding_errors.push(Diagnostic::new(
+                        "binding",
+                        tree.nodes[name as usize].span,
+                        format!("unresolved name {text}"),
+                    ));
+                }
             }
             Action::Declare {
                 kind,
@@ -184,6 +228,10 @@ fn compile_checked(
             }
             _ => {}
         }
+    }
+    if !binding_errors.is_empty() {
+        binding_errors.sort_by_key(|e| e.span[0]);
+        return Err(binding_errors.remove(0));
     }
     let mut lowered = vec![None; tree.nodes.len()];
     let mut depths = Vec::<u32>::new();
@@ -248,14 +296,21 @@ fn compile_checked(
                     span: node.span,
                 })
             }
-            Action::Operation { fields, .. } | Action::Overload { fields, .. } => {
+            Action::Operation { fields, .. }
+            | Action::Overload { fields, .. }
+            | Action::Call { fields, .. } => {
                 let args = fields
                     .iter()
                     .map(|f| value_of(*f))
                     .collect::<Result<Vec<_>, _>>()?;
                 let operation = match rule.action {
                     Action::Operation { id, .. } => id,
-                    Action::Overload { candidates, .. } => {
+                    Action::Overload { .. } | Action::Call { .. } => {
+                        let candidates = if let Action::Overload { candidates, .. } = rule.action {
+                            candidates
+                        } else {
+                            call_targets.get(&(id as u32)).copied().unwrap_or(&[])
+                        };
                         let mut selected = None;
                         let mut ambiguous = false;
                         for candidate in candidates {

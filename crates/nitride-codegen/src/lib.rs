@@ -88,6 +88,7 @@ pub fn generate(input: &str) -> Result<String, String> {
         ));
         let handler = text(&op["handler"])?;
         let arity = match handler {
+            "zero" => 0,
             "identity" | "neg" => 1,
             "add" | "sub" | "mul" | "div" | "pow" => 2,
             _ => return Err("unknown fixture host handler".into()),
@@ -126,6 +127,95 @@ pub fn generate(input: &str) -> Result<String, String> {
         if kinds.len() != unique.len() || kinds.iter().any(|s| s.is_empty()) {
             return Err("invalid symbol namespace inventory".into());
         }
+    }
+    let mut builtin_declarations = HashSet::new();
+    if let Some(declarations) = data.get("builtins") {
+        for builtin in array(declarations)? {
+            let kind = text(&builtin["kind"])?;
+            let name = text(&builtin["name"])?;
+            if name.is_empty()
+                || inventory.as_ref().is_none_or(|k| !k.contains(&kind))
+                || !builtin_declarations.insert((kind, name))
+            {
+                return Err("invalid builtin inventory".into());
+            }
+        }
+    }
+    let mut builtins = Vec::new();
+    let mut mapped_builtins = HashSet::new();
+    if let Some(mapping) = data["catalog"].get("builtins") {
+        for (kind, names) in mapping
+            .as_object()
+            .ok_or("builtin catalog must be an object")?
+        {
+            if inventory
+                .as_ref()
+                .is_none_or(|k| !k.contains(&kind.as_str()))
+            {
+                return Err("unknown builtin catalog namespace".into());
+            }
+            for (name, operations_for_name) in
+                names.as_object().ok_or("builtin names must be an object")?
+            {
+                if !builtin_declarations.contains(&(kind.as_str(), name.as_str())) {
+                    return Err("undeclared builtin mapping".into());
+                }
+                let mut inputs = HashSet::new();
+                let mut candidates = Vec::new();
+                for name in strings(operations_for_name)? {
+                    let id = lookup(&op_ids, name)?;
+                    if !inputs.insert(strings(&operations[id as usize]["inputs"])?) {
+                        return Err("ambiguous builtin input signature".into());
+                    }
+                    candidates.push(id.to_string());
+                }
+                if candidates.is_empty() {
+                    return Err("empty builtin signatures".into());
+                }
+                mapped_builtins.insert((kind.as_str(), name.as_str()));
+                builtins.push((
+                    kind.as_str(),
+                    format!(
+                        "nitride_core::Builtin {{kind:{},name:{},candidates:{}}}",
+                        quoted(kind),
+                        quoted(name),
+                        list(candidates)
+                    ),
+                ));
+            }
+        }
+    }
+    if !syntax_only && mapped_builtins != builtin_declarations {
+        return Err("missing builtin mapping".into());
+    }
+    let calls = data["catalog"]
+        .get("calls")
+        .map(|v| v.as_object().ok_or("calls must be an object"))
+        .transpose()?;
+    if let Some(calls) = calls {
+        for (name, policy) in calls {
+            let rule = &rules[lookup(&ids, name)? as usize];
+            let clauses = array(&rule["clauses"])?;
+            let args = strings(&policy["args"])?;
+            if clauses.len() != 1
+                || clauses[0]["kind"] != "References"
+                || rule["lexical"] != false
+                || args.iter().copied().collect::<HashSet<_>>().len() != args.len()
+            {
+                return Err(
+                    "call mapping requires one reference clause and unique arguments".into(),
+                );
+            }
+            if !strings(&clauses[0]["symbol_kinds"])?
+                .iter()
+                .any(|kind| builtins.iter().any(|(k, _)| k == kind))
+            {
+                return Err("call has no builtin namespace".into());
+            }
+        }
+    }
+    if syntax_only && (!builtins.is_empty() || calls.is_some_and(|m| !m.is_empty())) {
+        return Err("syntax-only call semantics".into());
     }
     let mut legacy_kind = None;
     for rule in rules {
@@ -178,11 +268,37 @@ pub fn generate(input: &str) -> Result<String, String> {
                         field(text(&clause["field"])?)?
                     )
                 }
-                "References" => format!(
-                    "Action::Reference {{field:{},kinds:{}}}",
-                    field(text(&clause["field"])?)?,
-                    list(strings(&clause["symbol_kinds"])?.into_iter().map(quoted))
-                ),
+                "References" => {
+                    let kinds = strings(&clause["symbol_kinds"])?;
+                    let admitted: Vec<_> = builtins
+                        .iter()
+                        .filter(|(kind, _)| kinds.contains(kind))
+                        .map(|(_, code)| code.clone())
+                        .collect();
+                    if let Some(policy) = calls.and_then(|m| m.get(name)) {
+                        format!(
+                            "Action::Call {{field:{},kinds:{},fields:{},builtins:{}}}",
+                            field(text(&clause["field"])?)?,
+                            list(kinds.into_iter().map(quoted)),
+                            list(
+                                strings(&policy["args"])?
+                                    .into_iter()
+                                    .map(field)
+                                    .collect::<Result<Vec<_>, _>>()?
+                            ),
+                            list(admitted)
+                        )
+                    } else {
+                        if !admitted.is_empty() {
+                            return Err("builtin references require a call mapping".into());
+                        }
+                        format!(
+                            "Action::Reference {{field:{},kinds:{}}}",
+                            field(text(&clause["field"])?)?,
+                            list(kinds.into_iter().map(quoted))
+                        )
+                    }
+                }
                 "Lowers" => {
                     let target = text(&clause["target"])?;
                     let args = strings(&clause["args"])?;

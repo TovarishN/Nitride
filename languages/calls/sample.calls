@@ -1,0 +1,5 @@
+let x=duration(4);
+sum(x,duration(2));
+neg(sum(2,3));
+zero();
+sys.neg(7);

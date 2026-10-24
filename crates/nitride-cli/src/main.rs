@@ -42,6 +42,7 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
     }
     if let [flag, path] = args.as_slice() {
         let result = match flag.as_str() {
+            "--calls" => Some(nitride_cli::observe_calls(&std::fs::read_to_string(path)?)),
             "--inference" => Some(nitride_cli::observe_inference(&std::fs::read_to_string(
                 path,
             )?)),
@@ -95,7 +96,7 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         );
         return Ok(true);
     }
-    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.json> [--output <language.json>] | <source.portable> | --observe <source> | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --bench <source> <iterations> | --version".into()) };
+    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.json> [--output <language.json>] | <source.portable> | --observe <source> | --calls <source> | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --bench <source> <iterations> | --version".into()) };
     let result = nitride_cli::observe(&std::fs::read_to_string(path)?);
     println!("{result}");
     Ok(result["ok"] == true)
