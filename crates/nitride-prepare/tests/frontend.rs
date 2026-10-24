@@ -217,3 +217,29 @@ fn text_arguments_are_positional_and_keep_plain_text_fields() {
     assert!(clause.get("text_args").is_none());
     assert!(typed(&grammar("syntax Start = V:W lowers T.Parse(text Missing);")).is_err());
 }
+
+#[test]
+fn vendored_csharp4_matches_provenance() {
+    use sha2::{Digest, Sha256};
+    let directory = root().join("languages/csharp4");
+    let provenance: Value =
+        serde_json::from_str(&std::fs::read_to_string(directory.join("provenance.json")).unwrap())
+            .unwrap();
+    let manifest: Value =
+        serde_json::from_str(&std::fs::read_to_string(directory.join("project.json")).unwrap())
+            .unwrap();
+    let files = provenance["files"].as_object().unwrap();
+    assert_eq!(files.len(), 30);
+    assert_eq!(
+        manifest["grammars"].as_array().unwrap().len(),
+        files.len()
+    );
+    for (path, hash) in files {
+        let bytes = std::fs::read(directory.join(path)).unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            hash.as_str().unwrap(),
+            "{path}"
+        );
+    }
+}

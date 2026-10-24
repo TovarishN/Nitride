@@ -1,0 +1,17 @@
+syntax module CSharp.NamesTypes
+{
+ extensible syntax TypeNameSuffix { }
+ extensible syntax TypeNamePrefix { }
+ extensible syntax ExpressionTypeArguments { }
+ syntax QualifiedName = Parts:(CSharp.Lexical.Identifier; ".")+;
+ syntax BuiltinType = "bool" / "byte" / "sbyte" / "short" / "ushort" / "int" / "uint" / "long" / "ulong" / "char" / "float" / "double" / "decimal" / "string" / "object";
+ syntax ArrayRank = "[" Commas:","* "]";
+ extensible syntax TypeBase
+ {
+  | NamedTypeName = Name:QualifiedName
+  | BuiltinTypeName = Value:BuiltinType
+ }
+ extensible syntax TypeReference { | TypeSyntax = Element:TypeBase Ranks:ArrayRank* }
+ syntax TypeFragment = Value:TypeReference;
+ syntax ReturnType = TypeReference / "void";
+}

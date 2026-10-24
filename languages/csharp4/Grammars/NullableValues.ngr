@@ -1,0 +1,24 @@
+syntax module CSharp.NullableValues
+{
+ syntax NullableBuiltin = "bool" / "byte" / "sbyte" / "short" / "ushort" / "int" / "uint" / "long" / "ulong" / "char" / "float" / "double" / "decimal";
+ syntax NullableElement = (CSharp.NamesTypes.TypeNamePrefix? CSharp.NamesTypes.QualifiedName CSharp.NamesTypes.TypeNameSuffix?) / NullableBuiltin;
+ token NullableMark = "?" !"?";
+ syntax NullableType = Element:NullableElement NullableMark;
+ extend syntax CSharp.NamesTypes.TypeBase
+ {
+  | NullableTypeName = Value:NullableType
+ }
+ // Only is/as operand parsing chooses a shorter non-nullable type before ? :.
+ extend syntax CSharp.Expressions.ConditionalTypeOperand
+ {
+  | NonNullableConditionalOperand = Type:NullableElement &("?" CSharp.Expressions.Expression ":")
+ }
+ extend syntax CSharp.Expressions.CastHead
+ {
+  | NullableCast = "(" Type:NullableType Ranks:CSharp.NamesTypes.ArrayRank* ")"
+ }
+ extend syntax CSharp.Expressions.Expression
+ {
+  | NullCoalescingExpression = Left:Expression "??" Right:Expression precedence 65 right
+ }
+}

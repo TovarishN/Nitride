@@ -1,0 +1,85 @@
+syntax module CSharp.Expressions
+{
+ extensible syntax ConditionalTypeOperand {}
+ syntax TypeOperatorOperand = Value:(ConditionalTypeOperand / CSharp.NamesTypes.TypeReference);
+ token PlusOp = "+" !['+' '='];
+ token MinusOp = "-" !['-' '=' '>'];
+ token MultiplyOp = "*" !"=";
+ token DivideOp = "/" !"=";
+ token RemainderOp = "%" !"=";
+ token LeftShiftOp = "<<" !"=";
+ token RightShiftOp = ">>" !"=";
+ token LessOp = "<" !['<' '='];
+ token GreaterOp = ">" !['>' '='];
+ token BitAndOp = "&" !['&' '='];
+ token BitOrOp = "|" !['|' '='];
+ token BitXorOp = "^" !"=";
+
+ syntax Literal = CSharp.Lexical.Real / CSharp.Lexical.Integer / CSharp.Lexical.Character / CSharp.Lexical.VerbatimString / CSharp.Lexical.RegularString / "true" / "false" / "null";
+ extensible syntax ArgumentName {}
+ syntax Argument = Name:ArgumentName? Mode:(!CSharp.Lexical.Identifier ("ref" / "out"))? Value:Expression;
+ syntax Arguments = "(" Items:(Argument; ",")* ")";
+ syntax ArrayElement = ArrayInitializer / Expression;
+ syntax ArrayInitializer = "{" Items:((ArrayElement; ",")+ ","?)? "}";
+ syntax SizedArray = "new" Element:CSharp.NamesTypes.TypeBase "[" Sizes:(Expression; ",")+ "]" Ranks:CSharp.NamesTypes.ArrayRank* Initializer:ArrayInitializer?;
+ syntax InitializedArray = "new" Element:CSharp.NamesTypes.TypeBase Ranks:CSharp.NamesTypes.ArrayRank+ Initializer:ArrayInitializer;
+ syntax DefiniteCastType = CSharp.NamesTypes.QualifiedName CSharp.NamesTypes.ArrayRank+ / CSharp.NamesTypes.BuiltinType CSharp.NamesTypes.ArrayRank*;
+ extensible syntax AdditionalCastFollower { }
+ syntax AfterNamedCast = CSharp.Lexical.Identifier / CSharp.NamesTypes.BuiltinType / Literal / "(" / "!" / "~" / "this" / "base" / "new" / "typeof" / "sizeof" / "checked" / "unchecked" / AdditionalCastFollower;
+ extensible syntax CastHead
+ {
+  | DefiniteCast = "(" Type:DefiniteCastType ")"
+  | NamedCast = "(" Name:CSharp.NamesTypes.QualifiedName ")" &AfterNamedCast
+ }
+ // Conditional arms are full expressions, including assignments. A rule call
+ // resets the Pratt operand floor rather than inheriting conditional precedence.
+ syntax ConditionalOperand = Value:Expression;
+ syntax AssignmentOperator = "<<=" / ">>=" / "+=" / "-=" / "*=" / "/=" / "%=" / "&=" / "|=" / "^=" / "=";
+ extensible syntax Expression
+ {
+  | NameExpression = Name:CSharp.Lexical.Identifier
+  | LiteralExpression = Value:Literal
+  | ThisExpression = "this"
+  | BaseMemberExpression = "base" "." Name:CSharp.Lexical.Identifier
+  | BaseIndexExpression = "base" "[" Indices:(Expression; ",")+ "]"
+  | ParenthesizedExpression = !CastHead "(" Value:Expression ")"
+  | CastExpression = Head:CastHead Value:Expression precedence 170
+  | ObjectCreationExpression = "new" Type:CSharp.NamesTypes.TypeBase Args:Arguments
+  | SizedArrayExpression = Value:SizedArray
+  | InitializedArrayExpression = Value:InitializedArray
+  | SizeOfBuiltinExpression = "sizeof" "(" Type:CSharp.NamesTypes.BuiltinType ")"
+  | TypeOfExpression = "typeof" "(" Type:CSharp.NamesTypes.ReturnType ")"
+  | CheckedExpression = "checked" "(" Value:Expression ")"
+  | UncheckedExpression = "unchecked" "(" Value:Expression ")"
+  | PredefinedMemberExpression = Type:CSharp.NamesTypes.BuiltinType "." Name:CSharp.Lexical.Identifier
+  | MemberExpression = Target:Expression "." Name:CSharp.Lexical.Identifier precedence 180 left
+  | InvocationExpression = Target:Expression Args:Arguments precedence 180 left
+  | ElementExpression = Target:Expression "[" Indices:(Expression; ",")+ "]" precedence 180 left
+  | PostfixIncrementExpression = Value:Expression "++" precedence 180 left
+  | PostfixDecrementExpression = Value:Expression "--" precedence 180 left
+  | UnaryExpression = Operator:("++" / "--" / PlusOp / MinusOp / "!" / "~") Value:Expression precedence 170
+  | MultiplyExpression = Left:Expression MultiplyOp Right:Expression precedence 160 left
+  | DivideExpression = Left:Expression DivideOp Right:Expression precedence 160 left
+  | RemainderExpression = Left:Expression RemainderOp Right:Expression precedence 160 left
+  | AddExpression = Left:Expression PlusOp Right:Expression precedence 150 left
+  | SubtractExpression = Left:Expression MinusOp Right:Expression precedence 150 left
+  | ShiftLeftExpression = Left:Expression LeftShiftOp Right:Expression precedence 140 left
+  | ShiftRightExpression = Left:Expression RightShiftOp Right:Expression precedence 140 left
+  | LessExpression = Left:Expression LessOp Right:Expression precedence 130 left
+  | GreaterExpression = Left:Expression GreaterOp Right:Expression precedence 130 left
+  | LessEqualExpression = Left:Expression "<=" Right:Expression precedence 130 left
+  | GreaterEqualExpression = Left:Expression ">=" Right:Expression precedence 130 left
+  | IsExpression = Value:Expression "is" Type:TypeOperatorOperand precedence 130 left
+  | AsExpression = Value:Expression "as" Type:TypeOperatorOperand precedence 130 left
+  | EqualExpression = Left:Expression "==" Right:Expression precedence 120 left
+  | NotEqualExpression = Left:Expression "!=" Right:Expression precedence 120 left
+  | BitAndExpression = Left:Expression BitAndOp Right:Expression precedence 110 left
+  | BitXorExpression = Left:Expression BitXorOp Right:Expression precedence 100 left
+  | BitOrExpression = Left:Expression BitOrOp Right:Expression precedence 90 left
+  | AndExpression = Left:Expression "&&" Right:Expression precedence 80 left
+  | OrExpression = Left:Expression "||" Right:Expression precedence 70 left
+  | ConditionalExpression = Condition:Expression "?" True:Expression ":" False:ConditionalOperand precedence 60 right
+  | AssignmentExpression = Target:Expression Operator:AssignmentOperator Value:Expression precedence 50 right
+ }
+ syntax ExpressionFragment = Value:Expression;
+}

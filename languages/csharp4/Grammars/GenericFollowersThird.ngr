@@ -1,0 +1,4 @@
+syntax module CSharp.GenericFollowersThird
+{
+ extend syntax CSharp.Generics.AdditionalGenericFollower { | ClosingBraceGenericFollower = "}" }
+}

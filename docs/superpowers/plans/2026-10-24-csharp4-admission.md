@@ -121,6 +121,36 @@
 - [ ] **Step 5:** Add to `scripts/prepare_parity.py`: CSNitrogen's `Lexical.ngr` alone (syntax mode), the full CSharp4 project, and 12 generated function grammars covering every operator, built-in, comprehension form and error class. Expected: native and live export equal; the error cases are rejected by both.
 - [ ] **Step 6:** Commit: `git commit -m "Admit grammar functions with Nitrogen's compile-time semantics"`.
 
+### Task 5a: Infix/postfix alternatives sharing a literal operator (added by Task 1 inventory)
+
+**Files:**
+- Modify: `crates/nitride-prepare/src/normalize.rs` (conflicting-operator check), `crates/nitride-codegen/src/lib.rs` (same), `tools/Nitride.Reference/Exporter.cs` (same)
+- Test: `crates/nitride-core/tests/precedence.rs`, `crates/nitride-codegen/tests/profiles.rs`
+
+**Interfaces:**
+- Produces: several infix/postfix alternatives of one point may share their operator literal. They compete as the parser already ranks them, by longest match then precedence; a remaining tie is the parser's existing ambiguity diagnostic (Task 6 decides whether `Ambiguous` nodes are needed).
+
+- [ ] **Step 1: Write failing tests.** `shared_operator_alternatives_take_longest_match` hand-builds `Member = T:E "." N:Id precedence 180 left` and `GenericMember = T:E "." N:Id "<" A:Id ">" precedence 180 left`; `a.b<c>` parses as `GenericMember` and `a.b` as `Member`. `shared_operator_is_generated` asserts codegen accepts the pair.
+- [ ] **Step 2:** Run them. Expected: FAIL ("conflicting extension operator").
+- [ ] **Step 3:** Remove the three checks.
+- [ ] **Step 4:** Run `cargo test --workspace` and `python3 scripts/prepare_parity.py`. Expected: pass. Move the old rejection case from the parity script's invalid list into the valid comparisons.
+- [ ] **Step 5:** Commit: `git commit -m "Let extensible alternatives share an operator literal"`.
+
+### Task 5b: Prefix alternatives with associativity (added by Task 1 inventory)
+
+**Files:**
+- Modify: `crates/nitride-prepare/src/normalize.rs` ("prefix associativity is not admitted")
+- Test: `crates/nitride-prepare/tests/frontend.rs`
+
+**Interfaces:**
+- Produces: a prefix alternative may write `left`/`right`; it is accepted and ignored (normalized `associativity: null`), matching the exporter and Nitrogen's generator.
+
+- [ ] **Step 1: Write the failing test** `prefix_associativity_is_accepted_and_ignored`: a grammar with `| Lambda = P:Id "=>" B:E precedence 10 right` prepares, the rule's `associativity` is null, and the trailing operand's minimum precedence equals that of the same rule without `right`.
+- [ ] **Step 2:** Run it. Expected: FAIL ("prefix associativity is not admitted").
+- [ ] **Step 3:** Drop the rejection; emit null.
+- [ ] **Step 4:** Run `cargo test --workspace` and `python3 scripts/prepare_parity.py` (add one prefix-associativity variant). Expected: pass.
+- [ ] **Step 5:** Commit: `git commit -m "Accept and ignore prefix associativity as Nitrogen does"`.
+
 ### Task 6: CSharp4 syntax parity
 
 **Files:**

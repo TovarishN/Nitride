@@ -1,0 +1,10 @@
+syntax module CSharp.AnonymousMethods
+{
+ syntax AnonymousParameter = Mode:(!CSharp.Lexical.Identifier ("ref" / "out"))? Type:CSharp.NamesTypes.TypeReference Name:CSharp.Lexical.Identifier;
+ syntax AnonymousParameters = "(" Items:(AnonymousParameter; ",")* ")";
+ extend syntax CSharp.Expressions.Expression
+ {
+  | AnonymousMethodExpression = "delegate" Parameters:AnonymousParameters? Body:CSharp.Statements.Block
+ }
+ extend syntax CSharp.Expressions.AdditionalCastFollower { | AnonymousCastFollower = "delegate" }
+}

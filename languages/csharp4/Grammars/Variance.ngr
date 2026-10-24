@@ -1,0 +1,8 @@
+syntax module CSharp.Variance
+{
+ extend syntax CSharp.Generics.VarianceAnnotation
+ {
+  | Covariant = !CSharp.Lexical.Identifier "out"
+  | Contravariant = !CSharp.Lexical.Identifier "in"
+ }
+}

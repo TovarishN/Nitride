@@ -1,0 +1,7 @@
+syntax module CSharp.ImplicitArrays
+{
+ extend syntax CSharp.Expressions.Expression
+ {
+  | ImplicitArrayExpression = "new" Rank:CSharp.NamesTypes.ArrayRank Initializer:CSharp.Expressions.ArrayInitializer
+ }
+}

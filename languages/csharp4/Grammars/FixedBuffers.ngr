@@ -1,0 +1,8 @@
+syntax module CSharp.FixedBuffers
+{
+ syntax FixedBufferDeclarator = Name:CSharp.Lexical.Identifier "[" Size:CSharp.Expressions.Expression "]";
+ extend syntax CSharp.Declarations.ClassMember
+ {
+  | FixedBufferMember = Attributes:CSharp.Attributes.AttributeSection* Modifiers:CSharp.Declarations.Modifier* "fixed" Type:CSharp.NamesTypes.TypeReference Variables:(FixedBufferDeclarator; ",")+ ";"
+ }
+}

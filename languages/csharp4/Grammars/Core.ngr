@@ -1,0 +1,2 @@
+// Legacy module identity retained while the real root lives in CompilationUnits.
+syntax module CSharp.Core { syntax LegacyCompilationUnit = CSharp.CompilationUnits.CompilationUnit; }
