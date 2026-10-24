@@ -1,0 +1,11 @@
+{
+  "dotnet_on_path": false,
+  "offline_build": true,
+  "cli_bytes": 1667776,
+  "checks": [
+    "prepare CSharp4",
+    "recover CSharp4 and following method",
+    "recover Inference and healthy later HIR"
+  ],
+  "core_third_party_dependencies": 0
+}

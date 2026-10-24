@@ -18,6 +18,33 @@ fn main() -> std::process::ExitCode {
 
 fn run() -> Result<bool, Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).collect();
+    if args.as_slice() == ["--recover-batch"] {
+        use std::io::{BufRead, Write};
+        let mut out = std::io::BufWriter::new(std::io::stdout().lock());
+        for line in std::io::stdin().lock().lines() {
+            let request: serde_json::Value = serde_json::from_str(&line?)?;
+            let profile = request["profile"]
+                .as_str()
+                .ok_or("missing recovery profile")?;
+            let language =
+                nitride_cli::recovery_language(profile).ok_or("unknown recovery profile")?;
+            let source = request["source"]
+                .as_str()
+                .ok_or("missing recovery source")?;
+            writeln!(out, "{}", nitride_cli::recovery_observe(language, source))?;
+            out.flush()?;
+        }
+        return Ok(true);
+    }
+    if let [flag, profile, path] = args.as_slice() {
+        if flag == "--recover" {
+            let language =
+                nitride_cli::recovery_language(profile).ok_or("unknown recovery profile")?;
+            let result = nitride_cli::recovery_observe(language, &std::fs::read_to_string(path)?);
+            println!("{result}");
+            return Ok(result["ok"] == true);
+        }
+    }
     if args.first().is_some_and(|a| a == "prepare") {
         let (manifest, output) = match args.as_slice() {
             [_, manifest] => (manifest, None),
@@ -129,7 +156,7 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         );
         return Ok(true);
     }
-    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.json> [--output <language.json>] | <source.portable> | --observe <source> | --functions <source> | --calls <source> | --dates <source> [--today yyyy-MM-dd] | --rewrites <source> [--today yyyy-MM-dd] | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --parse-csharp4 <source> | --bench <source> <iterations> | --version".into()) };
+    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.json> [--output <language.json>] | <source.portable> | --observe <source> | --functions <source> | --calls <source> | --dates <source> [--today yyyy-MM-dd] | --rewrites <source> [--today yyyy-MM-dd] | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --parse-csharp4 <source> | --bench <source> <iterations> | --recover <profile> <source> | --recover-batch | --version".into()) };
     let result = nitride_cli::observe(&std::fs::read_to_string(path)?);
     println!("{result}");
     Ok(result["ok"] == true)

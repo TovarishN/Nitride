@@ -104,6 +104,26 @@ fn main() -> std::process::ExitCode {
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).collect();
+    if let [flag, profile, path] = args.as_slice() {
+        if flag == "--recover" {
+            let language =
+                nitride_cli::recovery_language(profile).ok_or("unknown recovery language")?;
+            let source = std::fs::read_to_string(path)?;
+            let (parsed, phase) = measure(|| {
+                parse_recovering(
+                    language,
+                    &source,
+                    Limits::default(),
+                    RecoveryOptions::default(),
+                )
+            });
+            println!(
+                "{}",
+                serde_json::json!({"language":profile,"source_bytes":source.len(),"syntax_nodes":parsed.tree.nodes.len(),"syntax_capacity_bytes":parsed.tree.retained_bytes(),"parse":phase.json(),"execution":null,"diagnostics":parsed.diagnostics.len(),"recovery":{"work":parsed.stats.work,"search_states":parsed.stats.search_states,"repair_count":parsed.stats.repair_count,"fallback_count":parsed.stats.fallback_count},"metric":"requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings"})
+            );
+            return Ok(());
+        }
+    }
     let [profile, path] = args.as_slice() else {
         return Err(
             "usage: nitride-profile <portable|power|xml|composition|namespaces|inference|calls|functions|dates|rewrites|csharp4> <source>"

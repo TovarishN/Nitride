@@ -140,32 +140,7 @@ fn parse_on_stack(
             "source exceeds 32-bit span capacity",
         ));
     }
-    let mut parser = Parser {
-        language,
-        source,
-        options,
-        limits,
-        position: 0,
-        furthest: 0,
-        work: 0,
-        nodes: Vec::new(),
-        edges: Vec::new(),
-        edge_buffers: Vec::new(),
-        node_buffers: Vec::new(),
-        holes,
-        labels: vec![""],
-        label_ids: Default::default(),
-        in_token: 0,
-        work_budget: limits
-            .work
-            .max((source.len() as u64).saturating_mul(limits.parser_work_per_byte)),
-        memo: Default::default(),
-        // Reparsing revisits recent positions, so a window suffices: an eighth
-        // of the input, between 4,096 and about a million nodes per generation.
-        memo_capacity: (source.len() / 8).clamp(4096, 1 << 20),
-        stack_base: stack_position(),
-        stack_budget,
-    };
+    let mut parser = Parser::new(language, source, limits, options, holes, stack_budget);
     let root = parser.rule(start, 0, 0)?;
     parser.trivia()?;
     if root.is_none() || parser.position != source.len() {
@@ -187,6 +162,7 @@ fn parse_on_stack(
         edges: parser.edges,
         labels: parser.labels,
         root: root.unwrap(),
+        recovery: None,
     })
 }
 
@@ -258,6 +234,184 @@ enum Memo {
         nodes: std::ops::Range<u32>,
         edges: std::ops::Range<u32>,
     },
+}
+
+impl<'a> Parser<'a> {
+    fn new(
+        language: &'static Language,
+        source: &'a str,
+        limits: Limits,
+        options: ParseOptions,
+        holes: &'a [&'static Hole],
+        stack_budget: usize,
+    ) -> Self {
+        Self {
+            language,
+            source,
+            options,
+            limits,
+            position: 0,
+            furthest: 0,
+            work: 0,
+            nodes: Vec::new(),
+            edges: Vec::new(),
+            edge_buffers: Vec::new(),
+            node_buffers: Vec::new(),
+            holes,
+            labels: vec![""],
+            label_ids: Default::default(),
+            in_token: 0,
+            work_budget: limits
+                .work
+                .max((source.len() as u64).saturating_mul(limits.parser_work_per_byte)),
+            memo: Default::default(),
+            // Reparsing revisits recent positions, so a window suffices: an eighth
+            // of the input, between 4,096 and about a million nodes per generation.
+            memo_capacity: (source.len() / 8).clamp(4096, 1 << 20),
+            stack_base: stack_position(),
+            stack_budget,
+        }
+    }
+}
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct ProbeHit {
+    pub root: u32,
+    pub end: usize,
+    pub furthest: usize,
+}
+
+/// Strict prefix recognizer and its immutable successful subtree arena. Recovery
+/// uses original-source offsets; probes never edit or synthesize token text.
+pub(crate) struct StrictProbe<'a> {
+    parser: Parser<'a>,
+    cache: std::collections::HashMap<(u16, usize, u32), Option<ProbeHit>>,
+    committed_nodes: usize,
+    committed_edges: usize,
+}
+impl<'a> StrictProbe<'a> {
+    pub fn new(language: &'static Language, source: &'a str, limits: Limits) -> Self {
+        Self {
+            parser: Parser::new(
+                language,
+                source,
+                limits,
+                ParseOptions {
+                    strict_comments: true,
+                    ..Default::default()
+                },
+                &[],
+                limits.parser_stack_bytes,
+            ),
+            cache: Default::default(),
+            committed_nodes: 0,
+            committed_edges: 0,
+        }
+    }
+    pub fn rule(&mut self, id: u16, at: usize, power: u32) -> Result<Option<ProbeHit>, Diagnostic> {
+        if let Some(hit) = self.cache.get(&(id, at, power)) {
+            return Ok(*hit);
+        }
+        self.parser.position = at;
+        self.parser.furthest = at;
+        let root = self.parser.rule(id, power, 0)?;
+        let hit = root.map(|root| ProbeHit {
+            root,
+            end: self.parser.position,
+            furthest: self.parser.furthest,
+        });
+        self.cache.insert((id, at, power), hit);
+        Ok(hit)
+    }
+    pub fn predicate(&mut self, expr: &'static Expr, at: usize) -> Result<bool, Diagnostic> {
+        self.parser.position = at;
+        let mark = self.parser.mark();
+        let mut out = Vec::new();
+        let result = self.parser.expression(expr, false, None, 0, 0, &mut out);
+        self.parser.restore(mark);
+        result
+    }
+    /// Pack only newly accepted subtrees after a stable continuation. Previously
+    /// committed identities remain valid; speculative probes are discarded.
+    pub fn commit(&mut self, roots: &mut [u32], keep_from: usize) {
+        let mut nodes = Vec::new();
+        let mut edges = Vec::new();
+        let mut mapped = std::collections::HashMap::new();
+        for root in roots {
+            if *root == NO_NODE || (*root as usize) < self.committed_nodes {
+                continue;
+            }
+            let mut pending = vec![(*root, false)];
+            while let Some((old, visited)) = pending.pop() {
+                if (old as usize) < self.committed_nodes || mapped.contains_key(&old) {
+                    continue;
+                }
+                let n = self.parser.nodes[old as usize];
+                let children = &self.parser.edges
+                    [n.first_child as usize..(n.first_child + n.child_count) as usize];
+                if !visited {
+                    pending.push((old, true));
+                    pending.extend(children.iter().rev().map(|e| (e.node, false)));
+                } else {
+                    let id = (self.committed_nodes + nodes.len()) as u32;
+                    nodes.push(Node {
+                        first_child: (self.committed_edges + edges.len()) as u32,
+                        ..n
+                    });
+                    edges.extend(children.iter().map(|e| Edge {
+                        node: if (e.node as usize) < self.committed_nodes {
+                            e.node
+                        } else {
+                            mapped[&e.node]
+                        },
+                        ..*e
+                    }));
+                    mapped.insert(old, id);
+                }
+            }
+            *root = mapped[root];
+        }
+        self.parser.nodes.truncate(self.committed_nodes);
+        self.parser.edges.truncate(self.committed_edges);
+        self.parser.nodes.extend(nodes);
+        self.parser.edges.extend(edges);
+        self.cache.retain(|(_, at, _), hit| {
+            if *at < keep_from {
+                return false;
+            }
+            match hit {
+                None => true,
+                Some(hit) if hit.root == NO_NODE || (hit.root as usize) < self.committed_nodes => {
+                    true
+                }
+                Some(hit) => {
+                    if let Some(root) = mapped.get(&hit.root) {
+                        hit.root = *root;
+                        true
+                    } else {
+                        false
+                    }
+                }
+            }
+        });
+        self.committed_nodes = self.parser.nodes.len();
+        self.committed_edges = self.parser.edges.len();
+    }
+    pub fn nodes(&self) -> &[Node] {
+        &self.parser.nodes
+    }
+    pub fn edges(&self) -> &[Edge] {
+        &self.parser.edges
+    }
+    pub fn labels(&self) -> &[&'static str] {
+        &self.parser.labels
+    }
+    pub fn label(&self, edge: &Edge) -> &'static str {
+        self.parser.labels[edge.label as usize]
+    }
+    pub fn work(&self) -> u64 {
+        self.parser.work
+    }
 }
 
 impl Parser<'_> {

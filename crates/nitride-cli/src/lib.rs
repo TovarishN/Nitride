@@ -32,6 +32,11 @@ pub mod power {
 
 use nitride_core::*;
 use serde_json::{Value, json};
+mod recovery;
+pub use recovery::{recovery_language, recovery_observe};
+pub mod grammar_fixture {
+    include!(concat!(env!("OUT_DIR"), "/grammar.rs"));
+}
 
 pub fn syntax_observe(language: &'static Language, source: &str) -> Value {
     let tree = match parse(language, source, Limits::default()) {
@@ -230,6 +235,7 @@ fn observe_with_values(
     let mut hir = Vec::<Value>::with_capacity(program.nodes.len());
     for node in &program.nodes {
         let mut observation = match &node.kind {
+            HirKind::Error => json!({"kind":"error"}),
             HirKind::Constant(number) => {
                 json!({"kind":"constant","type":node.ty,"span":node.span,"number":number})
             }

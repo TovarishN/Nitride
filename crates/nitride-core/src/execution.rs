@@ -81,6 +81,9 @@ pub fn preflight_with_values(
     bindings: &[HostBinding],
     values: &[HostValue],
 ) -> Result<(), Vec<Diagnostic>> {
+    if !program.diagnostics().is_empty() {
+        return Err(program.diagnostics().to_vec());
+    }
     let mut errors = Vec::new();
     let mut previous_root = None;
     let mut visible = std::collections::HashMap::new();
@@ -104,6 +107,11 @@ pub fn preflight_with_values(
             .skip(previous_root.map_or(0, |r| r as usize + 1))
         {
             match &node.kind {
+                HirKind::Error => errors.push(Diagnostic::new(
+                    "host",
+                    node.span,
+                    "damaged value cannot execute",
+                )),
                 HirKind::Constant(number) if !number.is_finite() => {
                     errors.push(Diagnostic::new("host", node.span, "nonfinite constant"))
                 }
@@ -258,6 +266,7 @@ pub fn execute_with_values(
         while values.len() <= statement.value as usize {
             let node = &program.nodes[values.len()];
             let result = match &node.kind {
+                HirKind::Error => Err("damaged value cannot execute".into()),
                 HirKind::Constant(n) => Ok(*n),
                 HirKind::Reference(symbol) => Ok(symbols[symbol]),
                 // Text is consumed only by its operation's text handler.

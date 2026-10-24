@@ -1,11 +1,13 @@
 pub mod execution;
 pub mod grammar;
 pub mod parser;
+pub mod recovery;
 pub mod semantic;
 pub mod syntax;
 pub use execution::*;
 pub use grammar::*;
 pub use parser::{ParseOptions, TemplateHoles, parse, parse_template, parse_with_options};
+pub use recovery::*;
 pub use semantic::*;
 pub use syntax::*;
 

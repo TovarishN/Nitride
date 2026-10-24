@@ -23,9 +23,13 @@ pub struct SyntaxTree {
     pub root: u32,
     /// The distinct labels of this tree's edges; entry 0 is "".
     pub(crate) labels: Vec<&'static str>,
+    pub(crate) recovery: Option<Box<crate::RecoveryData>>,
 }
 
 impl SyntaxTree {
+    pub fn recovery(&self) -> Option<&crate::RecoveryData> {
+        self.recovery.as_deref()
+    }
     pub fn node(&self, id: u32) -> Option<&Node> {
         self.nodes.get(id as usize)
     }
@@ -59,5 +63,6 @@ impl SyntaxTree {
             + self.nodes.capacity() * std::mem::size_of::<Node>()
             + self.edges.capacity() * std::mem::size_of::<Edge>()
             + self.labels.capacity() * std::mem::size_of::<&str>()
+            + self.recovery.as_ref().map_or(0, |r| r.retained_bytes())
     }
 }

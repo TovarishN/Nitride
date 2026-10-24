@@ -297,7 +297,7 @@ preprocessing-free C#:
 ./target/release/nitride --parse-csharp4 languages/csharp4/corpus/Mono2008/gtest-linq-01.cs
 ```
 
-Trees match actual Nitrogen on 232 frozen cases and 64 generated programs.
+Trees match actual Nitrogen on 238 frozen cases and 64 generated programs.
 This needed grammar functions (Nitrogen's compile-time `function ... :
 Grammar.Rule`), `transparent` alternatives, operators that are rule references
 or shared between alternatives, prefix associativity, and UTF-16 surrogate-pair
@@ -307,6 +307,28 @@ size-relative work budget, so multi-megabyte files parse in linear time. It is
 currently about 6× slower than Nitrogen's parser. See
 [CSharp4 evidence](docs/stage12-evidence.md).
 
+## Recovery
+
+Recovery is opt-in and retains original source, missing elements and skipped
+regions while continuing supported typed analysis:
+
+```sh
+./target/release/nitride --recover csharp4 broken.cs
+./target/release/nitride --recover inference broken.inferred
+./target/release/nitride-profile --recover csharp4 broken.cs
+```
+
+The single-file CLI returns partial syntax/HIR and diagnostics as JSON, exits 1 when there
+are diagnostics, and never executes recovered input. `--recover-batch` accepts
+JSONL requests with `profile` and `source`. Library callers use
+`parse_recovering` and `compile_recovering`; private program diagnostics block
+all execution paths. Strict APIs keep their prior behavior.
+
+Recovery is grammar-derived and bounded. The frozen corpus passes the approved
+Roslyn aggregate gates; case-level regressions, fallback and large-file costs
+are explicit in [recovery evidence](docs/stage14-evidence.md). Incremental parsing
+and editor recovery integration remain future work.
+
 ## Validate
 
 ```sh
@@ -315,10 +337,10 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-There are 140 Rust tests, including parity over 481 frozen observations from
+There are 186 passing Rust tests (plus two opt-in scaling tests), including parity over 481 frozen observations from
 actual Nitrogen parsers and, for typed profiles, binding, typing and HIR,
 with the explicit inference-adapter policy described above.
-The development-only exporter has 15 tests. Live differential scripts compare
+The development exporter/composition/recovery-metric Python suite has 22 tests. Live differential scripts compare
 576 deterministic generated programs in total. `scripts/prepare_parity.py`
 compares 107 prepared profiles and 29 invalid grammars against the live exporter.
 
@@ -354,8 +376,7 @@ namespaces, token/sequence/choice/repetition, character classes, lookahead and
 Pratt-style expression alternatives.
 Unsupported grammar features and incompatible catalogs fail preparation.
 
-The portable core does not translate C# helpers. General .ngr features, recovery,
-incremental editing,
+The portable core does not translate C# helpers. General .ngr features, incremental editing,
 quotation, workspace indexing, LSP and dynamic language loading remain future work. Embedded targets, `no_std`, and custom allocators
 are not requirements.
 
