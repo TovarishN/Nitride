@@ -50,7 +50,7 @@ static class Exporter
             .ToDictionary(p => p.Key, p => p.Rule.Alternatives.Select(a => (Alternative: a, Module: p.Module, Implicit: p.Module.Name)).ToList());
         foreach (var module in modules)
         {
-            if (module.Builtins.Count + module.SymbolProperties.Count + module.Helpers.Count + module.Functions.Count != 0) throw Unsupported("builtins, properties or helpers");
+            if (module.SymbolProperties.Count + module.Helpers.Count + module.Functions.Count != 0) throw Unsupported("properties or helpers");
             foreach (var extension in module.Extends)
             {
                 string target = Resolve(extension.Target, module);
@@ -59,6 +59,18 @@ static class Exporter
                 alternatives.AddRange(extension.Alternatives.Select(a => (a, module, owner)));
             }
         }
+        var builtins = new JsonArray();
+        var builtinKeys = new HashSet<(string, string)>();
+        foreach (var module in modules)
+            foreach (var declaration in module.Builtins)
+            {
+                if (declaration.Scope is not null) throw Unsupported("scoped builtins");
+                foreach (var name in declaration.Names)
+                {
+                    if (!builtinKeys.Add((declaration.Kind.Name, name.Name))) throw Unsupported("duplicate builtin");
+                    builtins.Add(new JsonObject { ["kind"] = declaration.Kind.Name, ["name"] = name.Name });
+                }
+            }
         var rules = new JsonArray();
         var omitted = new JsonArray();
         void NoteOmitted(string name, SemanticsBlock? block, EquatableArray<BindingClause> clauses)
@@ -165,7 +177,7 @@ static class Exporter
         }
         foreach (var name in byName.Keys) Visit(name, []);
         string identity = sources.Length == 1 ? sources[0] : JsonSerializer.Serialize(sources);
-        var output = new JsonObject { ["version"] = 1, ["symbol_kinds"] = JsonSerializer.SerializeToNode(modules.SelectMany(m => m.Symbols).SelectMany(s => s.Kinds).Select(k => k.Name).Distinct(StringComparer.Ordinal)), ["mode"] = mode, ["omitted_semantics"] = omitted,
+        var output = new JsonObject { ["version"] = 1, ["symbol_kinds"] = JsonSerializer.SerializeToNode(modules.SelectMany(m => m.Symbols).SelectMany(s => s.Kinds).Select(k => k.Name).Distinct(StringComparer.Ordinal)), ["builtins"] = builtins, ["mode"] = mode, ["omitted_semantics"] = omitted,
             ["modules"] = JsonSerializer.SerializeToNode(modules.Select(m => new { name = m.Name, imports = m.Usings.Select(u => u.Module).ToArray() })),
             ["source_hash"] = Hash(identity), ["catalog_hash"] = Hash(catalog),
             ["start"] = start, ["rules"] = rules, ["catalog"] = JsonNode.Parse(catalog) };

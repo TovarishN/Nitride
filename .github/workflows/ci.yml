@@ -28,8 +28,9 @@ jobs:
       - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --parse-xml languages/xml/sample.xml
       - name: Prepare languages natively
         run: |
-          for profile in portable power composition xml namespaces inference; do
+          for profile in portable power composition xml namespaces inference calls; do
             cargo +stable run --release --locked -p nitride-cli --bin nitride -- prepare "languages/$profile/project.json" --output "prepared-$profile.json"
           done
       - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --namespaces languages/namespaces/sample.namespaces
       - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --inference languages/inference/sample.inferred
+      - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --calls languages/calls/sample.calls

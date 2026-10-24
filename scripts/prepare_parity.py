@@ -19,7 +19,7 @@ def compare(project, tmp, index):
 def main():
     with tempfile.TemporaryDirectory() as folder:
         tmp = pathlib.Path(folder)
-        for index, profile in enumerate(["portable", "power", "composition", "xml", "namespaces", "inference"]):
+        for index, profile in enumerate(["portable", "power", "composition", "xml", "namespaces", "inference", "calls"]):
             compare(ROOT / "languages" / profile / "project.json", tmp, index)
         for index in range(48):
             project = tmp / f"case-{index}"
@@ -83,7 +83,7 @@ def main():
             reference = run("export-project", bad / "project.json", bad / "output.json")
             native = subprocess.run([ROOT / "target/release/nitride", "prepare", bad / "project.json"], capture_output=True)
             assert reference.returncode != 0 and native.returncode != 0, source
-    print("70 prepared profiles match live .NET export; 14 invalid grammars are rejected by both")
+    print("71 prepared profiles match live .NET export; 14 invalid grammars are rejected by both")
 
 
 if __name__ == "__main__":

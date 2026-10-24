@@ -8,6 +8,7 @@ pub struct Module {
     pub name: String,
     pub imports: Vec<String>,
     pub symbols: Vec<String>,
+    pub builtins: Vec<(String, String)>,
     pub rules: Vec<Rule>,
     pub extensions: Vec<(String, Vec<Rule>)>,
     pub source: usize,
@@ -91,6 +92,7 @@ impl Parser<'_> {
                 name,
                 imports: Vec::new(),
                 symbols: Vec::new(),
+                builtins: Vec::new(),
                 rules: Vec::new(),
                 extensions: Vec::new(),
                 source: index,
@@ -108,6 +110,20 @@ impl Parser<'_> {
                     }
                     if count == module.symbols.len() {
                         return Err(self.error("expected symbol kind"));
+                    }
+                    self.expect("}")?;
+                } else if self.take("builtin")? {
+                    let kind = self.name(false)?;
+                    if self.at("in") {
+                        return Err(self.error("scoped builtins are not admitted"));
+                    }
+                    self.expect("{")?;
+                    let count = module.builtins.len();
+                    while !self.at("}") {
+                        module.builtins.push((kind.clone(), self.name(true)?));
+                    }
+                    if count == module.builtins.len() {
+                        return Err(self.error("expected builtin name"));
                     }
                     self.expect("}")?;
                 } else if self.take("token")? {

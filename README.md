@@ -9,7 +9,7 @@ The first working slice covers generated parsing, sequential binding, nominal
 type checking, typed HIR, exact host binding preflight, and native execution.
 It includes a deliberately restricted typed profile, a cross-module Power
 extension, independent sequential symbol namespaces, inferred declaration types, exact nominal
-overload selection, and syntax-only admission of existing Base/Uses and XML grammars.
+overload selection, built-in callable symbols, and syntax-only admission of existing Base/Uses and XML grammars.
 This is partial Nitrogen compatibility; the full DateCalc language is not admitted.
 
 ## Run
@@ -23,6 +23,7 @@ cargo build --release
 ./target/release/nitride --parse-xml languages/xml/sample.xml
 ./target/release/nitride --namespaces languages/namespaces/sample.namespaces
 ./target/release/nitride --inference languages/inference/sample.inferred
+./target/release/nitride --calls languages/calls/sample.calls
 cargo run -p nitride-cli --example embed
 ```
 
@@ -131,6 +132,37 @@ initializer consistency and primary type-error ordering; this is an explicit
 fixture policy, not a claim about Nitrogen's built-in diagnostic ordering.
 Adapter source hashes are recorded in `reference-provenance.json`.
 
+## Built-in function calls
+
+The Calls fixture resolves function names through actual symbol binding:
+
+```text
+let x = duration(4);
+sum(x, duration(2));
+neg(sum(2, 3));
+zero();
+sys.neg(7);
+```
+
+It returns `[6, -5, 0, -7]`. Unscoped `.ngr` `builtin function` declarations
+supply names; `catalog.builtins[kind][name]` supplies exact concrete signatures,
+and `catalog.calls[rule].args` lists argument fields. The fixture admits zero,
+one and two arguments, including several arities under the same `calc` name.
+Dotted names are explicit aliases, not module/member lookup.
+
+All visible local declarations are tried before built-ins. Kind priority applies
+within those tiers. A selected local noncallable produces a type error and does
+not fall back to a hidden built-in. Calls select exact nominal input tuples,
+evaluate arguments once left-to-right and lower to concrete operation HIR for
+whole-program host preflight. Built-in binding observations identify the name
+explicitly rather than inventing a declaration location.
+
+Only call rules may consume built-in namespaces in this admitted typed profile.
+Built-in values, scoped built-ins, callable values and authored function bodies
+remain unsupported. A generated development-only Nitrogen adapter provides the
+fixture's type properties and operation selection; native builds use pure
+`Calls.ngr`. See [call evidence](docs/stage7-evidence.md).
+
 ## Validate
 
 ```sh
@@ -139,12 +171,12 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-There are 68 Rust tests, including parity over 108 frozen observations from
+There are 75 Rust tests, including parity over 144 frozen observations from
 actual Nitrogen parsers and, for typed profiles, binding, typing and HIR,
 with the explicit inference-adapter policy described above.
-The development-only exporter has 12 tests. Live differential scripts compare
-256 deterministic generated programs in total. `scripts/prepare_parity.py`
-compares 70 prepared profiles and 14 invalid grammars against the live exporter.
+The development-only exporter has 14 tests. Live differential scripts compare
+320 deterministic generated programs in total. `scripts/prepare_parity.py`
+compares 71 prepared profiles and 14 invalid grammars against the live exporter.
 
 To refresh the reference using a sibling `../Nitrogen` source checkout and a
 .NET 10 SDK or later:
@@ -165,7 +197,7 @@ against live Nitrogen without overwriting them. After a native release build,
 live reference.
 
 The registered `nitrogen.json` and generated helper metadata let the existing
-Nitrogen extension discover the portable, composed, XML, namespace and inference language fixtures. Its workspace checker was verified; live VS Code/Rider interactions
+Nitrogen extension discover the portable, composed, XML, namespace, inference and call language fixtures. Its workspace checker was verified; live VS Code/Rider interactions
 and editor completion/navigation were not exercised.
 
 ## Scope and evidence

@@ -79,6 +79,20 @@
       "sources": [
         "languages/inference/InferenceSemantics.cs"
       ]
+    },
+    {
+      "name": "Calls",
+      "extensions": [
+        ".calls"
+      ],
+      "grammars": [
+        "languages/calls/Calls.Reference.ngr"
+      ],
+      "start": "Calls.Program",
+      "namespace": "Nitride.Reference.Calls",
+      "sources": [
+        "languages/calls/CallsSemantics.cs"
+      ]
     }
   ]
 }

@@ -1,0 +1,806 @@
+{
+  "version": 1,
+  "symbol_kinds": [
+    "value",
+    "function"
+  ],
+  "builtins": [
+    {
+      "kind": "function",
+      "name": "neg"
+    },
+    {
+      "kind": "function",
+      "name": "sum"
+    },
+    {
+      "kind": "function",
+      "name": "duration"
+    },
+    {
+      "kind": "function",
+      "name": "zero"
+    },
+    {
+      "kind": "function",
+      "name": "sys.neg"
+    },
+    {
+      "kind": "function",
+      "name": "calc"
+    }
+  ],
+  "mode": "typed",
+  "omitted_semantics": [],
+  "modules": [
+    {
+      "name": "Calls",
+      "imports": []
+    }
+  ],
+  "source_hash": "c80c35693d86f3ed9597768be95a6e385b914b6097fb8286c710dd158079f933",
+  "catalog_hash": "6bbf3a5094dcc90e5dc7230e5d26bf64af0fbc1e729625c652a8b62e347f7250",
+  "start": "Calls.Program",
+  "rules": [
+    {
+      "name": "Calls.Number",
+      "lexical": true,
+      "expr": {
+        "kind": "repeat",
+        "min": 1,
+        "max": 2147483647,
+        "inner": {
+          "kind": "class",
+          "negated": false,
+          "ranges": [
+            [
+              48,
+              57
+            ]
+          ]
+        }
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Calls.Identifier",
+      "lexical": true,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "class",
+            "negated": false,
+            "ranges": [
+              [
+                97,
+                122
+              ],
+              [
+                65,
+                90
+              ],
+              [
+                95,
+                95
+              ]
+            ]
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 2147483647,
+            "inner": {
+              "kind": "class",
+              "negated": false,
+              "ranges": [
+                [
+                  97,
+                  122
+                ],
+                [
+                  65,
+                  90
+                ],
+                [
+                  48,
+                  57
+                ],
+                [
+                  95,
+                  95
+                ],
+                [
+                  46,
+                  46
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [
+        "let",
+        "function",
+        "call",
+        "fallback"
+      ],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Calls.Program",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Statements",
+        "inner": {
+          "kind": "repeat",
+          "min": 0,
+          "max": 2147483647,
+          "inner": {
+            "kind": "ref",
+            "name": "Calls.Statement"
+          }
+        }
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Calls.Statement",
+      "lexical": false,
+      "expr": {
+        "kind": "choice",
+        "items": [
+          {
+            "kind": "ref",
+            "name": "Calls.Let"
+          },
+          {
+            "kind": "ref",
+            "name": "Calls.Local"
+          },
+          {
+            "kind": "ref",
+            "name": "Calls.Show"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Calls.Let",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "let"
+          },
+          {
+            "kind": "label",
+            "label": "Name",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "="
+          },
+          {
+            "kind": "label",
+            "label": "Value",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ";"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Declares",
+          "field": "Name",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "value"
+          ],
+          "sequential": true
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Calls.Local",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "function"
+          },
+          {
+            "kind": "label",
+            "label": "Name",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "="
+          },
+          {
+            "kind": "label",
+            "label": "Value",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ";"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Declares",
+          "field": "Name",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "function"
+          ],
+          "sequential": true
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Calls.Show",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Value",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ";"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Calls.Num",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Value",
+        "inner": {
+          "kind": "ref",
+          "name": "Calls.Number"
+        }
+      },
+      "clauses": [
+        {
+          "kind": "LowersLiteral",
+          "field": "Value",
+          "target": "Core.Scalar",
+          "args": [],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Calls.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Calls.Ref",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Name",
+        "inner": {
+          "kind": "ref",
+          "name": "Calls.Identifier"
+        }
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Name",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "value"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Calls.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Calls.Paren",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Inner",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": "Calls.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Calls.Call0",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Function",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Function",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "function"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Calls.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Calls.Call1",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Function",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Arg",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Function",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "function"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Calls.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Calls.Call2",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Function",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Left",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ","
+          },
+          {
+            "kind": "label",
+            "label": "Right",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Function",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "function"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Calls.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Calls.AnyCall",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "call"
+          },
+          {
+            "kind": "label",
+            "label": "Function",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Arg",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Function",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "function",
+            "value"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Calls.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Calls.FallbackCall",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "fallback"
+          },
+          {
+            "kind": "label",
+            "label": "Function",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Arg",
+            "inner": {
+              "kind": "ref",
+              "name": "Calls.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Function",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "value",
+            "function"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Calls.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Calls.Expr",
+      "lexical": false,
+      "expr": {
+        "kind": "pratt",
+        "prefixes": [
+          "Calls.Num",
+          "Calls.Ref",
+          "Calls.Paren",
+          "Calls.Call0",
+          "Calls.Call1",
+          "Calls.Call2",
+          "Calls.AnyCall",
+          "Calls.FallbackCall"
+        ],
+        "infixes": []
+      },
+      "clauses": [],
+      "except": []
+    }
+  ],
+  "catalog": {
+    "types": [
+      "Core.Scalar",
+      "Calls.Time"
+    ],
+    "operations": [
+      {
+        "id": "Calls.Duration",
+        "inputs": [
+          "Core.Scalar"
+        ],
+        "result": "Calls.Time",
+        "handler": "identity"
+      },
+      {
+        "id": "Calls.NegScalar",
+        "inputs": [
+          "Core.Scalar"
+        ],
+        "result": "Core.Scalar",
+        "handler": "neg"
+      },
+      {
+        "id": "Calls.NegTime",
+        "inputs": [
+          "Calls.Time"
+        ],
+        "result": "Calls.Time",
+        "handler": "neg"
+      },
+      {
+        "id": "Calls.SumScalar",
+        "inputs": [
+          "Core.Scalar",
+          "Core.Scalar"
+        ],
+        "result": "Core.Scalar",
+        "handler": "add"
+      },
+      {
+        "id": "Calls.SumTime",
+        "inputs": [
+          "Calls.Time",
+          "Calls.Time"
+        ],
+        "result": "Calls.Time",
+        "handler": "add"
+      },
+      {
+        "id": "Calls.Zero",
+        "inputs": [],
+        "result": "Core.Scalar",
+        "handler": "zero"
+      }
+    ],
+    "statements": {
+      "Calls.Let": {
+        "kind": "let",
+        "value": "Value",
+        "infer": true
+      },
+      "Calls.Local": {
+        "kind": "let",
+        "value": "Value",
+        "infer": true
+      },
+      "Calls.Show": {
+        "kind": "show",
+        "value": "Value"
+      }
+    },
+    "builtins": {
+      "function": {
+        "neg": [
+          "Calls.NegScalar",
+          "Calls.NegTime"
+        ],
+        "sys.neg": [
+          "Calls.NegScalar",
+          "Calls.NegTime"
+        ],
+        "sum": [
+          "Calls.SumScalar",
+          "Calls.SumTime"
+        ],
+        "duration": [
+          "Calls.Duration"
+        ],
+        "zero": [
+          "Calls.Zero"
+        ],
+        "calc": [
+          "Calls.Zero",
+          "Calls.NegScalar",
+          "Calls.SumScalar"
+        ]
+      }
+    },
+    "calls": {
+      "Calls.Call0": {
+        "args": []
+      },
+      "Calls.Call1": {
+        "args": [
+          "Arg"
+        ]
+      },
+      "Calls.Call2": {
+        "args": [
+          "Left",
+          "Right"
+        ]
+      },
+      "Calls.AnyCall": {
+        "args": [
+          "Arg"
+        ]
+      },
+      "Calls.FallbackCall": {
+        "args": [
+          "Arg"
+        ]
+      }
+    }
+  }
+}

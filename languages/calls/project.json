@@ -1,0 +1,8 @@
+{
+  "mode": "typed",
+  "start": "Calls.Program",
+  "grammars": [
+    "Calls.ngr"
+  ],
+  "catalog": "catalog.json"
+}

@@ -106,13 +106,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).collect();
     let [profile, path] = args.as_slice() else {
         return Err(
-            "usage: nitride-profile <portable|power|xml|composition|namespaces|inference> <source>"
+            "usage: nitride-profile <portable|power|xml|composition|namespaces|inference|calls> <source>"
                 .into(),
         );
     };
     let language = match profile.as_str() {
         "portable" => &nitride_cli::LANGUAGE,
         "inference" => &nitride_cli::inference::LANGUAGE,
+        "calls" => &nitride_cli::calls::LANGUAGE,
         "namespaces" => &nitride_cli::namespaces::LANGUAGE,
         "power" => &nitride_cli::power::LANGUAGE,
         "xml" => &nitride_cli::xml::LANGUAGE,
