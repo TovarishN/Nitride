@@ -40,3 +40,5 @@ impl Default for Limits {
         }
     }
 }
+
+mod templates;

@@ -16,6 +16,7 @@ fn existing_exports_match_native_frontend() {
         "namespaces",
         "inference",
         "calls",
+        "functions",
     ] {
         let directory = root().join("languages").join(profile);
         let manifest: Value =

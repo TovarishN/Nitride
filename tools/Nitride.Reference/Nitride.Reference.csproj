@@ -24,5 +24,6 @@
     <Compile Include="../../languages/inference/InferenceSemantics.cs" />
       <AdditionalFiles Include="../../languages/calls/Calls.Reference.ngr" Namespace="Nitride.Reference.Calls" />
     <Compile Include="../../languages/calls/CallsSemantics.cs" />
+      <AdditionalFiles Include="../../languages/functions/Functions.ngr" Namespace="Nitride.Reference.Functions" />
   </ItemGroup>
 </Project>

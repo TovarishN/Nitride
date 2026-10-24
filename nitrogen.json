@@ -93,6 +93,20 @@
       "sources": [
         "languages/calls/CallsSemantics.cs"
       ]
+    },
+    {
+      "name": "Functions",
+      "extensions": [
+        ".functions"
+      ],
+      "grammars": [
+        "languages/functions/Functions.ngr"
+      ],
+      "start": "Functions.Program",
+      "namespace": "Nitride.Reference.Functions",
+      "sources": [
+        "languages/functions/FunctionsSemantics.cs"
+      ]
     }
   ]
 }

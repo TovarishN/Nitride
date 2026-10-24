@@ -42,6 +42,16 @@ class ExportTests(unittest.TestCase):
         for declaration in ['builtin value in Start { x }','builtin missing { x }','builtin value { x x }']:
             self.reject('syntax module Bad { symbols { value } '+declaration+' syntax Start = "x"; }')
 
+    def test_declarative_templates_preserve_scope_and_parameter_types(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            output=pathlib.Path(tmp)/'out.json'
+            result=run('export-project',ROOT/'languages/functions/project.json',output)
+            self.assertEqual(result.returncode,0,result.stderr)
+            rules={r['name']:r for r in json.loads(output.read_text())['rules']}
+            self.assertEqual([c['kind'] for c in rules['Functions.Definition']['clauses']],['Declares','Scope','LowersTemplate'])
+            self.assertTrue(rules['Functions.Definition']['clauses'][0]['export'])
+            self.assertFalse(rules['Functions.Parameter']['clauses'][0]['sequential'])
+
     def test_csharp_blocks_are_rejected(self):
         self.reject('syntax module Bad { syntax Start = "x" { check BAD false : "bad"; } }')
 

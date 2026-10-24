@@ -385,6 +385,30 @@ impl Parser<'_> {
             _ if self.take(".")? => json!({"kind":"any"}),
             _ if self.take("(")? => {
                 let expr = self.expression()?;
+                if self.take(";")? {
+                    let separator = self.expression()?;
+                    if separator["kind"] != "literal"
+                        || separator["text"].as_str().is_none_or(|s| s.is_empty())
+                    {
+                        return Err(
+                            self.error("separated lists require a nonempty literal delimiter")
+                        );
+                    }
+                    self.expect(")")?;
+                    let at_least_one = if self.take("+")? {
+                        true
+                    } else {
+                        self.expect("*")?;
+                        false
+                    };
+                    let tail = json!({"kind":"repeat","min":0,"max":i32::MAX,"inner":{"kind":"sequence","items":[separator,expr.clone()]}});
+                    let body = json!({"kind":"sequence","items":[expr,tail]});
+                    return Ok(if at_least_one {
+                        body
+                    } else {
+                        json!({"kind":"repeat","min":0,"max":1,"inner":body})
+                    });
+                }
                 self.expect(")")?;
                 return Ok(expr);
             }
@@ -425,13 +449,13 @@ impl Parser<'_> {
             let mut args = Vec::new();
             let mut kinds = Vec::new();
             let mut sequential = false;
+            let mut exported = false;
             let kind = if self.take("declares")? {
                 kinds.push(self.name(false)?);
                 field = self.name(false)?;
                 sequential = self.take("sequential")?;
-                if !sequential {
-                    return Err(self.error("only sequential declarations are admitted"));
-                }
+                exported = self.take("export")?;
+
                 if self.take("type")? {
                     target = Some(self.name(true)?);
                 }
@@ -448,8 +472,21 @@ impl Parser<'_> {
                 }
                 field = self.name(false)?;
                 "References"
+            } else if self.take("scope")? {
+                "Scope"
             } else if self.take("lowers")? {
-                if self.take("literal")? {
+                if self.at("template") || self.at("expand") {
+                    let form = self.advance()?.text;
+                    field = self.name(false)?;
+                    self.expect("(")?;
+                    args.push(self.name(false)?);
+                    self.expect(")")?;
+                    if form == "template" {
+                        "LowersTemplate"
+                    } else {
+                        "LowersExpand"
+                    }
+                } else if self.take("literal")? {
                     target = Some(self.name(true)?);
                     field = self.name(false)?;
                     "LowersLiteral"
@@ -468,7 +505,11 @@ impl Parser<'_> {
             } else {
                 break;
             };
-            clauses.push(json!({"kind":kind,"field":field,"target":target,"args":args,"symbol_kinds":kinds,"sequential":sequential}));
+            let mut clause = json!({"kind":kind,"field":field,"target":target,"args":args,"symbol_kinds":kinds,"sequential":sequential});
+            if exported {
+                clause["export"] = json!(true);
+            }
+            clauses.push(clause);
         }
         Ok(clauses)
     }

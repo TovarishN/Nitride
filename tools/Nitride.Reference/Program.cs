@@ -17,6 +17,8 @@ try
         Console.WriteLine(JsonSerializer.Serialize(Oracle.Observe(File.ReadAllText(inferredSource), File.ReadAllText(inferredCatalog), inference: true)));
     else if (args is ["oracle-calls", var callSource, var callCatalog])
         Console.WriteLine(JsonSerializer.Serialize(Oracle.Observe(File.ReadAllText(callSource), File.ReadAllText(callCatalog), calls: true)));
+    else if (args is ["oracle-functions", var functionSource, var functionCatalog])
+        Console.WriteLine(JsonSerializer.Serialize(FunctionsOracle.Observe(File.ReadAllText(functionSource), File.ReadAllText(functionCatalog))));
     else if (args is ["oracle", var source, var operations])
         Console.WriteLine(JsonSerializer.Serialize(Oracle.Observe(File.ReadAllText(source), File.ReadAllText(operations))));
     else throw new ArgumentException("usage: export <grammar> <catalog> <output> | oracle <source> <catalog>");

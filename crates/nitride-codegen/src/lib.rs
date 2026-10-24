@@ -217,6 +217,18 @@ pub fn generate(input: &str) -> Result<String, String> {
     if syntax_only && (!builtins.is_empty() || calls.is_some_and(|m| !m.is_empty())) {
         return Err("syntax-only call semantics".into());
     }
+    let template_mode = rules.iter().any(|r| {
+        r["clauses"]
+            .as_array()
+            .is_some_and(|c| c.iter().any(|c| c["kind"] == "LowersTemplate"))
+    });
+    if template_mode
+        && (!builtin_declarations.is_empty()
+            || calls.is_some_and(|m| !m.is_empty())
+            || !groups.is_empty())
+    {
+        return Err("template profile cannot mix builtin calls or overload policies".into());
+    }
     let mut legacy_kind = None;
     for rule in rules {
         for clause in array(&rule["clauses"])? {
@@ -251,8 +263,25 @@ pub fn generate(input: &str) -> Result<String, String> {
             }
             Ok(quoted(s))
         };
-        let mut action = "Action::None".to_owned();
-        for clause in array(&rule["clauses"])? {
+        let clauses = array(&rule["clauses"])?;
+        if template_mode && rule["lexical"] == true && !clauses.is_empty() {
+            return Err("template semantic actions require syntax rules".into());
+        }
+        let special = if template_mode {
+            template_action(clauses, &field)?
+        } else {
+            None
+        };
+        let ordinary = if special.is_some() {
+            &[][..]
+        } else {
+            clauses.as_slice()
+        };
+        let mut action = special.unwrap_or_else(|| "Action::None".to_owned());
+        for clause in ordinary {
+            if clause["export"] == true {
+                return Err("unsupported exported declaration".into());
+            }
             if action != "Action::None" {
                 return Err("multiple semantic actions unsupported".into());
             }
@@ -328,6 +357,9 @@ pub fn generate(input: &str) -> Result<String, String> {
                     }
                 }
                 "Declares" => {
+                    if template_mode {
+                        return Err("sequential globals are outside template profile".into());
+                    }
                     if clause["sequential"] != true {
                         return Err("non-sequential declaration unsupported".into());
                     }
@@ -417,6 +449,9 @@ pub fn generate(input: &str) -> Result<String, String> {
     validate_progress(rules, &ids)?;
     if let Some(statements) = data["catalog"]["statements"].as_object() {
         for (name, statement) in statements {
+            if template_mode && statement["kind"] != "show" {
+                return Err("unsupported statement policy in template profile".into());
+            }
             let rule = &rules[lookup(&ids, name)? as usize];
             if let Some(infer) = statement.get("infer") {
                 let infer = infer.as_bool().ok_or("infer policy must be boolean")?;
@@ -443,6 +478,95 @@ pub fn generate(input: &str) -> Result<String, String> {
         quoted(text(&data["source_hash"])?),
         if syntax_only { "SyntaxOnly" } else { "Typed" }
     ))
+}
+
+fn template_action(
+    clauses: &[Value],
+    field: &impl Fn(&str) -> Result<String, String>,
+) -> Result<Option<String>, String> {
+    for clause in clauses {
+        let kind = text(&clause["kind"])?;
+        if matches!(
+            kind,
+            "Scope" | "LowersTemplate" | "LowersExpand" | "References"
+        ) && (!clause["target"].is_null()
+            || clause["sequential"] != false
+            || clause["export"] == true)
+        {
+            return Err("invalid template clause flags".into());
+        }
+        if kind == "Scope"
+            && (clause["field"] != ""
+                || !array(&clause["args"])?.is_empty()
+                || !array(&clause["symbol_kinds"])?.is_empty())
+        {
+            return Err("invalid scope clause".into());
+        }
+        if matches!(kind, "LowersTemplate" | "LowersExpand")
+            && !array(&clause["symbol_kinds"])?.is_empty()
+        {
+            return Err("invalid lowering kinds".into());
+        }
+    }
+    let find = |kind: &str| clauses.iter().find(|c| c["kind"] == kind);
+    if let Some(template) = find("LowersTemplate") {
+        let declaration = find("Declares").ok_or("template needs declaration")?;
+        if clauses.len() != 3
+            || find("Scope").is_none()
+            || declaration["sequential"] != false
+            || declaration["export"] != true
+            || !declaration["target"].is_null()
+            || strings(&declaration["symbol_kinds"])?.len() != 1
+            || strings(&template["args"])?.len() != 1
+        {
+            return Err("invalid template definition clauses".into());
+        }
+        return Ok(Some(format!(
+            "Action::Template {{kind:{},field:{},body:{},parameters:{}}}",
+            quoted(text(&declaration["symbol_kinds"][0])?),
+            field(text(&declaration["field"])?)?,
+            field(text(&template["field"])?)?,
+            field(text(&template["args"][0])?)?
+        )));
+    }
+    if let Some(expand) = find("LowersExpand") {
+        let reference = find("References").ok_or("expansion needs reference")?;
+        if clauses.len() != 2
+            || !array(&reference["args"])?.is_empty()
+            || expand["field"] != reference["field"]
+            || strings(&expand["args"])?.len() != 1
+        {
+            return Err("invalid expansion clauses".into());
+        }
+        return Ok(Some(format!(
+            "Action::Expand {{kinds:{},field:{},arguments:{}}}",
+            list(strings(&reference["symbol_kinds"])?.into_iter().map(quoted)),
+            field(text(&reference["field"])?)?,
+            field(text(&expand["args"][0])?)?
+        )));
+    }
+    if let Some(declaration) = find("Declares").filter(|c| c["sequential"] == false) {
+        if clauses.len() != 1 || strings(&declaration["symbol_kinds"])?.len() != 1 {
+            return Err("invalid template-profile declaration".into());
+        }
+        let kind = quoted(text(&declaration["symbol_kinds"][0])?);
+        let name = field(text(&declaration["field"])?)?;
+        return if declaration["target"].is_null() {
+            if declaration["export"] != true {
+                return Err("alias needs export".into());
+            }
+            Ok(Some(format!("Action::Alias {{kind:{kind},field:{name}}}")))
+        } else {
+            if declaration["export"] == true {
+                return Err("parameter cannot export".into());
+            }
+            Ok(Some(format!(
+                "Action::Parameter {{kind:{kind},field:{name},annotation:{}}}",
+                field(text(&declaration["target"])?)?
+            )))
+        };
+    }
+    Ok(None)
 }
 
 fn lookup(ids: &HashMap<&str, u16>, name: &str) -> Result<u16, String> {

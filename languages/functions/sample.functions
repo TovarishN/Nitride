@@ -1,0 +1,5 @@
+def sum(a: Scalar, b: Scalar)=add(a,b);
+def twice(x: Scalar)=call sum(x,x);
+call twice(neg(3));
+def offset(t: Functions.Time)=addtime(t,duration(2));
+call offset(duration(4));

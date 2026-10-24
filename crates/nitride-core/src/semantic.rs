@@ -40,6 +40,8 @@ pub struct Program {
     pub statements: Vec<Statement>,
     pub bindings: Vec<Binding>,
     pub builtin_bindings: Vec<BuiltinBinding>,
+    pub origin_spans: Vec<[u32; 2]>,
+    pub origin_ranges: Vec<std::ops::Range<u32>>,
 }
 
 pub fn compile(
@@ -78,7 +80,8 @@ fn compile_checked(
             .first_child
             .checked_add(node.child_count)
             .ok_or_else(|| Diagnostic::new("grammar", node.span, "invalid child range"))?;
-        if node.span[0] > node.span[1]
+        if node.rule as usize >= language.rules.len()
+            || node.span[0] > node.span[1]
             || tree
                 .source
                 .get(node.span[0] as usize..node.span[1] as usize)
@@ -95,6 +98,17 @@ fn compile_checked(
             ));
         }
     }
+    if language.rules.iter().any(|r| {
+        matches!(
+            r.action,
+            Action::Template { .. }
+                | Action::Parameter { .. }
+                | Action::Alias { .. }
+                | Action::Expand { .. }
+        )
+    }) {
+        return crate::templates::compile(language, tree, limits);
+    }
     let mut program = Program {
         language,
         nodes: Vec::new(),
@@ -102,6 +116,8 @@ fn compile_checked(
         statements: Vec::new(),
         bindings: Vec::new(),
         builtin_bindings: Vec::new(),
+        origin_spans: Vec::new(),
+        origin_ranges: Vec::new(),
     };
     if tree.nodes.len() as u64 > limits.work {
         return Err(Diagnostic::new(
@@ -431,6 +447,16 @@ fn compile_checked(
                 lowered[id] = Some(root);
                 continue;
             }
+            Action::Template { .. }
+            | Action::Parameter { .. }
+            | Action::Alias { .. }
+            | Action::Expand { .. } => {
+                return Err(Diagnostic::new(
+                    "grammar",
+                    node.span,
+                    "template action outside template compiler",
+                ));
+            }
             Action::Show { field: label } => {
                 let root = value_of(label)?;
                 program.statements.push(Statement {
@@ -469,4 +495,18 @@ fn compile_checked(
         return Err(error);
     }
     Ok(program)
+}
+
+impl Program {
+    pub fn origins(&self, node: u32) -> &[[u32; 2]] {
+        if let Some(range) = self.origin_ranges.get(node as usize) {
+            return self
+                .origin_spans
+                .get(range.start as usize..range.end as usize)
+                .unwrap_or(&[]);
+        }
+        self.nodes
+            .get(node as usize)
+            .map_or(&[], |n| std::slice::from_ref(&n.span))
+    }
 }

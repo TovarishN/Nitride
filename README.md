@@ -9,7 +9,7 @@ The first working slice covers generated parsing, sequential binding, nominal
 type checking, typed HIR, exact host binding preflight, and native execution.
 It includes a deliberately restricted typed profile, a cross-module Power
 extension, independent sequential symbol namespaces, inferred declaration types, exact nominal
-overload selection, built-in callable symbols, and syntax-only admission of existing Base/Uses and XML grammars.
+overload selection, built-in callable symbols, typed user-defined templates, and syntax-only admission of existing Base/Uses and XML grammars.
 This is partial Nitrogen compatibility; the full DateCalc language is not admitted.
 
 ## Run
@@ -24,6 +24,7 @@ cargo build --release
 ./target/release/nitride --namespaces languages/namespaces/sample.namespaces
 ./target/release/nitride --inference languages/inference/sample.inferred
 ./target/release/nitride --calls languages/calls/sample.calls
+./target/release/nitride --functions languages/functions/sample.functions
 cargo run -p nitride-cli --example embed
 ```
 
@@ -158,10 +159,38 @@ whole-program host preflight. Built-in binding observations identify the name
 explicitly rather than inventing a declaration location.
 
 Only call rules may consume built-in namespaces in this admitted typed profile.
-Built-in values, scoped built-ins, callable values and authored function bodies
-remain unsupported. A generated development-only Nitrogen adapter provides the
+Built-in values, scoped built-ins and callable values remain unsupported in this
+profile. Authored template bodies have their own admitted profile below. A generated development-only Nitrogen adapter provides the
 fixture's type properties and operation selection; native builds use pure
 `Calls.ngr`. See [call evidence](docs/stage7-evidence.md).
+
+## User-defined template bodies
+
+The Functions profile admits typed, document-local definitions and nested calls:
+
+```text
+def sum(a: Scalar, b: Scalar) = add(a, b);
+def twice(x: Scalar) = call sum(x, x);
+call twice(neg(3));
+```
+
+It returns `-6`. Definitions can be used before their declaration; parameter
+bindings stay within their definition. Return types follow the typed body.
+Duplicate declarations, wrong arity/types, invalid unused bodies and used expansion
+cycles are checked before execution. Depth and total work bounds protect expansion.
+
+This follows Nitrogen's declarative template semantics. Repeated parameters repeat
+argument computation (`neg(3)` runs twice above); unused arguments contribute no
+execution effects, while still being bound, checked and lowered. Full ordered
+call/definition/argument origins are retained in Program side tables.
+
+The same pure `Functions.ngr` supplies both native and actual Nitrogen semantics.
+The C# editor helper contains catalog metadata only. This profile uses fixed
+catalog operations in bodies. Mixing sequential globals or arbitrary built-in-call
+policies into the template profile is rejected; closures, cross-file exports and
+runtime function values remain deferred. Reference diagnostic parity uses the
+selected-root API; its identity-result and cyclic-result boundaries are documented
+in [function-body evidence](docs/stage8-evidence.md).
 
 ## Validate
 
@@ -171,12 +200,12 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-There are 75 Rust tests, including parity over 144 frozen observations from
+There are 87 Rust tests, including parity over 189 frozen observations from
 actual Nitrogen parsers and, for typed profiles, binding, typing and HIR,
 with the explicit inference-adapter policy described above.
-The development-only exporter has 14 tests. Live differential scripts compare
-320 deterministic generated programs in total. `scripts/prepare_parity.py`
-compares 71 prepared profiles and 14 invalid grammars against the live exporter.
+The development-only exporter has 15 tests. Live differential scripts compare
+384 deterministic generated programs in total. `scripts/prepare_parity.py`
+compares 76 prepared profiles and 16 invalid grammars against the live exporter.
 
 To refresh the reference using a sibling `../Nitrogen` source checkout and a
 .NET 10 SDK or later:
@@ -197,7 +226,7 @@ against live Nitrogen without overwriting them. After a native release build,
 live reference.
 
 The registered `nitrogen.json` and generated helper metadata let the existing
-Nitrogen extension discover the portable, composed, XML, namespace, inference and call language fixtures. Its workspace checker was verified; live VS Code/Rider interactions
+Nitrogen extension discover the portable, composed, XML, namespace, inference call and function language fixtures. Its workspace checker was verified; live VS Code/Rider interactions
 and editor completion/navigation were not exercised.
 
 ## Scope and evidence

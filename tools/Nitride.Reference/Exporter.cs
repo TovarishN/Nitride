@@ -89,24 +89,34 @@ static class Exporter
             SequenceExpr e => Obj("sequence", ("items", new JsonArray(e.Items.Select(i => Expression(i, module, implicitModule)).ToArray()))),
             ChoiceExpr e => Obj("choice", ("items", new JsonArray(e.Alternatives.Select(i => Expression(i, module, implicitModule)).ToArray()))),
             LabeledExpr e => Obj("label", ("label", JsonValue.Create(e.Label)), ("inner", Expression(e.Inner, module, implicitModule))),
+            SeparatedListExpr e when e.Separator is LiteralExpr { Value.Length: > 0 } => Separated(e, module, implicitModule),
             RepeatExpr e => Obj("repeat", ("min", JsonValue.Create(e.Kind == RepeatKind.OneOrMore ? 1 : 0)),
                 ("max", JsonValue.Create(e.Kind == RepeatKind.Optional ? 1 : int.MaxValue)), ("inner", Expression(e.Inner, module, implicitModule))),
             _ => throw Unsupported($"grammar expression {expression.GetType().Name} at {expression.Span.Start}")
         };
+        JsonNode Separated(SeparatedListExpr e, ModuleDecl module, string? implicitModule)
+        {
+            var item=Expression(e.Item,module,implicitModule);
+            var tail=Obj("repeat",("min",JsonValue.Create(0)),("max",JsonValue.Create(int.MaxValue)),("inner",Obj("sequence",("items",new JsonArray(Expression(e.Separator,module,implicitModule),item.DeepClone())))));
+            var body=Obj("sequence",("items",new JsonArray(item,tail)));
+            return e.AtLeastOne ? body : Obj("repeat",("min",JsonValue.Create(0)),("max",JsonValue.Create(1)),("inner",body));
+        }
         JsonArray Clauses(EquatableArray<BindingClause> clauses)
         {
             var result = new JsonArray();
             if (syntaxOnly) return result;
             foreach (var c in clauses)
             {
-                if (c.Kind is not (BindingClauseKind.Declares or BindingClauseKind.References or BindingClauseKind.Lowers or BindingClauseKind.LowersLiteral) ||
-                    c.Optional || c.Export || c.FileScope || c.Qualifier != null || c.TypeProperty != null || c.OperationProperty != null || c.InitializerProperty != null ||
+                if (c.Kind is not (BindingClauseKind.Declares or BindingClauseKind.References or BindingClauseKind.Lowers or BindingClauseKind.LowersLiteral or BindingClauseKind.Scope or BindingClauseKind.LowersTemplate or BindingClauseKind.LowersExpand) ||
+                    c.Optional || c.FileScope || c.Qualifier != null || c.TypeProperty != null || c.OperationProperty != null || c.InitializerProperty != null ||
                     c.Arguments.Any(a => a.SequenceElementType != null || a.InferSequence || a.AsText || a.OptionalElementType != null || a.OptionalText))
                     throw Unsupported($"semantic clause {c.Kind} at {c.Span.Start}");
-                if (c.Kind == BindingClauseKind.Declares && (!c.Sequential)) throw Unsupported("only sequential declarations supported");
-                result.Add(new JsonObject { ["kind"] = c.Kind.ToString(), ["field"] = c.Field, ["target"] = c.Target?.Name,
+
+                var clause = new JsonObject { ["kind"] = c.Kind.ToString(), ["field"] = c.Field, ["target"] = c.Target?.Name,
                     ["args"] = JsonSerializer.SerializeToNode(c.Arguments.Select(a => a.Name)),
-                    ["symbol_kinds"] = JsonSerializer.SerializeToNode(c.Kinds.Select(k => k.Name)), ["sequential"] = c.Sequential });
+                    ["symbol_kinds"] = JsonSerializer.SerializeToNode(c.Kinds.Select(k => k.Name)), ["sequential"] = c.Sequential };
+                if (c.Export) clause["export"] = true;
+                result.Add(clause);
             }
             return result;
         }
