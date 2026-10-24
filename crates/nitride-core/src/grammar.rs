@@ -33,10 +33,13 @@ pub enum Action {
     Reference {
         kinds: &'static [&'static str],
         field: &'static str,
+        values: &'static [BuiltinValue],
     },
     Operation {
         id: u16,
         fields: &'static [&'static str],
+        /// Positions passing their field's exact source spelling as `Core.Text`.
+        texts: &'static [bool],
     },
     Overload {
         candidates: &'static [u16],
@@ -86,6 +89,29 @@ pub struct Builtin {
     pub candidates: &'static [u16],
 }
 
+/// A host-supplied built-in value, typed by the catalog.
+#[derive(Debug, PartialEq, Eq)]
+pub struct BuiltinValue {
+    pub kind: &'static str,
+    pub name: &'static str,
+    pub ty: &'static str,
+}
+
+/// A fixed engine predicate over a field's source spelling; never translated C#.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Predicate {
+    IsoDate,
+}
+
+#[derive(Debug)]
+pub struct Check {
+    pub rule: u16,
+    pub field: &'static str,
+    pub predicate: Predicate,
+    pub code: &'static str,
+    pub message: &'static str,
+}
+
 #[derive(Debug)]
 pub struct Rule {
     pub name: &'static str,
@@ -119,5 +145,6 @@ pub struct Language {
     pub types: &'static [&'static str],
     pub operations: &'static [Signature],
     pub handlers: &'static [&'static str],
+    pub checks: &'static [Check],
     pub source_hash: &'static str,
 }

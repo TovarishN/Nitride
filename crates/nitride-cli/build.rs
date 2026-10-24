@@ -8,6 +8,7 @@ fn main() {
         ("inference", "inference"),
         ("calls", "calls"),
         ("functions", "functions"),
+        ("dates", "dates"),
     ] {
         let manifest = format!("../../languages/{profile}/project.json");
         println!("cargo:rerun-if-changed={manifest}");

@@ -363,6 +363,7 @@ impl Decoder<'_> {
         let mut field = String::new();
         let mut target = None;
         let mut args = Vec::new();
+        let mut text_args = Vec::new();
         let mut kinds = Vec::new();
         let mut sequential = false;
         let mut exported = false;
@@ -409,11 +410,13 @@ impl Decoder<'_> {
                     }
                     "Call" => {
                         target = Some(self.named(n, "Target"));
-                        args.extend(
-                            self.fields(n, "Args")
-                                .iter()
-                                .map(|&w| self.named(w, "Name")),
-                        );
+                        for (index, argument) in self.fields(n, "Args").into_iter().enumerate() {
+                            let form = self.first(argument);
+                            if self.kind(form) == "TextArgument" {
+                                text_args.push(index);
+                            }
+                            args.push(self.named(form, "Name"));
+                        }
                         "Lowers"
                     }
                     _ => unreachable!(),
@@ -424,6 +427,9 @@ impl Decoder<'_> {
         let mut value = json!({"kind":kind,"field":field,"target":target,"args":args,"symbol_kinds":kinds,"sequential":sequential});
         if exported {
             value["export"] = json!(true);
+        }
+        if !text_args.is_empty() {
+            value["text_args"] = json!(text_args);
         }
         value
     }

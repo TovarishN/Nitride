@@ -4,6 +4,12 @@ use crate::*;
 pub enum HirKind {
     Constant(f64),
     Reference(u32),
+    Builtin(&'static BuiltinValue),
+    /// An exact source spelling, `Program::text[start..end]`, feeding a text operation.
+    Text {
+        start: u32,
+        end: u32,
+    },
     Operation {
         operation: u16,
         args: std::ops::Range<u32>,
@@ -42,7 +48,10 @@ pub struct Program {
     pub builtin_bindings: Vec<BuiltinBinding>,
     pub origin_spans: Vec<[u32; 2]>,
     pub origin_ranges: Vec<std::ops::Range<u32>>,
+    pub text: String,
 }
+
+pub const TEXT: &str = "Core.Text";
 
 pub fn compile(
     language: &'static Language,
@@ -118,6 +127,7 @@ fn compile_checked(
         builtin_bindings: Vec::new(),
         origin_spans: Vec::new(),
         origin_ranges: Vec::new(),
+        text: String::new(),
     };
     if tree.nodes.len() as u64 > limits.work {
         return Err(Diagnostic::new(
@@ -131,6 +141,7 @@ fn compile_checked(
     let mut type_errors = Vec::new();
     let mut binding_errors = Vec::new();
     let mut call_targets = HashMap::<u32, &'static [u16]>::new();
+    let mut value_targets = HashMap::<u32, &'static BuiltinValue>::new();
     let field = |id, label| {
         tree.field(id, label)
             .ok_or_else(|| Diagnostic::new("grammar", [0, 0], format!("missing field {label}")))
@@ -145,6 +156,7 @@ fn compile_checked(
             Action::Reference {
                 field: label,
                 kinds,
+                ..
             }
             | Action::Call {
                 field: label,
@@ -198,6 +210,19 @@ fn compile_checked(
                             format!("unresolved name {text}"),
                         ));
                     }
+                } else if let Some(value) = match rule.action {
+                    // Built-in values follow every local kind, in authored kind order.
+                    Action::Reference { values, .. } => kinds
+                        .iter()
+                        .find_map(|kind| values.iter().find(|v| v.kind == *kind && v.name == text)),
+                    _ => None,
+                } {
+                    value_targets.insert(id as u32, value);
+                    program.builtin_bindings.push(BuiltinBinding {
+                        kind: value.kind,
+                        name: value.name,
+                        span: tree.nodes[name as usize].span,
+                    });
                 } else {
                     binding_errors.push(Diagnostic::new(
                         "binding",
@@ -260,6 +285,20 @@ fn compile_checked(
             })
         };
         let mut depth = 1;
+        for check in language.checks.iter().filter(|c| c.rule == node.rule) {
+            // An absent optional field has no spelling, so its predicate fails.
+            let spelling = tree
+                .field(id as u32, check.field)
+                .and_then(|c| tree.text(c));
+            let holds = spelling.is_some_and(|text| match check.predicate {
+                Predicate::IsoDate => iso_date_day_number(text).is_some(),
+            });
+            if !holds {
+                let mut diagnostic = Diagnostic::new("check", node.span, check.message);
+                diagnostic.code = Some(check.code);
+                type_errors.push(diagnostic);
+            }
+        }
         let value = match rule.action {
             Action::Literal { ty, field: label } => {
                 let child = field(id as u32, label)?;
@@ -278,6 +317,14 @@ fn compile_checked(
                 Some(HirNode {
                     kind: HirKind::Constant(number),
                     ty,
+                    span: node.span,
+                })
+            }
+            Action::Reference { .. } if value_targets.contains_key(&(id as u32)) => {
+                let value = value_targets[&(id as u32)];
+                Some(HirNode {
+                    kind: HirKind::Builtin(value),
+                    ty: value.ty,
                     span: node.span,
                 })
             }
@@ -315,10 +362,33 @@ fn compile_checked(
             Action::Operation { fields, .. }
             | Action::Overload { fields, .. }
             | Action::Call { fields, .. } => {
-                let args = fields
-                    .iter()
-                    .map(|f| value_of(*f))
-                    .collect::<Result<Vec<_>, _>>()?;
+                let texts = match rule.action {
+                    Action::Operation { texts, .. } => texts,
+                    _ => &[],
+                };
+                let mut args = Vec::with_capacity(fields.len());
+                for (index, label) in fields.iter().enumerate() {
+                    if texts.get(index) == Some(&true) {
+                        let child = field(id as u32, label)?;
+                        let spelling = tree.text(child).ok_or_else(|| {
+                            Diagnostic::new("grammar", node.span, "invalid text argument span")
+                        })?;
+                        let start = program.text.len() as u32;
+                        program.text.push_str(spelling);
+                        args.push(program.nodes.len() as u32);
+                        program.nodes.push(HirNode {
+                            kind: HirKind::Text {
+                                start,
+                                end: program.text.len() as u32,
+                            },
+                            ty: TEXT,
+                            span: tree.nodes[child as usize].span,
+                        });
+                        depths.push(1);
+                    } else {
+                        args.push(value_of(label)?);
+                    }
+                }
                 let operation = match rule.action {
                     Action::Operation { id, .. } => id,
                     Action::Overload { .. } | Action::Call { .. } => {

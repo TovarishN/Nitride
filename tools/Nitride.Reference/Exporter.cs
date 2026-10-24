@@ -109,13 +109,15 @@ static class Exporter
             {
                 if (c.Kind is not (BindingClauseKind.Declares or BindingClauseKind.References or BindingClauseKind.Lowers or BindingClauseKind.LowersLiteral or BindingClauseKind.Scope or BindingClauseKind.LowersTemplate or BindingClauseKind.LowersExpand) ||
                     c.Optional || c.FileScope || c.Qualifier != null || c.TypeProperty != null || c.OperationProperty != null || c.InitializerProperty != null ||
-                    c.Arguments.Any(a => a.SequenceElementType != null || a.InferSequence || a.AsText || a.OptionalElementType != null || a.OptionalText))
+                    c.Arguments.Any(a => a.SequenceElementType != null || a.InferSequence || (a.AsText && c.Kind != BindingClauseKind.Lowers) || a.OptionalElementType != null || a.OptionalText))
                     throw Unsupported($"semantic clause {c.Kind} at {c.Span.Start}");
 
                 var clause = new JsonObject { ["kind"] = c.Kind.ToString(), ["field"] = c.Field, ["target"] = c.Target?.Name,
                     ["args"] = JsonSerializer.SerializeToNode(c.Arguments.Select(a => a.Name)),
                     ["symbol_kinds"] = JsonSerializer.SerializeToNode(c.Kinds.Select(k => k.Name)), ["sequential"] = c.Sequential };
                 if (c.Export) clause["export"] = true;
+                var texts = c.Arguments.Select((a, i) => (a, i)).Where(p => p.a.AsText).Select(p => p.i).ToArray();
+                if (texts.Length > 0) clause["text_args"] = JsonSerializer.SerializeToNode(texts);
                 result.Add(clause);
             }
             return result;

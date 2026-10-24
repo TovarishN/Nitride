@@ -10,6 +10,8 @@ fn array(v: &Value) -> Result<&Vec<Value>, String> {
 fn strings(v: &Value) -> Result<Vec<&str>, String> {
     array(v)?.iter().map(text).collect()
 }
+const TEXT: &str = "Core.Text";
+
 fn quoted(s: &str) -> String {
     format!("{s:?}")
 }
@@ -83,18 +85,22 @@ pub fn generate(input: &str) -> Result<String, String> {
         signatures.push(format!(
             "nitride_core::Signature {{id:{}, inputs:{}, result:{}}}",
             quoted(id),
-            list(inputs.into_iter().map(quoted)),
+            list(inputs.iter().copied().map(quoted)),
             quoted(result)
         ));
         let handler = text(&op["handler"])?;
         let arity = match handler {
             "zero" => 0,
-            "identity" | "neg" => 1,
+            "identity" | "neg" | "iso-date" => 1,
             "add" | "sub" | "mul" | "div" | "pow" => 2,
             _ => return Err("unknown fixture host handler".into()),
         };
         if array(&op["inputs"])?.len() != arity {
             return Err("fixture host handler arity mismatch".into());
+        }
+        // Text is only an operation input fed directly by source spelling.
+        if result == TEXT || (handler == "iso-date") != inputs.contains(&TEXT) {
+            return Err("text operations require a text host handler".into());
         }
         handlers.push(quoted(handler));
     }
@@ -113,6 +119,9 @@ pub fn generate(input: &str) -> Result<String, String> {
             for name in ids {
                 let id = lookup(&op_ids, name)?;
                 let signature = strings(&operations[id as usize]["inputs"])?;
+                if signature.contains(&TEXT) {
+                    return Err("overloads cannot take text arguments".into());
+                }
                 if !inputs.insert(signature) {
                     return Err("ambiguous overload input signature".into());
                 }
@@ -185,6 +194,41 @@ pub fn generate(input: &str) -> Result<String, String> {
             }
         }
     }
+    let mut values = Vec::new();
+    if let Some(mapping) = data["catalog"].get("values") {
+        for (kind, names) in mapping
+            .as_object()
+            .ok_or("value catalog must be an object")?
+        {
+            if inventory
+                .as_ref()
+                .is_none_or(|k| !k.contains(&kind.as_str()))
+            {
+                return Err("unknown builtin value namespace".into());
+            }
+            for (name, ty) in names.as_object().ok_or("value names must be an object")? {
+                let ty = text(ty)?;
+                if !builtin_declarations.contains(&(kind.as_str(), name.as_str())) {
+                    return Err("undeclared builtin value mapping".into());
+                }
+                if !type_set.contains(ty) || ty == TEXT {
+                    return Err("unknown builtin value type".into());
+                }
+                if !mapped_builtins.insert((kind.as_str(), name.as_str())) {
+                    return Err("builtin is both callable and a value".into());
+                }
+                values.push((
+                    kind.as_str(),
+                    format!(
+                        "nitride_core::BuiltinValue {{kind:{},name:{},ty:{}}}",
+                        quoted(kind),
+                        quoted(name),
+                        quoted(ty)
+                    ),
+                ));
+            }
+        }
+    }
     if !syntax_only && mapped_builtins != builtin_declarations {
         return Err("missing builtin mapping".into());
     }
@@ -206,13 +250,60 @@ pub fn generate(input: &str) -> Result<String, String> {
                     "call mapping requires one reference clause and unique arguments".into(),
                 );
             }
-            if !strings(&clauses[0]["symbol_kinds"])?
+            let kinds = strings(&clauses[0]["symbol_kinds"])?;
+            if !kinds
                 .iter()
                 .any(|kind| builtins.iter().any(|(k, _)| k == kind))
             {
                 return Err("call has no builtin namespace".into());
             }
+            if kinds
+                .iter()
+                .any(|kind| values.iter().any(|(k, _)| k == kind))
+            {
+                return Err("calls cannot reach builtin values".into());
+            }
         }
+    }
+    let checks = data["catalog"]
+        .get("checks")
+        .map(|v| v.as_object().ok_or("checks must be an object"))
+        .transpose()?;
+    let mut check_tables = Vec::new();
+    for (name, list) in checks.into_iter().flatten() {
+        let id = lookup(&ids, name)?;
+        let rule = &rules[id as usize];
+        let mut labels = HashSet::new();
+        collect_labels(&rule["expr"], &mut labels);
+        if rule["lexical"] != false {
+            return Err("checks require syntax rules".into());
+        }
+        for check in array(list)? {
+            let (code, field, message) = (
+                text(&check["code"])?,
+                text(&check["field"])?,
+                text(&check["message"])?,
+            );
+            if code.is_empty() || !code.bytes().all(|b| b.is_ascii_alphanumeric()) {
+                return Err("invalid check code".into());
+            }
+            if message.is_empty() || !labels.contains(field) {
+                return Err("check requires a rule field and message".into());
+            }
+            let predicate = match text(&check["predicate"])? {
+                "iso-date" => "IsoDate",
+                _ => return Err("unknown check predicate".into()),
+            };
+            check_tables.push(format!(
+                "nitride_core::Check {{rule:{id},field:{},predicate:nitride_core::Predicate::{predicate},code:{},message:{}}}",
+                quoted(field),
+                quoted(code),
+                quoted(message)
+            ));
+        }
+    }
+    if syntax_only && (!values.is_empty() || !check_tables.is_empty()) {
+        return Err("syntax-only value or check semantics".into());
     }
     if syntax_only && (!builtins.is_empty() || calls.is_some_and(|m| !m.is_empty())) {
         return Err("syntax-only call semantics".into());
@@ -225,7 +316,9 @@ pub fn generate(input: &str) -> Result<String, String> {
     if template_mode
         && (!builtin_declarations.is_empty()
             || calls.is_some_and(|m| !m.is_empty())
-            || !groups.is_empty())
+            || !groups.is_empty()
+            || !check_tables.is_empty()
+            || operations.iter().any(|op| op["handler"] == "iso-date"))
     {
         return Err("template profile cannot mix builtin calls or overload policies".into());
     }
@@ -288,7 +381,7 @@ pub fn generate(input: &str) -> Result<String, String> {
             action = match text(&clause["kind"])? {
                 "LowersLiteral" => {
                     let ty = text(&clause["target"])?;
-                    if !type_set.contains(ty) {
+                    if !type_set.contains(ty) || ty == TEXT {
                         return Err("unknown literal type".into());
                     }
                     format!(
@@ -300,6 +393,11 @@ pub fn generate(input: &str) -> Result<String, String> {
                 "References" => {
                     let kinds = strings(&clause["symbol_kinds"])?;
                     let admitted: Vec<_> = builtins
+                        .iter()
+                        .filter(|(kind, _)| kinds.contains(kind))
+                        .map(|(_, code)| code.clone())
+                        .collect();
+                    let visible_values: Vec<_> = values
                         .iter()
                         .filter(|(kind, _)| kinds.contains(kind))
                         .map(|(_, code)| code.clone())
@@ -322,9 +420,10 @@ pub fn generate(input: &str) -> Result<String, String> {
                             return Err("builtin references require a call mapping".into());
                         }
                         format!(
-                            "Action::Reference {{field:{},kinds:{}}}",
+                            "Action::Reference {{field:{},kinds:{},values:{}}}",
                             field(text(&clause["field"])?)?,
-                            list(kinds.into_iter().map(quoted))
+                            list(kinds.into_iter().map(quoted)),
+                            list(visible_values)
                         )
                     }
                 }
@@ -335,7 +434,25 @@ pub fn generate(input: &str) -> Result<String, String> {
                         .iter()
                         .map(|arg| field(arg))
                         .collect::<Result<Vec<_>, _>>()?;
+                    let mut texts = vec![false; args.len()];
+                    if let Some(positions) = clause.get("text_args") {
+                        for position in array(positions)? {
+                            let index = position
+                                .as_u64()
+                                .filter(|i| (*i as usize) < args.len())
+                                .ok_or("invalid text argument position")?;
+                            if std::mem::replace(&mut texts[index as usize], true) {
+                                return Err("duplicate text argument position".into());
+                            }
+                        }
+                        if !texts.contains(&true) {
+                            return Err("empty text argument positions".into());
+                        }
+                    }
                     if let Some(candidates) = groups.get(target) {
+                        if texts.contains(&true) {
+                            return Err("overloads cannot take text arguments".into());
+                        }
                         if !candidates.iter().any(|id| {
                             operations[*id as usize]["inputs"]
                                 .as_array()
@@ -350,10 +467,26 @@ pub fn generate(input: &str) -> Result<String, String> {
                         )
                     } else {
                         let id = lookup(&op_ids, target)?;
-                        if args.len() != array(&operations[id as usize]["inputs"])?.len() {
+                        let inputs = strings(&operations[id as usize]["inputs"])?;
+                        if args.len() != inputs.len() {
                             return Err("operation arity mismatch".into());
                         }
-                        format!("Action::Operation {{id:{id},fields:{}}}", list(fields))
+                        if inputs
+                            .iter()
+                            .zip(&texts)
+                            .any(|(ty, text)| (*ty == TEXT) != *text)
+                        {
+                            return Err("text arguments must match Core.Text inputs".into());
+                        }
+                        format!(
+                            "Action::Operation {{id:{id},fields:{},texts:{}}}",
+                            list(fields),
+                            if texts.contains(&true) {
+                                list(texts.iter().map(bool::to_string))
+                            } else {
+                                "&[]".into()
+                            }
+                        )
                     }
                 }
                 "Declares" => {
@@ -470,11 +603,12 @@ pub fn generate(input: &str) -> Result<String, String> {
         }
     }
     Ok(format!(
-        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},source_hash:{},profile:Profile::{}}};\n",
+        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},source_hash:{},profile:Profile::{}}};\n",
         list(output_rules),
         list(types.into_iter().map(quoted)),
         list(signatures),
         list(handlers),
+        list(check_tables),
         quoted(text(&data["source_hash"])?),
         if syntax_only { "SyntaxOnly" } else { "Typed" }
     ))

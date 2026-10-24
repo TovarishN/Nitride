@@ -15,6 +15,7 @@ syntax module NitrideGrammar
   token NameTail = IdPart / "." IdStart;
   token Reserved = ("precedence" / "except" / "then" / "else" / "declares" / "references" / "scope" / "dynamic" / "lowers" / "rewrites") !NameTail;
   token LoweringKeyword = ("literal" / "template" / "expand") !NameTail;
+  token TextKeyword = "text" !NameTail;
   token Comment = "//" [^ '\n']* / "/*" (!"*/" .)* "*/";
   token OpaqueCharLiteral = "'" (Escape / [^ '\'' '\\' '\n'])* "'";
   token OpaqueChar = !("/*" / "//" / "@\"" / "\"\"\"") [^ '{' '}' '"' '\''];
@@ -74,5 +75,7 @@ syntax module NitrideGrammar
   syntax Template = "template" Field:Identifier "(" Args:Identifier ")";
   syntax Expand = "expand" Field:Identifier "(" Args:Identifier ")";
   syntax LiteralLowering = "literal" Target:QualifiedName Field:Identifier;
-  syntax Call = !LoweringKeyword Target:QualifiedName "(" Args:(Word; ",")* ")";
+  syntax Call = !LoweringKeyword Target:QualifiedName "(" Args:(Argument; ",")* ")";
+  syntax Argument = TextArgument / Word;
+  syntax TextArgument = TextKeyword Name:Identifier;
 }

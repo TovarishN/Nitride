@@ -17,6 +17,7 @@ fn language(candidates: &'static [u16]) -> &'static Language {
         source_hash: "test",
         types: &["Core.Scalar"],
         handlers: &[],
+        checks: &[],
         operations: &[
             Signature {
                 id: "A",

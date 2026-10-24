@@ -109,6 +109,20 @@
       ]
     },
     {
+      "name": "Dates",
+      "extensions": [
+        ".dates"
+      ],
+      "grammars": [
+        "languages/dates/Dates.Reference.ngr"
+      ],
+      "start": "Dates.Program",
+      "namespace": "Nitride.Reference.Dates",
+      "sources": [
+        "languages/dates/DatesSemantics.cs"
+      ]
+    },
+    {
       "name": "NitrideGrammar",
       "extensions": [
         ".nitridegrammar"

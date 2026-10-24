@@ -1,6 +1,9 @@
 pub mod functions {
     include!(concat!(env!("OUT_DIR"), "/functions.rs"));
 }
+pub mod dates {
+    include!(concat!(env!("OUT_DIR"), "/dates.rs"));
+}
 pub mod calls {
     include!(concat!(env!("OUT_DIR"), "/calls.rs"));
 }
@@ -74,6 +77,13 @@ pub fn fixture_bindings_for(language: &'static Language) -> Vec<HostBinding> {
         .iter()
         .zip(language.handlers)
         .map(|(signature, handler)| {
+            if *handler == "iso-date" {
+                return HostBinding::text(*signature, |text| {
+                    iso_date_day_number(text)
+                        .map(|day| day as f64)
+                        .ok_or_else(|| "not a calendar date".into())
+                });
+            }
             HostBinding::new(*signature, move |a| {
                 Ok(match *handler {
                     "zero" => 0.0,
@@ -89,6 +99,26 @@ pub fn fixture_bindings_for(language: &'static Language) -> Vec<HostBinding> {
             })
         })
         .collect()
+}
+
+/// Days since 0001-01-01 for the current UTC date; the fixture has no time-zone policy.
+pub fn utc_today() -> f64 {
+    let seconds = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
+    (719_162 + seconds / 86_400) as f64
+}
+
+/// The Dates fixture host's built-in values: `pi`, and `today` as a day number.
+pub fn dates_values(today: f64) -> Vec<HostValue> {
+    vec![
+        HostValue::new("value", "pi", "Core.Scalar", || Ok(std::f64::consts::PI)),
+        HostValue::new("value", "today", "Dates.Date", move || Ok(today)),
+    ]
+}
+
+pub fn observe_dates(source: &str, today: f64) -> Value {
+    observe_with_values(&dates::LANGUAGE, source, true, &dates_values(today))
 }
 
 pub fn observe(source: &str) -> Value {
@@ -116,7 +146,23 @@ pub fn observe_language(language: &'static Language, source: &str) -> Value {
 }
 
 fn observe_with_kinds(language: &'static Language, source: &str, include_kinds: bool) -> Value {
-    let error = |e: Diagnostic| json!({"ok":false,"error":e.category,"span":e.span,"message":e.message,"trace":[]});
+    observe_with_values(language, source, include_kinds, &[])
+}
+
+fn observe_with_values(
+    language: &'static Language,
+    source: &str,
+    include_kinds: bool,
+    values: &[HostValue],
+) -> Value {
+    let error = |e: Diagnostic| {
+        let mut observation =
+            json!({"ok":false,"error":e.category,"span":e.span,"message":e.message,"trace":[]});
+        if let Some(code) = e.code {
+            observation["code"] = json!(code);
+        }
+        observation
+    };
     let tree = match parse(language, source, Limits::default()) {
         Ok(t) => t,
         Err(e) => return error(e),
@@ -125,7 +171,12 @@ fn observe_with_kinds(language: &'static Language, source: &str, include_kinds: 
         Ok(p) => p,
         Err(e) => return error(e.into_iter().next().unwrap()),
     };
-    let report = match execute(&program, &fixture_bindings_for(language), Limits::default()) {
+    let report = match execute_with_values(
+        &program,
+        &fixture_bindings_for(language),
+        values,
+        Limits::default(),
+    ) {
         Ok(r) => r,
         Err(failure) => {
             return json!({"ok":false,"error":failure.diagnostic.category,"message":failure.diagnostic.message,"trace":failure.trace});
@@ -142,6 +193,7 @@ fn observe_with_kinds(language: &'static Language, source: &str, include_kinds: 
             || rule.name == "Inference.Paren"
             || rule.name == "Calls.Paren"
             || rule.name == "Functions.Paren"
+            || rule.name == "Dates.Paren"
         {
             syntax.push(json!({"kind":rule.name,"span":node.span}));
         }
@@ -155,6 +207,12 @@ fn observe_with_kinds(language: &'static Language, source: &str, include_kinds: 
             }
             HirKind::Reference(symbol) => {
                 json!({"kind":"reference","type":node.ty,"span":node.span,"symbol":symbol})
+            }
+            HirKind::Builtin(value) => {
+                json!({"kind":"reference","type":node.ty,"span":node.span,"builtin":value.name})
+            }
+            HirKind::Text { start, end } => {
+                json!({"kind":"text","type":node.ty,"span":node.span,"text":&program.text[*start as usize..*end as usize]})
             }
             HirKind::Operation { operation, args } => {
                 json!({"kind":"operation","type":node.ty,"span":node.span,"operation":language.operations[*operation as usize].id,

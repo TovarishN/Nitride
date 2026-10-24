@@ -1,0 +1,188 @@
+[
+  {
+    "name": "sample",
+    "source": "let start = 2026-10-05;\nlet sprint = 2 * 7 days;\nstart + sprint;\n(2026-12-25 - start) in days;\nlet pi = pi * 2;\npi;\n(today - start) in days;\n",
+    "values": [
+      739907,
+      81,
+      6.283185307179586,
+      19
+    ]
+  },
+  {
+    "name": "date_literal",
+    "source": "2026-10-05;",
+    "values": [
+      739893
+    ]
+  },
+  {
+    "name": "leap_day",
+    "source": "2024-02-29;",
+    "values": [
+      738944
+    ]
+  },
+  {
+    "name": "invalid_day_check",
+    "source": "2026-02-30;",
+    "error": "check"
+  },
+  {
+    "name": "non_leap_check",
+    "source": "2023-02-29;",
+    "error": "check"
+  },
+  {
+    "name": "century_non_leap_check",
+    "source": "1900-02-29;",
+    "error": "check"
+  },
+  {
+    "name": "month_check",
+    "source": "2026-13-01;",
+    "error": "check"
+  },
+  {
+    "name": "year_zero_check",
+    "source": "0000-01-01;",
+    "error": "check"
+  },
+  {
+    "name": "check_before_later_type_error",
+    "source": "2026-02-30; 1 + 2026-10-05;",
+    "error": "check"
+  },
+  {
+    "name": "type_error_before_later_check",
+    "source": "1 + 2026-10-05; 2026-02-30;",
+    "error": "type"
+  },
+  {
+    "name": "inner_check_wins_tie",
+    "source": "2026-02-30 + 1;",
+    "error": "check"
+  },
+  {
+    "name": "invalid_date_has_no_effects",
+    "source": "let a = 2026-10-05; a + 1 days; 2026-04-31;",
+    "error": "check"
+  },
+  {
+    "name": "builtin_pi",
+    "source": "pi * 2;",
+    "values": [
+      6.283185307179586
+    ]
+  },
+  {
+    "name": "builtin_today",
+    "source": "today;",
+    "values": [
+      739912
+    ]
+  },
+  {
+    "name": "builtin_in_parentheses",
+    "source": "(today - 2026-10-05) in days;",
+    "values": [
+      19
+    ]
+  },
+  {
+    "name": "local_shadows_builtin",
+    "source": "let pi = 3; pi;",
+    "values": [
+      3
+    ]
+  },
+  {
+    "name": "initializer_sees_builtin",
+    "source": "let today = today + 2 days; today; today - 2026-10-24;",
+    "values": [
+      739914,
+      2
+    ]
+  },
+  {
+    "name": "builtin_used_twice",
+    "source": "today - today;",
+    "values": [
+      0
+    ]
+  },
+  {
+    "name": "unresolved",
+    "source": "missing;",
+    "error": "binding"
+  },
+  {
+    "name": "unresolved_before_type",
+    "source": "1 + 2026-10-05; missing;",
+    "error": "binding"
+  },
+  {
+    "name": "date_plus_date",
+    "source": "2026-10-05 + 2026-10-06;",
+    "error": "type"
+  },
+  {
+    "name": "between",
+    "source": "2026-12-25 - 2026-10-05;",
+    "values": [
+      81
+    ]
+  },
+  {
+    "name": "durations",
+    "source": "2 days + 3 days; (5 days - 2 days) in days;",
+    "values": [
+      5,
+      3
+    ]
+  },
+  {
+    "name": "earlier",
+    "source": "2026-03-01 - 1 days;",
+    "values": [
+      739674
+    ]
+  },
+  {
+    "name": "scale_precedence",
+    "source": "3 * 2 days in days;",
+    "values": [
+      6
+    ]
+  },
+  {
+    "name": "scalar_in_days",
+    "source": "let x = 1; x in days;",
+    "error": "type"
+  },
+  {
+    "name": "builtin_wrong_type",
+    "source": "today in days;",
+    "error": "type"
+  },
+  {
+    "name": "keyword_prefix_identifier",
+    "source": "daysx;",
+    "error": "binding"
+  },
+  {
+    "name": "empty",
+    "source": "",
+    "values": []
+  },
+  {
+    "name": "syntax_error",
+    "source": "2026-10-05 +;",
+    "error": "syntax"
+  },
+  {
+    "name": "non_ascii",
+    "source": "é;",
+    "error": "syntax"
+  }
+]

@@ -1,0 +1,846 @@
+{
+  "version": 1,
+  "symbol_kinds": [
+    "value"
+  ],
+  "builtins": [
+    {
+      "kind": "value",
+      "name": "pi"
+    },
+    {
+      "kind": "value",
+      "name": "today"
+    }
+  ],
+  "mode": "typed",
+  "omitted_semantics": [],
+  "modules": [
+    {
+      "name": "Dates",
+      "imports": []
+    }
+  ],
+  "source_hash": "371c4ff40c4e1c9373ce4a6e878b3fefe825d13179c1cd5a2248e3ce42fd3781",
+  "catalog_hash": "3733c5c891e247182fb945eb998c0de40494329ca0d236847f51cb83ada81fbb",
+  "start": "Dates.Program",
+  "rules": [
+    {
+      "name": "Dates.Digit",
+      "lexical": true,
+      "expr": {
+        "kind": "class",
+        "negated": false,
+        "ranges": [
+          [
+            48,
+            57
+          ]
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Dates.Date",
+      "lexical": true,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "ref",
+            "name": "Dates.Digit"
+          },
+          {
+            "kind": "ref",
+            "name": "Dates.Digit"
+          },
+          {
+            "kind": "ref",
+            "name": "Dates.Digit"
+          },
+          {
+            "kind": "ref",
+            "name": "Dates.Digit"
+          },
+          {
+            "kind": "literal",
+            "text": "-"
+          },
+          {
+            "kind": "ref",
+            "name": "Dates.Digit"
+          },
+          {
+            "kind": "ref",
+            "name": "Dates.Digit"
+          },
+          {
+            "kind": "literal",
+            "text": "-"
+          },
+          {
+            "kind": "ref",
+            "name": "Dates.Digit"
+          },
+          {
+            "kind": "ref",
+            "name": "Dates.Digit"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Dates.Number",
+      "lexical": true,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "repeat",
+            "min": 1,
+            "max": 2147483647,
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Digit"
+            }
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 1,
+            "inner": {
+              "kind": "sequence",
+              "items": [
+                {
+                  "kind": "literal",
+                  "text": "."
+                },
+                {
+                  "kind": "repeat",
+                  "min": 1,
+                  "max": 2147483647,
+                  "inner": {
+                    "kind": "ref",
+                    "name": "Dates.Digit"
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Dates.Identifier",
+      "lexical": true,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "class",
+            "negated": false,
+            "ranges": [
+              [
+                97,
+                122
+              ],
+              [
+                65,
+                90
+              ],
+              [
+                95,
+                95
+              ]
+            ]
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 2147483647,
+            "inner": {
+              "kind": "class",
+              "negated": false,
+              "ranges": [
+                [
+                  97,
+                  122
+                ],
+                [
+                  65,
+                  90
+                ],
+                [
+                  48,
+                  57
+                ],
+                [
+                  95,
+                  95
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [
+        "let",
+        "days",
+        "in"
+      ],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Dates.Program",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Statements",
+        "inner": {
+          "kind": "repeat",
+          "min": 0,
+          "max": 2147483647,
+          "inner": {
+            "kind": "ref",
+            "name": "Dates.Statement"
+          }
+        }
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Dates.Statement",
+      "lexical": false,
+      "expr": {
+        "kind": "choice",
+        "items": [
+          {
+            "kind": "ref",
+            "name": "Dates.Let"
+          },
+          {
+            "kind": "ref",
+            "name": "Dates.Show"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Dates.Let",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "let"
+          },
+          {
+            "kind": "label",
+            "label": "Name",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "="
+          },
+          {
+            "kind": "label",
+            "label": "Value",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ";"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Declares",
+          "field": "Name",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "value"
+          ],
+          "sequential": true
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Dates.Show",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Value",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ";"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Dates.Day",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Value",
+        "inner": {
+          "kind": "ref",
+          "name": "Dates.Date"
+        }
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Dates.ParseDate",
+          "args": [
+            "Value"
+          ],
+          "symbol_kinds": [],
+          "sequential": false,
+          "text_args": [
+            0
+          ]
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Dates.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Dates.Num",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Value",
+        "inner": {
+          "kind": "ref",
+          "name": "Dates.Number"
+        }
+      },
+      "clauses": [
+        {
+          "kind": "LowersLiteral",
+          "field": "Value",
+          "target": "Core.Scalar",
+          "args": [],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Dates.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Dates.Ref",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Name",
+        "inner": {
+          "kind": "ref",
+          "name": "Dates.Identifier"
+        }
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Name",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "value"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Dates.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Dates.Paren",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Inner",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": "Dates.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Dates.Days",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Amount",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "days"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Dates.Days",
+          "args": [
+            "Amount"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": 30,
+      "owner": "Dates.Expr",
+      "associativity": "Left"
+    },
+    {
+      "name": "Dates.InDays",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Span",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "in"
+          },
+          {
+            "kind": "literal",
+            "text": "days"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Dates.InDays",
+          "args": [
+            "Span"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": 5,
+      "owner": "Dates.Expr",
+      "associativity": "Left"
+    },
+    {
+      "name": "Dates.Add",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Left",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "\u002B"
+          },
+          {
+            "kind": "label",
+            "label": "Right",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Expr"
+            }
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Dates.Plus",
+          "args": [
+            "Left",
+            "Right"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": 10,
+      "owner": "Dates.Expr",
+      "associativity": "Left"
+    },
+    {
+      "name": "Dates.Sub",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Left",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "-"
+          },
+          {
+            "kind": "label",
+            "label": "Right",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Expr"
+            }
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Dates.Minus",
+          "args": [
+            "Left",
+            "Right"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": 10,
+      "owner": "Dates.Expr",
+      "associativity": "Left"
+    },
+    {
+      "name": "Dates.Mul",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Left",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "*"
+          },
+          {
+            "kind": "label",
+            "label": "Right",
+            "inner": {
+              "kind": "ref",
+              "name": "Dates.Expr"
+            }
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Dates.Times",
+          "args": [
+            "Left",
+            "Right"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": 20,
+      "owner": "Dates.Expr",
+      "associativity": "Left"
+    },
+    {
+      "name": "Dates.Expr",
+      "lexical": false,
+      "expr": {
+        "kind": "pratt",
+        "prefixes": [
+          "Dates.Day",
+          "Dates.Num",
+          "Dates.Ref",
+          "Dates.Paren"
+        ],
+        "infixes": [
+          "Dates.Days",
+          "Dates.InDays",
+          "Dates.Add",
+          "Dates.Sub",
+          "Dates.Mul"
+        ]
+      },
+      "clauses": [],
+      "except": []
+    }
+  ],
+  "catalog": {
+    "types": [
+      "Core.Scalar",
+      "Core.Text",
+      "Dates.Date",
+      "Dates.Duration"
+    ],
+    "operations": [
+      {
+        "id": "Dates.ParseDate",
+        "inputs": [
+          "Core.Text"
+        ],
+        "result": "Dates.Date",
+        "handler": "iso-date"
+      },
+      {
+        "id": "Dates.Days",
+        "inputs": [
+          "Core.Scalar"
+        ],
+        "result": "Dates.Duration",
+        "handler": "identity"
+      },
+      {
+        "id": "Dates.InDays",
+        "inputs": [
+          "Dates.Duration"
+        ],
+        "result": "Core.Scalar",
+        "handler": "identity"
+      },
+      {
+        "id": "Dates.AddScalar",
+        "inputs": [
+          "Core.Scalar",
+          "Core.Scalar"
+        ],
+        "result": "Core.Scalar",
+        "handler": "add"
+      },
+      {
+        "id": "Dates.Later",
+        "inputs": [
+          "Dates.Date",
+          "Dates.Duration"
+        ],
+        "result": "Dates.Date",
+        "handler": "add"
+      },
+      {
+        "id": "Dates.AddDurations",
+        "inputs": [
+          "Dates.Duration",
+          "Dates.Duration"
+        ],
+        "result": "Dates.Duration",
+        "handler": "add"
+      },
+      {
+        "id": "Dates.SubScalar",
+        "inputs": [
+          "Core.Scalar",
+          "Core.Scalar"
+        ],
+        "result": "Core.Scalar",
+        "handler": "sub"
+      },
+      {
+        "id": "Dates.Earlier",
+        "inputs": [
+          "Dates.Date",
+          "Dates.Duration"
+        ],
+        "result": "Dates.Date",
+        "handler": "sub"
+      },
+      {
+        "id": "Dates.Between",
+        "inputs": [
+          "Dates.Date",
+          "Dates.Date"
+        ],
+        "result": "Dates.Duration",
+        "handler": "sub"
+      },
+      {
+        "id": "Dates.SubDurations",
+        "inputs": [
+          "Dates.Duration",
+          "Dates.Duration"
+        ],
+        "result": "Dates.Duration",
+        "handler": "sub"
+      },
+      {
+        "id": "Dates.MulScalar",
+        "inputs": [
+          "Core.Scalar",
+          "Core.Scalar"
+        ],
+        "result": "Core.Scalar",
+        "handler": "mul"
+      },
+      {
+        "id": "Dates.Scale",
+        "inputs": [
+          "Core.Scalar",
+          "Dates.Duration"
+        ],
+        "result": "Dates.Duration",
+        "handler": "mul"
+      }
+    ],
+    "overloads": {
+      "Dates.Plus": [
+        "Dates.AddScalar",
+        "Dates.Later",
+        "Dates.AddDurations"
+      ],
+      "Dates.Minus": [
+        "Dates.SubScalar",
+        "Dates.Earlier",
+        "Dates.Between",
+        "Dates.SubDurations"
+      ],
+      "Dates.Times": [
+        "Dates.MulScalar",
+        "Dates.Scale"
+      ]
+    },
+    "statements": {
+      "Dates.Let": {
+        "kind": "let",
+        "value": "Value",
+        "infer": true
+      },
+      "Dates.Show": {
+        "kind": "show",
+        "value": "Value"
+      }
+    },
+    "values": {
+      "value": {
+        "pi": "Core.Scalar",
+        "today": "Dates.Date"
+      }
+    },
+    "checks": {
+      "Dates.Day": [
+        {
+          "code": "DATE0001",
+          "field": "Value",
+          "predicate": "iso-date",
+          "message": "not a calendar date"
+        }
+      ]
+    }
+  }
+}
