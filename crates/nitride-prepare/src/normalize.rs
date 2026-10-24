@@ -303,18 +303,15 @@ pub fn prepare(
                         if operator["kind"] == "label" {
                             operator = &operator["inner"];
                         }
-                        let spelling = operator["text"]
+                        // Operators may be rule references; only literal spellings can conflict.
+                        if let Some(spelling) = operator["text"]
                             .as_str()
                             .filter(|_| operator["kind"] == "literal")
-                            .ok_or_else(|| {
-                                sources[from.source].error(
-                                    alternative.span,
-                                    "infix must start with a literal operator",
-                                )
-                            })?;
-                        if !operators.insert(spelling.to_owned()) {
-                            return Err(sources[from.source]
-                                .error(alternative.span, "conflicting extension operator"));
+                        {
+                            if !operators.insert(spelling.to_owned()) {
+                                return Err(sources[from.source]
+                                    .error(alternative.span, "conflicting extension operator"));
+                            }
                         }
                     } else if alternative.associativity.is_some() {
                         return Err(sources[from.source]

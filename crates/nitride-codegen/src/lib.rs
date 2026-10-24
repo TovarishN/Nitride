@@ -726,11 +726,9 @@ pub fn generate(input: &str) -> Result<String, String> {
             {
                 return Err("invalid infix target".into());
             }
+            // Operators may be rule references; only literal spellings can conflict.
             let operator = bare(&parts[1]);
-            if operator["kind"] != "literal" {
-                return Err("infix must start with a literal operator".into());
-            }
-            if !operators.insert(text(&operator["text"])?) {
+            if operator["kind"] == "literal" && !operators.insert(text(&operator["text"])?) {
                 return Err("conflicting extension operator".into());
             }
         }

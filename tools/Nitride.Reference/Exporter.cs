@@ -191,8 +191,7 @@ static class Exporter
                             var items = a.Body is SequenceExpr sequence ? sequence.Items.ToArray() : [];
                             Expr? suffix = items.Length > 1 ? items[1] : null;
                             if (suffix is LabeledExpr label) suffix = label.Inner;
-                            if (suffix is not LiteralExpr literal) throw Unsupported("infix must start with a literal operator");
-                            if (!operators.Add(literal.Value)) throw Unsupported("conflicting extension operator " + literal.Value + " for " + point);
+                            if (suffix is LiteralExpr literal && !operators.Add(literal.Value)) throw Unsupported("conflicting extension operator " + literal.Value + " for " + point);
                         }
                         Add(p.Module, a.Name, a.Body, false, a.Clauses, a.Semantics, precedence: a.Precedence, owner: point,
                             implicitModule: p.Implicit, associativity: infix ? (a.Associativity ?? GrammarAssociativity.Left).ToString() : null);
