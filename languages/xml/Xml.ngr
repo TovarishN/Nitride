@@ -1,0 +1,23 @@
+// A deliberately small XML subset for structural pattern matching.
+syntax module Xml
+{
+  token Name = ['a'..'z' 'A'..'Z' '_' ':'] ['a'..'z' 'A'..'Z' '0'..'9' '_' ':' '-' '.']*;
+  token Quoted = "\"" [^ '"' '<']* "\"" / "'" [^ '\'' '<']* "'";
+  token Content = [^ '<']+;
+  token Comment = "<!--" (!"-->" .)* "-->";
+  token Declaration = "<?xml" (!"?>" .)* "?>";
+
+  syntax Document = Declaration? Comment* Root:Element Comment*;
+  syntax Element = Empty / Paired;
+  syntax Empty = "<" Tag:Name Attributes:Attribute* "/>";
+  syntax Paired = "<" Open:Name Attributes:Attribute* ">" Children:Node* "</" Close:Name ">"
+  {
+    check XML0001 Open.Text == Close.Text : $"closing tag '{Close.Text}' does not match '{Open.Text}'" at Close;
+    match
+      (pass:Text)<[ <credentials ..$_>..$_<password ..$_>$pass</password>..$_</credentials>]>
+      => warning XML1001 : $"A password is stored directly inside credentials; use a secret-ref instead. {pass}";
+  }
+  syntax Attribute = Name "=" Quoted;
+  syntax Node = Element / Comment / Text;
+  syntax Text = Content;
+}

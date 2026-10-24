@@ -1,0 +1,17 @@
+[
+  {
+    "file": "languages/xml/Xml.ngr",
+    "nitrogen_source": "examples/XmlPatterns/Xml.ngr",
+    "sha256": "6245ab4f5095d5cec6583df783818e8c9faa08bdb8aa63be6d4c675e2995c0c6"
+  },
+  {
+    "file": "languages/composition/Base.ngr",
+    "nitrogen_source": "Nitrogen.Tests/Grammars/Base.ngr",
+    "sha256": "5968f1f2ae8cd40a0400b99473c8982eb329e1a4a1556c78085d8d12b7d0fcb2"
+  },
+  {
+    "file": "languages/composition/Uses.ngr",
+    "nitrogen_source": "Nitrogen.Tests/Grammars/Uses.ngr",
+    "sha256": "31cc161ae085ee276c96e0156a5806567381aec505e136e4241eff695d262cee"
+  }
+]

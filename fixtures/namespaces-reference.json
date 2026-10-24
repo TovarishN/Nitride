@@ -1,0 +1,1832 @@
+[
+  {
+    "name": "empty",
+    "source": "",
+    "observation": {
+      "ok": true,
+      "syntax": [],
+      "bindings": [],
+      "hir": [],
+      "values": [],
+      "trace": []
+    }
+  },
+  {
+    "name": "separate-identities",
+    "source": "let x:Scalar=10; rate x:Scalar=20; value(x); rate(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            0,
+            16
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            13,
+            15
+          ]
+        },
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            17,
+            34
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            31,
+            33
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            35,
+            44
+          ]
+        },
+        {
+          "kind": "Namespaces.ValueRef",
+          "span": [
+            35,
+            43
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            45,
+            53
+          ]
+        },
+        {
+          "kind": "Namespaces.RateRef",
+          "span": [
+            45,
+            52
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            41,
+            42
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            50,
+            51
+          ],
+          "symbol": 22,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            13,
+            15
+          ],
+          "number": 10
+        },
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            31,
+            33
+          ],
+          "number": 20
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            35,
+            43
+          ],
+          "symbol": 4
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            45,
+            52
+          ],
+          "symbol": 22
+        }
+      ],
+      "values": [
+        10,
+        20
+      ],
+      "trace": []
+    }
+  },
+  {
+    "name": "ordered-priority",
+    "source": "let x:Scalar=10; rate x:Scalar=20; either(x); reverse(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            0,
+            16
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            13,
+            15
+          ]
+        },
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            17,
+            34
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            31,
+            33
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            35,
+            45
+          ]
+        },
+        {
+          "kind": "Namespaces.AnyRef",
+          "span": [
+            35,
+            44
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            46,
+            57
+          ]
+        },
+        {
+          "kind": "Namespaces.ReverseRef",
+          "span": [
+            46,
+            56
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            42,
+            43
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            54,
+            55
+          ],
+          "symbol": 22,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            13,
+            15
+          ],
+          "number": 10
+        },
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            31,
+            33
+          ],
+          "number": 20
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            35,
+            44
+          ],
+          "symbol": 4
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            46,
+            56
+          ],
+          "symbol": 22
+        }
+      ],
+      "values": [
+        10,
+        20
+      ],
+      "trace": []
+    }
+  },
+  {
+    "name": "priority-not-recency",
+    "source": "rate x:Scalar=20; let x:Scalar=10; reverse(x); either(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            0,
+            17
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            14,
+            16
+          ]
+        },
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            18,
+            34
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            31,
+            33
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            35,
+            46
+          ]
+        },
+        {
+          "kind": "Namespaces.ReverseRef",
+          "span": [
+            35,
+            45
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            47,
+            57
+          ]
+        },
+        {
+          "kind": "Namespaces.AnyRef",
+          "span": [
+            47,
+            56
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            43,
+            44
+          ],
+          "symbol": 5,
+          "kind": "rate"
+        },
+        {
+          "span": [
+            54,
+            55
+          ],
+          "symbol": 22,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            14,
+            16
+          ],
+          "number": 20
+        },
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            31,
+            33
+          ],
+          "number": 10
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            35,
+            45
+          ],
+          "symbol": 5
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            47,
+            56
+          ],
+          "symbol": 22
+        }
+      ],
+      "values": [
+        20,
+        10
+      ],
+      "trace": []
+    }
+  },
+  {
+    "name": "rate-fallback",
+    "source": "rate x:Scalar=20; either(x); reverse(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            0,
+            17
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            14,
+            16
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            18,
+            28
+          ]
+        },
+        {
+          "kind": "Namespaces.AnyRef",
+          "span": [
+            18,
+            27
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            29,
+            40
+          ]
+        },
+        {
+          "kind": "Namespaces.ReverseRef",
+          "span": [
+            29,
+            39
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            25,
+            26
+          ],
+          "symbol": 5,
+          "kind": "rate"
+        },
+        {
+          "span": [
+            37,
+            38
+          ],
+          "symbol": 5,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            14,
+            16
+          ],
+          "number": 20
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            18,
+            27
+          ],
+          "symbol": 5
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            29,
+            39
+          ],
+          "symbol": 5
+        }
+      ],
+      "values": [
+        20,
+        20
+      ],
+      "trace": []
+    }
+  },
+  {
+    "name": "value-fallback",
+    "source": "let x:Scalar=10; either(x); reverse(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            0,
+            16
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            13,
+            15
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            17,
+            27
+          ]
+        },
+        {
+          "kind": "Namespaces.AnyRef",
+          "span": [
+            17,
+            26
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            28,
+            39
+          ]
+        },
+        {
+          "kind": "Namespaces.ReverseRef",
+          "span": [
+            28,
+            38
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            24,
+            25
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            36,
+            37
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            13,
+            15
+          ],
+          "number": 10
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            17,
+            26
+          ],
+          "symbol": 4
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            28,
+            38
+          ],
+          "symbol": 4
+        }
+      ],
+      "values": [
+        10,
+        10
+      ],
+      "trace": []
+    }
+  },
+  {
+    "name": "shadow-only-value",
+    "source": "let x:Scalar=1; rate x:Scalar=20; let x:Scalar=value(x)+10; value(x); rate(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            0,
+            15
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            13,
+            14
+          ]
+        },
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            16,
+            33
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            30,
+            32
+          ]
+        },
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            34,
+            59
+          ]
+        },
+        {
+          "kind": "Namespaces.Add",
+          "span": [
+            47,
+            58
+          ]
+        },
+        {
+          "kind": "Namespaces.ValueRef",
+          "span": [
+            47,
+            55
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            56,
+            58
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            60,
+            69
+          ]
+        },
+        {
+          "kind": "Namespaces.ValueRef",
+          "span": [
+            60,
+            68
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            70,
+            78
+          ]
+        },
+        {
+          "kind": "Namespaces.RateRef",
+          "span": [
+            70,
+            77
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            53,
+            54
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            66,
+            67
+          ],
+          "symbol": 38,
+          "kind": "value"
+        },
+        {
+          "span": [
+            75,
+            76
+          ],
+          "symbol": 21,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            13,
+            14
+          ],
+          "number": 1
+        },
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            30,
+            32
+          ],
+          "number": 20
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            47,
+            58
+          ],
+          "operation": "Namespaces.Add",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                47,
+                55
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                56,
+                58
+              ],
+              "number": 10
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            60,
+            68
+          ],
+          "symbol": 38
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            70,
+            77
+          ],
+          "symbol": 21
+        }
+      ],
+      "values": [
+        11,
+        20
+      ],
+      "trace": [
+        "Namespaces.Add"
+      ]
+    }
+  },
+  {
+    "name": "shadow-only-rate",
+    "source": "let x:Scalar=1; rate x:Scalar=20; rate x:Scalar=rate(x)+10; value(x); rate(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            0,
+            15
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            13,
+            14
+          ]
+        },
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            16,
+            33
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            30,
+            32
+          ]
+        },
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            34,
+            59
+          ]
+        },
+        {
+          "kind": "Namespaces.Add",
+          "span": [
+            48,
+            58
+          ]
+        },
+        {
+          "kind": "Namespaces.RateRef",
+          "span": [
+            48,
+            55
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            56,
+            58
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            60,
+            69
+          ]
+        },
+        {
+          "kind": "Namespaces.ValueRef",
+          "span": [
+            60,
+            68
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            70,
+            78
+          ]
+        },
+        {
+          "kind": "Namespaces.RateRef",
+          "span": [
+            70,
+            77
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            53,
+            54
+          ],
+          "symbol": 21,
+          "kind": "rate"
+        },
+        {
+          "span": [
+            66,
+            67
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            75,
+            76
+          ],
+          "symbol": 39,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            13,
+            14
+          ],
+          "number": 1
+        },
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            30,
+            32
+          ],
+          "number": 20
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            48,
+            58
+          ],
+          "operation": "Namespaces.Add",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                48,
+                55
+              ],
+              "symbol": 21
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                56,
+                58
+              ],
+              "number": 10
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            60,
+            68
+          ],
+          "symbol": 4
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            70,
+            77
+          ],
+          "symbol": 39
+        }
+      ],
+      "values": [
+        1,
+        30
+      ],
+      "trace": [
+        "Namespaces.Add"
+      ]
+    }
+  },
+  {
+    "name": "cross-kind-initializer",
+    "source": "let x:Scalar=5; rate x:Scalar=either(x)+1; rate(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            0,
+            15
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            13,
+            14
+          ]
+        },
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            16,
+            42
+          ]
+        },
+        {
+          "kind": "Namespaces.Add",
+          "span": [
+            30,
+            41
+          ]
+        },
+        {
+          "kind": "Namespaces.AnyRef",
+          "span": [
+            30,
+            39
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            40,
+            41
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            43,
+            51
+          ]
+        },
+        {
+          "kind": "Namespaces.RateRef",
+          "span": [
+            43,
+            50
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            37,
+            38
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            48,
+            49
+          ],
+          "symbol": 21,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            13,
+            14
+          ],
+          "number": 5
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            30,
+            41
+          ],
+          "operation": "Namespaces.Add",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                30,
+                39
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                40,
+                41
+              ],
+              "number": 1
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            43,
+            50
+          ],
+          "symbol": 21
+        }
+      ],
+      "values": [
+        6
+      ],
+      "trace": [
+        "Namespaces.Add"
+      ]
+    }
+  },
+  {
+    "name": "initializer-prior-rate",
+    "source": "rate x:Scalar=20; let x:Scalar=reverse(x)+1; value(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            0,
+            17
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            14,
+            16
+          ]
+        },
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            18,
+            44
+          ]
+        },
+        {
+          "kind": "Namespaces.Add",
+          "span": [
+            31,
+            43
+          ]
+        },
+        {
+          "kind": "Namespaces.ReverseRef",
+          "span": [
+            31,
+            41
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            42,
+            43
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            45,
+            54
+          ]
+        },
+        {
+          "kind": "Namespaces.ValueRef",
+          "span": [
+            45,
+            53
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            39,
+            40
+          ],
+          "symbol": 5,
+          "kind": "rate"
+        },
+        {
+          "span": [
+            51,
+            52
+          ],
+          "symbol": 22,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            14,
+            16
+          ],
+          "number": 20
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            31,
+            43
+          ],
+          "operation": "Namespaces.Add",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                31,
+                41
+              ],
+              "symbol": 5
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                42,
+                43
+              ],
+              "number": 1
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            45,
+            53
+          ],
+          "symbol": 22
+        }
+      ],
+      "values": [
+        21
+      ],
+      "trace": [
+        "Namespaces.Add"
+      ]
+    }
+  },
+  {
+    "name": "nominal-types",
+    "source": "let x:Time=duration(2); rate x:Scalar=3; value(x); rate(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            0,
+            23
+          ]
+        },
+        {
+          "kind": "Namespaces.Duration",
+          "span": [
+            11,
+            22
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            20,
+            21
+          ]
+        },
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            24,
+            40
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            38,
+            39
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            41,
+            50
+          ]
+        },
+        {
+          "kind": "Namespaces.ValueRef",
+          "span": [
+            41,
+            49
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            51,
+            59
+          ]
+        },
+        {
+          "kind": "Namespaces.RateRef",
+          "span": [
+            51,
+            58
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            47,
+            48
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            56,
+            57
+          ],
+          "symbol": 29,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Namespaces.Time",
+          "span": [
+            11,
+            22
+          ],
+          "operation": "Namespaces.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                20,
+                21
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            38,
+            39
+          ],
+          "number": 3
+        },
+        {
+          "kind": "reference",
+          "type": "Namespaces.Time",
+          "span": [
+            41,
+            49
+          ],
+          "symbol": 4
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            51,
+            58
+          ],
+          "symbol": 29
+        }
+      ],
+      "values": [
+        2,
+        3
+      ],
+      "trace": [
+        "Namespaces.Duration"
+      ]
+    }
+  },
+  {
+    "name": "priority-carries-type",
+    "source": "let x:Time=duration(2); rate x:Scalar=3; either(x); reverse(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            0,
+            23
+          ]
+        },
+        {
+          "kind": "Namespaces.Duration",
+          "span": [
+            11,
+            22
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            20,
+            21
+          ]
+        },
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            24,
+            40
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            38,
+            39
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            41,
+            51
+          ]
+        },
+        {
+          "kind": "Namespaces.AnyRef",
+          "span": [
+            41,
+            50
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            52,
+            63
+          ]
+        },
+        {
+          "kind": "Namespaces.ReverseRef",
+          "span": [
+            52,
+            62
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            48,
+            49
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            60,
+            61
+          ],
+          "symbol": 29,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Namespaces.Time",
+          "span": [
+            11,
+            22
+          ],
+          "operation": "Namespaces.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                20,
+                21
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            38,
+            39
+          ],
+          "number": 3
+        },
+        {
+          "kind": "reference",
+          "type": "Namespaces.Time",
+          "span": [
+            41,
+            50
+          ],
+          "symbol": 4
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            52,
+            62
+          ],
+          "symbol": 29
+        }
+      ],
+      "values": [
+        2,
+        3
+      ],
+      "trace": [
+        "Namespaces.Duration"
+      ]
+    }
+  },
+  {
+    "name": "unicode-spans",
+    "source": "// 😀 café\nlet x:Scalar=1; rate x:Scalar=2; either(x); reverse(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Namespaces.LetValue",
+          "span": [
+            14,
+            29
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            27,
+            28
+          ]
+        },
+        {
+          "kind": "Namespaces.LetRate",
+          "span": [
+            30,
+            46
+          ]
+        },
+        {
+          "kind": "Namespaces.Num",
+          "span": [
+            44,
+            45
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            47,
+            57
+          ]
+        },
+        {
+          "kind": "Namespaces.AnyRef",
+          "span": [
+            47,
+            56
+          ]
+        },
+        {
+          "kind": "Namespaces.Show",
+          "span": [
+            58,
+            69
+          ]
+        },
+        {
+          "kind": "Namespaces.ReverseRef",
+          "span": [
+            58,
+            68
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            54,
+            55
+          ],
+          "symbol": 18,
+          "kind": "value"
+        },
+        {
+          "span": [
+            66,
+            67
+          ],
+          "symbol": 35,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            27,
+            28
+          ],
+          "number": 1
+        },
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            44,
+            45
+          ],
+          "number": 2
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            47,
+            56
+          ],
+          "symbol": 18
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            58,
+            68
+          ],
+          "symbol": 35
+        }
+      ],
+      "values": [
+        1,
+        2
+      ],
+      "trace": []
+    }
+  },
+  {
+    "name": "wrong-namespace",
+    "source": "rate x:Scalar=2; value(x);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        23,
+        24
+      ],
+      "message": "unresolved value 'x'",
+      "trace": []
+    }
+  },
+  {
+    "name": "other-wrong-namespace",
+    "source": "let x:Scalar=2; rate(x);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        21,
+        22
+      ],
+      "message": "unresolved rate 'x'",
+      "trace": []
+    }
+  },
+  {
+    "name": "forward-value",
+    "source": "value(x); let x:Scalar=2;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        6,
+        7
+      ],
+      "message": "value 'x' is declared in this file but not visible here",
+      "trace": []
+    }
+  },
+  {
+    "name": "forward-rate",
+    "source": "rate(x); rate x:Scalar=2;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        5,
+        6
+      ],
+      "message": "rate 'x' is declared in this file but not visible here",
+      "trace": []
+    }
+  },
+  {
+    "name": "self-not-cross-kind",
+    "source": "let x:Scalar=2; rate x:Scalar=rate(x);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        35,
+        36
+      ],
+      "message": "rate 'x' is declared in this file but not visible here",
+      "trace": []
+    }
+  },
+  {
+    "name": "all-kinds-missing",
+    "source": "either(x);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        7,
+        8
+      ],
+      "message": "unresolved value or rate 'x'",
+      "trace": []
+    }
+  },
+  {
+    "name": "unknown-type",
+    "source": "let x:Unknown=1; value(x);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        6,
+        13
+      ],
+      "message": "'Unknown' is not a type in the semantic catalog",
+      "trace": []
+    }
+  },
+  {
+    "name": "priority-type-rejection",
+    "source": "let x:Time=duration(2); rate x:Scalar=3; either(x)+1;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        41,
+        50
+      ],
+      "message": "'Namespaces.Add' needs Core.Scalar, not Namespaces.Time",
+      "trace": []
+    }
+  },
+  {
+    "name": "reverse-type-rejection",
+    "source": "let x:Scalar=1; rate x:Time=duration(3); reverse(x)+1;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        41,
+        51
+      ],
+      "message": "'Namespaces.Add' needs Core.Scalar, not Namespaces.Time",
+      "trace": []
+    }
+  },
+  {
+    "name": "invalid-initializer",
+    "source": "rate x:Time=2;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        12,
+        13
+      ],
+      "message": "initializer differs from declared type",
+      "trace": []
+    }
+  },
+  {
+    "name": "no-effects-on-late-binding-error",
+    "source": "duration(1); rate x:Scalar=2; value(x);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        36,
+        37
+      ],
+      "message": "unresolved value 'x'",
+      "trace": []
+    }
+  }
+]

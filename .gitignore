@@ -1,0 +1,5 @@
+/target/
+/tools/**/bin/
+/tools/**/obj/
+__pycache__/
+.superpowers/

@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Nitride.Reference.Syntax</RootNamespace>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <NitrogenRoot Condition="'$(NitrogenRoot)' == ''">$(MSBuildThisFileDirectory)../../../Nitrogen</NitrogenRoot>
+  </PropertyGroup>
+  <ItemGroup>
+    <CompilerVisibleProperty Include="RootNamespace" />
+    <CompilerVisibleItemMetadata Include="AdditionalFiles" MetadataName="Namespace" />
+    <ProjectReference Include="$(NitrogenRoot)/Nitrogen.Grammar/Nitrogen.Grammar.csproj" />
+    <ProjectReference Include="$(NitrogenRoot)/Nitrogen.Runtime/Nitrogen.Runtime.csproj" />
+    <ProjectReference Include="$(NitrogenRoot)/Nitrogen.Generator/Nitrogen.Generator.csproj" OutputItemType="Analyzer" ReferenceOutputAssembly="false" />
+    <AdditionalFiles Include="../../languages/portable/Portable.ngr" NitrogenNamespace="Nitride.Reference.Syntax" />
+    <AdditionalFiles Include="../../languages/power/Power.ngr" Namespace="Nitride.Reference.Syntax" />
+    <AdditionalFiles Include="../../languages/composition/Base.ngr" Namespace="Nitride.Reference.Base" />
+    <AdditionalFiles Include="../../languages/composition/Uses.ngr" Namespace="Nitride.Reference.Uses" />
+    <AdditionalFiles Include="../../languages/xml/Xml.ngr" Namespace="Nitride.Reference.Xml" />
+    <AdditionalFiles Include="../../languages/namespaces/Namespaces.ngr" Namespace="Nitride.Reference.Namespaces" />
+    <AdditionalFiles Include="../../languages/inference/Inference.Reference.ngr" Namespace="Nitride.Reference.Inference" />
+    <Compile Include="../../languages/inference/InferenceSemantics.cs" />
+  </ItemGroup>
+</Project>

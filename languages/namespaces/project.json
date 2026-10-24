@@ -1,0 +1,6 @@
+{
+  "mode": "typed",
+  "start": "Namespaces.Program",
+  "grammars": ["Namespaces.ngr"],
+  "catalog": "catalog.json"
+}

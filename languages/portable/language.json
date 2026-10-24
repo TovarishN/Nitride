@@ -1,0 +1,701 @@
+{
+  "version": 1,
+  "source_hash": "53ffed877c62d04ef3c8e597fa2b1171b0697a4a4ac65f0b6d0e8a034d38c41d",
+  "catalog_hash": "eccb8cc9d5b7818c982a3ae5d72870bdae7f5a8c02e80ea9036f08649b3dfc7b",
+  "start": "Portable.Program",
+  "rules": [
+    {
+      "name": "Portable.Number",
+      "lexical": true,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "repeat",
+            "min": 1,
+            "max": 2147483647,
+            "inner": {
+              "kind": "class",
+              "ranges": [
+                [
+                  48,
+                  57
+                ]
+              ]
+            }
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 1,
+            "inner": {
+              "kind": "sequence",
+              "items": [
+                {
+                  "kind": "literal",
+                  "text": "."
+                },
+                {
+                  "kind": "repeat",
+                  "min": 1,
+                  "max": 2147483647,
+                  "inner": {
+                    "kind": "class",
+                    "ranges": [
+                      [
+                        48,
+                        57
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Portable.Identifier",
+      "lexical": true,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "class",
+            "ranges": [
+              [
+                97,
+                122
+              ],
+              [
+                65,
+                90
+              ],
+              [
+                95,
+                95
+              ]
+            ]
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 2147483647,
+            "inner": {
+              "kind": "class",
+              "ranges": [
+                [
+                  97,
+                  122
+                ],
+                [
+                  65,
+                  90
+                ],
+                [
+                  48,
+                  57
+                ],
+                [
+                  95,
+                  95
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [
+        "let",
+        "duration"
+      ],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Portable.Program",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Statements",
+        "inner": {
+          "kind": "repeat",
+          "min": 0,
+          "max": 2147483647,
+          "inner": {
+            "kind": "ref",
+            "name": "Portable.Statement"
+          }
+        }
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Portable.Statement",
+      "lexical": false,
+      "expr": {
+        "kind": "choice",
+        "items": [
+          {
+            "kind": "ref",
+            "name": "Portable.Let"
+          },
+          {
+            "kind": "ref",
+            "name": "Portable.Show"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Portable.Let",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "let"
+          },
+          {
+            "kind": "label",
+            "label": "Name",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ":"
+          },
+          {
+            "kind": "label",
+            "label": "Annotation",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "="
+          },
+          {
+            "kind": "label",
+            "label": "Value",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ";"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Declares",
+          "field": "Name",
+          "target": "Annotation",
+          "args": [],
+          "symbol_kinds": [
+            "value"
+          ],
+          "sequential": true
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Portable.Show",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Value",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ";"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Portable.Num",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Value",
+        "inner": {
+          "kind": "ref",
+          "name": "Portable.Number"
+        }
+      },
+      "clauses": [
+        {
+          "kind": "LowersLiteral",
+          "field": "Value",
+          "target": "Core.Scalar",
+          "args": [],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Portable.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Portable.Ref",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Name",
+        "inner": {
+          "kind": "ref",
+          "name": "Portable.Identifier"
+        }
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Name",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "value"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Portable.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Portable.Paren",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Inner",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": "Portable.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Portable.Duration",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "duration"
+          },
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Amount",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Portable.Duration",
+          "args": [
+            "Amount"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Portable.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Portable.Neg",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "-"
+          },
+          {
+            "kind": "label",
+            "label": "Value",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Portable.Neg",
+          "args": [
+            "Value"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": 30,
+      "owner": "Portable.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Portable.Add",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Left",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "\u002B"
+          },
+          {
+            "kind": "label",
+            "label": "Right",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Portable.Add",
+          "args": [
+            "Left",
+            "Right"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": 10,
+      "owner": "Portable.Expr",
+      "associativity": "Left"
+    },
+    {
+      "name": "Portable.Sub",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Left",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "-"
+          },
+          {
+            "kind": "label",
+            "label": "Right",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Portable.Sub",
+          "args": [
+            "Left",
+            "Right"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": 10,
+      "owner": "Portable.Expr",
+      "associativity": "Left"
+    },
+    {
+      "name": "Portable.Mul",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Left",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "*"
+          },
+          {
+            "kind": "label",
+            "label": "Right",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Portable.Mul",
+          "args": [
+            "Left",
+            "Right"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": 20,
+      "owner": "Portable.Expr",
+      "associativity": "Left"
+    },
+    {
+      "name": "Portable.Div",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Left",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "/"
+          },
+          {
+            "kind": "label",
+            "label": "Right",
+            "inner": {
+              "kind": "ref",
+              "name": "Portable.Expr"
+            }
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Portable.Div",
+          "args": [
+            "Left",
+            "Right"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": 20,
+      "owner": "Portable.Expr",
+      "associativity": "Left"
+    },
+    {
+      "name": "Portable.Expr",
+      "lexical": false,
+      "expr": {
+        "kind": "pratt",
+        "prefixes": [
+          "Portable.Num",
+          "Portable.Ref",
+          "Portable.Paren",
+          "Portable.Duration",
+          "Portable.Neg"
+        ],
+        "infixes": [
+          "Portable.Add",
+          "Portable.Sub",
+          "Portable.Mul",
+          "Portable.Div"
+        ]
+      },
+      "clauses": [],
+      "except": []
+    }
+  ],
+  "catalog": {
+    "types": [
+      "Core.Scalar",
+      "Portable.Time"
+    ],
+    "operations": [
+      {
+        "id": "Portable.Duration",
+        "inputs": [
+          "Core.Scalar"
+        ],
+        "result": "Portable.Time",
+        "handler": "identity"
+      },
+      {
+        "id": "Portable.Neg",
+        "inputs": [
+          "Core.Scalar"
+        ],
+        "result": "Core.Scalar",
+        "handler": "neg"
+      },
+      {
+        "id": "Portable.Add",
+        "inputs": [
+          "Core.Scalar",
+          "Core.Scalar"
+        ],
+        "result": "Core.Scalar",
+        "handler": "add"
+      },
+      {
+        "id": "Portable.Sub",
+        "inputs": [
+          "Core.Scalar",
+          "Core.Scalar"
+        ],
+        "result": "Core.Scalar",
+        "handler": "sub"
+      },
+      {
+        "id": "Portable.Mul",
+        "inputs": [
+          "Core.Scalar",
+          "Core.Scalar"
+        ],
+        "result": "Core.Scalar",
+        "handler": "mul"
+      },
+      {
+        "id": "Portable.Div",
+        "inputs": [
+          "Core.Scalar",
+          "Core.Scalar"
+        ],
+        "result": "Core.Scalar",
+        "handler": "div"
+      }
+    ],
+    "statements": {
+      "Portable.Let": {
+        "kind": "let",
+        "value": "Value"
+      },
+      "Portable.Show": {
+        "kind": "show",
+        "value": "Value"
+      }
+    }
+  }
+}

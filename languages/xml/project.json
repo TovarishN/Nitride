@@ -1,0 +1,8 @@
+{
+  "mode": "syntax",
+  "start": "Xml.Document",
+  "grammars": [
+    "Xml.ngr"
+  ],
+  "catalog": "catalog.json"
+}

@@ -1,0 +1,89 @@
+{
+  "host": "macOS-27.0.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13) (Homebrew)",
+  "native_executable_bytes": 418992,
+  "reference_output_directory_bytes_excluding_symbols": 1072901,
+  "measurements": {
+    "empty": {
+      "source_bytes": 0,
+      "native": {
+        "runs": 5,
+        "wall_ms_median": 4.5117499999999815,
+        "wall_ms_min": 4.035375000000007,
+        "wall_ms_max": 227.20287500000003,
+        "peak_rss_bytes_median": 2015232,
+        "peak_rss_bytes_min": 2015232,
+        "peak_rss_bytes_max": 2015232
+      },
+      "dotnet_reference": {
+        "runs": 5,
+        "wall_ms_median": 105.247584,
+        "wall_ms_min": 88.79962499999999,
+        "wall_ms_max": 111.58233299999998,
+        "peak_rss_bytes_median": 55050240,
+        "peak_rss_bytes_min": 54919168,
+        "peak_rss_bytes_max": 55263232
+      }
+    },
+    "small": {
+      "source_bytes": 30,
+      "native": {
+        "runs": 5,
+        "wall_ms_median": 9.780082999999994,
+        "wall_ms_min": 9.68833400000002,
+        "wall_ms_max": 10.922209000000072,
+        "peak_rss_bytes_median": 2064384,
+        "peak_rss_bytes_min": 2064384,
+        "peak_rss_bytes_max": 2064384
+      },
+      "dotnet_reference": {
+        "runs": 5,
+        "wall_ms_median": 124.63087500000003,
+        "wall_ms_min": 105.86824999999989,
+        "wall_ms_max": 138.2690419999999,
+        "peak_rss_bytes_median": 55885824,
+        "peak_rss_bytes_min": 55754752,
+        "peak_rss_bytes_max": 55967744
+      }
+    },
+    "1000_statements": {
+      "source_bytes": 12889,
+      "native": {
+        "runs": 5,
+        "wall_ms_median": 27.990624999999937,
+        "wall_ms_min": 25.47516599999988,
+        "wall_ms_max": 34.284624999999956,
+        "peak_rss_bytes_median": 27082752,
+        "peak_rss_bytes_min": 27017216,
+        "peak_rss_bytes_max": 27131904
+      },
+      "dotnet_reference": {
+        "runs": 5,
+        "wall_ms_median": 188.55041699999987,
+        "wall_ms_min": 180.52687499999996,
+        "wall_ms_max": 245.48229200000014,
+        "peak_rss_bytes_median": 71614464,
+        "peak_rss_bytes_min": 71450624,
+        "peak_rss_bytes_max": 71794688
+      }
+    }
+  },
+  "limitations": [
+    "Peak RSS, not retained engine bytes or an idle-process baseline.",
+    "Wall time includes process spawn, initialization, pipeline, JSON observation formatting and output; it is not a warm parser benchmark.",
+    "Reference is a development adapter over real Nitrogen APIs, not an optimized production deployment.",
+    "Reference output size excludes the separately installed .NET runtime; native executable still uses normal OS libraries.",
+    ".NET HIR constants are f32; native constants are f64. The measured corpus uses exactly representable integers.",
+    "Allocator high-water instrumentation and stack measurement are not available in this report.",
+    "Warm OS caches; process-cold runs; no cold disk-cache claim."
+  ],
+  "native_warm_pipeline": {
+    "elapsed_us": 2848,
+    "hir_retained_capacity_bytes": 432,
+    "iterations": 1000,
+    "syntax_retained_capacity_bytes": 1054
+  },
+  "dotnet_sdk": "11.0.100-preview.2.26159.112",
+  "reference_target_framework": "net10.0"
+}

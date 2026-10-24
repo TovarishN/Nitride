@@ -1,0 +1,541 @@
+{
+  "version": 1,
+  "mode": "syntax",
+  "omitted_semantics": [
+    {
+      "rule": "Xml.Paired",
+      "block": true,
+      "clauses": []
+    }
+  ],
+  "modules": [
+    {
+      "name": "Xml",
+      "imports": []
+    }
+  ],
+  "source_hash": "6245ab4f5095d5cec6583df783818e8c9faa08bdb8aa63be6d4c675e2995c0c6",
+  "catalog_hash": "40499eca863652b41634eee4aff5553d2ec5616ccc0dd1aa8aaa1305145d171f",
+  "start": "Xml.Document",
+  "rules": [
+    {
+      "name": "Xml.Name",
+      "lexical": true,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "class",
+            "negated": false,
+            "ranges": [
+              [
+                97,
+                122
+              ],
+              [
+                65,
+                90
+              ],
+              [
+                95,
+                95
+              ],
+              [
+                58,
+                58
+              ]
+            ]
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 2147483647,
+            "inner": {
+              "kind": "class",
+              "negated": false,
+              "ranges": [
+                [
+                  97,
+                  122
+                ],
+                [
+                  65,
+                  90
+                ],
+                [
+                  48,
+                  57
+                ],
+                [
+                  95,
+                  95
+                ],
+                [
+                  58,
+                  58
+                ],
+                [
+                  45,
+                  45
+                ],
+                [
+                  46,
+                  46
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Xml.Quoted",
+      "lexical": true,
+      "expr": {
+        "kind": "choice",
+        "items": [
+          {
+            "kind": "sequence",
+            "items": [
+              {
+                "kind": "literal",
+                "text": "\u0022"
+              },
+              {
+                "kind": "repeat",
+                "min": 0,
+                "max": 2147483647,
+                "inner": {
+                  "kind": "class",
+                  "negated": true,
+                  "ranges": [
+                    [
+                      34,
+                      34
+                    ],
+                    [
+                      60,
+                      60
+                    ]
+                  ]
+                }
+              },
+              {
+                "kind": "literal",
+                "text": "\u0022"
+              }
+            ]
+          },
+          {
+            "kind": "sequence",
+            "items": [
+              {
+                "kind": "literal",
+                "text": "\u0027"
+              },
+              {
+                "kind": "repeat",
+                "min": 0,
+                "max": 2147483647,
+                "inner": {
+                  "kind": "class",
+                  "negated": true,
+                  "ranges": [
+                    [
+                      39,
+                      39
+                    ],
+                    [
+                      60,
+                      60
+                    ]
+                  ]
+                }
+              },
+              {
+                "kind": "literal",
+                "text": "\u0027"
+              }
+            ]
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Xml.Content",
+      "lexical": true,
+      "expr": {
+        "kind": "repeat",
+        "min": 1,
+        "max": 2147483647,
+        "inner": {
+          "kind": "class",
+          "negated": true,
+          "ranges": [
+            [
+              60,
+              60
+            ]
+          ]
+        }
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Xml.Comment",
+      "lexical": true,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "\u003C!--"
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 2147483647,
+            "inner": {
+              "kind": "sequence",
+              "items": [
+                {
+                  "kind": "predicate",
+                  "positive": false,
+                  "inner": {
+                    "kind": "literal",
+                    "text": "--\u003E"
+                  }
+                },
+                {
+                  "kind": "any"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "--\u003E"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Xml.Declaration",
+      "lexical": true,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "\u003C?xml"
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 2147483647,
+            "inner": {
+              "kind": "sequence",
+              "items": [
+                {
+                  "kind": "predicate",
+                  "positive": false,
+                  "inner": {
+                    "kind": "literal",
+                    "text": "?\u003E"
+                  }
+                },
+                {
+                  "kind": "any"
+                }
+              ]
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "?\u003E"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Xml.Document",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 1,
+            "inner": {
+              "kind": "ref",
+              "name": "Xml.Declaration"
+            }
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 2147483647,
+            "inner": {
+              "kind": "ref",
+              "name": "Xml.Comment"
+            }
+          },
+          {
+            "kind": "label",
+            "label": "Root",
+            "inner": {
+              "kind": "ref",
+              "name": "Xml.Element"
+            }
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 2147483647,
+            "inner": {
+              "kind": "ref",
+              "name": "Xml.Comment"
+            }
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Xml.Element",
+      "lexical": false,
+      "expr": {
+        "kind": "choice",
+        "items": [
+          {
+            "kind": "ref",
+            "name": "Xml.Empty"
+          },
+          {
+            "kind": "ref",
+            "name": "Xml.Paired"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Xml.Empty",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "\u003C"
+          },
+          {
+            "kind": "label",
+            "label": "Tag",
+            "inner": {
+              "kind": "ref",
+              "name": "Xml.Name"
+            }
+          },
+          {
+            "kind": "label",
+            "label": "Attributes",
+            "inner": {
+              "kind": "repeat",
+              "min": 0,
+              "max": 2147483647,
+              "inner": {
+                "kind": "ref",
+                "name": "Xml.Attribute"
+              }
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "/\u003E"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Xml.Paired",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "\u003C"
+          },
+          {
+            "kind": "label",
+            "label": "Open",
+            "inner": {
+              "kind": "ref",
+              "name": "Xml.Name"
+            }
+          },
+          {
+            "kind": "label",
+            "label": "Attributes",
+            "inner": {
+              "kind": "repeat",
+              "min": 0,
+              "max": 2147483647,
+              "inner": {
+                "kind": "ref",
+                "name": "Xml.Attribute"
+              }
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "\u003E"
+          },
+          {
+            "kind": "label",
+            "label": "Children",
+            "inner": {
+              "kind": "repeat",
+              "min": 0,
+              "max": 2147483647,
+              "inner": {
+                "kind": "ref",
+                "name": "Xml.Node"
+              }
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "\u003C/"
+          },
+          {
+            "kind": "label",
+            "label": "Close",
+            "inner": {
+              "kind": "ref",
+              "name": "Xml.Name"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "\u003E"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Xml.Attribute",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "ref",
+            "name": "Xml.Name"
+          },
+          {
+            "kind": "literal",
+            "text": "="
+          },
+          {
+            "kind": "ref",
+            "name": "Xml.Quoted"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Xml.Node",
+      "lexical": false,
+      "expr": {
+        "kind": "choice",
+        "items": [
+          {
+            "kind": "ref",
+            "name": "Xml.Element"
+          },
+          {
+            "kind": "ref",
+            "name": "Xml.Comment"
+          },
+          {
+            "kind": "ref",
+            "name": "Xml.Text"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Xml.Text",
+      "lexical": false,
+      "expr": {
+        "kind": "ref",
+        "name": "Xml.Content"
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    }
+  ],
+  "catalog": {
+    "types": [],
+    "operations": [],
+    "statements": {}
+  }
+}

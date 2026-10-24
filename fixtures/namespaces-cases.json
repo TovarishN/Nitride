@@ -1,0 +1,156 @@
+[
+  {
+    "name": "empty",
+    "source": "",
+    "values": []
+  },
+  {
+    "name": "separate-identities",
+    "source": "let x:Scalar=10; rate x:Scalar=20; value(x); rate(x);",
+    "values": [
+      10,
+      20
+    ]
+  },
+  {
+    "name": "ordered-priority",
+    "source": "let x:Scalar=10; rate x:Scalar=20; either(x); reverse(x);",
+    "values": [
+      10,
+      20
+    ]
+  },
+  {
+    "name": "priority-not-recency",
+    "source": "rate x:Scalar=20; let x:Scalar=10; reverse(x); either(x);",
+    "values": [
+      20,
+      10
+    ]
+  },
+  {
+    "name": "rate-fallback",
+    "source": "rate x:Scalar=20; either(x); reverse(x);",
+    "values": [
+      20,
+      20
+    ]
+  },
+  {
+    "name": "value-fallback",
+    "source": "let x:Scalar=10; either(x); reverse(x);",
+    "values": [
+      10,
+      10
+    ]
+  },
+  {
+    "name": "shadow-only-value",
+    "source": "let x:Scalar=1; rate x:Scalar=20; let x:Scalar=value(x)+10; value(x); rate(x);",
+    "values": [
+      11,
+      20
+    ]
+  },
+  {
+    "name": "shadow-only-rate",
+    "source": "let x:Scalar=1; rate x:Scalar=20; rate x:Scalar=rate(x)+10; value(x); rate(x);",
+    "values": [
+      1,
+      30
+    ]
+  },
+  {
+    "name": "cross-kind-initializer",
+    "source": "let x:Scalar=5; rate x:Scalar=either(x)+1; rate(x);",
+    "values": [
+      6
+    ]
+  },
+  {
+    "name": "initializer-prior-rate",
+    "source": "rate x:Scalar=20; let x:Scalar=reverse(x)+1; value(x);",
+    "values": [
+      21
+    ]
+  },
+  {
+    "name": "nominal-types",
+    "source": "let x:Time=duration(2); rate x:Scalar=3; value(x); rate(x);",
+    "values": [
+      2,
+      3
+    ]
+  },
+  {
+    "name": "priority-carries-type",
+    "source": "let x:Time=duration(2); rate x:Scalar=3; either(x); reverse(x);",
+    "values": [
+      2,
+      3
+    ]
+  },
+  {
+    "name": "unicode-spans",
+    "source": "// 😀 café\nlet x:Scalar=1; rate x:Scalar=2; either(x); reverse(x);",
+    "values": [
+      1,
+      2
+    ]
+  },
+  {
+    "name": "wrong-namespace",
+    "source": "rate x:Scalar=2; value(x);",
+    "error": "binding"
+  },
+  {
+    "name": "other-wrong-namespace",
+    "source": "let x:Scalar=2; rate(x);",
+    "error": "binding"
+  },
+  {
+    "name": "forward-value",
+    "source": "value(x); let x:Scalar=2;",
+    "error": "binding"
+  },
+  {
+    "name": "forward-rate",
+    "source": "rate(x); rate x:Scalar=2;",
+    "error": "binding"
+  },
+  {
+    "name": "self-not-cross-kind",
+    "source": "let x:Scalar=2; rate x:Scalar=rate(x);",
+    "error": "binding"
+  },
+  {
+    "name": "all-kinds-missing",
+    "source": "either(x);",
+    "error": "binding"
+  },
+  {
+    "name": "unknown-type",
+    "source": "let x:Unknown=1; value(x);",
+    "error": "type"
+  },
+  {
+    "name": "priority-type-rejection",
+    "source": "let x:Time=duration(2); rate x:Scalar=3; either(x)+1;",
+    "error": "type"
+  },
+  {
+    "name": "reverse-type-rejection",
+    "source": "let x:Scalar=1; rate x:Time=duration(3); reverse(x)+1;",
+    "error": "type"
+  },
+  {
+    "name": "invalid-initializer",
+    "source": "rate x:Time=2;",
+    "error": "type"
+  },
+  {
+    "name": "no-effects-on-late-binding-error",
+    "source": "duration(1); rate x:Scalar=2; value(x);",
+    "error": "binding"
+  }
+]

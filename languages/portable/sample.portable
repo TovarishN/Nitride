@@ -1,0 +1,4 @@
+let x : Scalar = 6;
+x * 7;
+let t : Time = duration(3);
+t;

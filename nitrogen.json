@@ -1,0 +1,84 @@
+{
+  "languages": [
+    {
+      "name": "Portable",
+      "extensions": [
+        ".portable"
+      ],
+      "grammars": [
+        "languages/portable/Portable.ngr"
+      ],
+      "start": "Portable.Program",
+      "namespace": "Nitride.Reference.Syntax",
+      "sources": [
+        "languages/portable/PortableSemantics.cs"
+      ]
+    },
+    {
+      "name": "PortablePower",
+      "extensions": [
+        ".powercalc"
+      ],
+      "grammars": [
+        "languages/portable/Portable.ngr",
+        "languages/power/Power.ngr"
+      ],
+      "start": "Portable.Program",
+      "namespace": "Nitride.Reference.Syntax",
+      "sources": [
+        "languages/power/PowerSemantics.cs"
+      ]
+    },
+    {
+      "name": "Composition",
+      "extensions": [
+        ".composed"
+      ],
+      "grammars": [
+        "languages/composition/Base.ngr",
+        "languages/composition/Uses.ngr"
+      ],
+      "start": "Uses.Doc",
+      "namespace": "Nitride.Composition.Syntax"
+    },
+    {
+      "name": "XmlReference",
+      "extensions": [
+        ".xml"
+      ],
+      "grammars": [
+        "languages/xml/Xml.ngr"
+      ],
+      "start": "Xml.Document",
+      "namespace": "Nitride.Xml.Syntax"
+    },
+    {
+      "name": "Namespaces",
+      "extensions": [
+        ".namespaces"
+      ],
+      "grammars": [
+        "languages/namespaces/Namespaces.ngr"
+      ],
+      "start": "Namespaces.Program",
+      "namespace": "Nitride.Reference.Syntax",
+      "sources": [
+        "languages/namespaces/NamespacesSemantics.cs"
+      ]
+    },
+    {
+      "name": "Inference",
+      "extensions": [
+        ".inferred"
+      ],
+      "grammars": [
+        "languages/inference/Inference.Reference.ngr"
+      ],
+      "start": "Inference.Program",
+      "namespace": "Nitride.Reference.Inference",
+      "sources": [
+        "languages/inference/InferenceSemantics.cs"
+      ]
+    }
+  ]
+}

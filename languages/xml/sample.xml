@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<configuration>
+  <service name="worker" enabled="true">
+    <endpoint url="https://example.invalid/api"/>
+  </service>
+</configuration>

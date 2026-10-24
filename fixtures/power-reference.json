@@ -1,0 +1,631 @@
+[
+  {
+    "name": "right_associative",
+    "source": "2 ^ 3 ^ 2;",
+    "values": [
+      512
+    ],
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Show",
+          "span": [
+            0,
+            10
+          ]
+        },
+        {
+          "kind": "Portable.Power.Pow",
+          "span": [
+            0,
+            9
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            0,
+            1
+          ]
+        },
+        {
+          "kind": "Portable.Power.Pow",
+          "span": [
+            4,
+            9
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            4,
+            5
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            8,
+            9
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            9
+          ],
+          "operation": "Portable.Power",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                0,
+                1
+              ],
+              "number": 2
+            },
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "span": [
+                4,
+                9
+              ],
+              "operation": "Portable.Power",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    4,
+                    5
+                  ],
+                  "number": 3
+                },
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    8,
+                    9
+                  ],
+                  "number": 2
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        512
+      ],
+      "trace": [
+        "Portable.Power",
+        "Portable.Power"
+      ]
+    }
+  },
+  {
+    "name": "precedence",
+    "source": "2 * 3 ^ 2 + 1;",
+    "values": [
+      19
+    ],
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Show",
+          "span": [
+            0,
+            14
+          ]
+        },
+        {
+          "kind": "Portable.Add",
+          "span": [
+            0,
+            13
+          ]
+        },
+        {
+          "kind": "Portable.Mul",
+          "span": [
+            0,
+            9
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            0,
+            1
+          ]
+        },
+        {
+          "kind": "Portable.Power.Pow",
+          "span": [
+            4,
+            9
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            4,
+            5
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            8,
+            9
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            12,
+            13
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            13
+          ],
+          "operation": "Portable.Add",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "span": [
+                0,
+                9
+              ],
+              "operation": "Portable.Mul",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    0,
+                    1
+                  ],
+                  "number": 2
+                },
+                {
+                  "kind": "operation",
+                  "type": "Core.Scalar",
+                  "span": [
+                    4,
+                    9
+                  ],
+                  "operation": "Portable.Power",
+                  "args": [
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "span": [
+                        4,
+                        5
+                      ],
+                      "number": 3
+                    },
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "span": [
+                        8,
+                        9
+                      ],
+                      "number": 2
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                12,
+                13
+              ],
+              "number": 1
+            }
+          ]
+        }
+      ],
+      "values": [
+        19
+      ],
+      "trace": [
+        "Portable.Power",
+        "Portable.Mul",
+        "Portable.Add"
+      ]
+    }
+  },
+  {
+    "name": "parenthesized",
+    "source": "(-2) ^ 2;",
+    "values": [
+      4
+    ],
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Show",
+          "span": [
+            0,
+            9
+          ]
+        },
+        {
+          "kind": "Portable.Power.Pow",
+          "span": [
+            0,
+            8
+          ]
+        },
+        {
+          "kind": "Portable.Paren",
+          "span": [
+            0,
+            4
+          ]
+        },
+        {
+          "kind": "Portable.Neg",
+          "span": [
+            1,
+            3
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            2,
+            3
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            7,
+            8
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            8
+          ],
+          "operation": "Portable.Power",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "span": [
+                1,
+                3
+              ],
+              "operation": "Portable.Neg",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    2,
+                    3
+                  ],
+                  "number": 2
+                }
+              ]
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                7,
+                8
+              ],
+              "number": 2
+            }
+          ]
+        }
+      ],
+      "values": [
+        4
+      ],
+      "trace": [
+        "Portable.Neg",
+        "Portable.Power"
+      ]
+    }
+  },
+  {
+    "name": "prefix_precedence",
+    "source": "-2 ^ 2;",
+    "values": [
+      4
+    ],
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Show",
+          "span": [
+            0,
+            7
+          ]
+        },
+        {
+          "kind": "Portable.Power.Pow",
+          "span": [
+            0,
+            6
+          ]
+        },
+        {
+          "kind": "Portable.Neg",
+          "span": [
+            0,
+            2
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            1,
+            2
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            5,
+            6
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            6
+          ],
+          "operation": "Portable.Power",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "span": [
+                0,
+                2
+              ],
+              "operation": "Portable.Neg",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    1,
+                    2
+                  ],
+                  "number": 2
+                }
+              ]
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                5,
+                6
+              ],
+              "number": 2
+            }
+          ]
+        }
+      ],
+      "values": [
+        4
+      ],
+      "trace": [
+        "Portable.Neg",
+        "Portable.Power"
+      ]
+    }
+  },
+  {
+    "name": "binding",
+    "source": "let x : Scalar = 2; x ^ 3;",
+    "values": [
+      8
+    ],
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Let",
+          "span": [
+            0,
+            19
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            17,
+            18
+          ]
+        },
+        {
+          "kind": "Portable.Show",
+          "span": [
+            20,
+            26
+          ]
+        },
+        {
+          "kind": "Portable.Power.Pow",
+          "span": [
+            20,
+            25
+          ]
+        },
+        {
+          "kind": "Portable.Ref",
+          "span": [
+            20,
+            21
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            24,
+            25
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            20,
+            21
+          ],
+          "symbol": 4
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            17,
+            18
+          ],
+          "number": 2
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            20,
+            25
+          ],
+          "operation": "Portable.Power",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                20,
+                21
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                24,
+                25
+              ],
+              "number": 3
+            }
+          ]
+        }
+      ],
+      "values": [
+        8
+      ],
+      "trace": [
+        "Portable.Power"
+      ]
+    }
+  },
+  {
+    "name": "type_mismatch",
+    "source": "duration(1) ^ 2;",
+    "error": "type",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        11
+      ],
+      "message": "'Portable.Power' needs Core.Scalar, not Portable.Time",
+      "trace": []
+    }
+  },
+  {
+    "name": "unknown",
+    "source": "missing ^ 2;",
+    "error": "binding",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        0,
+        7
+      ],
+      "message": "unresolved value 'missing'",
+      "trace": []
+    }
+  },
+  {
+    "name": "malformed",
+    "source": "1 ^ ;",
+    "error": "syntax",
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        4,
+        4
+      ],
+      "message": "invalid source",
+      "trace": []
+    }
+  },
+  {
+    "name": "nonfinite",
+    "source": "2 ^ 1024;",
+    "error": "execution",
+    "observation": {
+      "ok": false,
+      "error": "execution",
+      "message": "nonfinite result",
+      "trace": [
+        "Portable.Power"
+      ]
+    }
+  }
+]

@@ -1,0 +1,57 @@
+[
+  {
+    "name": "right_associative",
+    "source": "2 ^ 3 ^ 2;",
+    "values": [
+      512
+    ]
+  },
+  {
+    "name": "precedence",
+    "source": "2 * 3 ^ 2 + 1;",
+    "values": [
+      19
+    ]
+  },
+  {
+    "name": "parenthesized",
+    "source": "(-2) ^ 2;",
+    "values": [
+      4
+    ]
+  },
+  {
+    "name": "prefix_precedence",
+    "source": "-2 ^ 2;",
+    "values": [
+      4
+    ]
+  },
+  {
+    "name": "binding",
+    "source": "let x : Scalar = 2; x ^ 3;",
+    "values": [
+      8
+    ]
+  },
+  {
+    "name": "type_mismatch",
+    "source": "duration(1) ^ 2;",
+    "error": "type"
+  },
+  {
+    "name": "unknown",
+    "source": "missing ^ 2;",
+    "error": "binding"
+  },
+  {
+    "name": "malformed",
+    "source": "1 ^ ;",
+    "error": "syntax"
+  },
+  {
+    "name": "nonfinite",
+    "source": "2 ^ 1024;",
+    "error": "execution"
+  }
+]

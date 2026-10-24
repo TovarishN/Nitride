@@ -1,0 +1,135 @@
+[
+  {
+    "name": "precedence",
+    "source": "1 + 2 * 3;",
+    "values": [
+      7
+    ]
+  },
+  {
+    "name": "associativity",
+    "source": "10 - 3 - 2;",
+    "values": [
+      5
+    ]
+  },
+  {
+    "name": "parentheses",
+    "source": "(1 + 2) * -3;",
+    "values": [
+      -9
+    ]
+  },
+  {
+    "name": "sequential",
+    "source": "let x : Scalar = 2; let y : Scalar = x * 3; y + x;",
+    "values": [
+      8
+    ]
+  },
+  {
+    "name": "shadowing",
+    "source": "let x : Scalar = 2; let x : Scalar = x + 1; x;",
+    "values": [
+      3
+    ]
+  },
+  {
+    "name": "duration",
+    "source": "let t : Time = duration(3); t;",
+    "values": [
+      3
+    ]
+  },
+  {
+    "name": "unknown",
+    "source": "missing + 1;",
+    "error": "binding"
+  },
+  {
+    "name": "forward",
+    "source": "x; let x : Scalar = 1;",
+    "error": "binding"
+  },
+  {
+    "name": "self_reference",
+    "source": "let x : Scalar = x;",
+    "error": "binding"
+  },
+  {
+    "name": "nominal_mismatch",
+    "source": "duration(1) + 2;",
+    "error": "type"
+  },
+  {
+    "name": "initializer_mismatch",
+    "source": "let x : Time = 1;",
+    "error": "type"
+  },
+  {
+    "name": "unknown_type",
+    "source": "let x : Unknown = 1;",
+    "error": "type"
+  },
+  {
+    "name": "malformed",
+    "source": "1 + ;",
+    "error": "syntax"
+  },
+  {
+    "name": "late_error",
+    "source": "duration(1); unknown;",
+    "error": "binding"
+  },
+  {
+    "name": "nonfinite",
+    "source": "1 / 0;",
+    "error": "execution"
+  },
+  {
+    "name": "empty",
+    "source": "",
+    "values": []
+  },
+  {
+    "name": "unicode_trivia",
+    "source": "// Привет 😀\n1 + 2;",
+    "values": [
+      3
+    ]
+  },
+  {
+    "name": "unicode_error",
+    "source": "// 😀\n1 + é;",
+    "error": "syntax"
+  },
+  {
+    "name": "block_comment",
+    "source": "/* λ 😀 */ 2;",
+    "values": [
+      2
+    ]
+  },
+  {
+    "name": "trailing_garbage",
+    "source": "1; @",
+    "error": "syntax"
+  },
+  {
+    "name": "keyword_boundary",
+    "source": "letx:Scalar=1; x;",
+    "error": "syntax"
+  },
+  {
+    "name": "comment_to_eof",
+    "source": "1; /* bad",
+    "values": [
+      1
+    ]
+  },
+  {
+    "name": "empty_comment_to_eof",
+    "source": "/* unclosed",
+    "values": []
+  }
+]

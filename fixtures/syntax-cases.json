@@ -1,0 +1,116 @@
+[
+  {
+    "profile": "xml",
+    "name": "empty_element",
+    "source": "<root/>",
+    "ok": true
+  },
+  {
+    "profile": "xml",
+    "name": "nested",
+    "source": "<root a='1' b=\"2\">text<child/>tail</root>",
+    "ok": true
+  },
+  {
+    "profile": "xml",
+    "name": "declaration",
+    "source": "<?xml version='1.0'?><!--before--><root/><!--after-->",
+    "ok": true
+  },
+  {
+    "profile": "xml",
+    "name": "unicode",
+    "source": "<root><!--😀--><child name=\"café λ\"/></root>",
+    "ok": true
+  },
+  {
+    "profile": "xml",
+    "name": "mismatch_is_syntax",
+    "source": "<a></b>",
+    "ok": true
+  },
+  {
+    "profile": "xml",
+    "name": "empty",
+    "source": "",
+    "ok": false
+  },
+  {
+    "profile": "xml",
+    "name": "bad_quote",
+    "source": "<a k='x/>",
+    "ok": false
+  },
+  {
+    "profile": "xml",
+    "name": "unclosed",
+    "source": "<a>",
+    "ok": false
+  },
+  {
+    "profile": "xml",
+    "name": "comment_unclosed",
+    "source": "<a><!--no close</a>",
+    "ok": false
+  },
+  {
+    "profile": "xml",
+    "name": "trailing",
+    "source": "<a/>extra",
+    "ok": false
+  },
+  {
+    "profile": "xml",
+    "name": "whitespace",
+    "source": " \n <root> \n <child/> \n </root> ",
+    "ok": true
+  },
+  {
+    "profile": "composition",
+    "name": "empty",
+    "source": "doc end",
+    "ok": true
+  },
+  {
+    "profile": "composition",
+    "name": "imports",
+    "source": "doc let x = -1; (name) end",
+    "ok": true
+  },
+  {
+    "profile": "composition",
+    "name": "extension",
+    "source": "doc let x = --1; end",
+    "ok": true
+  },
+  {
+    "profile": "composition",
+    "name": "reference",
+    "source": "doc let x = word; end",
+    "ok": true
+  },
+  {
+    "profile": "composition",
+    "name": "unicode",
+    "source": "//😀\ndoc (abc) end",
+    "ok": true
+  },
+  {
+    "profile": "composition",
+    "name": "missing_end",
+    "source": "doc let x = 1;",
+    "ok": false
+  },
+  {
+    "profile": "composition",
+    "name": "malformed",
+    "source": "doc let x = ; end",
+    "ok": false
+  },
+  {
+    "profile": "composition",
+    "name": "unknown",
+    "source": "doc nonsense end",
+    "ok": false
+  }
+]

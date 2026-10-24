@@ -1,0 +1,737 @@
+{
+  "version": 1,
+  "symbol_kinds": [
+    "value",
+    "rate"
+  ],
+  "mode": "typed",
+  "omitted_semantics": [],
+  "modules": [
+    {
+      "name": "Namespaces",
+      "imports": []
+    }
+  ],
+  "source_hash": "3386d33a45ccb35deb5c0e91ff112a538456bf7cae3c2d25a3b099c45d3f5373",
+  "catalog_hash": "1ab119403a0d401d5c56358fe2a5e5c188a713583ac614141250adf411d9bc9c",
+  "start": "Namespaces.Program",
+  "rules": [
+    {
+      "name": "Namespaces.Number",
+      "lexical": true,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "repeat",
+            "min": 1,
+            "max": 2147483647,
+            "inner": {
+              "kind": "class",
+              "negated": false,
+              "ranges": [
+                [
+                  48,
+                  57
+                ]
+              ]
+            }
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 1,
+            "inner": {
+              "kind": "sequence",
+              "items": [
+                {
+                  "kind": "literal",
+                  "text": "."
+                },
+                {
+                  "kind": "repeat",
+                  "min": 1,
+                  "max": 2147483647,
+                  "inner": {
+                    "kind": "class",
+                    "negated": false,
+                    "ranges": [
+                      [
+                        48,
+                        57
+                      ]
+                    ]
+                  }
+                }
+              ]
+            }
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.Identifier",
+      "lexical": true,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "class",
+            "negated": false,
+            "ranges": [
+              [
+                97,
+                122
+              ],
+              [
+                65,
+                90
+              ],
+              [
+                95,
+                95
+              ]
+            ]
+          },
+          {
+            "kind": "repeat",
+            "min": 0,
+            "max": 2147483647,
+            "inner": {
+              "kind": "class",
+              "negated": false,
+              "ranges": [
+                [
+                  97,
+                  122
+                ],
+                [
+                  65,
+                  90
+                ],
+                [
+                  48,
+                  57
+                ],
+                [
+                  95,
+                  95
+                ]
+              ]
+            }
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [
+        "let",
+        "rate",
+        "value",
+        "either",
+        "reverse",
+        "duration"
+      ],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.Program",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Statements",
+        "inner": {
+          "kind": "repeat",
+          "min": 0,
+          "max": 2147483647,
+          "inner": {
+            "kind": "ref",
+            "name": "Namespaces.Statement"
+          }
+        }
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.Statement",
+      "lexical": false,
+      "expr": {
+        "kind": "choice",
+        "items": [
+          {
+            "kind": "ref",
+            "name": "Namespaces.LetValue"
+          },
+          {
+            "kind": "ref",
+            "name": "Namespaces.LetRate"
+          },
+          {
+            "kind": "ref",
+            "name": "Namespaces.Show"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.LetValue",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "let"
+          },
+          {
+            "kind": "label",
+            "label": "Name",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ":"
+          },
+          {
+            "kind": "label",
+            "label": "Annotation",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "="
+          },
+          {
+            "kind": "label",
+            "label": "Value",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ";"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Declares",
+          "field": "Name",
+          "target": "Annotation",
+          "args": [],
+          "symbol_kinds": [
+            "value"
+          ],
+          "sequential": true
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.LetRate",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "rate"
+          },
+          {
+            "kind": "label",
+            "label": "Name",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ":"
+          },
+          {
+            "kind": "label",
+            "label": "Annotation",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "="
+          },
+          {
+            "kind": "label",
+            "label": "Value",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ";"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Declares",
+          "field": "Name",
+          "target": "Annotation",
+          "args": [],
+          "symbol_kinds": [
+            "rate"
+          ],
+          "sequential": true
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.Show",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Value",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ";"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": null,
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.Num",
+      "lexical": false,
+      "expr": {
+        "kind": "label",
+        "label": "Value",
+        "inner": {
+          "kind": "ref",
+          "name": "Namespaces.Number"
+        }
+      },
+      "clauses": [
+        {
+          "kind": "LowersLiteral",
+          "field": "Value",
+          "target": "Core.Scalar",
+          "args": [],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Namespaces.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.ValueRef",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "value"
+          },
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Name",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Name",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "value"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Namespaces.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.RateRef",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "rate"
+          },
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Name",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Name",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "rate"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Namespaces.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.AnyRef",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "either"
+          },
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Name",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Name",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "value",
+            "rate"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Namespaces.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.ReverseRef",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "reverse"
+          },
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Name",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Identifier"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "References",
+          "field": "Name",
+          "target": null,
+          "args": [],
+          "symbol_kinds": [
+            "rate",
+            "value"
+          ],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Namespaces.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.Paren",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Inner",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [],
+      "except": [],
+      "precedence": null,
+      "owner": "Namespaces.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.Duration",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "literal",
+            "text": "duration"
+          },
+          {
+            "kind": "literal",
+            "text": "("
+          },
+          {
+            "kind": "label",
+            "label": "Amount",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": ")"
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Namespaces.Duration",
+          "args": [
+            "Amount"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": null,
+      "owner": "Namespaces.Expr",
+      "associativity": null
+    },
+    {
+      "name": "Namespaces.Add",
+      "lexical": false,
+      "expr": {
+        "kind": "sequence",
+        "items": [
+          {
+            "kind": "label",
+            "label": "Left",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Expr"
+            }
+          },
+          {
+            "kind": "literal",
+            "text": "\u002B"
+          },
+          {
+            "kind": "label",
+            "label": "Right",
+            "inner": {
+              "kind": "ref",
+              "name": "Namespaces.Expr"
+            }
+          }
+        ]
+      },
+      "clauses": [
+        {
+          "kind": "Lowers",
+          "field": "",
+          "target": "Namespaces.Add",
+          "args": [
+            "Left",
+            "Right"
+          ],
+          "symbol_kinds": [],
+          "sequential": false
+        }
+      ],
+      "except": [],
+      "precedence": 10,
+      "owner": "Namespaces.Expr",
+      "associativity": "Left"
+    },
+    {
+      "name": "Namespaces.Expr",
+      "lexical": false,
+      "expr": {
+        "kind": "pratt",
+        "prefixes": [
+          "Namespaces.Num",
+          "Namespaces.ValueRef",
+          "Namespaces.RateRef",
+          "Namespaces.AnyRef",
+          "Namespaces.ReverseRef",
+          "Namespaces.Paren",
+          "Namespaces.Duration"
+        ],
+        "infixes": [
+          "Namespaces.Add"
+        ]
+      },
+      "clauses": [],
+      "except": []
+    }
+  ],
+  "catalog": {
+    "types": [
+      "Core.Scalar",
+      "Namespaces.Time"
+    ],
+    "operations": [
+      {
+        "id": "Namespaces.Duration",
+        "inputs": [
+          "Core.Scalar"
+        ],
+        "result": "Namespaces.Time",
+        "handler": "identity"
+      },
+      {
+        "id": "Namespaces.Add",
+        "inputs": [
+          "Core.Scalar",
+          "Core.Scalar"
+        ],
+        "result": "Core.Scalar",
+        "handler": "add"
+      }
+    ],
+    "statements": {
+      "Namespaces.LetValue": {
+        "kind": "let",
+        "value": "Value"
+      },
+      "Namespaces.LetRate": {
+        "kind": "let",
+        "value": "Value"
+      },
+      "Namespaces.Show": {
+        "kind": "show",
+        "value": "Value"
+      }
+    }
+  }
+}

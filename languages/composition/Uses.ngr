@@ -1,0 +1,15 @@
+// Uses another module's tokens (Word, Number), plain rule (Pair) and extension point (Value), in
+// its own rules, its extension and its recovery sites (issue 236).
+syntax module Uses
+{
+  using Base;
+
+  syntax Doc    = "doc" Entries:Entry* "end";
+  syntax Entry  = Assign / Pair;
+  syntax Assign = "let" Key:Word "=" Value:Value ";";
+
+  extend syntax Base.Value
+  {
+    | Neg = "-" Value
+  }
+}

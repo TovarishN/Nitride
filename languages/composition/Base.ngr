@@ -1,0 +1,14 @@
+// Cross-module references (issue 236): Uses.ngr uses these tokens and this rule, and extends this point.
+syntax module Base
+{
+  token Word   = ['a'..'z']+;
+  token Number = ['0'..'9']+;
+
+  syntax Pair = "(" Key:Word ")";
+
+  extensible syntax Value
+  {
+    | Num = Number
+    | Ref = Word
+  }
+}

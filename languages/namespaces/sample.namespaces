@@ -1,0 +1,6 @@
+let x : Scalar = 10;
+rate x : Scalar = 20;
+value(x);
+rate(x);
+either(x);
+reverse(x);

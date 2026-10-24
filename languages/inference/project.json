@@ -1,0 +1,6 @@
+{
+  "mode":"typed",
+  "start":"Inference.Program",
+  "grammars":["Inference.ngr"],
+  "catalog":"catalog.json"
+}

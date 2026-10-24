@@ -1,0 +1,2500 @@
+[
+  {
+    "name": "empty",
+    "source": "",
+    "observation": {
+      "ok": true,
+      "syntax": [],
+      "bindings": [],
+      "hir": [],
+      "values": [],
+      "trace": []
+    }
+  },
+  {
+    "name": "scalar-inference",
+    "source": "let x=2; value(x)+3;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            8
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            6,
+            7
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            9,
+            20
+          ]
+        },
+        {
+          "kind": "Inference.Add",
+          "span": [
+            9,
+            19
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            9,
+            17
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            18,
+            19
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            15,
+            16
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            6,
+            7
+          ],
+          "number": 2
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            9,
+            19
+          ],
+          "operation": "Inference.AddScalar",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                9,
+                17
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                18,
+                19
+              ],
+              "number": 3
+            }
+          ]
+        }
+      ],
+      "values": [
+        5
+      ],
+      "trace": [
+        "Inference.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "nominal-inference",
+    "source": "let t=duration(3); value(t);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            18
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            6,
+            17
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            15,
+            16
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            19,
+            28
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            19,
+            27
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            25,
+            26
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            6,
+            17
+          ],
+          "operation": "Inference.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                15,
+                16
+              ],
+              "number": 3
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Inference.Time",
+          "span": [
+            19,
+            27
+          ],
+          "symbol": 4
+        }
+      ],
+      "values": [
+        3
+      ],
+      "trace": [
+        "Inference.Duration"
+      ]
+    }
+  },
+  {
+    "name": "reference-chain",
+    "source": "let a=1; let b=value(a)+2; let c=value(b)+3; value(c);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            8
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            6,
+            7
+          ]
+        },
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            9,
+            26
+          ]
+        },
+        {
+          "kind": "Inference.Add",
+          "span": [
+            15,
+            25
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            15,
+            23
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            24,
+            25
+          ]
+        },
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            27,
+            44
+          ]
+        },
+        {
+          "kind": "Inference.Add",
+          "span": [
+            33,
+            43
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            33,
+            41
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            42,
+            43
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            45,
+            54
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            45,
+            53
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            21,
+            22
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            39,
+            40
+          ],
+          "symbol": 13,
+          "kind": "value"
+        },
+        {
+          "span": [
+            51,
+            52
+          ],
+          "symbol": 31,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            6,
+            7
+          ],
+          "number": 1
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            15,
+            25
+          ],
+          "operation": "Inference.AddScalar",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                15,
+                23
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                24,
+                25
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            33,
+            43
+          ],
+          "operation": "Inference.AddScalar",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                33,
+                41
+              ],
+              "symbol": 13
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                42,
+                43
+              ],
+              "number": 3
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            45,
+            53
+          ],
+          "symbol": 31
+        }
+      ],
+      "values": [
+        6
+      ],
+      "trace": [
+        "Inference.AddScalar",
+        "Inference.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "self-shadow",
+    "source": "let x=1; let x=value(x)+1; value(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            8
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            6,
+            7
+          ]
+        },
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            9,
+            26
+          ]
+        },
+        {
+          "kind": "Inference.Add",
+          "span": [
+            15,
+            25
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            15,
+            23
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            24,
+            25
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            27,
+            36
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            27,
+            35
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            21,
+            22
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            33,
+            34
+          ],
+          "symbol": 13,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            6,
+            7
+          ],
+          "number": 1
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            15,
+            25
+          ],
+          "operation": "Inference.AddScalar",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                15,
+                23
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                24,
+                25
+              ],
+              "number": 1
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            27,
+            35
+          ],
+          "symbol": 13
+        }
+      ],
+      "values": [
+        2
+      ],
+      "trace": [
+        "Inference.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "shadow-changes-type",
+    "source": "let x=1; let x=duration(3); value(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            8
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            6,
+            7
+          ]
+        },
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            9,
+            27
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            15,
+            26
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            24,
+            25
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            28,
+            37
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            28,
+            36
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            34,
+            35
+          ],
+          "symbol": 13,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            6,
+            7
+          ],
+          "number": 1
+        },
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            15,
+            26
+          ],
+          "operation": "Inference.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                24,
+                25
+              ],
+              "number": 3
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Inference.Time",
+          "span": [
+            28,
+            36
+          ],
+          "symbol": 13
+        }
+      ],
+      "values": [
+        3
+      ],
+      "trace": [
+        "Inference.Duration"
+      ]
+    }
+  },
+  {
+    "name": "namespace-types",
+    "source": "let x=1; rate x=duration(2); either(x); reverse(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            8
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            6,
+            7
+          ]
+        },
+        {
+          "kind": "Inference.InferRate",
+          "span": [
+            9,
+            28
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            16,
+            27
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            25,
+            26
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            29,
+            39
+          ]
+        },
+        {
+          "kind": "Inference.AnyRef",
+          "span": [
+            29,
+            38
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            40,
+            51
+          ]
+        },
+        {
+          "kind": "Inference.ReverseRef",
+          "span": [
+            40,
+            50
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            36,
+            37
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            48,
+            49
+          ],
+          "symbol": 14,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            6,
+            7
+          ],
+          "number": 1
+        },
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            16,
+            27
+          ],
+          "operation": "Inference.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                25,
+                26
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            29,
+            38
+          ],
+          "symbol": 4
+        },
+        {
+          "kind": "reference",
+          "type": "Inference.Time",
+          "span": [
+            40,
+            50
+          ],
+          "symbol": 14
+        }
+      ],
+      "values": [
+        1,
+        2
+      ],
+      "trace": [
+        "Inference.Duration"
+      ]
+    }
+  },
+  {
+    "name": "cross-namespace-initializer",
+    "source": "let x=2; rate x=either(x)+1; reverse(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            8
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            6,
+            7
+          ]
+        },
+        {
+          "kind": "Inference.InferRate",
+          "span": [
+            9,
+            28
+          ]
+        },
+        {
+          "kind": "Inference.Add",
+          "span": [
+            16,
+            27
+          ]
+        },
+        {
+          "kind": "Inference.AnyRef",
+          "span": [
+            16,
+            25
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            26,
+            27
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            29,
+            40
+          ]
+        },
+        {
+          "kind": "Inference.ReverseRef",
+          "span": [
+            29,
+            39
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            23,
+            24
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            37,
+            38
+          ],
+          "symbol": 14,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            6,
+            7
+          ],
+          "number": 2
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            16,
+            27
+          ],
+          "operation": "Inference.AddScalar",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                16,
+                25
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                26,
+                27
+              ],
+              "number": 1
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            29,
+            39
+          ],
+          "symbol": 14
+        }
+      ],
+      "values": [
+        3
+      ],
+      "trace": [
+        "Inference.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "mixed-explicit",
+    "source": "let x:Scalar=2; let y=value(x)+3; rate z:Time=duration(4); reverse(z); value(y);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.LetValue",
+          "span": [
+            0,
+            15
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            13,
+            14
+          ]
+        },
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            16,
+            33
+          ]
+        },
+        {
+          "kind": "Inference.Add",
+          "span": [
+            22,
+            32
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            22,
+            30
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            31,
+            32
+          ]
+        },
+        {
+          "kind": "Inference.LetRate",
+          "span": [
+            34,
+            58
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            46,
+            57
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            55,
+            56
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            59,
+            70
+          ]
+        },
+        {
+          "kind": "Inference.ReverseRef",
+          "span": [
+            59,
+            69
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            71,
+            80
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            71,
+            79
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            28,
+            29
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            67,
+            68
+          ],
+          "symbol": 39,
+          "kind": "rate"
+        },
+        {
+          "span": [
+            77,
+            78
+          ],
+          "symbol": 20,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            13,
+            14
+          ],
+          "number": 2
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            22,
+            32
+          ],
+          "operation": "Inference.AddScalar",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                22,
+                30
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                31,
+                32
+              ],
+              "number": 3
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            46,
+            57
+          ],
+          "operation": "Inference.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                55,
+                56
+              ],
+              "number": 4
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Inference.Time",
+          "span": [
+            59,
+            69
+          ],
+          "symbol": 39
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            71,
+            79
+          ],
+          "symbol": 20
+        }
+      ],
+      "values": [
+        4,
+        5
+      ],
+      "trace": [
+        "Inference.AddScalar",
+        "Inference.Duration"
+      ]
+    }
+  },
+  {
+    "name": "nominal-overload",
+    "source": "let x=duration(2)+duration(3); value(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            30
+          ]
+        },
+        {
+          "kind": "Inference.Add",
+          "span": [
+            6,
+            29
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            6,
+            17
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            15,
+            16
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            18,
+            29
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            27,
+            28
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            31,
+            40
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            31,
+            39
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            37,
+            38
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            6,
+            29
+          ],
+          "operation": "Inference.AddTime",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Inference.Time",
+              "span": [
+                6,
+                17
+              ],
+              "operation": "Inference.Duration",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    15,
+                    16
+                  ],
+                  "number": 2
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Inference.Time",
+              "span": [
+                18,
+                29
+              ],
+              "operation": "Inference.Duration",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    27,
+                    28
+                  ],
+                  "number": 3
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Inference.Time",
+          "span": [
+            31,
+            39
+          ],
+          "symbol": 4
+        }
+      ],
+      "values": [
+        5
+      ],
+      "trace": [
+        "Inference.Duration",
+        "Inference.Duration",
+        "Inference.AddTime"
+      ]
+    }
+  },
+  {
+    "name": "result-changes-type",
+    "source": "let x=duration(4)-duration(2); value(x)+1;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            30
+          ]
+        },
+        {
+          "kind": "Inference.Sub",
+          "span": [
+            6,
+            29
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            6,
+            17
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            15,
+            16
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            18,
+            29
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            27,
+            28
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            31,
+            42
+          ]
+        },
+        {
+          "kind": "Inference.Add",
+          "span": [
+            31,
+            41
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            31,
+            39
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            40,
+            41
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            37,
+            38
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            6,
+            29
+          ],
+          "operation": "Inference.SubTime",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Inference.Time",
+              "span": [
+                6,
+                17
+              ],
+              "operation": "Inference.Duration",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    15,
+                    16
+                  ],
+                  "number": 4
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Inference.Time",
+              "span": [
+                18,
+                29
+              ],
+              "operation": "Inference.Duration",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    27,
+                    28
+                  ],
+                  "number": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            31,
+            41
+          ],
+          "operation": "Inference.AddScalar",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                31,
+                39
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                40,
+                41
+              ],
+              "number": 1
+            }
+          ]
+        }
+      ],
+      "values": [
+        3
+      ],
+      "trace": [
+        "Inference.Duration",
+        "Inference.Duration",
+        "Inference.SubTime",
+        "Inference.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "reference-overload",
+    "source": "let x=duration(4); rate x=duration(2); either(x)+reverse(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            18
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            6,
+            17
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            15,
+            16
+          ]
+        },
+        {
+          "kind": "Inference.InferRate",
+          "span": [
+            19,
+            38
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            26,
+            37
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            35,
+            36
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            39,
+            60
+          ]
+        },
+        {
+          "kind": "Inference.Add",
+          "span": [
+            39,
+            59
+          ]
+        },
+        {
+          "kind": "Inference.AnyRef",
+          "span": [
+            39,
+            48
+          ]
+        },
+        {
+          "kind": "Inference.ReverseRef",
+          "span": [
+            49,
+            59
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            46,
+            47
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            57,
+            58
+          ],
+          "symbol": 24,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            6,
+            17
+          ],
+          "operation": "Inference.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                15,
+                16
+              ],
+              "number": 4
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            26,
+            37
+          ],
+          "operation": "Inference.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                35,
+                36
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            39,
+            59
+          ],
+          "operation": "Inference.AddTime",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Inference.Time",
+              "span": [
+                39,
+                48
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "reference",
+              "type": "Inference.Time",
+              "span": [
+                49,
+                59
+              ],
+              "symbol": 24
+            }
+          ]
+        }
+      ],
+      "values": [
+        6
+      ],
+      "trace": [
+        "Inference.Duration",
+        "Inference.Duration",
+        "Inference.AddTime"
+      ]
+    }
+  },
+  {
+    "name": "overload-shadow",
+    "source": "let x=2; let x=duration(value(x)); value(x)+duration(3);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            8
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            6,
+            7
+          ]
+        },
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            9,
+            34
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            15,
+            33
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            24,
+            32
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            35,
+            56
+          ]
+        },
+        {
+          "kind": "Inference.Add",
+          "span": [
+            35,
+            55
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            35,
+            43
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            44,
+            55
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            53,
+            54
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            30,
+            31
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            41,
+            42
+          ],
+          "symbol": 13,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            6,
+            7
+          ],
+          "number": 2
+        },
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            15,
+            33
+          ],
+          "operation": "Inference.Duration",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                24,
+                32
+              ],
+              "symbol": 4
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            35,
+            55
+          ],
+          "operation": "Inference.AddTime",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Inference.Time",
+              "span": [
+                35,
+                43
+              ],
+              "symbol": 13
+            },
+            {
+              "kind": "operation",
+              "type": "Inference.Time",
+              "span": [
+                44,
+                55
+              ],
+              "operation": "Inference.Duration",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    53,
+                    54
+                  ],
+                  "number": 3
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        5
+      ],
+      "trace": [
+        "Inference.Duration",
+        "Inference.Duration",
+        "Inference.AddTime"
+      ]
+    }
+  },
+  {
+    "name": "initializer-once",
+    "source": "let x=duration(2); value(x); value(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            18
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            6,
+            17
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            15,
+            16
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            19,
+            28
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            19,
+            27
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            29,
+            38
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            29,
+            37
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            25,
+            26
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            35,
+            36
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            6,
+            17
+          ],
+          "operation": "Inference.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                15,
+                16
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Inference.Time",
+          "span": [
+            19,
+            27
+          ],
+          "symbol": 4
+        },
+        {
+          "kind": "reference",
+          "type": "Inference.Time",
+          "span": [
+            29,
+            37
+          ],
+          "symbol": 4
+        }
+      ],
+      "values": [
+        2,
+        2
+      ],
+      "trace": [
+        "Inference.Duration"
+      ]
+    }
+  },
+  {
+    "name": "grouped-inference",
+    "source": "let x=(duration(2)+duration(3)); value(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            0,
+            32
+          ]
+        },
+        {
+          "kind": "Inference.Paren",
+          "span": [
+            6,
+            31
+          ]
+        },
+        {
+          "kind": "Inference.Add",
+          "span": [
+            7,
+            30
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            7,
+            18
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            16,
+            17
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            19,
+            30
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            28,
+            29
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            33,
+            42
+          ]
+        },
+        {
+          "kind": "Inference.ValueRef",
+          "span": [
+            33,
+            41
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            39,
+            40
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            7,
+            30
+          ],
+          "operation": "Inference.AddTime",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Inference.Time",
+              "span": [
+                7,
+                18
+              ],
+              "operation": "Inference.Duration",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    16,
+                    17
+                  ],
+                  "number": 2
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Inference.Time",
+              "span": [
+                19,
+                30
+              ],
+              "operation": "Inference.Duration",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    28,
+                    29
+                  ],
+                  "number": 3
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Inference.Time",
+          "span": [
+            33,
+            41
+          ],
+          "symbol": 4
+        }
+      ],
+      "values": [
+        5
+      ],
+      "trace": [
+        "Inference.Duration",
+        "Inference.Duration",
+        "Inference.AddTime"
+      ]
+    }
+  },
+  {
+    "name": "unicode-spans",
+    "source": "// café 😀\nlet x=1; rate x=duration(2); either(x); reverse(x);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Inference.InferValue",
+          "span": [
+            14,
+            22
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            20,
+            21
+          ]
+        },
+        {
+          "kind": "Inference.InferRate",
+          "span": [
+            23,
+            42
+          ]
+        },
+        {
+          "kind": "Inference.Duration",
+          "span": [
+            30,
+            41
+          ]
+        },
+        {
+          "kind": "Inference.Num",
+          "span": [
+            39,
+            40
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            43,
+            53
+          ]
+        },
+        {
+          "kind": "Inference.AnyRef",
+          "span": [
+            43,
+            52
+          ]
+        },
+        {
+          "kind": "Inference.Show",
+          "span": [
+            54,
+            65
+          ]
+        },
+        {
+          "kind": "Inference.ReverseRef",
+          "span": [
+            54,
+            64
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            50,
+            51
+          ],
+          "symbol": 18,
+          "kind": "value"
+        },
+        {
+          "span": [
+            62,
+            63
+          ],
+          "symbol": 28,
+          "kind": "rate"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            20,
+            21
+          ],
+          "number": 1
+        },
+        {
+          "kind": "operation",
+          "type": "Inference.Time",
+          "span": [
+            30,
+            41
+          ],
+          "operation": "Inference.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                39,
+                40
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            43,
+            52
+          ],
+          "symbol": 18
+        },
+        {
+          "kind": "reference",
+          "type": "Inference.Time",
+          "span": [
+            54,
+            64
+          ],
+          "symbol": 28
+        }
+      ],
+      "values": [
+        1,
+        2
+      ],
+      "trace": [
+        "Inference.Duration"
+      ]
+    }
+  },
+  {
+    "name": "bad-mixed-overload",
+    "source": "duration(1)+2;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        13
+      ],
+      "message": "no exact overload",
+      "trace": []
+    }
+  },
+  {
+    "name": "no-result-directed-choice",
+    "source": "let x:Scalar=duration(1)+duration(2);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        13,
+        36
+      ],
+      "message": "initializer differs from declared type",
+      "trace": []
+    }
+  },
+  {
+    "name": "bad-duration-argument",
+    "source": "let x=duration(duration(1));",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        15,
+        26
+      ],
+      "message": "'Inference.Duration' needs Core.Scalar, not Inference.Time",
+      "trace": []
+    }
+  },
+  {
+    "name": "forward-inferred",
+    "source": "let x=value(y); let y=1;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        12,
+        13
+      ],
+      "message": "value 'y' is declared in this file but not visible here",
+      "trace": []
+    }
+  },
+  {
+    "name": "unbound-self",
+    "source": "let x=value(x);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        12,
+        13
+      ],
+      "message": "value 'x' is declared in this file but not visible here",
+      "trace": []
+    }
+  },
+  {
+    "name": "other-namespace-self",
+    "source": "let x=2; rate x=rate(x);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        21,
+        22
+      ],
+      "message": "rate 'x' is declared in this file but not visible here",
+      "trace": []
+    }
+  },
+  {
+    "name": "unknown-annotation",
+    "source": "let x:Unknown=1;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        6,
+        13
+      ],
+      "message": "'Unknown' is not a type in the semantic catalog",
+      "trace": []
+    }
+  },
+  {
+    "name": "late-binding-before-type",
+    "source": "let x=duration(1)+2; value(missing);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        27,
+        34
+      ],
+      "message": "unresolved value 'missing'",
+      "trace": []
+    }
+  },
+  {
+    "name": "late-invalid-no-effects",
+    "source": "duration(1); let x=duration(2)+3;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        19,
+        32
+      ],
+      "message": "no exact overload",
+      "trace": []
+    }
+  },
+  {
+    "name": "inferred-type-rejection",
+    "source": "let x=duration(1); value(x)+2;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        19,
+        29
+      ],
+      "message": "no exact overload",
+      "trace": []
+    }
+  },
+  {
+    "name": "earlier-argument-and-late-annotation",
+    "source": "duration(duration(1)); let x:Unknown=2;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        9,
+        20
+      ],
+      "message": "'Inference.Duration' needs Core.Scalar, not Inference.Time",
+      "trace": []
+    }
+  },
+  {
+    "name": "syntax-error",
+    "source": "let x=;",
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        6,
+        6
+      ],
+      "message": "invalid source",
+      "trace": []
+    }
+  },
+  {
+    "name": "outer-overload-before-inner-argument-error",
+    "source": "1+duration(duration(2));",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        23
+      ],
+      "message": "no exact overload",
+      "trace": []
+    }
+  },
+  {
+    "name": "initializer-before-later-overload",
+    "source": "let x:Scalar=duration(1); value(x)+duration(2);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        13,
+        24
+      ],
+      "message": "initializer differs from declared type",
+      "trace": []
+    }
+  },
+  {
+    "name": "initializer-before-later-argument",
+    "source": "let x:Time=1; duration(duration(1));",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        11,
+        12
+      ],
+      "message": "initializer differs from declared type",
+      "trace": []
+    }
+  },
+  {
+    "name": "initializer-before-later-annotation",
+    "source": "let x:Scalar=duration(1); let y:Unknown=2;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        13,
+        24
+      ],
+      "message": "initializer differs from declared type",
+      "trace": []
+    }
+  },
+  {
+    "name": "parenthesized-initializer-origin",
+    "source": "let x:Scalar=(duration(1)); value(x)+duration(2);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        14,
+        25
+      ],
+      "message": "initializer differs from declared type",
+      "trace": []
+    }
+  }
+]

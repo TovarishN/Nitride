@@ -1,0 +1,1105 @@
+[
+  {
+    "name": "precedence",
+    "source": "1 + 2 * 3;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Show",
+          "span": [
+            0,
+            10
+          ]
+        },
+        {
+          "kind": "Portable.Add",
+          "span": [
+            0,
+            9
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            0,
+            1
+          ]
+        },
+        {
+          "kind": "Portable.Mul",
+          "span": [
+            4,
+            9
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            4,
+            5
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            8,
+            9
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            9
+          ],
+          "operation": "Portable.Add",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                0,
+                1
+              ],
+              "number": 1
+            },
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "span": [
+                4,
+                9
+              ],
+              "operation": "Portable.Mul",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    4,
+                    5
+                  ],
+                  "number": 2
+                },
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    8,
+                    9
+                  ],
+                  "number": 3
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        7
+      ],
+      "trace": [
+        "Portable.Mul",
+        "Portable.Add"
+      ]
+    }
+  },
+  {
+    "name": "associativity",
+    "source": "10 - 3 - 2;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Show",
+          "span": [
+            0,
+            11
+          ]
+        },
+        {
+          "kind": "Portable.Sub",
+          "span": [
+            0,
+            10
+          ]
+        },
+        {
+          "kind": "Portable.Sub",
+          "span": [
+            0,
+            6
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            0,
+            2
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            5,
+            6
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            9,
+            10
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            10
+          ],
+          "operation": "Portable.Sub",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "span": [
+                0,
+                6
+              ],
+              "operation": "Portable.Sub",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    0,
+                    2
+                  ],
+                  "number": 10
+                },
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    5,
+                    6
+                  ],
+                  "number": 3
+                }
+              ]
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                9,
+                10
+              ],
+              "number": 2
+            }
+          ]
+        }
+      ],
+      "values": [
+        5
+      ],
+      "trace": [
+        "Portable.Sub",
+        "Portable.Sub"
+      ]
+    }
+  },
+  {
+    "name": "parentheses",
+    "source": "(1 + 2) * -3;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Show",
+          "span": [
+            0,
+            13
+          ]
+        },
+        {
+          "kind": "Portable.Mul",
+          "span": [
+            0,
+            12
+          ]
+        },
+        {
+          "kind": "Portable.Paren",
+          "span": [
+            0,
+            7
+          ]
+        },
+        {
+          "kind": "Portable.Add",
+          "span": [
+            1,
+            6
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            1,
+            2
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            5,
+            6
+          ]
+        },
+        {
+          "kind": "Portable.Neg",
+          "span": [
+            10,
+            12
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            11,
+            12
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            12
+          ],
+          "operation": "Portable.Mul",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "span": [
+                1,
+                6
+              ],
+              "operation": "Portable.Add",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    1,
+                    2
+                  ],
+                  "number": 1
+                },
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    5,
+                    6
+                  ],
+                  "number": 2
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "span": [
+                10,
+                12
+              ],
+              "operation": "Portable.Neg",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    11,
+                    12
+                  ],
+                  "number": 3
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        -9
+      ],
+      "trace": [
+        "Portable.Add",
+        "Portable.Neg",
+        "Portable.Mul"
+      ]
+    }
+  },
+  {
+    "name": "sequential",
+    "source": "let x : Scalar = 2; let y : Scalar = x * 3; y + x;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Let",
+          "span": [
+            0,
+            19
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            17,
+            18
+          ]
+        },
+        {
+          "kind": "Portable.Let",
+          "span": [
+            20,
+            43
+          ]
+        },
+        {
+          "kind": "Portable.Mul",
+          "span": [
+            37,
+            42
+          ]
+        },
+        {
+          "kind": "Portable.Ref",
+          "span": [
+            37,
+            38
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            41,
+            42
+          ]
+        },
+        {
+          "kind": "Portable.Show",
+          "span": [
+            44,
+            50
+          ]
+        },
+        {
+          "kind": "Portable.Add",
+          "span": [
+            44,
+            49
+          ]
+        },
+        {
+          "kind": "Portable.Ref",
+          "span": [
+            44,
+            45
+          ]
+        },
+        {
+          "kind": "Portable.Ref",
+          "span": [
+            48,
+            49
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            37,
+            38
+          ],
+          "symbol": 4
+        },
+        {
+          "span": [
+            44,
+            45
+          ],
+          "symbol": 24
+        },
+        {
+          "span": [
+            48,
+            49
+          ],
+          "symbol": 4
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            17,
+            18
+          ],
+          "number": 2
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            37,
+            42
+          ],
+          "operation": "Portable.Mul",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                37,
+                38
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                41,
+                42
+              ],
+              "number": 3
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            44,
+            49
+          ],
+          "operation": "Portable.Add",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                44,
+                45
+              ],
+              "symbol": 24
+            },
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                48,
+                49
+              ],
+              "symbol": 4
+            }
+          ]
+        }
+      ],
+      "values": [
+        8
+      ],
+      "trace": [
+        "Portable.Mul",
+        "Portable.Add"
+      ]
+    }
+  },
+  {
+    "name": "shadowing",
+    "source": "let x : Scalar = 2; let x : Scalar = x + 1; x;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Let",
+          "span": [
+            0,
+            19
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            17,
+            18
+          ]
+        },
+        {
+          "kind": "Portable.Let",
+          "span": [
+            20,
+            43
+          ]
+        },
+        {
+          "kind": "Portable.Add",
+          "span": [
+            37,
+            42
+          ]
+        },
+        {
+          "kind": "Portable.Ref",
+          "span": [
+            37,
+            38
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            41,
+            42
+          ]
+        },
+        {
+          "kind": "Portable.Show",
+          "span": [
+            44,
+            46
+          ]
+        },
+        {
+          "kind": "Portable.Ref",
+          "span": [
+            44,
+            45
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            37,
+            38
+          ],
+          "symbol": 4
+        },
+        {
+          "span": [
+            44,
+            45
+          ],
+          "symbol": 24
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            17,
+            18
+          ],
+          "number": 2
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            37,
+            42
+          ],
+          "operation": "Portable.Add",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                37,
+                38
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                41,
+                42
+              ],
+              "number": 1
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            44,
+            45
+          ],
+          "symbol": 24
+        }
+      ],
+      "values": [
+        3
+      ],
+      "trace": [
+        "Portable.Add"
+      ]
+    }
+  },
+  {
+    "name": "duration",
+    "source": "let t : Time = duration(3); t;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Let",
+          "span": [
+            0,
+            27
+          ]
+        },
+        {
+          "kind": "Portable.Duration",
+          "span": [
+            15,
+            26
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            24,
+            25
+          ]
+        },
+        {
+          "kind": "Portable.Show",
+          "span": [
+            28,
+            30
+          ]
+        },
+        {
+          "kind": "Portable.Ref",
+          "span": [
+            28,
+            29
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            28,
+            29
+          ],
+          "symbol": 4
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Portable.Time",
+          "span": [
+            15,
+            26
+          ],
+          "operation": "Portable.Duration",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                24,
+                25
+              ],
+              "number": 3
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Portable.Time",
+          "span": [
+            28,
+            29
+          ],
+          "symbol": 4
+        }
+      ],
+      "values": [
+        3
+      ],
+      "trace": [
+        "Portable.Duration"
+      ]
+    }
+  },
+  {
+    "name": "unknown",
+    "source": "missing + 1;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        0,
+        7
+      ],
+      "message": "unresolved value 'missing'",
+      "trace": []
+    }
+  },
+  {
+    "name": "forward",
+    "source": "x; let x : Scalar = 1;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        0,
+        1
+      ],
+      "message": "value 'x' is declared in this file but not visible here",
+      "trace": []
+    }
+  },
+  {
+    "name": "self_reference",
+    "source": "let x : Scalar = x;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        17,
+        18
+      ],
+      "message": "value 'x' is declared in this file but not visible here",
+      "trace": []
+    }
+  },
+  {
+    "name": "nominal_mismatch",
+    "source": "duration(1) + 2;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        11
+      ],
+      "message": "'Portable.Add' needs Core.Scalar, not Portable.Time",
+      "trace": []
+    }
+  },
+  {
+    "name": "initializer_mismatch",
+    "source": "let x : Time = 1;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        15,
+        16
+      ],
+      "message": "initializer differs from declared type",
+      "trace": []
+    }
+  },
+  {
+    "name": "unknown_type",
+    "source": "let x : Unknown = 1;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        8,
+        15
+      ],
+      "message": "'Unknown' is not a type in the semantic catalog",
+      "trace": []
+    }
+  },
+  {
+    "name": "malformed",
+    "source": "1 + ;",
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        4,
+        4
+      ],
+      "message": "invalid source",
+      "trace": []
+    }
+  },
+  {
+    "name": "late_error",
+    "source": "duration(1); unknown;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        13,
+        20
+      ],
+      "message": "unresolved value 'unknown'",
+      "trace": []
+    }
+  },
+  {
+    "name": "nonfinite",
+    "source": "1 / 0;",
+    "observation": {
+      "ok": false,
+      "error": "execution",
+      "message": "nonfinite result",
+      "trace": [
+        "Portable.Div"
+      ]
+    }
+  },
+  {
+    "name": "empty",
+    "source": "",
+    "observation": {
+      "ok": true,
+      "syntax": [],
+      "bindings": [],
+      "hir": [],
+      "values": [],
+      "trace": []
+    }
+  },
+  {
+    "name": "unicode_trivia",
+    "source": "// Привет 😀\n1 + 2;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Show",
+          "span": [
+            21,
+            27
+          ]
+        },
+        {
+          "kind": "Portable.Add",
+          "span": [
+            21,
+            26
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            21,
+            22
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            25,
+            26
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            21,
+            26
+          ],
+          "operation": "Portable.Add",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                21,
+                22
+              ],
+              "number": 1
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                25,
+                26
+              ],
+              "number": 2
+            }
+          ]
+        }
+      ],
+      "values": [
+        3
+      ],
+      "trace": [
+        "Portable.Add"
+      ]
+    }
+  },
+  {
+    "name": "unicode_error",
+    "source": "// 😀\n1 + é;",
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        12,
+        12
+      ],
+      "message": "invalid source",
+      "trace": []
+    }
+  },
+  {
+    "name": "block_comment",
+    "source": "/* λ 😀 */ 2;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Show",
+          "span": [
+            14,
+            16
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            14,
+            15
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            14,
+            15
+          ],
+          "number": 2
+        }
+      ],
+      "values": [
+        2
+      ],
+      "trace": []
+    }
+  },
+  {
+    "name": "trailing_garbage",
+    "source": "1; @",
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        3,
+        3
+      ],
+      "message": "invalid source",
+      "trace": []
+    }
+  },
+  {
+    "name": "keyword_boundary",
+    "source": "letx:Scalar=1; x;",
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        4,
+        4
+      ],
+      "message": "invalid source",
+      "trace": []
+    }
+  },
+  {
+    "name": "comment_to_eof",
+    "source": "1; /* bad",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Portable.Show",
+          "span": [
+            0,
+            2
+          ]
+        },
+        {
+          "kind": "Portable.Num",
+          "span": [
+            0,
+            1
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            1
+          ],
+          "number": 1
+        }
+      ],
+      "values": [
+        1
+      ],
+      "trace": []
+    }
+  },
+  {
+    "name": "empty_comment_to_eof",
+    "source": "/* unclosed",
+    "observation": {
+      "ok": true,
+      "syntax": [],
+      "bindings": [],
+      "hir": [],
+      "values": [],
+      "trace": []
+    }
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "mode": "syntax",
+  "start": "Uses.Doc",
+  "grammars": [
+    "Base.ngr",
+    "Uses.ngr"
+  ],
+  "catalog": "catalog.json"
+}

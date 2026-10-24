@@ -1,0 +1,7 @@
+syntax module Portable.Power
+{
+  extend syntax Portable.Expr
+  {
+    | Pow = Left:Expr "^" Right:Expr precedence 25 right lowers Portable.Power(Left, Right)
+  }
+}

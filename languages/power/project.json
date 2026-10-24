@@ -1,0 +1,9 @@
+{
+  "mode": "typed",
+  "start": "Portable.Program",
+  "grammars": [
+    "../portable/Portable.ngr",
+    "Power.ngr"
+  ],
+  "catalog": "catalog.json"
+}

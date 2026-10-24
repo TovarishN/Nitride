@@ -1,0 +1,23 @@
+// Independent sequential symbol namespaces; rate here is a binding kind, not a unit.
+syntax module Namespaces
+{
+  symbols { value rate }
+  token Number = ['0'..'9']+ ("." ['0'..'9']+)?;
+  token Identifier = ['a'..'z' 'A'..'Z' '_'] ['a'..'z' 'A'..'Z' '0'..'9' '_']* except "let" "rate" "value" "either" "reverse" "duration";
+  syntax Program = Statements:Statement*;
+  syntax Statement = LetValue / LetRate / Show;
+  syntax LetValue = "let" Name:Identifier ":" Annotation:Identifier "=" Value:Expr ";" declares value Name sequential type Annotation;
+  syntax LetRate = "rate" Name:Identifier ":" Annotation:Identifier "=" Value:Expr ";" declares rate Name sequential type Annotation;
+  syntax Show = Value:Expr ";";
+  extensible syntax Expr
+  {
+    | Num = Value:Number lowers literal Core.Scalar Value
+    | ValueRef = "value" "(" Name:Identifier ")" references value Name
+    | RateRef = "rate" "(" Name:Identifier ")" references rate Name
+    | AnyRef = "either" "(" Name:Identifier ")" references (value | rate) Name
+    | ReverseRef = "reverse" "(" Name:Identifier ")" references (rate | value) Name
+    | Paren = "(" Inner:Expr ")"
+    | Duration = "duration" "(" Amount:Expr ")" lowers Namespaces.Duration(Amount)
+    | Add = Left:Expr "+" Right:Expr precedence 10 left lowers Namespaces.Add(Left, Right)
+  }
+}

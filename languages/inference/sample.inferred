@@ -1,0 +1,6 @@
+let x = 2;
+let x = value(x) + 3;
+rate x = duration(4);
+either(x);
+reverse(x) + duration(2);
+reverse(x) - duration(1);

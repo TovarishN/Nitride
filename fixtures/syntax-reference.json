@@ -1,0 +1,777 @@
+[
+  {
+    "profile": "xml",
+    "name": "empty_element",
+    "source": "<root/>",
+    "ok": true,
+    "observation": {
+      "ok": true,
+      "profile": "syntax-only",
+      "semantic_validation": false,
+      "nodes": [
+        {
+          "rule": "Xml.Document",
+          "span": [
+            0,
+            7
+          ],
+          "parent": null
+        },
+        {
+          "rule": "Xml.Empty",
+          "span": [
+            0,
+            7
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            1,
+            5
+          ],
+          "parent": 1
+        }
+      ]
+    }
+  },
+  {
+    "profile": "xml",
+    "name": "nested",
+    "source": "<root a='1' b=\"2\">text<child/>tail</root>",
+    "ok": true,
+    "observation": {
+      "ok": true,
+      "profile": "syntax-only",
+      "semantic_validation": false,
+      "nodes": [
+        {
+          "rule": "Xml.Document",
+          "span": [
+            0,
+            41
+          ],
+          "parent": null
+        },
+        {
+          "rule": "Xml.Paired",
+          "span": [
+            0,
+            41
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            1,
+            5
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Attribute",
+          "span": [
+            6,
+            11
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            6,
+            7
+          ],
+          "parent": 3
+        },
+        {
+          "rule": "Xml.Quoted",
+          "span": [
+            8,
+            11
+          ],
+          "parent": 3
+        },
+        {
+          "rule": "Xml.Attribute",
+          "span": [
+            12,
+            17
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            12,
+            13
+          ],
+          "parent": 6
+        },
+        {
+          "rule": "Xml.Quoted",
+          "span": [
+            14,
+            17
+          ],
+          "parent": 6
+        },
+        {
+          "rule": "Xml.Content",
+          "span": [
+            18,
+            22
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Empty",
+          "span": [
+            22,
+            30
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            23,
+            28
+          ],
+          "parent": 10
+        },
+        {
+          "rule": "Xml.Content",
+          "span": [
+            30,
+            34
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            36,
+            40
+          ],
+          "parent": 1
+        }
+      ]
+    }
+  },
+  {
+    "profile": "xml",
+    "name": "declaration",
+    "source": "<?xml version='1.0'?><!--before--><root/><!--after-->",
+    "ok": true,
+    "observation": {
+      "ok": true,
+      "profile": "syntax-only",
+      "semantic_validation": false,
+      "nodes": [
+        {
+          "rule": "Xml.Document",
+          "span": [
+            0,
+            53
+          ],
+          "parent": null
+        },
+        {
+          "rule": "Xml.Declaration",
+          "span": [
+            0,
+            21
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Xml.Comment",
+          "span": [
+            21,
+            34
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Xml.Empty",
+          "span": [
+            34,
+            41
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            35,
+            39
+          ],
+          "parent": 3
+        },
+        {
+          "rule": "Xml.Comment",
+          "span": [
+            41,
+            53
+          ],
+          "parent": 0
+        }
+      ]
+    }
+  },
+  {
+    "profile": "xml",
+    "name": "unicode",
+    "source": "<root><!--😀--><child name=\"café λ\"/></root>",
+    "ok": true,
+    "observation": {
+      "ok": true,
+      "profile": "syntax-only",
+      "semantic_validation": false,
+      "nodes": [
+        {
+          "rule": "Xml.Document",
+          "span": [
+            0,
+            48
+          ],
+          "parent": null
+        },
+        {
+          "rule": "Xml.Paired",
+          "span": [
+            0,
+            48
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            1,
+            5
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Comment",
+          "span": [
+            6,
+            17
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Empty",
+          "span": [
+            17,
+            41
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            18,
+            23
+          ],
+          "parent": 4
+        },
+        {
+          "rule": "Xml.Attribute",
+          "span": [
+            24,
+            39
+          ],
+          "parent": 4
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            24,
+            28
+          ],
+          "parent": 6
+        },
+        {
+          "rule": "Xml.Quoted",
+          "span": [
+            29,
+            39
+          ],
+          "parent": 6
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            43,
+            47
+          ],
+          "parent": 1
+        }
+      ]
+    }
+  },
+  {
+    "profile": "xml",
+    "name": "mismatch_is_syntax",
+    "source": "<a></b>",
+    "ok": true,
+    "observation": {
+      "ok": true,
+      "profile": "syntax-only",
+      "semantic_validation": false,
+      "nodes": [
+        {
+          "rule": "Xml.Document",
+          "span": [
+            0,
+            7
+          ],
+          "parent": null
+        },
+        {
+          "rule": "Xml.Paired",
+          "span": [
+            0,
+            7
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            1,
+            2
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            5,
+            6
+          ],
+          "parent": 1
+        }
+      ]
+    }
+  },
+  {
+    "profile": "xml",
+    "name": "empty",
+    "source": "",
+    "ok": false,
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        0,
+        0
+      ],
+      "semantic_validation": false
+    }
+  },
+  {
+    "profile": "xml",
+    "name": "bad_quote",
+    "source": "<a k='x/>",
+    "ok": false,
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        5,
+        5
+      ],
+      "semantic_validation": false
+    }
+  },
+  {
+    "profile": "xml",
+    "name": "unclosed",
+    "source": "<a>",
+    "ok": false,
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        3,
+        3
+      ],
+      "semantic_validation": false
+    }
+  },
+  {
+    "profile": "xml",
+    "name": "comment_unclosed",
+    "source": "<a><!--no close</a>",
+    "ok": false,
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        4,
+        4
+      ],
+      "semantic_validation": false
+    }
+  },
+  {
+    "profile": "xml",
+    "name": "trailing",
+    "source": "<a/>extra",
+    "ok": false,
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        4,
+        4
+      ],
+      "semantic_validation": false
+    }
+  },
+  {
+    "profile": "xml",
+    "name": "whitespace",
+    "source": " \n <root> \n <child/> \n </root> ",
+    "ok": true,
+    "observation": {
+      "ok": true,
+      "profile": "syntax-only",
+      "semantic_validation": false,
+      "nodes": [
+        {
+          "rule": "Xml.Document",
+          "span": [
+            3,
+            30
+          ],
+          "parent": null
+        },
+        {
+          "rule": "Xml.Paired",
+          "span": [
+            3,
+            30
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            4,
+            8
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Empty",
+          "span": [
+            12,
+            20
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            13,
+            18
+          ],
+          "parent": 3
+        },
+        {
+          "rule": "Xml.Name",
+          "span": [
+            25,
+            29
+          ],
+          "parent": 1
+        }
+      ]
+    }
+  },
+  {
+    "profile": "composition",
+    "name": "empty",
+    "source": "doc end",
+    "ok": true,
+    "observation": {
+      "ok": true,
+      "profile": "syntax-only",
+      "semantic_validation": false,
+      "nodes": [
+        {
+          "rule": "Uses.Doc",
+          "span": [
+            0,
+            7
+          ],
+          "parent": null
+        }
+      ]
+    }
+  },
+  {
+    "profile": "composition",
+    "name": "imports",
+    "source": "doc let x = -1; (name) end",
+    "ok": true,
+    "observation": {
+      "ok": true,
+      "profile": "syntax-only",
+      "semantic_validation": false,
+      "nodes": [
+        {
+          "rule": "Uses.Doc",
+          "span": [
+            0,
+            26
+          ],
+          "parent": null
+        },
+        {
+          "rule": "Uses.Assign",
+          "span": [
+            4,
+            15
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Base.Word",
+          "span": [
+            8,
+            9
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Uses.Neg",
+          "span": [
+            12,
+            14
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Base.Number",
+          "span": [
+            13,
+            14
+          ],
+          "parent": 3
+        },
+        {
+          "rule": "Base.Pair",
+          "span": [
+            16,
+            22
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Base.Word",
+          "span": [
+            17,
+            21
+          ],
+          "parent": 5
+        }
+      ]
+    }
+  },
+  {
+    "profile": "composition",
+    "name": "extension",
+    "source": "doc let x = --1; end",
+    "ok": true,
+    "observation": {
+      "ok": true,
+      "profile": "syntax-only",
+      "semantic_validation": false,
+      "nodes": [
+        {
+          "rule": "Uses.Doc",
+          "span": [
+            0,
+            20
+          ],
+          "parent": null
+        },
+        {
+          "rule": "Uses.Assign",
+          "span": [
+            4,
+            16
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Base.Word",
+          "span": [
+            8,
+            9
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Uses.Neg",
+          "span": [
+            12,
+            15
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Uses.Neg",
+          "span": [
+            13,
+            15
+          ],
+          "parent": 3
+        },
+        {
+          "rule": "Base.Number",
+          "span": [
+            14,
+            15
+          ],
+          "parent": 4
+        }
+      ]
+    }
+  },
+  {
+    "profile": "composition",
+    "name": "reference",
+    "source": "doc let x = word; end",
+    "ok": true,
+    "observation": {
+      "ok": true,
+      "profile": "syntax-only",
+      "semantic_validation": false,
+      "nodes": [
+        {
+          "rule": "Uses.Doc",
+          "span": [
+            0,
+            21
+          ],
+          "parent": null
+        },
+        {
+          "rule": "Uses.Assign",
+          "span": [
+            4,
+            17
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Base.Word",
+          "span": [
+            8,
+            9
+          ],
+          "parent": 1
+        },
+        {
+          "rule": "Base.Word",
+          "span": [
+            12,
+            16
+          ],
+          "parent": 1
+        }
+      ]
+    }
+  },
+  {
+    "profile": "composition",
+    "name": "unicode",
+    "source": "//😀\ndoc (abc) end",
+    "ok": true,
+    "observation": {
+      "ok": true,
+      "profile": "syntax-only",
+      "semantic_validation": false,
+      "nodes": [
+        {
+          "rule": "Uses.Doc",
+          "span": [
+            7,
+            20
+          ],
+          "parent": null
+        },
+        {
+          "rule": "Base.Pair",
+          "span": [
+            11,
+            16
+          ],
+          "parent": 0
+        },
+        {
+          "rule": "Base.Word",
+          "span": [
+            12,
+            15
+          ],
+          "parent": 1
+        }
+      ]
+    }
+  },
+  {
+    "profile": "composition",
+    "name": "missing_end",
+    "source": "doc let x = 1;",
+    "ok": false,
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        14,
+        14
+      ],
+      "semantic_validation": false
+    }
+  },
+  {
+    "profile": "composition",
+    "name": "malformed",
+    "source": "doc let x = ; end",
+    "ok": false,
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        12,
+        12
+      ],
+      "semantic_validation": false
+    }
+  },
+  {
+    "profile": "composition",
+    "name": "unknown",
+    "source": "doc nonsense end",
+    "ok": false,
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        4,
+        4
+      ],
+      "semantic_validation": false
+    }
+  }
+]
