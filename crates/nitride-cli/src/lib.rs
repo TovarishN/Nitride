@@ -1,6 +1,9 @@
 pub mod functions {
     include!(concat!(env!("OUT_DIR"), "/functions.rs"));
 }
+pub mod rewrites {
+    include!(concat!(env!("OUT_DIR"), "/rewrites.rs"));
+}
 pub mod dates {
     include!(concat!(env!("OUT_DIR"), "/dates.rs"));
 }
@@ -121,6 +124,10 @@ pub fn observe_dates(source: &str, today: f64) -> Value {
     observe_with_values(&dates::LANGUAGE, source, true, &dates_values(today))
 }
 
+pub fn observe_rewrites(source: &str, today: f64) -> Value {
+    observe_with_values(&rewrites::LANGUAGE, source, true, &dates_values(today))
+}
+
 pub fn observe(source: &str) -> Value {
     observe_language(&LANGUAGE, source)
 }
@@ -221,6 +228,16 @@ fn observe_with_values(
         };
         if std::ptr::eq(language, &functions::LANGUAGE) {
             observation["origins"] = json!(program.origins(hir.len() as u32));
+        }
+        if !language.helpers.is_empty() {
+            // Rewrite profiles report every origin with its source, as Nitrogen does.
+            let id = hir.len() as u32;
+            let paths = program.origin_in_rewrite(id);
+            observation.as_object_mut().unwrap().remove("span");
+            observation["origins"] =
+                json!(program.origins(id).iter().zip(paths).map(|(span, rewrite)| {
+                json!({"path":if *rewrite {"nitrogen:rewrite"} else {"input"},"span":span})
+            }).collect::<Vec<_>>());
         }
         hir.push(observation);
     }

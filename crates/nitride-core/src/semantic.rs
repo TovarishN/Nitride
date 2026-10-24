@@ -1,4 +1,5 @@
 use crate::*;
+use std::collections::HashMap;
 
 #[derive(Debug)]
 pub enum HirKind {
@@ -48,6 +49,9 @@ pub struct Program {
     pub builtin_bindings: Vec<BuiltinBinding>,
     pub origin_spans: Vec<[u32; 2]>,
     pub origin_ranges: Vec<std::ops::Range<u32>>,
+    /// Parallel to `origin_spans` in rewrite profiles: true for a span within
+    /// a quote template (`nitrogen:rewrite`) rather than the document.
+    pub origin_rewrites: Vec<bool>,
     pub text: String,
 }
 
@@ -68,12 +72,36 @@ pub fn compile(
     compile_checked(language, tree, limits).map_err(|e| vec![e])
 }
 
-fn compile_checked(
-    language: &'static Language,
-    tree: &SyntaxTree,
-    limits: Limits,
-) -> Result<Program, Diagnostic> {
-    use std::collections::HashMap;
+/// Name resolution facts for one syntax tree.
+#[derive(Default)]
+struct Bound {
+    references: HashMap<u32, (u32, u32)>,
+    values: HashMap<u32, &'static BuiltinValue>,
+    calls: HashMap<u32, &'static [u16]>,
+}
+
+/// One parsed quote template and its holes.
+struct Template {
+    tree: SyntaxTree,
+    holes: Vec<(u32, &'static Hole)>,
+    bound: Bound,
+}
+
+struct HelperTemplates {
+    body: Template,
+    arms: Vec<(Template, Template)>,
+}
+
+/// The rewrite use a template tree is lowered for.
+struct Expansion<'a> {
+    use_span: [u32; 2],
+    name: String,
+    holes: &'a HashMap<u32, u32>,
+}
+
+type Origin = (bool, [u32; 2]);
+
+fn check_storage(language: &'static Language, tree: &SyntaxTree) -> Result<(), Diagnostic> {
     if !std::ptr::eq(language, tree.language) {
         return Err(Diagnostic::new(
             "grammar",
@@ -107,6 +135,15 @@ fn compile_checked(
             ));
         }
     }
+    Ok(())
+}
+
+fn compile_checked(
+    language: &'static Language,
+    tree: &SyntaxTree,
+    limits: Limits,
+) -> Result<Program, Diagnostic> {
+    check_storage(language, tree)?;
     if language.rules.iter().any(|r| {
         matches!(
             r.action,
@@ -118,6 +155,12 @@ fn compile_checked(
     }) {
         return crate::templates::compile(language, tree, limits);
     }
+    // Every template is validated on each compile, used or not.
+    let templates = if language.helpers.is_empty() {
+        None
+    } else {
+        Some(parse_templates(language, limits)?)
+    };
     let mut program = Program {
         language,
         nodes: Vec::new(),
@@ -127,6 +170,7 @@ fn compile_checked(
         builtin_bindings: Vec::new(),
         origin_spans: Vec::new(),
         origin_ranges: Vec::new(),
+        origin_rewrites: Vec::new(),
         text: String::new(),
     };
     if tree.nodes.len() as u64 > limits.work {
@@ -136,12 +180,49 @@ fn compile_checked(
             "compiler work limit exceeded",
         ));
     }
-    let mut environment = HashMap::<(&'static str, &str), (u32, u32)>::new();
-    let mut references = HashMap::<u32, (u32, u32)>::new();
     let mut type_errors = Vec::new();
+    let (bound, mut binding_errors) = bind(language, tree, Some(&mut program), &mut type_errors)?;
+    if !binding_errors.is_empty() {
+        binding_errors.sort_by_key(|e| e.span[0]);
+        return Err(binding_errors.remove(0));
+    }
+    let mut lowerer = Lowerer {
+        language,
+        limits,
+        program: &mut program,
+        type_errors,
+        depths: Vec::new(),
+        templates: templates.as_deref(),
+        origins: templates.as_ref().map(|_| Vec::new()),
+        active: Vec::new(),
+        work: tree.nodes.len() as u64,
+    };
+    lowerer.lower_tree(tree, &bound, None)?;
+    let Lowerer {
+        type_errors,
+        origins,
+        ..
+    } = lowerer;
+    if let Some(error) = type_errors.into_iter().min_by_key(|e| e.span[0]) {
+        return Err(error);
+    }
+    if let Some(origins) = origins {
+        reemit(&mut program, origins, limits)?;
+    }
+    Ok(program)
+}
+
+/// Binds a document (`program` given: locals, observations) or a template
+/// (no locals: names resolve only against built-ins, as in Nitrogen).
+fn bind(
+    language: &'static Language,
+    tree: &SyntaxTree,
+    mut program: Option<&mut Program>,
+    type_errors: &mut Vec<Diagnostic>,
+) -> Result<(Bound, Vec<Diagnostic>), Diagnostic> {
+    let mut environment = HashMap::<(&'static str, &str), (u32, u32)>::new();
+    let mut bound = Bound::default();
     let mut binding_errors = Vec::new();
-    let mut call_targets = HashMap::<u32, &'static [u16]>::new();
-    let mut value_targets = HashMap::<u32, &'static BuiltinValue>::new();
     let field = |id, label| {
         tree.field(id, label)
             .ok_or_else(|| Diagnostic::new("grammar", [0, 0], format!("missing field {label}")))
@@ -172,12 +253,14 @@ fn compile_checked(
                     .iter()
                     .find_map(|kind| environment.get(&(*kind, text)).copied().map(|b| (*kind, b)))
                 {
-                    references.insert(id as u32, binding);
-                    program.bindings.push(Binding {
-                        kind,
-                        span: tree.nodes[name as usize].span,
-                        symbol: binding.0,
-                    });
+                    bound.references.insert(id as u32, binding);
+                    if let Some(program) = program.as_deref_mut() {
+                        program.bindings.push(Binding {
+                            kind,
+                            span: tree.nodes[name as usize].span,
+                            symbol: binding.0,
+                        });
+                    }
                 } else if let Action::Call { builtins, .. } = rule.action {
                     for (i, builtin) in builtins.iter().enumerate() {
                         if builtin.kind.is_empty()
@@ -197,12 +280,14 @@ fn compile_checked(
                     if let Some(builtin) = kinds.iter().find_map(|kind| {
                         builtins.iter().find(|b| b.kind == *kind && b.name == text)
                     }) {
-                        call_targets.insert(id as u32, builtin.candidates);
-                        program.builtin_bindings.push(BuiltinBinding {
-                            kind: builtin.kind,
-                            name: builtin.name,
-                            span: tree.nodes[name as usize].span,
-                        });
+                        bound.calls.insert(id as u32, builtin.candidates);
+                        if let Some(program) = program.as_deref_mut() {
+                            program.builtin_bindings.push(BuiltinBinding {
+                                kind: builtin.kind,
+                                name: builtin.name,
+                                span: tree.nodes[name as usize].span,
+                            });
+                        }
                     } else {
                         binding_errors.push(Diagnostic::new(
                             "binding",
@@ -217,12 +302,14 @@ fn compile_checked(
                         .find_map(|kind| values.iter().find(|v| v.kind == *kind && v.name == text)),
                     _ => None,
                 } {
-                    value_targets.insert(id as u32, value);
-                    program.builtin_bindings.push(BuiltinBinding {
-                        kind: value.kind,
-                        name: value.name,
-                        span: tree.nodes[name as usize].span,
-                    });
+                    bound.values.insert(id as u32, value);
+                    if let Some(program) = program.as_deref_mut() {
+                        program.builtin_bindings.push(BuiltinBinding {
+                            kind: value.kind,
+                            name: value.name,
+                            span: tree.nodes[name as usize].span,
+                        });
+                    }
                 } else {
                     binding_errors.push(Diagnostic::new(
                         "binding",
@@ -237,6 +324,13 @@ fn compile_checked(
                 annotation,
                 ..
             } => {
+                if program.is_none() {
+                    return Err(Diagnostic::new(
+                        "grammar",
+                        [0, 0],
+                        "templates may not declare names",
+                    ));
+                }
                 let name = field(id as u32, label)?;
                 if let Some(annotation) = annotation {
                     let annotation = field(id as u32, annotation)?;
@@ -267,304 +361,740 @@ fn compile_checked(
                     (tree.nodes[name as usize].span[0], id as u32),
                 );
             }
+            Action::Show { .. } if program.is_none() => {
+                return Err(Diagnostic::new(
+                    "grammar",
+                    [0, 0],
+                    "templates may not contain statements",
+                ));
+            }
             _ => {}
         }
     }
-    if !binding_errors.is_empty() {
-        binding_errors.sort_by_key(|e| e.span[0]);
-        return Err(binding_errors.remove(0));
-    }
-    let mut lowered = vec![None; tree.nodes.len()];
-    let mut depths = Vec::<u32>::new();
-    for (id, node) in tree.nodes.iter().enumerate() {
-        let rule = &language.rules[node.rule as usize];
-        let value_of = |label| -> Result<u32, Diagnostic> {
-            let child = field(id as u32, label)?;
-            lowered[child as usize].ok_or_else(|| {
-                Diagnostic::new("type", node.span, format!("untyped argument {label}"))
-            })
+    Ok((bound, binding_errors))
+}
+
+fn parse_templates(
+    language: &'static Language,
+    limits: Limits,
+) -> Result<Vec<HelperTemplates>, Diagnostic> {
+    let template = |helper: &Helper,
+                    text: &str,
+                    category: u16,
+                    holes: &[&'static Hole],
+                    bind_names: bool|
+     -> Result<Template, Diagnostic> {
+        let invalid = |message: &str| {
+            Diagnostic::new(
+                "grammar",
+                [0, 0],
+                format!("invalid template in {}: {message}", helper.name),
+            )
         };
-        let mut depth = 1;
-        for check in language.checks.iter().filter(|c| c.rule == node.rule) {
-            // An absent optional field has no spelling, so its predicate fails.
-            let spelling = tree
-                .field(id as u32, check.field)
-                .and_then(|c| tree.text(c));
-            let holds = spelling.is_some_and(|text| match check.predicate {
-                Predicate::IsoDate => iso_date_day_number(text).is_some(),
-            });
-            if !holds {
-                let mut diagnostic = Diagnostic::new("check", node.span, check.message);
-                diagnostic.code = Some(check.code);
-                type_errors.push(diagnostic);
+        let (tree, found) = parse_template(language, text, category, holes, limits)
+            .map_err(|e| invalid(&e.message))?;
+        let bound = if bind_names {
+            let (bound, errors) =
+                bind(language, &tree, None, &mut Vec::new()).map_err(|e| invalid(&e.message))?;
+            if let Some(error) = errors.first() {
+                return Err(invalid(&error.message));
             }
-        }
-        let value = match rule.action {
-            Action::Literal { ty, field: label } => {
-                let child = field(id as u32, label)?;
-                let number = tree
-                    .text(child)
-                    .and_then(|s| s.parse::<f64>().ok())
-                    .filter(|n| n.is_finite())
-                    .unwrap_or_else(|| {
-                        type_errors.push(Diagnostic::new(
-                            "type",
-                            node.span,
-                            "literal must be finite",
-                        ));
-                        0.0 // Private placeholder; any diagnostic prevents Program publication.
-                    });
-                Some(HirNode {
-                    kind: HirKind::Constant(number),
-                    ty,
-                    span: node.span,
-                })
-            }
-            Action::Reference { .. } if value_targets.contains_key(&(id as u32)) => {
-                let value = value_targets[&(id as u32)];
-                Some(HirNode {
-                    kind: HirKind::Builtin(value),
-                    ty: value.ty,
-                    span: node.span,
-                })
-            }
-            Action::Reference { .. } => {
-                let (symbol, declaration) = references[&(id as u32)];
-                let initializer = lowered[declaration as usize].ok_or_else(|| {
-                    Diagnostic::new(
-                        "grammar",
-                        node.span,
-                        "reference declaration has no validated initializer",
-                    )
-                })?;
-                let declaration_node = tree.nodes[declaration as usize];
-                let ty = if let Action::Declare {
-                    annotation: Some(label),
-                    ..
-                } = language.rules[declaration_node.rule as usize].action
-                {
-                    let text = tree.text(field(declaration, label)?).unwrap();
-                    language
-                        .types
-                        .iter()
-                        .copied()
-                        .find(|t| *t == text || t.rsplit('.').next() == Some(text))
-                        .unwrap_or("<error>")
-                } else {
-                    program.nodes[initializer as usize].ty
-                };
-                Some(HirNode {
-                    kind: HirKind::Reference(symbol),
-                    ty,
-                    span: node.span,
-                })
-            }
-            Action::Operation { fields, .. }
-            | Action::Overload { fields, .. }
-            | Action::Call { fields, .. } => {
-                let texts = match rule.action {
-                    Action::Operation { texts, .. } => texts,
-                    _ => &[],
-                };
-                let mut args = Vec::with_capacity(fields.len());
-                for (index, label) in fields.iter().enumerate() {
-                    if texts.get(index) == Some(&true) {
-                        let child = field(id as u32, label)?;
-                        let spelling = tree.text(child).ok_or_else(|| {
-                            Diagnostic::new("grammar", node.span, "invalid text argument span")
-                        })?;
-                        let start = program.text.len() as u32;
-                        program.text.push_str(spelling);
-                        args.push(program.nodes.len() as u32);
-                        program.nodes.push(HirNode {
-                            kind: HirKind::Text {
-                                start,
-                                end: program.text.len() as u32,
-                            },
-                            ty: TEXT,
-                            span: tree.nodes[child as usize].span,
-                        });
-                        depths.push(1);
-                    } else {
-                        args.push(value_of(label)?);
-                    }
-                }
-                let operation = match rule.action {
-                    Action::Operation { id, .. } => id,
-                    Action::Overload { .. } | Action::Call { .. } => {
-                        let candidates = if let Action::Overload { candidates, .. } = rule.action {
-                            candidates
-                        } else {
-                            call_targets.get(&(id as u32)).copied().unwrap_or(&[])
-                        };
-                        let mut selected = None;
-                        let mut ambiguous = false;
-                        for candidate in candidates {
-                            let signature = language
-                                .operations
-                                .get(*candidate as usize)
-                                .ok_or_else(|| {
-                                    Diagnostic::new(
-                                        "grammar",
-                                        node.span,
-                                        "unknown overload operation",
-                                    )
-                                })?;
-                            if signature.inputs.len() == args.len()
-                                && args
-                                    .iter()
-                                    .zip(signature.inputs)
-                                    .all(|(arg, ty)| program.nodes[*arg as usize].ty == *ty)
-                            {
-                                if selected.is_some() {
-                                    ambiguous = true;
-                                    break;
-                                }
-                                selected = Some(*candidate);
-                            }
-                        }
-                        if selected.is_none() || ambiguous {
-                            type_errors.push(Diagnostic::new(
-                                "type",
-                                node.span,
-                                if ambiguous {
-                                    "ambiguous exact overload"
-                                } else {
-                                    "no exact overload"
-                                },
-                            ));
-                            // Preserve a typed error fact so enclosing checks can finish
-                            // and diagnostics can be selected in source order. This
-                            // provisional HIR is never returned when errors exist.
-                            lowered[id] = Some(program.nodes.len() as u32);
-                            program.nodes.push(HirNode {
-                                kind: HirKind::Constant(0.0),
-                                ty: "<error>",
-                                span: node.span,
-                            });
-                            depths.push(1);
-                            continue;
-                        }
-                        selected.unwrap()
-                    }
-                    _ => unreachable!(),
-                };
-                let signature = language
-                    .operations
-                    .get(operation as usize)
-                    .ok_or_else(|| Diagnostic::new("grammar", node.span, "unknown operation"))?;
-                if args.len() != signature.inputs.len() {
-                    type_errors.push(Diagnostic::new(
-                        "type",
-                        node.span,
-                        "operation arity mismatch",
-                    ));
-                }
-                for (argument, ty) in args.iter().zip(signature.inputs) {
-                    let child = &program.nodes[*argument as usize];
-                    if child.ty != *ty {
-                        type_errors.push(Diagnostic::new(
-                            "type",
-                            child.span,
-                            "operation argument type mismatch",
-                        ));
-                    }
-                    depth = depth.max(depths[*argument as usize] + 1);
-                }
-                let start = program.args.len() as u32;
-                program.args.extend(args);
-                Some(HirNode {
-                    kind: HirKind::Operation {
-                        operation,
-                        args: start..program.args.len() as u32,
-                    },
-                    ty: signature.result,
-                    span: node.span,
-                })
-            }
-            Action::Declare {
-                field: name,
-                annotation,
-                value,
-                ..
-            } => {
-                let root = value_of(value)?;
-                if let Some(annotation) = annotation {
-                    let annotation = field(id as u32, annotation)?;
-                    let spelling = tree.text(annotation).unwrap();
-                    let ty = language
-                        .types
-                        .iter()
-                        .copied()
-                        .find(|t| *t == spelling || t.rsplit('.').next() == Some(spelling))
-                        .unwrap_or("<error>");
-                    if program.nodes[root as usize].ty != ty
-                        && ty != "<error>"
-                        && program.nodes[root as usize].ty != "<error>"
-                    {
-                        type_errors.push(Diagnostic::new(
-                            "type",
-                            program.nodes[root as usize].span,
-                            "initializer differs from declared type",
-                        ));
-                    }
-                }
-                let symbol = tree.nodes[field(id as u32, name)? as usize].span[0];
-                program.statements.push(Statement {
-                    value: root,
-                    symbol: Some(symbol),
-                });
-                lowered[id] = Some(root);
-                continue;
-            }
-            Action::Template { .. }
-            | Action::Parameter { .. }
-            | Action::Alias { .. }
-            | Action::Expand { .. } => {
+            bound
+        } else {
+            Bound::default()
+        };
+        Ok(Template {
+            tree,
+            holes: found,
+            bound,
+        })
+    };
+    let mut result = Vec::with_capacity(language.helpers.len());
+    for helper in language.helpers {
+        let parameters: Vec<_> = helper.parameters.iter().collect();
+        let body = template(helper, helper.body, helper.result, &parameters, true)?;
+        let mut arms = Vec::new();
+        for arm in helper.arms {
+            let selector = helper
+                .selector
+                .and_then(|s| helper.parameters.get(s as usize))
+                .ok_or_else(|| Diagnostic::new("grammar", [0, 0], "invalid match selector"))?;
+            let captures: Vec<_> = arm.captures.iter().collect();
+            let pattern = template(helper, arm.pattern, selector.category, &captures, false)?;
+            // Every declared capture must occur as a parsed hole.
+            if captures
+                .iter()
+                .any(|c| !pattern.holes.iter().any(|(_, h)| std::ptr::eq(*h, *c)))
+            {
                 return Err(Diagnostic::new(
                     "grammar",
-                    node.span,
-                    "template action outside template compiler",
+                    [0, 0],
+                    format!("unused match capture in {}", helper.name),
                 ));
             }
-            Action::Show { field: label } => {
-                let root = value_of(label)?;
-                program.statements.push(Statement {
-                    value: root,
-                    symbol: None,
-                });
-                lowered[id] = Some(root);
-                continue;
-            }
-            Action::None => {
-                let typed: Vec<_> = tree
-                    .children(id as u32)
-                    .iter()
-                    .filter_map(|e| lowered[e.node as usize])
-                    .collect();
-                if typed.len() == 1 {
-                    lowered[id] = Some(typed[0]);
-                }
-                continue;
+            let visible: Vec<_> = parameters.iter().chain(&captures).copied().collect();
+            let result = template(helper, arm.result, helper.result, &visible, true)?;
+            arms.push((pattern, result));
+        }
+        result.push(HelperTemplates { body, arms });
+    }
+    Ok(result)
+}
+
+/// Structural syntax equality: rules, labels and children; token text for lexical nodes.
+fn same_syntax(language: &Language, a: &SyntaxTree, x: u32, b: &SyntaxTree, y: u32) -> bool {
+    let (p, q) = (a.nodes[x as usize], b.nodes[y as usize]);
+    if p.rule != q.rule {
+        return false;
+    }
+    if language.rules[p.rule as usize].lexical {
+        return a.text(x) == b.text(y);
+    }
+    let (left, right) = (a.children(x), b.children(y));
+    left.len() == right.len()
+        && left
+            .iter()
+            .zip(right)
+            .all(|(l, r)| l.label == r.label && same_syntax(language, a, l.node, b, r.node))
+}
+
+/// Matches original caller syntax against a pattern, binding captures.
+fn match_pattern(
+    language: &Language,
+    pattern: &Template,
+    node: u32,
+    tree: &SyntaxTree,
+    target: u32,
+    captures: &mut HashMap<&'static str, u32>,
+) -> bool {
+    if let Some((_, hole)) = pattern.holes.iter().find(|(n, _)| *n == node) {
+        let rule = &language.rules[tree.nodes[target as usize].rule as usize];
+        if tree.nodes[target as usize].rule != hole.category && rule.owner != Some(hole.category) {
+            return false;
+        }
+        return match captures.get(hole.name) {
+            Some(previous) => same_syntax(language, tree, *previous, tree, target),
+            None => {
+                captures.insert(hole.name, target);
+                true
             }
         };
-        if depth > limits.depth {
+    }
+    let (p, q) = (
+        pattern.tree.nodes[node as usize],
+        tree.nodes[target as usize],
+    );
+    if p.rule != q.rule {
+        return false;
+    }
+    if language.rules[p.rule as usize].lexical {
+        return pattern.tree.text(node) == tree.text(target);
+    }
+    let (left, right) = (pattern.tree.children(node), tree.children(target));
+    left.len() == right.len()
+        && left.iter().zip(right).all(|(l, r)| {
+            l.label == r.label && match_pattern(language, pattern, l.node, tree, r.node, captures)
+        })
+}
+
+struct Lowerer<'p> {
+    language: &'static Language,
+    limits: Limits,
+    program: &'p mut Program,
+    type_errors: Vec<Diagnostic>,
+    depths: Vec<u32>,
+    templates: Option<&'p [HelperTemplates]>,
+    // Provisional origins per HIR node, rewrite profiles only.
+    origins: Option<Vec<Vec<Origin>>>,
+    active: Vec<u16>,
+    work: u64,
+}
+
+impl Lowerer<'_> {
+    fn push(&mut self, node: HirNode, depth: u32, origin: Origin) -> u32 {
+        let id = self.program.nodes.len() as u32;
+        self.program.nodes.push(node);
+        self.depths.push(depth);
+        if let Some(origins) = &mut self.origins {
+            origins.push(vec![origin]);
+        }
+        id
+    }
+
+    /// Errors inside an expansion report at the use, naming the rewrite.
+    fn error(&mut self, expansion: Option<&Expansion>, mut diagnostic: Diagnostic) {
+        if let Some(expansion) = expansion {
+            diagnostic.span = expansion.use_span;
+            diagnostic.message = format!(
+                "in the expansion of {}: {}",
+                expansion.name, diagnostic.message
+            );
+        }
+        self.type_errors.push(diagnostic);
+    }
+
+    fn lower_tree(
+        &mut self,
+        tree: &SyntaxTree,
+        bound: &Bound,
+        expansion: Option<&Expansion>,
+    ) -> Result<Vec<Option<u32>>, Diagnostic> {
+        let language = self.language;
+        let field = |id, label| {
+            tree.field(id, label)
+                .ok_or_else(|| Diagnostic::new("grammar", [0, 0], format!("missing field {label}")))
+        };
+        let mut lowered = vec![None; tree.nodes.len()];
+        for (id, node) in tree.nodes.iter().enumerate() {
+            if let Some(hir) = expansion.and_then(|e| e.holes.get(&(id as u32))) {
+                lowered[id] = Some(*hir);
+                continue;
+            }
+            let rule = &language.rules[node.rule as usize];
+            let span = expansion.map_or(node.span, |e| e.use_span);
+            let origin = (expansion.is_some(), node.span);
+            let value_of = |lowered: &[Option<u32>], label| -> Result<u32, Diagnostic> {
+                let child = field(id as u32, label)?;
+                lowered[child as usize].ok_or_else(|| {
+                    Diagnostic::new("type", node.span, format!("untyped argument {label}"))
+                })
+            };
+            let mut depth = 1;
+            for check in language.checks.iter().filter(|c| c.rule == node.rule) {
+                // An absent optional field has no spelling, so its predicate fails.
+                let spelling = tree
+                    .field(id as u32, check.field)
+                    .and_then(|c| tree.text(c));
+                let holds = spelling.is_some_and(|text| match check.predicate {
+                    Predicate::IsoDate => iso_date_day_number(text).is_some(),
+                });
+                if !holds {
+                    let mut diagnostic = Diagnostic::new("check", node.span, check.message);
+                    diagnostic.code = Some(check.code);
+                    self.error(expansion, diagnostic);
+                }
+            }
+            let value = match rule.action {
+                Action::Literal { ty, field: label } => {
+                    let child = field(id as u32, label)?;
+                    let number = match tree
+                        .text(child)
+                        .and_then(|s| s.parse::<f64>().ok())
+                        .filter(|n| n.is_finite())
+                    {
+                        Some(number) => number,
+                        None => {
+                            self.error(
+                                expansion,
+                                Diagnostic::new("type", node.span, "literal must be finite"),
+                            );
+                            0.0 // Private placeholder; any diagnostic prevents Program publication.
+                        }
+                    };
+                    Some(HirNode {
+                        kind: HirKind::Constant(number),
+                        ty,
+                        span,
+                    })
+                }
+                Action::Reference { .. } if bound.values.contains_key(&(id as u32)) => {
+                    let value = bound.values[&(id as u32)];
+                    Some(HirNode {
+                        kind: HirKind::Builtin(value),
+                        ty: value.ty,
+                        span,
+                    })
+                }
+                Action::Reference { .. } => {
+                    let (symbol, declaration) = bound.references[&(id as u32)];
+                    let initializer = lowered[declaration as usize].ok_or_else(|| {
+                        Diagnostic::new(
+                            "grammar",
+                            node.span,
+                            "reference declaration has no validated initializer",
+                        )
+                    })?;
+                    let declaration_node = tree.nodes[declaration as usize];
+                    let ty = if let Action::Declare {
+                        annotation: Some(label),
+                        ..
+                    } = language.rules[declaration_node.rule as usize].action
+                    {
+                        let text = tree.text(field(declaration, label)?).unwrap();
+                        language
+                            .types
+                            .iter()
+                            .copied()
+                            .find(|t| *t == text || t.rsplit('.').next() == Some(text))
+                            .unwrap_or("<error>")
+                    } else {
+                        self.program.nodes[initializer as usize].ty
+                    };
+                    Some(HirNode {
+                        kind: HirKind::Reference(symbol),
+                        ty,
+                        span,
+                    })
+                }
+                Action::Operation { fields, .. }
+                | Action::Overload { fields, .. }
+                | Action::Call { fields, .. } => {
+                    let texts = match rule.action {
+                        Action::Operation { texts, .. } => texts,
+                        _ => &[],
+                    };
+                    let mut args = Vec::with_capacity(fields.len());
+                    for (index, label) in fields.iter().enumerate() {
+                        if texts.get(index) == Some(&true) {
+                            let child = field(id as u32, label)?;
+                            let spelling = tree.text(child).ok_or_else(|| {
+                                Diagnostic::new("grammar", node.span, "invalid text argument span")
+                            })?;
+                            let start = self.program.text.len() as u32;
+                            self.program.text.push_str(spelling);
+                            let end = self.program.text.len() as u32;
+                            let child_span = tree.nodes[child as usize].span;
+                            args.push(self.push(
+                                HirNode {
+                                    kind: HirKind::Text { start, end },
+                                    ty: TEXT,
+                                    span: expansion.map_or(child_span, |e| e.use_span),
+                                },
+                                1,
+                                (expansion.is_some(), child_span),
+                            ));
+                        } else {
+                            args.push(value_of(&lowered, label)?);
+                        }
+                    }
+                    let operation = match rule.action {
+                        Action::Operation { id, .. } => id,
+                        Action::Overload { .. } | Action::Call { .. } => {
+                            let candidates =
+                                if let Action::Overload { candidates, .. } = rule.action {
+                                    candidates
+                                } else {
+                                    bound.calls.get(&(id as u32)).copied().unwrap_or(&[])
+                                };
+                            let mut selected = None;
+                            let mut ambiguous = false;
+                            for candidate in candidates {
+                                let signature = language
+                                    .operations
+                                    .get(*candidate as usize)
+                                    .ok_or_else(|| {
+                                        Diagnostic::new(
+                                            "grammar",
+                                            node.span,
+                                            "unknown overload operation",
+                                        )
+                                    })?;
+                                if signature.inputs.len() == args.len()
+                                    && args.iter().zip(signature.inputs).all(|(arg, ty)| {
+                                        self.program.nodes[*arg as usize].ty == *ty
+                                    })
+                                {
+                                    if selected.is_some() {
+                                        ambiguous = true;
+                                        break;
+                                    }
+                                    selected = Some(*candidate);
+                                }
+                            }
+                            if selected.is_none() || ambiguous {
+                                self.error(
+                                    expansion,
+                                    Diagnostic::new(
+                                        "type",
+                                        node.span,
+                                        if ambiguous {
+                                            "ambiguous exact overload"
+                                        } else {
+                                            "no exact overload"
+                                        },
+                                    ),
+                                );
+                                // Preserve a typed error fact so enclosing checks can finish
+                                // and diagnostics can be selected in source order. This
+                                // provisional HIR is never returned when errors exist.
+                                lowered[id] = Some(self.push(
+                                    HirNode {
+                                        kind: HirKind::Constant(0.0),
+                                        ty: "<error>",
+                                        span,
+                                    },
+                                    1,
+                                    origin,
+                                ));
+                                continue;
+                            }
+                            selected.unwrap()
+                        }
+                        _ => unreachable!(),
+                    };
+                    let signature =
+                        language.operations.get(operation as usize).ok_or_else(|| {
+                            Diagnostic::new("grammar", node.span, "unknown operation")
+                        })?;
+                    if args.len() != signature.inputs.len() {
+                        self.error(
+                            expansion,
+                            Diagnostic::new("type", node.span, "operation arity mismatch"),
+                        );
+                    }
+                    for (argument, ty) in args.iter().zip(signature.inputs) {
+                        let child = &self.program.nodes[*argument as usize];
+                        if child.ty != *ty {
+                            let child_span = child.span;
+                            self.error(
+                                expansion,
+                                Diagnostic::new(
+                                    "type",
+                                    child_span,
+                                    "operation argument type mismatch",
+                                ),
+                            );
+                        }
+                        depth = depth.max(self.depths[*argument as usize] + 1);
+                    }
+                    let start = self.program.args.len() as u32;
+                    self.program.args.extend(args);
+                    Some(HirNode {
+                        kind: HirKind::Operation {
+                            operation,
+                            args: start..self.program.args.len() as u32,
+                        },
+                        ty: signature.result,
+                        span,
+                    })
+                }
+                Action::Rewrite {
+                    helper,
+                    fields,
+                    name,
+                } => {
+                    lowered[id] = Some(
+                        self.expand(tree, id as u32, &lowered, helper, fields, name, expansion)?,
+                    );
+                    continue;
+                }
+                Action::Declare {
+                    field: name,
+                    annotation,
+                    value,
+                    ..
+                } => {
+                    let root = value_of(&lowered, value)?;
+                    if let Some(annotation) = annotation {
+                        let annotation = field(id as u32, annotation)?;
+                        let spelling = tree.text(annotation).unwrap();
+                        let ty = language
+                            .types
+                            .iter()
+                            .copied()
+                            .find(|t| *t == spelling || t.rsplit('.').next() == Some(spelling))
+                            .unwrap_or("<error>");
+                        let actual = self.program.nodes[root as usize].ty;
+                        if actual != ty && ty != "<error>" && actual != "<error>" {
+                            let root_span = self.program.nodes[root as usize].span;
+                            self.type_errors.push(Diagnostic::new(
+                                "type",
+                                root_span,
+                                "initializer differs from declared type",
+                            ));
+                        }
+                    }
+                    let symbol = tree.nodes[field(id as u32, name)? as usize].span[0];
+                    self.program.statements.push(Statement {
+                        value: root,
+                        symbol: Some(symbol),
+                    });
+                    lowered[id] = Some(root);
+                    continue;
+                }
+                Action::Template { .. }
+                | Action::Parameter { .. }
+                | Action::Alias { .. }
+                | Action::Expand { .. } => {
+                    return Err(Diagnostic::new(
+                        "grammar",
+                        node.span,
+                        "template action outside template compiler",
+                    ));
+                }
+                Action::Show { field: label } => {
+                    let root = value_of(&lowered, label)?;
+                    self.program.statements.push(Statement {
+                        value: root,
+                        symbol: None,
+                    });
+                    lowered[id] = Some(root);
+                    continue;
+                }
+                Action::None => {
+                    let typed: Vec<_> = tree
+                        .children(id as u32)
+                        .iter()
+                        .filter_map(|e| lowered[e.node as usize])
+                        .collect();
+                    if typed.len() == 1 {
+                        lowered[id] = Some(typed[0]);
+                    }
+                    continue;
+                }
+            };
+            if depth > self.limits.depth {
+                return Err(Diagnostic::new(
+                    "limit",
+                    node.span,
+                    "HIR depth limit exceeded",
+                ));
+            }
+            if let Some(value) = value {
+                lowered[id] = Some(self.push(value, depth, origin));
+            }
+        }
+        Ok(lowered)
+    }
+
+    /// Lowers a rewrite use as its selected template, holes filled by the
+    /// caller's lowered syntax. The caller's own HIR stays unreferenced unless
+    /// a hole uses it; re-emission drops unreachable nodes.
+    #[allow(clippy::too_many_arguments)]
+    fn expand(
+        &mut self,
+        tree: &SyntaxTree,
+        id: u32,
+        lowered: &[Option<u32>],
+        helper_index: u16,
+        fields: &'static [&'static str],
+        name: &'static str,
+        outer: Option<&Expansion>,
+    ) -> Result<u32, Diagnostic> {
+        let language = self.language;
+        let node = tree.nodes[id as usize];
+        let use_span = outer.map_or(node.span, |e| e.use_span);
+        let display = outer.map_or_else(
+            || name.to_owned(),
+            |e| format!("{}: in the expansion of {name}", e.name),
+        );
+        let helper = language
+            .helpers
+            .get(helper_index as usize)
+            .ok_or_else(|| Diagnostic::new("grammar", node.span, "unknown rewrite helper"))?;
+        let templates = &self.templates.ok_or_else(|| {
+            Diagnostic::new("grammar", node.span, "rewrite outside a helper profile")
+        })?[helper_index as usize];
+        let args = fields
+            .iter()
+            .map(|label| {
+                tree.field(id, label).ok_or_else(|| {
+                    Diagnostic::new("grammar", node.span, format!("missing field {label}"))
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let placeholder = |this: &mut Self, message: &str| {
+            this.type_errors
+                .push(Diagnostic::new("type", use_span, message.to_owned()));
+            this.push(
+                HirNode {
+                    kind: HirKind::Constant(0.0),
+                    ty: "<error>",
+                    span: use_span,
+                },
+                1,
+                (outer.is_some(), node.span),
+            )
+        };
+        if self.active.contains(&helper_index) {
+            return Ok(placeholder(
+                self,
+                "a rewrite that reaches itself prevents lowering",
+            ));
+        }
+        if self.active.len() as u32 >= self.limits.depth {
+            return Err(Diagnostic::new(
+                "limit",
+                use_span,
+                "rewrite depth limit exceeded",
+            ));
+        }
+        let mut captures = HashMap::new();
+        let mut selected = &templates.body;
+        if let Some(selector) = helper.selector {
+            let subject = args[selector as usize];
+            // Ordered arms; the fallback (the helper body) binds no captures.
+            let mut matched = false;
+            for (pattern, result) in &templates.arms {
+                captures.clear();
+                if match_pattern(
+                    language,
+                    pattern,
+                    pattern.tree.root,
+                    tree,
+                    subject,
+                    &mut captures,
+                ) {
+                    selected = result;
+                    matched = true;
+                    break;
+                }
+            }
+            if !matched {
+                captures.clear();
+            }
+        }
+        let mut holes = HashMap::with_capacity(selected.holes.len());
+        for (template_node, hole) in &selected.holes {
+            let caller = helper
+                .parameters
+                .iter()
+                .position(|p| std::ptr::eq(p, *hole))
+                .map(|i| args[i])
+                .or_else(|| captures.get(hole.name).copied())
+                .ok_or_else(|| Diagnostic::new("grammar", node.span, "unbound template hole"))?;
+            match lowered[caller as usize] {
+                Some(hir) => {
+                    holes.insert(*template_node, hir);
+                }
+                None => return Ok(placeholder(self, "untyped rewrite argument")),
+            }
+        }
+        self.work += selected.tree.nodes.len() as u64;
+        if self.work > self.limits.work {
+            return Err(Diagnostic::new(
+                "limit",
+                use_span,
+                "compiler work limit exceeded",
+            ));
+        }
+        let expansion = Expansion {
+            use_span,
+            name: display,
+            holes: &holes,
+        };
+        let first_new = self.program.nodes.len() as u32;
+        self.active.push(helper_index);
+        let result = self.lower_tree(&selected.tree, &selected.bound, Some(&expansion));
+        self.active.pop();
+        let result = result?;
+        let root = selected.tree.root;
+        let Some(hir) = result[root as usize] else {
+            return Ok(placeholder(self, "untyped rewrite result"));
+        };
+        // A single-hole template is the caller's HIR itself, with its own origins.
+        if holes.contains_key(&root) || self.origins.is_none() {
+            return Ok(hir);
+        }
+        // Otherwise the result carries the use first. A caller node reached
+        // through a wrapper (`<[ ($X) ]>`) is copied, leaving its other uses alone.
+        let hir = if hir < first_new {
+            let copy = &self.program.nodes[hir as usize];
+            let kind = match &copy.kind {
+                HirKind::Constant(n) => HirKind::Constant(*n),
+                HirKind::Reference(s) => HirKind::Reference(*s),
+                HirKind::Builtin(b) => HirKind::Builtin(b),
+                HirKind::Text { start, end } => HirKind::Text {
+                    start: *start,
+                    end: *end,
+                },
+                HirKind::Operation { operation, args } => HirKind::Operation {
+                    operation: *operation,
+                    args: args.clone(),
+                },
+            };
+            let node = HirNode {
+                kind,
+                ty: copy.ty,
+                span: copy.span,
+            };
+            let depth = self.depths[hir as usize];
+            let previous = self.origins.as_ref().unwrap()[hir as usize].clone();
+            let id = self.push(node, depth, previous[0]);
+            self.origins.as_mut().unwrap()[id as usize] = previous;
+            id
+        } else {
+            hir
+        };
+        let list = &mut self.origins.as_mut().unwrap()[hir as usize];
+        let origin = (outer.is_some(), node.span);
+        list.retain(|o| *o != origin);
+        list.insert(0, origin);
+        Ok(hir)
+    }
+}
+
+/// Emits only HIR reachable from statements, in evaluation order. A node
+/// reached twice is emitted twice, so repeated holes repeat their effects and
+/// discarded caller syntax never runs, as Nitrogen evaluates HIR trees.
+fn reemit(
+    program: &mut Program,
+    origins: Vec<Vec<Origin>>,
+    limits: Limits,
+) -> Result<(), Diagnostic> {
+    let nodes = std::mem::take(&mut program.nodes);
+    let args = std::mem::take(&mut program.args);
+    fn emit(
+        id: u32,
+        nodes: &[HirNode],
+        args: &[u32],
+        origins: &[Vec<Origin>],
+        program: &mut Program,
+        limits: Limits,
+    ) -> Result<u32, Diagnostic> {
+        let node = &nodes[id as usize];
+        let kind = match &node.kind {
+            HirKind::Operation {
+                operation,
+                args: range,
+            } => {
+                let mut emitted = Vec::with_capacity(range.len());
+                for arg in &args[range.start as usize..range.end as usize] {
+                    emitted.push(emit(*arg, nodes, args, origins, program, limits)?);
+                }
+                let start = program.args.len() as u32;
+                program.args.extend(emitted);
+                HirKind::Operation {
+                    operation: *operation,
+                    args: start..program.args.len() as u32,
+                }
+            }
+            HirKind::Constant(n) => HirKind::Constant(*n),
+            HirKind::Reference(s) => HirKind::Reference(*s),
+            HirKind::Builtin(b) => HirKind::Builtin(b),
+            HirKind::Text { start, end } => HirKind::Text {
+                start: *start,
+                end: *end,
+            },
+        };
+        if program.nodes.len() as u64 >= limits.work {
             return Err(Diagnostic::new(
                 "limit",
                 node.span,
-                "HIR depth limit exceeded",
+                "rewrite expansion work limit exceeded",
             ));
         }
-        if let Some(value) = value {
-            lowered[id] = Some(program.nodes.len() as u32);
-            program.nodes.push(value);
-            depths.push(depth);
+        let start = program.origin_spans.len() as u32;
+        for (in_template, span) in &origins[id as usize] {
+            program.origin_spans.push(*span);
+            program.origin_rewrites.push(*in_template);
         }
+        program
+            .origin_ranges
+            .push(start..program.origin_spans.len() as u32);
+        program.nodes.push(HirNode {
+            kind,
+            ty: node.ty,
+            span: node.span,
+        });
+        Ok(program.nodes.len() as u32 - 1)
     }
-    if let Some(error) = type_errors.into_iter().min_by_key(|e| e.span[0]) {
-        return Err(error);
+    let mut statements = std::mem::take(&mut program.statements);
+    for statement in &mut statements {
+        statement.value = emit(statement.value, &nodes, &args, &origins, program, limits)?;
     }
-    Ok(program)
+    program.statements = statements;
+    Ok(())
 }
 
 impl Program {
@@ -578,5 +1108,13 @@ impl Program {
         self.nodes
             .get(node as usize)
             .map_or(&[], |n| std::slice::from_ref(&n.span))
+    }
+
+    /// Whether each origin of `node` lies in a quote template (`nitrogen:rewrite`).
+    pub fn origin_in_rewrite(&self, node: u32) -> &[bool] {
+        self.origin_ranges
+            .get(node as usize)
+            .and_then(|r| self.origin_rewrites.get(r.start as usize..r.end as usize))
+            .unwrap_or(&[])
     }
 }

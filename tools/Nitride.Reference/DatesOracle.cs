@@ -13,12 +13,12 @@ namespace Nitride.Reference;
 // profile supplies them; dates are .NET DateOnly day numbers and durations days.
 static class DatesOracle
 {
-    public static object Observe(string source, string catalogText, string today)
+    public static object Observe(string source, string catalogText, string today, bool rewrites = false)
     {
         var catalog=JsonNode.Parse(catalogText)!;
         var types=catalog["types"]!.AsArray().Select(t=>(string)t!).ToDictionary(t=>t,t=>SemanticType.Named(t[..t.LastIndexOf('.')],t[(t.LastIndexOf('.')+1)..]));
         var operations=catalog["operations"]!.AsArray().Select(o=>new OperationSignature((string)o!["id"]!,types[(string)o["result"]!],o["inputs"]!.AsArray().Select(t=>types[(string)t!]).ToArray())).ToArray();
-        var language=new LanguageBuilder().Add(DatesModule.Instance).AddSemantic(new SemanticModule("Dates",[],types.Values,operations)).Build();
+        var builder=new LanguageBuilder().Add(DatesModule.Instance);if(rewrites)builder.Add(RewritesModule.Instance);var language=builder.AddSemantic(new SemanticModule("Dates",[],types.Values,operations)).Build();
         using var parsed=language.Parse(source,DatesModule.Program);
         int[] Span(TextSpan s)=>[Encoding.UTF8.GetByteCount(source.AsSpan(0,s.Start)),Encoding.UTF8.GetByteCount(source.AsSpan(0,s.End))];
         object Error(string category,TextSpan span,string message,string? code=null)=>code is null
@@ -70,12 +70,21 @@ static class DatesOracle
             else throw new Exception("unsupported HIR "+node.GetType().Name);
             if(!double.IsFinite(value))throw new ArithmeticException("nonfinite result");return value;
         }
-        object Hir(HirNode node)=>node switch {
+        // Rewrite profiles report every origin; template origins keep their own path and offsets.
+        object Origin(SourceOrigin o)=>o.Path=="input.dates"?new{path="input",span=Span(o.Span)}:new{path=o.Path,span=new[]{o.Span.Start,o.Span.End}};
+        object Hir(HirNode node)=>rewrites?RewriteHir(node):node switch {
             HirConstant c=>new{kind="constant",type=node.Type.Id,span=Span(node.Origins[0].Span),number=(double)c.Value},
             HirText t=>new{kind="text",type=node.Type.Id,span=Span(node.Origins[0].Span),text=t.Value},
             HirSymbolRef r when r.Symbol.Binding.IsBuiltin=>new{kind="reference",type=node.Type.Id,span=Span(node.Origins[0].Span),builtin=r.Symbol.Binding.Name},
             HirSymbolRef r=>(object)new{kind="reference",type=node.Type.Id,span=Span(node.Origins[0].Span),symbol=Span(r.Symbol.Binding.NameSpan)[0]},
             HirOperation o=>new{kind="operation",type=node.Type.Id,span=Span(node.Origins[0].Span),operation=o.Signature.Id,args=o.Arguments.Select(Hir).ToArray()},
+            _=>throw new Exception("unsupported HIR "+node.GetType().Name)};
+        object RewriteHir(HirNode node)=>node switch {
+            HirConstant c=>new{kind="constant",type=node.Type.Id,origins=node.Origins.Select(Origin).ToArray(),number=(double)c.Value},
+            HirText t=>new{kind="text",type=node.Type.Id,origins=node.Origins.Select(Origin).ToArray(),text=t.Value},
+            HirSymbolRef r when r.Symbol.Binding.IsBuiltin=>new{kind="reference",type=node.Type.Id,origins=node.Origins.Select(Origin).ToArray(),builtin=r.Symbol.Binding.Name},
+            HirSymbolRef r=>(object)new{kind="reference",type=node.Type.Id,origins=node.Origins.Select(Origin).ToArray(),symbol=Span(r.Symbol.Binding.NameSpan)[0]},
+            HirOperation o=>new{kind="operation",type=node.Type.Id,origins=node.Origins.Select(Origin).ToArray(),operation=o.Signature.Id,args=o.Arguments.Select(RewriteHir).ToArray()},
             _=>throw new Exception("unsupported HIR "+node.GetType().Name)};
         try
         {
@@ -86,9 +95,10 @@ static class DatesOracle
             }
         }
         catch(ArithmeticException e){return new{ok=false,error="execution",message=e.Message,trace};}
-        var syntaxKinds=new HashSet<string>{"Let","Show","Day","Num","Ref","Paren","Days","InDays","Add","Sub","Mul"};
+        var syntaxKinds=new HashSet<string>{"Let","Show","Day","Num","Ref","Paren","Days","InDays","Add","Sub","Mul","Fortnights","Swapped","Soon","Twice","Pad","Wrap"};
+        string Module(int kind)=>rewrites&&kind>>16==RewritesModule.Instance.Id?"Rewrites.":"Dates.";
         return new{ok=true,
-            syntax=Enumerable.Range(0,tree.NodeCount).Where(n=>syntaxKinds.Contains(language.GetKindName(tree.Kind(n)))).Select(n=>new{kind="Dates."+language.GetKindName(tree.Kind(n)),span=Span(tree.Span(n))}).ToArray(),
+            syntax=Enumerable.Range(0,tree.NodeCount).Where(n=>syntaxKinds.Contains(language.GetKindName(tree.Kind(n)))).Select(n=>new{kind=Module(tree.Kind(n))+language.GetKindName(tree.Kind(n)),span=Span(tree.Span(n))}).ToArray(),
             bindings=binding.References.Select(r=>{var s=project.Resolve(r).Single();return s.IsBuiltin?(object)new{span=Span(r.NameSpan),builtin=s.Name,kind=s.Kind}:new{span=Span(r.NameSpan),symbol=Span(s.NameSpan)[0],kind=s.Kind};}).ToArray(),
             hir=lowered.Roots.Select(Hir).ToArray(),values,trace};
     }

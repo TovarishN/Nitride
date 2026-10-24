@@ -30,7 +30,7 @@ jobs:
       - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --parse-xml languages/xml/sample.xml
       - name: Prepare languages natively
         run: |
-          for profile in portable power composition xml namespaces inference calls functions dates grammar; do
+          for profile in portable power composition xml namespaces inference calls functions dates rewrites grammar; do
             cargo +stable run --release --locked -p nitride-cli --bin nitride -- prepare "languages/$profile/project.json" --output "prepared-$profile.json"
           done
       - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --namespaces languages/namespaces/sample.namespaces
@@ -38,3 +38,4 @@ jobs:
       - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --calls languages/calls/sample.calls
       - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --functions languages/functions/sample.functions
       - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --dates languages/dates/sample.dates --today 2026-10-24
+      - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --rewrites languages/rewrites/sample.rewrites --today 2026-10-24

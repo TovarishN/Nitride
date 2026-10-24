@@ -10,7 +10,7 @@ type checking, typed HIR, exact host binding preflight, and native execution.
 It includes a deliberately restricted typed profile, a cross-module Power
 extension, independent sequential symbol namespaces, inferred declaration types, exact nominal
 overload selection, built-in callable symbols, typed user-defined templates, host-supplied
-built-in values, checked text literals, and syntax-only admission of existing Base/Uses and XML grammars.
+built-in values, checked text literals, quote rewrites, and syntax-only admission of existing Base/Uses and XML grammars.
 This is partial Nitrogen compatibility; the full DateCalc language is not admitted.
 
 ## Run
@@ -27,6 +27,7 @@ cargo build --release
 ./target/release/nitride --calls languages/calls/sample.calls
 ./target/release/nitride --functions languages/functions/sample.functions
 ./target/release/nitride --dates languages/dates/sample.dates --today 2026-10-24
+./target/release/nitride --rewrites languages/rewrites/sample.rewrites --today 2026-10-24
 cargo run -p nitride-cli --example embed
 ```
 
@@ -253,6 +254,39 @@ A generated development-only adapter, `Dates.Reference.ngr` and
 `DatesSemantics.cs`, supplies the same types, predicate and overload selection
 to actual Nitrogen. See [built-in value evidence](docs/stage10-evidence.md).
 
+## Quote rewrites
+
+[`Rewrites.ngr`](languages/rewrites/Rewrites.ngr) extends Dates with DateCalc's
+rewrite forms:
+
+```text
+syntax function FortnightDuration(Count: Expr) : Expr = <[ $Count * 14 days ]>;
+syntax function SwapAddition(Value: Expr) : Expr = match Value
+{
+  | (Left: Expr, Right: Expr) <[ $Left + $Right ]> => <[ $Right + $Left ]>;
+  | _ => <[ $Value ]>;
+};
+| Fortnights = Count:Expr "fortnights" precedence 30 rewrites FortnightDuration(Count)
+| Soon = "~" Amount:Expr precedence 40 rewrites <[ today + $Amount days ]>
+```
+
+A use means its template, with each `$` hole filled by the caller's own syntax.
+`3 fortnights` types, lowers and runs as `3 * 14 days`. Templates are parsed by
+the language's generated parser at compile time, with holes standing for one
+node of their category. Every template, used or not, is validated on each
+compile. Names inside templates resolve only against built-ins, so
+`let today = …; ~1;` still uses the built-in `today`.
+
+Match arms compare the original caller syntax structurally, before any
+expansion, keeping parentheses: `count + 2 swapped` is `2 + count`, while
+`(count + 2) swapped` takes the fallback. Only HIR reachable from statements
+is emitted, so discarded caller syntax never runs, and a repeated hole repeats
+its effects, as in Nitrogen. HIR origins record the use and template-relative
+`nitrogen:rewrite` spans. Errors inside an expansion are reported at the use,
+as `in the expansion of Swapped: …`. List splices, grammar functions and C#
+quotation APIs are not admitted. See
+[rewrite evidence](docs/stage11-evidence.md).
+
 ## Validate
 
 ```sh
@@ -261,12 +295,12 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-There are 111 Rust tests, including parity over 220 frozen observations from
+There are 120 Rust tests, including parity over 249 frozen observations from
 actual Nitrogen parsers and, for typed profiles, binding, typing and HIR,
 with the explicit inference-adapter policy described above.
 The development-only exporter has 15 tests. Live differential scripts compare
-448 deterministic generated programs in total. `scripts/prepare_parity.py`
-compares 82 prepared profiles and 16 invalid grammars against the live exporter.
+512 deterministic generated programs in total. `scripts/prepare_parity.py`
+compares 88 prepared profiles and 20 invalid grammars against the live exporter.
 
 To refresh the reference using a sibling `../Nitrogen` source checkout and a
 .NET 10 SDK or later:
@@ -287,7 +321,7 @@ against live Nitrogen without overwriting them. After a native release build,
 live reference.
 
 The registered `nitrogen.json` and generated helper metadata let the existing
-Nitrogen extension discover the portable, composed, XML, namespace, inference, call, function, dates and grammar-language fixtures. Its workspace checker was verified; live VS Code/Rider interactions
+Nitrogen extension discover the portable, composed, XML, namespace, inference, call, function, dates, rewrites and grammar-language fixtures. Its workspace checker was verified; live VS Code/Rider interactions
 and editor completion/navigation were not exercised.
 
 ## Scope and evidence

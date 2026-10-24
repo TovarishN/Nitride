@@ -291,3 +291,22 @@ checker passes the sample and reports DATE0001 on an invalid date.
 CLI 835,216 B (+16,816). Older phase allocation counts, retained bytes and peaks
 are unchanged. Self-review only; not yet published. DateCalc rewrites, calls,
 weekday/Math functions and live editors remain deferred.
+
+
+## Stage 11: Quote rewrites and syntax-function helpers
+
+Plan: stage11-plan.md; evidence: stage11-evidence.md. Added `syntax function`
+quote helpers with ordered match arms, and inline and helper `rewrites`
+clauses, over a Rewrites profile composed with Dates. Templates are parsed by
+the generated language in template mode, with `$` holes, and validated on
+every compile. Holes take the caller's HIR; template names see only built-ins.
+Arms match original syntax. Reachable-only re-emission reproduces Nitrogen's
+repeated computation and keeps discarded syntax from running. Origins record
+the use and template-relative spans.
+
+120 Rust tests, 249 frozen and 512 generated live observations, and 88 valid /
+20 invalid preparation profiles pass. A clean offline source-only build runs
+Rewrites without .NET on PATH. CLI 918,416 B (+83,200). Older allocation
+counts and retained bytes are unchanged; HIR peaks fell. Self-review only; not
+yet published. List splices, grammar functions, weekday/Math calls and live
+editors remain deferred.

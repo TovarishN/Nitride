@@ -21,6 +21,55 @@ pub fn parse_with_options(
     limits: Limits,
     options: ParseOptions,
 ) -> Result<SyntaxTree, Diagnostic> {
+    parse_from(language, source, limits, options, language.start, &[])
+}
+
+/// Template hole nodes and the holes they stand for.
+pub type TemplateHoles = Vec<(u32, &'static Hole)>;
+
+/// A quote template parsed as `category`, with `$Name` holes for `holes`.
+/// The text is trimmed first, so spans are relative to the trimmed template.
+/// Each returned hole is a childless node of the hole's category.
+pub fn parse_template(
+    language: &'static Language,
+    text: &str,
+    category: u16,
+    holes: &[&'static Hole],
+    limits: Limits,
+) -> Result<(SyntaxTree, TemplateHoles), Diagnostic> {
+    let tree = parse_from(
+        language,
+        text.trim(),
+        limits,
+        ParseOptions::default(),
+        category,
+        holes,
+    )?;
+    let found = (0..tree.nodes.len() as u32)
+        .filter_map(|id| {
+            let node = tree.nodes[id as usize];
+            let name = tree.text(id)?.strip_prefix('$')?;
+            (node.child_count == 0 && !language.rules[node.rule as usize].lexical)
+                .then(|| {
+                    holes
+                        .iter()
+                        .find(|h| h.name == name && h.category == node.rule)
+                })
+                .flatten()
+                .map(|hole| (id, *hole))
+        })
+        .collect();
+    Ok((tree, found))
+}
+
+fn parse_from(
+    language: &'static Language,
+    source: &str,
+    limits: Limits,
+    options: ParseOptions,
+    start: u16,
+    holes: &[&'static Hole],
+) -> Result<SyntaxTree, Diagnostic> {
     if source.len() > u32::MAX as usize {
         return Err(Diagnostic::new(
             "limit",
@@ -40,8 +89,9 @@ pub fn parse_with_options(
         edges: Vec::new(),
         edge_buffers: Vec::new(),
         node_buffers: Vec::new(),
+        holes,
     };
-    let root = parser.rule(language.start, 0, 0)?;
+    let root = parser.rule(start, 0, 0)?;
     parser.trivia()?;
     if root.is_none() || parser.position != source.len() {
         let at = parser.furthest.max(parser.position) as u32;
@@ -87,6 +137,8 @@ struct Parser<'a> {
     // Free lists belong to this parse only. Recursive frames own taken buffers.
     edge_buffers: Vec<Vec<Edge>>,
     node_buffers: Vec<Vec<Node>>,
+    // Template mode only: `$Name` stands for one node of the hole's category.
+    holes: &'a [&'static Hole],
 }
 
 impl Parser<'_> {
@@ -213,6 +265,23 @@ impl Parser<'_> {
         self.nodes.push(node);
         Ok(id)
     }
+    /// The length of a `$Name` hole of `category` at the current position.
+    fn hole(&self, category: u16) -> Option<usize> {
+        if self.holes.is_empty() {
+            return None;
+        }
+        let rest = self.source[self.position..].strip_prefix('$')?;
+        let end = rest
+            .find(|c: char| !(c.is_ascii_alphanumeric() || c == '_'))
+            .unwrap_or(rest.len());
+        let name = &rest[..end];
+        (name.starts_with(|c: char| c.is_ascii_alphabetic() || c == '_')
+            && self
+                .holes
+                .iter()
+                .any(|h| h.name == name && h.category == category))
+        .then_some(end + 1)
+    }
     fn rule(&mut self, id: u16, minimum: u32, depth: u32) -> Result<Option<u32>, Diagnostic> {
         self.tick(depth)?;
         let rule = self
@@ -226,7 +295,13 @@ impl Parser<'_> {
         }
         let start = self.position;
         if let Expr::Pratt { prefixes, infixes } = rule.expr {
-            return self.pratt(prefixes, infixes, minimum, depth + 1);
+            return self.pratt(id, prefixes, infixes, minimum, depth + 1);
+        }
+        if !rule.lexical {
+            if let Some(length) = self.hole(id) {
+                self.position += length;
+                return self.add_node(id, start, &[]).map(Some);
+            }
         }
         let mut children = self.edge_buffers.pop().unwrap_or_default();
         let lexical_failure_base = self.furthest;
@@ -270,6 +345,7 @@ impl Parser<'_> {
     }
     fn pratt(
         &mut self,
+        point: u16,
         prefixes: &'static [u16],
         infixes: &'static [u16],
         minimum: u32,
@@ -278,7 +354,9 @@ impl Parser<'_> {
         self.tick(depth)?;
         let prefix_mark = self.mark();
         let mut winner = None;
-        for id in prefixes {
+        // A hole is one operand node; operators may still follow it.
+        let hole = self.hole(point);
+        for id in prefixes.iter().filter(|_| hole.is_none()) {
             self.restore(prefix_mark);
             let rule =
                 self.language.rules.get(*id as usize).ok_or_else(|| {
@@ -296,7 +374,14 @@ impl Parser<'_> {
                 }
             }
         }
-        let Some(mut left) = self.accept_winner(prefix_mark, winner)? else {
+        let left = if let Some(length) = hole {
+            let start = self.position;
+            self.position += length;
+            Some(self.add_node(point, start, &[])?)
+        } else {
+            self.accept_winner(prefix_mark, winner)?
+        };
+        let Some(mut left) = left else {
             return Ok(None);
         };
         loop {

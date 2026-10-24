@@ -41,15 +41,28 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         return Ok(true);
     }
     let dates = match args.as_slice() {
-        [flag, path] if flag == "--dates" => Some((path, nitride_cli::utc_today())),
-        [flag, path, today_flag, today] if flag == "--dates" && today_flag == "--today" => Some((
-            path,
-            iso_date_day_number(today).ok_or("--today requires a yyyy-MM-dd calendar date")? as f64,
-        )),
+        [flag, path] if flag == "--dates" || flag == "--rewrites" => {
+            Some((flag, path, nitride_cli::utc_today()))
+        }
+        [flag, path, today_flag, today]
+            if (flag == "--dates" || flag == "--rewrites") && today_flag == "--today" =>
+        {
+            Some((
+                flag,
+                path,
+                iso_date_day_number(today).ok_or("--today requires a yyyy-MM-dd calendar date")?
+                    as f64,
+            ))
+        }
         _ => None,
     };
-    if let Some((path, today)) = dates {
-        let result = nitride_cli::observe_dates(&std::fs::read_to_string(path)?, today);
+    if let Some((flag, path, today)) = dates {
+        let source = std::fs::read_to_string(path)?;
+        let result = if flag == "--rewrites" {
+            nitride_cli::observe_rewrites(&source, today)
+        } else {
+            nitride_cli::observe_dates(&source, today)
+        };
         println!("{result}");
         return Ok(result["ok"] == true);
     }
@@ -112,7 +125,7 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         );
         return Ok(true);
     }
-    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.json> [--output <language.json>] | <source.portable> | --observe <source> | --functions <source> | --calls <source> | --dates <source> [--today yyyy-MM-dd] | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --bench <source> <iterations> | --version".into()) };
+    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.json> [--output <language.json>] | <source.portable> | --observe <source> | --functions <source> | --calls <source> | --dates <source> [--today yyyy-MM-dd] | --rewrites <source> [--today yyyy-MM-dd] | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --bench <source> <iterations> | --version".into()) };
     let result = nitride_cli::observe(&std::fs::read_to_string(path)?);
     println!("{result}");
     Ok(result["ok"] == true)
