@@ -256,3 +256,19 @@ actual workspace controls pass. CLI801,104 B; core dependencies remain zero.
 The reviewer ran 23 probes; no other actionable findings or deferred minors.
 Stacked draft PR/three-platform CI track hosted validation. No draft PR merge,
 DateCalc admission, mixed global captures or live editor interaction is claimed.
+
+
+## Stage 9: Self-hosted admitted grammar frontend
+
+Replaced the handwritten .ngr lexer/parser with generated core parsing of
+languages/grammar/Grammar.ngr, followed by a Rust model decoder. A checked-in Rust
+seed breaks the Cargo cycle; regeneration and a rebuilt fixed-point check match
+byte for byte. Actual Nitrogen exports the same normalized grammar. New strict
+comment parsing is opt-in so existing application-language behavior is preserved.
+99 Rust tests,15 exporter tests,77 valid/16 invalid preparation profiles,
+189 frozen and 384 generated runtime comparisons pass locally. Clean offline
+source-only build/fixedpoint/preparation/execution and configured workspace
+positive/negative controls pass. CLI818400B(+17296), profiler519600B; phase memory
+allocation/retained/peak metrics unchanged. Full Nitrogen grammar coverage and
+live editor interaction remain deferred. Final review/publication tracked in the
+stage9 plan and evidence.

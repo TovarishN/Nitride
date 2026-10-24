@@ -1,0 +1,78 @@
+// Admitted Nitride grammar syntax, described in itself. The Rust decoder retains
+// literal validation and profile admission; this is not the full Nitrogen.ngr.
+syntax module NitrideGrammar
+{
+  token IdStart = ['a'..'z' 'A'..'Z' '_'];
+  token IdPart = ['a'..'z' 'A'..'Z' '0'..'9' '_'];
+  token Identifier = IdStart IdPart*;
+  token QualifiedName = Identifier ("." Identifier)*;
+  token Integer = ['0'..'9']+;
+  token Hex = ['0'..'9' 'a'..'f' 'A'..'F'];
+  token Escape = "\\" (['n' 'r' 't' '0' '\\' '"' '\''] / "u" Hex Hex Hex Hex);
+  token String = "\"" (Escape / [^ '"' '\\' '\n'])* "\"";
+  token Char = "'" (Escape / [^ '\'' '\\' '\n']) "'";
+  token CallHead = QualifiedName "(";
+  token NameTail = IdPart / "." IdStart;
+  token Reserved = ("precedence" / "except" / "then" / "else" / "declares" / "references" / "scope" / "dynamic" / "lowers" / "rewrites") !NameTail;
+  token LoweringKeyword = ("literal" / "template" / "expand") !NameTail;
+  token Comment = "//" [^ '\n']* / "/*" (!"*/" .)* "*/";
+  token OpaqueCharLiteral = "'" (Escape / [^ '\'' '\\' '\n'])* "'";
+  token OpaqueChar = !("/*" / "//" / "@\"" / "\"\"\"") [^ '{' '}' '"' '\''];
+  token Opaque = "{" (!("@\"" / "\"\"\"") (Comment / String / OpaqueCharLiteral / Opaque / OpaqueChar))* "}";
+
+  syntax File = Modules:Module*;
+  syntax Module = "syntax" "module" Name:QualifiedName "{" Members:Member* "}";
+  syntax Member = Using / Symbols / Builtin / TokenRule / SyntaxRule / ExtensibleRule / Extend;
+  syntax Using = "using" Name:QualifiedName ";";
+  syntax Symbols = "symbols" "{" Names:Identifier+ "}";
+  syntax Builtin = "builtin" Kind:Identifier "{" Names:QualifiedName+ "}";
+  syntax TokenRule = "token" Name:Identifier "=" Body:Expression Except:ExceptList? ";";
+  syntax ExceptList = "except" Words:String+;
+  syntax SyntaxRule = "syntax" Name:Identifier "=" Body:Expression Clauses:Clause* End:End;
+  syntax End = Semantics / Terminator;
+  syntax Terminator = ";";
+  syntax Semantics = Body:Opaque;
+  syntax ExtensibleRule = "extensible" "syntax" Name:Identifier "{" Alternatives:Alternative* "}";
+  syntax Extend = "extend" "syntax" Name:QualifiedName "{" Alternatives:Alternative* "}";
+  syntax Alternative = "|" Named:AlternativeName? Body:Expression Precedence:Precedence? Clauses:Clause* Semantics:Semantics?;
+  syntax AlternativeName = Name:Identifier "=";
+  syntax Precedence = "precedence" Level:Integer Associativity:Associativity?;
+  syntax Associativity = "left" / "right";
+
+  syntax Expression = Items:Sequence ("/" Items:Sequence)*;
+  syntax Sequence = Items:Element (!Reserved Items:Element)*;
+  syntax Element = Labelled / Unary;
+  syntax Labelled = Name:Identifier ":" Inner:Unary;
+  syntax Unary = Predicate / Postfixed;
+  syntax Predicate = Op:PredicateOp Inner:Unary;
+  syntax PredicateOp = "!" / "&";
+  syntax Postfixed = Inner:Primary Ops:Postfix*;
+  syntax Postfix = "?" / "*" / "+";
+  syntax Primary = Literal / Reference / Any / Group / Class;
+  syntax Literal = Value:String;
+  syntax Reference = !Reserved !CallHead Name:QualifiedName;
+  syntax Any = !".." ".";
+  syntax Group = "(" Inner:Expression Separator:Separator? ")";
+  syntax Separator = ";" Value:Expression;
+  syntax Class = "[" Negated:Negation? Ranges:Range+ "]";
+  syntax Negation = "^";
+  syntax Range = Low:Char High:Upper?;
+  syntax Upper = ".." Value:Char;
+
+  syntax Clause = Declares / References / Scope / Lowers;
+  syntax Declares = "declares" Kind:Identifier Field:Identifier Sequential:Sequential? Export:Export? Type:DeclaredType?;
+  syntax Sequential = "sequential";
+  syntax Export = "export";
+  syntax DeclaredType = "type" Name:QualifiedName;
+  syntax References = "references" Kinds:Kinds Field:Identifier;
+  syntax Kinds = KindGroup / SingleKind;
+  syntax KindGroup = "(" Names:(Word; "|")+ ")";
+  syntax SingleKind = Name:Identifier;
+  syntax Word = Name:Identifier;
+  syntax Scope = "scope";
+  syntax Lowers = "lowers" Form:(Template / Expand / LiteralLowering / Call);
+  syntax Template = "template" Field:Identifier "(" Args:Identifier ")";
+  syntax Expand = "expand" Field:Identifier "(" Args:Identifier ")";
+  syntax LiteralLowering = "literal" Target:QualifiedName Field:Identifier;
+  syntax Call = !LoweringKeyword Target:QualifiedName "(" Args:(Word; ",")* ")";
+}

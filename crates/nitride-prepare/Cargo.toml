@@ -6,6 +6,7 @@ license.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+nitride-core = { path = "../nitride-core" }
 nitride-codegen = { path = "../nitride-codegen" }
 serde_json = "1"
 sha2 = "0.10"
