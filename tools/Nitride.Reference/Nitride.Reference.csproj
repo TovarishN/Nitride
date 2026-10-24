@@ -28,5 +28,35 @@
     <AdditionalFiles Include="../../languages/dates/Dates.Reference.ngr" Namespace="Nitride.Reference.Dates" />
     <Compile Include="../../languages/dates/DatesSemantics.cs" />
     <AdditionalFiles Include="../../languages/rewrites/Rewrites.ngr" Namespace="Nitride.Reference.Dates" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Core.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Lexical.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/NamesTypes.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Expressions.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Statements.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Attributes.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Declarations.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/CompilationUnits.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Unsafe.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/GlobalTargetsThird.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Generics.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/NullableValues.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/AnonymousMethods.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Iterators.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/DefaultValues.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/DeclarationForms.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/AliasQualification.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/GenericUnsafe.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/FixedBuffers.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Lambdas.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Queries.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/ObjectInitializers.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/AnonymousTypes.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/ImplicitArrays.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/ExtensionReceivers.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/GenericFollowersThird.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/NamedArguments.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/OptionalParameters.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/Variance.ngr" Namespace="Nitride.Reference.CSharp4" />
+    <AdditionalFiles Include="../../languages/csharp4/Grammars/GenericFollowersFourth.ngr" Namespace="Nitride.Reference.CSharp4" />
   </ItemGroup>
 </Project>

@@ -10,7 +10,7 @@ type checking, typed HIR, exact host binding preflight, and native execution.
 It includes a deliberately restricted typed profile, a cross-module Power
 extension, independent sequential symbol namespaces, inferred declaration types, exact nominal
 overload selection, built-in callable symbols, typed user-defined templates, host-supplied
-built-in values, checked text literals, quote rewrites, and syntax-only admission of existing Base/Uses and XML grammars.
+built-in values, checked text literals, quote rewrites, grammar functions, and syntax-only admission of existing Base/Uses, XML and CSharp4 grammars.
 This is partial Nitrogen compatibility; the full DateCalc language is not admitted.
 
 ## Run
@@ -287,6 +287,48 @@ as `in the expansion of Swapped: …`. List splices, grammar functions and C#
 quotation APIs are not admitted. See
 [rewrite evidence](docs/stage11-evidence.md).
 
+## C# (CSharp4)
+
+`languages/csharp4` vendors CSNitrogen's CSharp4 grammar (30 modules, with
+SHA-256 provenance). Nitride prepares it natively and parses valid,
+preprocessing-free C#:
+
+```sh
+./target/release/nitride --parse-csharp4 languages/csharp4/corpus/Mono2008/gtest-linq-01.cs
+```
+
+Trees match actual Nitrogen on 238 frozen cases and 64 generated programs.
+This needed grammar functions (Nitrogen's compile-time `function ... :
+Grammar.Rule`), `transparent` alternatives, operators that are rule references
+or shared between alternatives, prefix associativity, and UTF-16 surrogate-pair
+classes, which codegen turns into supplementary code points over UTF-8 text.
+Tokens are parse-tree leaves. The parser has its own frame budget and a
+size-relative work budget, so multi-megabyte files parse in linear time. It is
+currently about 6× slower than Nitrogen's parser. See
+[CSharp4 evidence](docs/stage12-evidence.md).
+
+## Recovery
+
+Recovery is opt-in and retains original source, missing elements and skipped
+regions while continuing supported typed analysis:
+
+```sh
+./target/release/nitride --recover csharp4 broken.cs
+./target/release/nitride --recover inference broken.inferred
+./target/release/nitride-profile --recover csharp4 broken.cs
+```
+
+The single-file CLI returns partial syntax/HIR and diagnostics as JSON, exits 1 when there
+are diagnostics, and never executes recovered input. `--recover-batch` accepts
+JSONL requests with `profile` and `source`. Library callers use
+`parse_recovering` and `compile_recovering`; private program diagnostics block
+all execution paths. Strict APIs keep their prior behavior.
+
+Recovery is grammar-derived and bounded. The frozen corpus passes the approved
+Roslyn aggregate gates; case-level regressions, fallback and large-file costs
+are explicit in [recovery evidence](docs/stage14-evidence.md). Incremental parsing
+and editor recovery integration remain future work.
+
 ## Validate
 
 ```sh
@@ -295,12 +337,12 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-There are 120 Rust tests, including parity over 249 frozen observations from
+There are 186 passing Rust tests (plus two opt-in scaling tests), including parity over 481 frozen observations from
 actual Nitrogen parsers and, for typed profiles, binding, typing and HIR,
 with the explicit inference-adapter policy described above.
-The development-only exporter has 15 tests. Live differential scripts compare
-512 deterministic generated programs in total. `scripts/prepare_parity.py`
-compares 88 prepared profiles and 20 invalid grammars against the live exporter.
+The development exporter/composition/recovery-metric Python suite has 22 tests. Live differential scripts compare
+576 deterministic generated programs in total. `scripts/prepare_parity.py`
+compares 107 prepared profiles and 29 invalid grammars against the live exporter.
 
 To refresh the reference using a sibling `../Nitrogen` source checkout and a
 .NET 10 SDK or later:
@@ -334,8 +376,7 @@ namespaces, token/sequence/choice/repetition, character classes, lookahead and
 Pratt-style expression alternatives.
 Unsupported grammar features and incompatible catalogs fail preparation.
 
-The portable core does not translate C# helpers. General .ngr features, recovery,
-incremental editing,
+The portable core does not translate C# helpers. General .ngr features, incremental editing,
 quotation, workspace indexing, LSP and dynamic language loading remain future work. Embedded targets, `no_std`, and custom allocators
 are not requirements.
 

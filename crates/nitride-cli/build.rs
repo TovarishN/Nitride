@@ -10,6 +10,8 @@ fn main() {
         ("functions", "functions"),
         ("dates", "dates"),
         ("rewrites", "rewrites"),
+        ("csharp4", "csharp4"),
+        ("grammar", "grammar"),
     ] {
         let manifest = format!("../../languages/{profile}/project.json");
         println!("cargo:rerun-if-changed={manifest}");

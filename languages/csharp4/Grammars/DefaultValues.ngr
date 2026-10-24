@@ -1,0 +1,8 @@
+syntax module CSharp.DefaultValues
+{
+ extend syntax CSharp.Expressions.Expression
+ {
+  | DefaultValueExpression = "default" "(" Type:CSharp.NamesTypes.TypeReference ")"
+ }
+ extend syntax CSharp.Expressions.AdditionalCastFollower { | DefaultCastFollower = "default" }
+}

@@ -1,0 +1,7 @@
+syntax module CSharp.OptionalParameters
+{
+ extend syntax CSharp.Attributes.ParameterDefault
+ {
+  | DefaultValue = "=" Value:CSharp.Expressions.Expression
+ }
+}

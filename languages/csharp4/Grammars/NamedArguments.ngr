@@ -1,0 +1,15 @@
+syntax module CSharp.NamedArguments
+{
+ syntax NamedIndexArgument = Name:CSharp.Lexical.Identifier ":" !":" Value:CSharp.Expressions.Expression;
+ syntax PositionalIndexArgument = Value:CSharp.Expressions.Expression Comma:",";
+ syntax NamedIndexArguments = Leading:PositionalIndexArgument* Named:(NamedIndexArgument; ",")+;
+ extend syntax CSharp.Expressions.ArgumentName
+ {
+  | NamedArgumentName = Name:CSharp.Lexical.Identifier ":" !":"
+ }
+ extend syntax CSharp.Expressions.Expression
+ {
+  | NamedBaseIndexExpression = "base" "[" Arguments:NamedIndexArguments "]"
+  | NamedElementExpression = Target:Expression "[" Arguments:NamedIndexArguments "]" precedence 180 left
+ }
+}

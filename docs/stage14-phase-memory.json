@@ -1,0 +1,1061 @@
+{
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13) (Homebrew)",
+  "profiler_executable_bytes": 1138192,
+  "native_executable_bytes": 1667776,
+  "measurements": [
+    {
+      "language": "portable",
+      "items": 10,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 109,
+          "execution": {
+            "allocation_count": 29,
+            "baseline_live_bytes": 7440,
+            "elapsed_ns": 10667,
+            "peak_bytes": 1072,
+            "retained_bytes": 640
+          },
+          "hir": {
+            "allocation_count": 52,
+            "baseline_live_bytes": 4432,
+            "elapsed_ns": 37916,
+            "peak_bytes": 4136,
+            "retained_bytes": 3008
+          },
+          "hir_nodes": 50,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 36,
+            "baseline_live_bytes": 1375,
+            "elapsed_ns": 62500,
+            "peak_bytes": 4860,
+            "retained_bytes": 3057
+          },
+          "semantic_validation": true,
+          "source_bytes": 109,
+          "syntax_capacity_bytes": 3057,
+          "syntax_nodes": 101
+        },
+        {
+          "caller_source_capacity_bytes": 109,
+          "execution": {
+            "allocation_count": 29,
+            "baseline_live_bytes": 7440,
+            "elapsed_ns": 5291,
+            "peak_bytes": 1072,
+            "retained_bytes": 640
+          },
+          "hir": {
+            "allocation_count": 52,
+            "baseline_live_bytes": 4432,
+            "elapsed_ns": 12750,
+            "peak_bytes": 4136,
+            "retained_bytes": 3008
+          },
+          "hir_nodes": 50,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 36,
+            "baseline_live_bytes": 1375,
+            "elapsed_ns": 36917,
+            "peak_bytes": 4860,
+            "retained_bytes": 3057
+          },
+          "semantic_validation": true,
+          "source_bytes": 109,
+          "syntax_capacity_bytes": 3057,
+          "syntax_nodes": 101
+        },
+        {
+          "caller_source_capacity_bytes": 109,
+          "execution": {
+            "allocation_count": 29,
+            "baseline_live_bytes": 7440,
+            "elapsed_ns": 5333,
+            "peak_bytes": 1072,
+            "retained_bytes": 640
+          },
+          "hir": {
+            "allocation_count": 52,
+            "baseline_live_bytes": 4432,
+            "elapsed_ns": 12875,
+            "peak_bytes": 4136,
+            "retained_bytes": 3008
+          },
+          "hir_nodes": 50,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 36,
+            "baseline_live_bytes": 1375,
+            "elapsed_ns": 33042,
+            "peak_bytes": 4860,
+            "retained_bytes": 3057
+          },
+          "semantic_validation": true,
+          "source_bytes": 109,
+          "syntax_capacity_bytes": 3057,
+          "syntax_nodes": 101
+        }
+      ]
+    },
+    {
+      "language": "portable",
+      "items": 100,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 1189,
+          "execution": {
+            "allocation_count": 215,
+            "baseline_live_bytes": 55856,
+            "elapsed_ns": 18167,
+            "peak_bytes": 9152,
+            "retained_bytes": 5120
+          },
+          "hir": {
+            "allocation_count": 337,
+            "baseline_live_bytes": 31792,
+            "elapsed_ns": 33834,
+            "peak_bytes": 34632,
+            "retained_bytes": 24064
+          },
+          "hir_nodes": 500,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 45,
+            "baseline_live_bytes": 2455,
+            "elapsed_ns": 161834,
+            "peak_bytes": 30844,
+            "retained_bytes": 29337
+          },
+          "semantic_validation": true,
+          "source_bytes": 1189,
+          "syntax_capacity_bytes": 29337,
+          "syntax_nodes": 1001
+        },
+        {
+          "caller_source_capacity_bytes": 1189,
+          "execution": {
+            "allocation_count": 215,
+            "baseline_live_bytes": 55856,
+            "elapsed_ns": 35583,
+            "peak_bytes": 9152,
+            "retained_bytes": 5120
+          },
+          "hir": {
+            "allocation_count": 337,
+            "baseline_live_bytes": 31792,
+            "elapsed_ns": 42625,
+            "peak_bytes": 34632,
+            "retained_bytes": 24064
+          },
+          "hir_nodes": 500,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 45,
+            "baseline_live_bytes": 2455,
+            "elapsed_ns": 232250,
+            "peak_bytes": 30844,
+            "retained_bytes": 29337
+          },
+          "semantic_validation": true,
+          "source_bytes": 1189,
+          "syntax_capacity_bytes": 29337,
+          "syntax_nodes": 1001
+        },
+        {
+          "caller_source_capacity_bytes": 1189,
+          "execution": {
+            "allocation_count": 215,
+            "baseline_live_bytes": 55856,
+            "elapsed_ns": 19041,
+            "peak_bytes": 9152,
+            "retained_bytes": 5120
+          },
+          "hir": {
+            "allocation_count": 337,
+            "baseline_live_bytes": 31792,
+            "elapsed_ns": 38125,
+            "peak_bytes": 34632,
+            "retained_bytes": 24064
+          },
+          "hir_nodes": 500,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 45,
+            "baseline_live_bytes": 2455,
+            "elapsed_ns": 213959,
+            "peak_bytes": 30844,
+            "retained_bytes": 29337
+          },
+          "semantic_validation": true,
+          "source_bytes": 1189,
+          "syntax_capacity_bytes": 29337,
+          "syntax_nodes": 1001
+        }
+      ]
+    },
+    {
+      "language": "portable",
+      "items": 1000,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 12889,
+          "execution": {
+            "allocation_count": 2021,
+            "baseline_live_bytes": 663544,
+            "elapsed_ns": 125458,
+            "peak_bytes": 80992,
+            "retained_bytes": 40960
+          },
+          "hir": {
+            "allocation_count": 3054,
+            "baseline_live_bytes": 307192,
+            "elapsed_ns": 217167,
+            "peak_bytes": 473224,
+            "retained_bytes": 356352
+          },
+          "hir_nodes": 5000,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 56,
+            "baseline_live_bytes": 14155,
+            "elapsed_ns": 1740875,
+            "peak_bytes": 468092,
+            "retained_bytes": 293037
+          },
+          "semantic_validation": true,
+          "source_bytes": 12889,
+          "syntax_capacity_bytes": 293037,
+          "syntax_nodes": 10001
+        },
+        {
+          "caller_source_capacity_bytes": 12889,
+          "execution": {
+            "allocation_count": 2021,
+            "baseline_live_bytes": 663544,
+            "elapsed_ns": 148917,
+            "peak_bytes": 80992,
+            "retained_bytes": 40960
+          },
+          "hir": {
+            "allocation_count": 3054,
+            "baseline_live_bytes": 307192,
+            "elapsed_ns": 280209,
+            "peak_bytes": 473224,
+            "retained_bytes": 356352
+          },
+          "hir_nodes": 5000,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 56,
+            "baseline_live_bytes": 14155,
+            "elapsed_ns": 1675416,
+            "peak_bytes": 468092,
+            "retained_bytes": 293037
+          },
+          "semantic_validation": true,
+          "source_bytes": 12889,
+          "syntax_capacity_bytes": 293037,
+          "syntax_nodes": 10001
+        },
+        {
+          "caller_source_capacity_bytes": 12889,
+          "execution": {
+            "allocation_count": 2021,
+            "baseline_live_bytes": 663544,
+            "elapsed_ns": 164958,
+            "peak_bytes": 80992,
+            "retained_bytes": 40960
+          },
+          "hir": {
+            "allocation_count": 3054,
+            "baseline_live_bytes": 307192,
+            "elapsed_ns": 227584,
+            "peak_bytes": 473224,
+            "retained_bytes": 356352
+          },
+          "hir_nodes": 5000,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 56,
+            "baseline_live_bytes": 14155,
+            "elapsed_ns": 1869375,
+            "peak_bytes": 468092,
+            "retained_bytes": 293037
+          },
+          "semantic_validation": true,
+          "source_bytes": 12889,
+          "syntax_capacity_bytes": 293037,
+          "syntax_nodes": 10001
+        }
+      ]
+    },
+    {
+      "language": "portable",
+      "items": 5000,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 68889,
+          "execution": {
+            "allocation_count": 10027,
+            "baseline_live_bytes": 3079288,
+            "elapsed_ns": 908583,
+            "peak_bytes": 527712,
+            "retained_bytes": 327680
+          },
+          "hir": {
+            "allocation_count": 15067,
+            "baseline_live_bytes": 1539192,
+            "elapsed_ns": 1410166,
+            "peak_bytes": 2103944,
+            "retained_bytes": 1540096
+          },
+          "hir_nodes": 25000,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 63,
+            "baseline_live_bytes": 70155,
+            "elapsed_ns": 8309750,
+            "peak_bytes": 1901692,
+            "retained_bytes": 1469037
+          },
+          "semantic_validation": true,
+          "source_bytes": 68889,
+          "syntax_capacity_bytes": 1469037,
+          "syntax_nodes": 50001
+        },
+        {
+          "caller_source_capacity_bytes": 68889,
+          "execution": {
+            "allocation_count": 10027,
+            "baseline_live_bytes": 3079288,
+            "elapsed_ns": 976500,
+            "peak_bytes": 527712,
+            "retained_bytes": 327680
+          },
+          "hir": {
+            "allocation_count": 15067,
+            "baseline_live_bytes": 1539192,
+            "elapsed_ns": 1548709,
+            "peak_bytes": 2103944,
+            "retained_bytes": 1540096
+          },
+          "hir_nodes": 25000,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 63,
+            "baseline_live_bytes": 70155,
+            "elapsed_ns": 9069334,
+            "peak_bytes": 1901692,
+            "retained_bytes": 1469037
+          },
+          "semantic_validation": true,
+          "source_bytes": 68889,
+          "syntax_capacity_bytes": 1469037,
+          "syntax_nodes": 50001
+        },
+        {
+          "caller_source_capacity_bytes": 68889,
+          "execution": {
+            "allocation_count": 10027,
+            "baseline_live_bytes": 3079288,
+            "elapsed_ns": 927250,
+            "peak_bytes": 527712,
+            "retained_bytes": 327680
+          },
+          "hir": {
+            "allocation_count": 15067,
+            "baseline_live_bytes": 1539192,
+            "elapsed_ns": 1321875,
+            "peak_bytes": 2103944,
+            "retained_bytes": 1540096
+          },
+          "hir_nodes": 25000,
+          "language": "portable",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 63,
+            "baseline_live_bytes": 70155,
+            "elapsed_ns": 9200042,
+            "peak_bytes": 1901692,
+            "retained_bytes": 1469037
+          },
+          "semantic_validation": true,
+          "source_bytes": 68889,
+          "syntax_capacity_bytes": 1469037,
+          "syntax_nodes": 50001
+        }
+      ]
+    },
+    {
+      "language": "power",
+      "items": 10,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 109,
+          "execution": {
+            "allocation_count": 29,
+            "baseline_live_bytes": 7517,
+            "elapsed_ns": 4541,
+            "peak_bytes": 1072,
+            "retained_bytes": 640
+          },
+          "hir": {
+            "allocation_count": 52,
+            "baseline_live_bytes": 4509,
+            "elapsed_ns": 10750,
+            "peak_bytes": 4136,
+            "retained_bytes": 3008
+          },
+          "hir_nodes": 50,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 36,
+            "baseline_live_bytes": 1452,
+            "elapsed_ns": 39708,
+            "peak_bytes": 4860,
+            "retained_bytes": 3057
+          },
+          "semantic_validation": true,
+          "source_bytes": 109,
+          "syntax_capacity_bytes": 3057,
+          "syntax_nodes": 101
+        },
+        {
+          "caller_source_capacity_bytes": 109,
+          "execution": {
+            "allocation_count": 29,
+            "baseline_live_bytes": 7517,
+            "elapsed_ns": 6041,
+            "peak_bytes": 1072,
+            "retained_bytes": 640
+          },
+          "hir": {
+            "allocation_count": 52,
+            "baseline_live_bytes": 4509,
+            "elapsed_ns": 56458,
+            "peak_bytes": 4136,
+            "retained_bytes": 3008
+          },
+          "hir_nodes": 50,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 36,
+            "baseline_live_bytes": 1452,
+            "elapsed_ns": 25625,
+            "peak_bytes": 4860,
+            "retained_bytes": 3057
+          },
+          "semantic_validation": true,
+          "source_bytes": 109,
+          "syntax_capacity_bytes": 3057,
+          "syntax_nodes": 101
+        },
+        {
+          "caller_source_capacity_bytes": 109,
+          "execution": {
+            "allocation_count": 29,
+            "baseline_live_bytes": 7517,
+            "elapsed_ns": 4458,
+            "peak_bytes": 1072,
+            "retained_bytes": 640
+          },
+          "hir": {
+            "allocation_count": 52,
+            "baseline_live_bytes": 4509,
+            "elapsed_ns": 14458,
+            "peak_bytes": 4136,
+            "retained_bytes": 3008
+          },
+          "hir_nodes": 50,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 36,
+            "baseline_live_bytes": 1452,
+            "elapsed_ns": 32541,
+            "peak_bytes": 4860,
+            "retained_bytes": 3057
+          },
+          "semantic_validation": true,
+          "source_bytes": 109,
+          "syntax_capacity_bytes": 3057,
+          "syntax_nodes": 101
+        }
+      ]
+    },
+    {
+      "language": "power",
+      "items": 100,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 1189,
+          "execution": {
+            "allocation_count": 215,
+            "baseline_live_bytes": 55933,
+            "elapsed_ns": 20208,
+            "peak_bytes": 9152,
+            "retained_bytes": 5120
+          },
+          "hir": {
+            "allocation_count": 337,
+            "baseline_live_bytes": 31869,
+            "elapsed_ns": 38750,
+            "peak_bytes": 34632,
+            "retained_bytes": 24064
+          },
+          "hir_nodes": 500,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 45,
+            "baseline_live_bytes": 2532,
+            "elapsed_ns": 227667,
+            "peak_bytes": 30844,
+            "retained_bytes": 29337
+          },
+          "semantic_validation": true,
+          "source_bytes": 1189,
+          "syntax_capacity_bytes": 29337,
+          "syntax_nodes": 1001
+        },
+        {
+          "caller_source_capacity_bytes": 1189,
+          "execution": {
+            "allocation_count": 215,
+            "baseline_live_bytes": 55933,
+            "elapsed_ns": 19458,
+            "peak_bytes": 9152,
+            "retained_bytes": 5120
+          },
+          "hir": {
+            "allocation_count": 337,
+            "baseline_live_bytes": 31869,
+            "elapsed_ns": 67208,
+            "peak_bytes": 34632,
+            "retained_bytes": 24064
+          },
+          "hir_nodes": 500,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 45,
+            "baseline_live_bytes": 2532,
+            "elapsed_ns": 200125,
+            "peak_bytes": 30844,
+            "retained_bytes": 29337
+          },
+          "semantic_validation": true,
+          "source_bytes": 1189,
+          "syntax_capacity_bytes": 29337,
+          "syntax_nodes": 1001
+        },
+        {
+          "caller_source_capacity_bytes": 1189,
+          "execution": {
+            "allocation_count": 215,
+            "baseline_live_bytes": 55933,
+            "elapsed_ns": 16083,
+            "peak_bytes": 9152,
+            "retained_bytes": 5120
+          },
+          "hir": {
+            "allocation_count": 337,
+            "baseline_live_bytes": 31869,
+            "elapsed_ns": 30791,
+            "peak_bytes": 34632,
+            "retained_bytes": 24064
+          },
+          "hir_nodes": 500,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 45,
+            "baseline_live_bytes": 2532,
+            "elapsed_ns": 191167,
+            "peak_bytes": 30844,
+            "retained_bytes": 29337
+          },
+          "semantic_validation": true,
+          "source_bytes": 1189,
+          "syntax_capacity_bytes": 29337,
+          "syntax_nodes": 1001
+        }
+      ]
+    },
+    {
+      "language": "power",
+      "items": 1000,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 12889,
+          "execution": {
+            "allocation_count": 2021,
+            "baseline_live_bytes": 663621,
+            "elapsed_ns": 137667,
+            "peak_bytes": 80992,
+            "retained_bytes": 40960
+          },
+          "hir": {
+            "allocation_count": 3054,
+            "baseline_live_bytes": 307269,
+            "elapsed_ns": 233000,
+            "peak_bytes": 473224,
+            "retained_bytes": 356352
+          },
+          "hir_nodes": 5000,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 56,
+            "baseline_live_bytes": 14232,
+            "elapsed_ns": 1992458,
+            "peak_bytes": 468092,
+            "retained_bytes": 293037
+          },
+          "semantic_validation": true,
+          "source_bytes": 12889,
+          "syntax_capacity_bytes": 293037,
+          "syntax_nodes": 10001
+        },
+        {
+          "caller_source_capacity_bytes": 12889,
+          "execution": {
+            "allocation_count": 2021,
+            "baseline_live_bytes": 663621,
+            "elapsed_ns": 145167,
+            "peak_bytes": 80992,
+            "retained_bytes": 40960
+          },
+          "hir": {
+            "allocation_count": 3054,
+            "baseline_live_bytes": 307269,
+            "elapsed_ns": 262292,
+            "peak_bytes": 473224,
+            "retained_bytes": 356352
+          },
+          "hir_nodes": 5000,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 56,
+            "baseline_live_bytes": 14232,
+            "elapsed_ns": 1837959,
+            "peak_bytes": 468092,
+            "retained_bytes": 293037
+          },
+          "semantic_validation": true,
+          "source_bytes": 12889,
+          "syntax_capacity_bytes": 293037,
+          "syntax_nodes": 10001
+        },
+        {
+          "caller_source_capacity_bytes": 12889,
+          "execution": {
+            "allocation_count": 2021,
+            "baseline_live_bytes": 663621,
+            "elapsed_ns": 115333,
+            "peak_bytes": 80992,
+            "retained_bytes": 40960
+          },
+          "hir": {
+            "allocation_count": 3054,
+            "baseline_live_bytes": 307269,
+            "elapsed_ns": 275208,
+            "peak_bytes": 473224,
+            "retained_bytes": 356352
+          },
+          "hir_nodes": 5000,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 56,
+            "baseline_live_bytes": 14232,
+            "elapsed_ns": 2058291,
+            "peak_bytes": 468092,
+            "retained_bytes": 293037
+          },
+          "semantic_validation": true,
+          "source_bytes": 12889,
+          "syntax_capacity_bytes": 293037,
+          "syntax_nodes": 10001
+        }
+      ]
+    },
+    {
+      "language": "power",
+      "items": 5000,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 68889,
+          "execution": {
+            "allocation_count": 10027,
+            "baseline_live_bytes": 3079365,
+            "elapsed_ns": 770791,
+            "peak_bytes": 527712,
+            "retained_bytes": 327680
+          },
+          "hir": {
+            "allocation_count": 15067,
+            "baseline_live_bytes": 1539269,
+            "elapsed_ns": 2040208,
+            "peak_bytes": 2103944,
+            "retained_bytes": 1540096
+          },
+          "hir_nodes": 25000,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 63,
+            "baseline_live_bytes": 70232,
+            "elapsed_ns": 9095125,
+            "peak_bytes": 1901692,
+            "retained_bytes": 1469037
+          },
+          "semantic_validation": true,
+          "source_bytes": 68889,
+          "syntax_capacity_bytes": 1469037,
+          "syntax_nodes": 50001
+        },
+        {
+          "caller_source_capacity_bytes": 68889,
+          "execution": {
+            "allocation_count": 10027,
+            "baseline_live_bytes": 3079365,
+            "elapsed_ns": 793208,
+            "peak_bytes": 527712,
+            "retained_bytes": 327680
+          },
+          "hir": {
+            "allocation_count": 15067,
+            "baseline_live_bytes": 1539269,
+            "elapsed_ns": 1513709,
+            "peak_bytes": 2103944,
+            "retained_bytes": 1540096
+          },
+          "hir_nodes": 25000,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 63,
+            "baseline_live_bytes": 70232,
+            "elapsed_ns": 9624500,
+            "peak_bytes": 1901692,
+            "retained_bytes": 1469037
+          },
+          "semantic_validation": true,
+          "source_bytes": 68889,
+          "syntax_capacity_bytes": 1469037,
+          "syntax_nodes": 50001
+        },
+        {
+          "caller_source_capacity_bytes": 68889,
+          "execution": {
+            "allocation_count": 10027,
+            "baseline_live_bytes": 3079365,
+            "elapsed_ns": 752417,
+            "peak_bytes": 527712,
+            "retained_bytes": 327680
+          },
+          "hir": {
+            "allocation_count": 15067,
+            "baseline_live_bytes": 1539269,
+            "elapsed_ns": 1201750,
+            "peak_bytes": 2103944,
+            "retained_bytes": 1540096
+          },
+          "hir_nodes": 25000,
+          "language": "power",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 63,
+            "baseline_live_bytes": 70232,
+            "elapsed_ns": 10475125,
+            "peak_bytes": 1901692,
+            "retained_bytes": 1469037
+          },
+          "semantic_validation": true,
+          "source_bytes": 68889,
+          "syntax_capacity_bytes": 1469037,
+          "syntax_nodes": 50001
+        }
+      ]
+    },
+    {
+      "language": "xml",
+      "items": 10,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 472,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 33,
+            "baseline_live_bytes": 1253,
+            "elapsed_ns": 39250,
+            "peak_bytes": 4624,
+            "retained_bytes": 3504
+          },
+          "semantic_validation": false,
+          "source_bytes": 472,
+          "syntax_capacity_bytes": 3504,
+          "syntax_nodes": 104
+        },
+        {
+          "caller_source_capacity_bytes": 472,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 33,
+            "baseline_live_bytes": 1253,
+            "elapsed_ns": 67334,
+            "peak_bytes": 4624,
+            "retained_bytes": 3504
+          },
+          "semantic_validation": false,
+          "source_bytes": 472,
+          "syntax_capacity_bytes": 3504,
+          "syntax_nodes": 104
+        },
+        {
+          "caller_source_capacity_bytes": 472,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 33,
+            "baseline_live_bytes": 1253,
+            "elapsed_ns": 36209,
+            "peak_bytes": 4624,
+            "retained_bytes": 3504
+          },
+          "semantic_validation": false,
+          "source_bytes": 472,
+          "syntax_capacity_bytes": 3504,
+          "syntax_nodes": 104
+        }
+      ]
+    },
+    {
+      "language": "xml",
+      "items": 100,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 4612,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 42,
+            "baseline_live_bytes": 5393,
+            "elapsed_ns": 297042,
+            "peak_bytes": 33052,
+            "retained_bytes": 32844
+          },
+          "semantic_validation": false,
+          "source_bytes": 4612,
+          "syntax_capacity_bytes": 32844,
+          "syntax_nodes": 1004
+        },
+        {
+          "caller_source_capacity_bytes": 4612,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 42,
+            "baseline_live_bytes": 5393,
+            "elapsed_ns": 232333,
+            "peak_bytes": 33052,
+            "retained_bytes": 32844
+          },
+          "semantic_validation": false,
+          "source_bytes": 4612,
+          "syntax_capacity_bytes": 32844,
+          "syntax_nodes": 1004
+        },
+        {
+          "caller_source_capacity_bytes": 4612,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 42,
+            "baseline_live_bytes": 5393,
+            "elapsed_ns": 310375,
+            "peak_bytes": 33052,
+            "retained_bytes": 32844
+          },
+          "semantic_validation": false,
+          "source_bytes": 4612,
+          "syntax_capacity_bytes": 32844,
+          "syntax_nodes": 1004
+        }
+      ]
+    },
+    {
+      "language": "xml",
+      "items": 1000,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 47812,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 53,
+            "baseline_live_bytes": 48593,
+            "elapsed_ns": 2574125,
+            "peak_bytes": 484112,
+            "retained_bytes": 328044
+          },
+          "semantic_validation": false,
+          "source_bytes": 47812,
+          "syntax_capacity_bytes": 328044,
+          "syntax_nodes": 10004
+        },
+        {
+          "caller_source_capacity_bytes": 47812,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 53,
+            "baseline_live_bytes": 48593,
+            "elapsed_ns": 2244708,
+            "peak_bytes": 484112,
+            "retained_bytes": 328044
+          },
+          "semantic_validation": false,
+          "source_bytes": 47812,
+          "syntax_capacity_bytes": 328044,
+          "syntax_nodes": 10004
+        },
+        {
+          "caller_source_capacity_bytes": 47812,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 53,
+            "baseline_live_bytes": 48593,
+            "elapsed_ns": 2526125,
+            "peak_bytes": 484112,
+            "retained_bytes": 328044
+          },
+          "semantic_validation": false,
+          "source_bytes": 47812,
+          "syntax_capacity_bytes": 328044,
+          "syntax_nodes": 10004
+        }
+      ]
+    },
+    {
+      "language": "xml",
+      "items": 5000,
+      "runs": [
+        {
+          "caller_source_capacity_bytes": 247812,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 60,
+            "baseline_live_bytes": 248593,
+            "elapsed_ns": 12251750,
+            "peak_bytes": 1966864,
+            "retained_bytes": 1648044
+          },
+          "semantic_validation": false,
+          "source_bytes": 247812,
+          "syntax_capacity_bytes": 1648044,
+          "syntax_nodes": 50004
+        },
+        {
+          "caller_source_capacity_bytes": 247812,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 60,
+            "baseline_live_bytes": 248593,
+            "elapsed_ns": 11699666,
+            "peak_bytes": 1966864,
+            "retained_bytes": 1648044
+          },
+          "semantic_validation": false,
+          "source_bytes": 247812,
+          "syntax_capacity_bytes": 1648044,
+          "syntax_nodes": 50004
+        },
+        {
+          "caller_source_capacity_bytes": 247812,
+          "execution": null,
+          "hir": null,
+          "hir_nodes": null,
+          "language": "xml",
+          "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+          "parse": {
+            "allocation_count": 60,
+            "baseline_live_bytes": 248593,
+            "elapsed_ns": 11418000,
+            "peak_bytes": 1966864,
+            "retained_bytes": 1648044
+          },
+          "semantic_validation": false,
+          "source_bytes": 247812,
+          "syntax_capacity_bytes": 1648044,
+          "syntax_nodes": 50004
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Counts requested live allocation bytes through System, not allocator overhead, RSS or OS-internal realloc copies.",
+    "Each phase peak is incremental above its own baseline; do not sum independent peak values as a simultaneous process peak.",
+    "Caller source and pre-created host bindings are in the baseline; syntax's owned source copy is included in parse storage.",
+    "Static language tables and executable mappings are excluded from allocation counts.",
+    "JSON is formatted only after all phase snapshots. XML has parsing admission only.",
+    "Profiler atomic accounting affects timings; these are not uninstrumented throughput benchmarks.",
+    "Single-threaded fixture handlers; no concurrent allocator activity is expected."
+  ]
+}

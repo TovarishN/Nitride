@@ -20,6 +20,8 @@ pub enum Expr {
     Pratt {
         prefixes: &'static [u16],
         infixes: &'static [u16],
+        /// Alternatives can begin alike, so results are memoized by position.
+        memoize: bool,
     },
 }
 
@@ -153,6 +155,11 @@ pub struct Rule {
     pub except: &'static [&'static str],
     pub precedence: u32,
     pub right_associative: bool,
+    /// A prefix alternative with no node of its own: its one element stands in.
+    pub transparent: bool,
+    /// A syntax-only rule of references and literals with no node of its own
+    /// (Nitrogen's alias): its one child, if any, stands in for it.
+    pub alias: bool,
     pub owner: Option<u16>,
     pub action: Action,
 }

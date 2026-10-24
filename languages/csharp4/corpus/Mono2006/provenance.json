@@ -1,0 +1,45 @@
+{
+  "repository": "https://github.com/mono/mono",
+  "revision": "4d1b9d0d7b412552566206a513e90df6d9121eec",
+  "selection": "First three numbered generic tests, chosen before parsing; no passing-only selection.",
+  "files": [
+    {
+      "local": "gtest-001.cs",
+      "sourcePath": "mcs/tests/gtest-001.cs",
+      "url": "https://raw.githubusercontent.com/mono/mono/4d1b9d0d7b412552566206a513e90df6d9121eec/mcs/tests/gtest-001.cs",
+      "sha256": "9b8a662a304f539013ea0213faf5a1f52ccdab98931336e68c411fced11a86df",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; LICENSE.GPL and COPYING retained alongside fixtures. Source files have no additional notice."
+    },
+    {
+      "local": "gtest-002.cs",
+      "sourcePath": "mcs/tests/gtest-002.cs",
+      "url": "https://raw.githubusercontent.com/mono/mono/4d1b9d0d7b412552566206a513e90df6d9121eec/mcs/tests/gtest-002.cs",
+      "sha256": "15d4db1307b0fc33b9974e52d3eb9e48cc874735e0d3dfdf67ec514f533dc8fd",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; LICENSE.GPL and COPYING retained alongside fixtures. Source files have no additional notice."
+    },
+    {
+      "local": "gtest-003.cs",
+      "sourcePath": "mcs/tests/gtest-003.cs",
+      "url": "https://raw.githubusercontent.com/mono/mono/4d1b9d0d7b412552566206a513e90df6d9121eec/mcs/tests/gtest-003.cs",
+      "sha256": "0e0a4e5e998ebb9ad18158007d45f1de54df70d10083920555b4186f348dade3",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; LICENSE.GPL and COPYING retained alongside fixtures. Source files have no additional notice."
+    }
+  ],
+  "licenseFiles": [
+    {
+      "local": "LICENSE",
+      "url": "https://raw.githubusercontent.com/mono/mono/4d1b9d0d7b412552566206a513e90df6d9121eec/mcs/LICENSE",
+      "sha256": "6b0e0576200eea22ac14998090dc438645f88eb2124448685cfebed2c5aaba47"
+    },
+    {
+      "local": "LICENSE.GPL",
+      "url": "https://raw.githubusercontent.com/mono/mono/4d1b9d0d7b412552566206a513e90df6d9121eec/mcs/LICENSE.GPL",
+      "sha256": "e9e3d0b84da3c0fe9bd9ba273328fb6035a6e8d05707f0a9468565458ac0b387"
+    },
+    {
+      "local": "COPYING",
+      "url": "https://raw.githubusercontent.com/mono/mono/4d1b9d0d7b412552566206a513e90df6d9121eec/mcs/COPYING",
+      "sha256": "32b1062f7da84967e7019d01ab805935caa7ab7321a7ced0e30ebe75e5df1670"
+    }
+  ]
+}

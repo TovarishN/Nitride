@@ -26,6 +26,8 @@ pub fn prepare(
     for (index, source) in sources.iter().enumerate() {
         modules.extend(parser::parse(source, index)?);
     }
+    // Grammar functions expand before validation, as in Nitrogen's compiler.
+    crate::functions::expand(&mut modules, sources)?;
     let mut module_names = HashSet::new();
     let mut symbols = HashMap::new();
     for (mi, module) in modules.iter().enumerate() {
@@ -267,9 +269,13 @@ pub fn prepare(
             }
             Ok(resolved)
         })?;
-        Ok(json!({"name":name,"lexical":rule.lexical,"expr":expr,
+        let mut value = json!({"name":name,"lexical":rule.lexical,"expr":expr,
             "clauses":if mode=="syntax"{Vec::<Value>::new()}else{clauses},"except":rule.except,
-            "precedence":rule.precedence,"owner":owner,"associativity":associativity}))
+            "precedence":rule.precedence,"owner":owner,"associativity":associativity});
+        if rule.transparent {
+            value["transparent"] = json!(true);
+        }
+        Ok(value)
     };
     for module in &modules {
         for rule in &module.rules {
@@ -277,7 +283,6 @@ pub fn prepare(
                 let point = format!("{}.{}", module.name, rule.name);
                 let mut prefixes = Vec::new();
                 let mut infixes = Vec::new();
-                let mut operators = HashSet::new();
                 let mut alternative_names = HashSet::new();
                 for (mi, alternative, implicit) in &points[&point] {
                     let from = &modules[*mi];
@@ -290,31 +295,35 @@ pub fn prepare(
                     let infix = head["kind"] == "ref"
                         && resolve(head["name"].as_str().unwrap(), from, Some(implicit), span)?
                             == point;
-                    if infix {
-                        if alternative.precedence.is_none_or(|p| p == 0) {
-                            return Err(sources[from.source]
-                                .error(alternative.span, "infix precedence must be 1..255"));
-                        }
-                        let mut operator = &alternative.body["items"][1];
-                        if operator["kind"] == "label" {
-                            operator = &operator["inner"];
-                        }
-                        let spelling = operator["text"]
-                            .as_str()
-                            .filter(|_| operator["kind"] == "literal")
-                            .ok_or_else(|| {
-                                sources[from.source].error(
-                                    alternative.span,
-                                    "infix must start with a literal operator",
-                                )
-                            })?;
-                        if !operators.insert(spelling.to_owned()) {
-                            return Err(sources[from.source]
-                                .error(alternative.span, "conflicting extension operator"));
-                        }
-                    } else if alternative.associativity.is_some() {
+                    // Alternatives may share an operator: the parser ranks them by longest
+                    // match, then precedence, as Nitrogen does. A prefix alternative's
+                    // associativity is accepted and ignored, as Nitrogen's generator ignores
+                    // it: its trailing operand binds at its own precedence.
+                    if infix && alternative.precedence.is_none_or(|p| p == 0) {
                         return Err(sources[from.source]
-                            .error(alternative.span, "prefix associativity is not admitted"));
+                            .error(alternative.span, "infix precedence must be 1..255"));
+                    }
+                    // A transparent alternative yields exactly one node: a literal,
+                    // class or reference, labeled or not, or a choice of them.
+                    fn single(expr: &Value) -> bool {
+                        match expr["kind"].as_str() {
+                            Some("literal" | "class" | "ref") => true,
+                            Some("label") => single(&expr["inner"]),
+                            Some("choice") => expr["items"].as_array().unwrap().iter().all(single),
+                            _ => false,
+                        }
+                    }
+                    if alternative.transparent
+                        && (infix
+                            || alternative.precedence.is_some()
+                            || !alternative.clauses.is_empty()
+                            || alternative.block
+                            || !single(&alternative.body))
+                    {
+                        return Err(sources[from.source].error(
+                            alternative.span,
+                            "a transparent alternative must be a prefix yielding exactly one node",
+                        ));
                     }
                     let assoc =
                         infix.then(|| alternative.associativity.as_deref().unwrap_or("Left"));

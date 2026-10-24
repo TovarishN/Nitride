@@ -13,6 +13,8 @@ fn language(expr: Expr) -> &'static Language {
                     except: &[],
                     precedence: 0,
                     right_associative: false,
+                    transparent: false,
+                    alias: false,
                     owner: None,
                     action: Action::None,
                 },
@@ -23,6 +25,8 @@ fn language(expr: Expr) -> &'static Language {
                     except: &[],
                     precedence: 0,
                     right_associative: false,
+                    transparent: false,
+                    alias: false,
                     owner: None,
                     action: Action::None,
                 },
@@ -47,9 +51,16 @@ fn lookahead_restores_tree_and_position() {
         },
         Expr::Ref(1),
     ]));
-    let tree = parse(lang, "x", Limits::default()).unwrap();
+    // Token internals are kept here so a leaked speculative node would show.
+    let options = ParseOptions {
+        token_children: true,
+        ..Default::default()
+    };
+    let tree = parse_with_options(lang, "x", Limits::default(), options).unwrap();
     assert_eq!(tree.nodes.len(), 2);
     assert_eq!(tree.nodes[tree.root as usize].span, [0, 1]);
+    // By default the token is a leaf.
+    assert_eq!(parse(lang, "x", Limits::default()).unwrap().nodes.len(), 1);
 }
 
 #[test]
@@ -75,6 +86,8 @@ fn prefix_language(prefixes: &'static [u16], second: Expr) -> &'static Language 
         except: &[],
         precedence: 0,
         right_associative: false,
+        transparent: false,
+        alias: false,
         owner: None,
         action: Action::None,
     };
@@ -88,6 +101,7 @@ fn prefix_language(prefixes: &'static [u16], second: Expr) -> &'static Language 
                     Expr::Pratt {
                         prefixes,
                         infixes: &[],
+                        memoize: false,
                     },
                 ),
                 rule("Short", Expr::Literal("a")),

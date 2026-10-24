@@ -109,12 +109,19 @@ fn opaque_blocks_balance_quoted_and_commented_braces() {
 fn utf16_literal_decoding_remains_distinct_from_generated_recognition() {
     let good = r#"syntax module Test { syntax Start="\uD83D\uDE00"; }"#;
     assert_eq!(syntax(good).unwrap()["rules"][0]["expr"]["text"], "😀");
-    for body in [r#""\uD800""#, "['😀']", r#"['\uD800']"#, r#""\q""#] {
+    for body in [r#""\uD800""#, "['😀']", r#""\q""#] {
         assert!(
             syntax(&format!("syntax module Test {{ syntax Start={body}; }}")).is_err(),
             "{body}"
         );
     }
+    // Classes match UTF-16 units in Nitrogen: a lone surrogate unit is admitted
+    // there and keeps its UTF-16 range (codegen gives it UTF-8 meaning).
+    let class = syntax(r#"syntax module Test { syntax Start=['\uD800']; }"#).unwrap();
+    assert_eq!(
+        class["rules"][0]["expr"]["ranges"],
+        serde_json::json!([[0xD800, 0xD800]])
+    );
 }
 
 #[test]

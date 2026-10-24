@@ -1,0 +1,193 @@
+{
+  "repository": "https://github.com/mono/mono",
+  "revision": "d7a4c6473ed2cd096c9223519c378bf136912a97",
+  "revisionDate": "2008-12-30T11:41:39Z",
+  "selection": "Before fetching or parsing: first three lexicographically sorted non-library tests in each of linq, initialize, implicitarray, anontype, collectioninit, autoproperty and exmethod; implicitarray has only two. Retain every outcome. Fixtures are parse-only; compilation dependencies and execution are excluded.",
+  "status": "all-predeclared-sources-parsed",
+  "files": [
+    {
+      "local": "gtest-linq-01.cs",
+      "sourcePath": "mcs/tests/gtest-linq-01.cs",
+      "group": "linq",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-linq-01.cs",
+      "sha256": "3e8518656fb55b9f597e311ff81ebb926e120727c59910fb9cc93579be2d979d",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-linq-02.cs",
+      "sourcePath": "mcs/tests/gtest-linq-02.cs",
+      "group": "linq",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-linq-02.cs",
+      "sha256": "7f34882f2f96a03042ceaddb35dd6a2f36d319880723a83555a1bd468beadd1d",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-linq-03.cs",
+      "sourcePath": "mcs/tests/gtest-linq-03.cs",
+      "group": "linq",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-linq-03.cs",
+      "sha256": "e5635e1733f88b3e39a28607a702843dcd32708974b1724b22c6701ae275674f",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-initialize-01.cs",
+      "sourcePath": "mcs/tests/gtest-initialize-01.cs",
+      "group": "initialize",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-initialize-01.cs",
+      "sha256": "889b1be1b973a45c6dcd3c0c0a9f55aee0508159e1fd7c51e0f27f8b3117e162",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-initialize-02.cs",
+      "sourcePath": "mcs/tests/gtest-initialize-02.cs",
+      "group": "initialize",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-initialize-02.cs",
+      "sha256": "1008dc30dceb8984fa98af0478f1a16a373b59ce1afb4de82e8d769b67269198",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-initialize-03.cs",
+      "sourcePath": "mcs/tests/gtest-initialize-03.cs",
+      "group": "initialize",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-initialize-03.cs",
+      "sha256": "07dfbd048649975556defef9024a8c6246ea01e05b33ed3e4d20c3c17c8e15c3",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-implicitarray-01.cs",
+      "sourcePath": "mcs/tests/gtest-implicitarray-01.cs",
+      "group": "implicitarray",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-implicitarray-01.cs",
+      "sha256": "7a6b0e79fa21235d77814042437dbcf741e3ea9e9695dad6877f9bdfeb555b0e",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-implicitarray-02.cs",
+      "sourcePath": "mcs/tests/gtest-implicitarray-02.cs",
+      "group": "implicitarray",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-implicitarray-02.cs",
+      "sha256": "b248dbca6249fb5fc2bd290af8c479f06d52193bc40e4f7002da8f8dbde25217",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-anontype-01.cs",
+      "sourcePath": "mcs/tests/gtest-anontype-01.cs",
+      "group": "anontype",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-anontype-01.cs",
+      "sha256": "a861c1dbc69c960e1c9bf974d3b2221a8c3a583dd171a37e913d05b34ac1b334",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-anontype-02.cs",
+      "sourcePath": "mcs/tests/gtest-anontype-02.cs",
+      "group": "anontype",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-anontype-02.cs",
+      "sha256": "8915a259e6d1a3207c1b85aa07abebb6ccc61ba767c901820406491c19bfb9df",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-anontype-03.cs",
+      "sourcePath": "mcs/tests/gtest-anontype-03.cs",
+      "group": "anontype",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-anontype-03.cs",
+      "sha256": "fa469fec7181cdee9f6be0e4c7b590036d0c7a6a49e91c599a639e4cb1fe6a7a",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-collectioninit-01.cs",
+      "sourcePath": "mcs/tests/gtest-collectioninit-01.cs",
+      "group": "collectioninit",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-collectioninit-01.cs",
+      "sha256": "7dce5668d26fab3766ddfed6cb29dce4e8c0c5a8015119bdd136dd909c8c7155",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-collectioninit-02.cs",
+      "sourcePath": "mcs/tests/gtest-collectioninit-02.cs",
+      "group": "collectioninit",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-collectioninit-02.cs",
+      "sha256": "de5b63deba94d0ce74d0d78b04c196a2983e7b2549c92441fbec57de46aca381",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-collectioninit-03.cs",
+      "sourcePath": "mcs/tests/gtest-collectioninit-03.cs",
+      "group": "collectioninit",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-collectioninit-03.cs",
+      "sha256": "37e844b60316d2529889cf21efd9ed9a599c8e5a42d33d8ec157f640c6c0da0e",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-autoproperty-01.cs",
+      "sourcePath": "mcs/tests/gtest-autoproperty-01.cs",
+      "group": "autoproperty",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-autoproperty-01.cs",
+      "sha256": "dc924d7e36ec6c69d1d536cf1d98cd151647d18593c62f78e512c4a51f6f514e",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-autoproperty-02.cs",
+      "sourcePath": "mcs/tests/gtest-autoproperty-02.cs",
+      "group": "autoproperty",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-autoproperty-02.cs",
+      "sha256": "47c425d028983bbb447dfef9c1a373a5570cde5c449bf71fbc8426a663fc75cc",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-autoproperty-03.cs",
+      "sourcePath": "mcs/tests/gtest-autoproperty-03.cs",
+      "group": "autoproperty",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-autoproperty-03.cs",
+      "sha256": "65273db18b8853ca26b970302c73d8f6ccc04fee9d7ca8a5df4e298d4832408c",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-exmethod-01.cs",
+      "sourcePath": "mcs/tests/gtest-exmethod-01.cs",
+      "group": "exmethod",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-exmethod-01.cs",
+      "sha256": "40f6fecb8eb461e22e16d558380e632cdee699c8578150dd5cb296a9cdcd27a1",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-exmethod-02.cs",
+      "sourcePath": "mcs/tests/gtest-exmethod-02.cs",
+      "group": "exmethod",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-exmethod-02.cs",
+      "sha256": "fc4b84b53248381ed2cf536d929f07b67653ff386831c00dd5d3c76c90011eea",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    },
+    {
+      "local": "gtest-exmethod-03.cs",
+      "sourcePath": "mcs/tests/gtest-exmethod-03.cs",
+      "group": "exmethod",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/tests/gtest-exmethod-03.cs",
+      "sha256": "be6851de96fa1bf3528979adf838047c91b79462fcc952bc0a398c2d94eabe16",
+      "license": "Mono compiler GNU GPL as declared by the pinned mcs/LICENSE; all source notices retained, parse-only fixtures."
+    }
+  ],
+  "licenseFiles": [
+    {
+      "local": "LICENSE",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/LICENSE",
+      "sha256": "1f48c84bc30e0458cbcb4d54d1e65c0db1e608a3362d3deaae11eea5422b0d97"
+    },
+    {
+      "local": "LICENSE.GPL",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/LICENSE.GPL",
+      "sha256": "e9e3d0b84da3c0fe9bd9ba273328fb6035a6e8d05707f0a9468565458ac0b387"
+    },
+    {
+      "local": "COPYING",
+      "url": "https://raw.githubusercontent.com/mono/mono/d7a4c6473ed2cd096c9223519c378bf136912a97/mcs/COPYING",
+      "sha256": "32b1062f7da84967e7019d01ab805935caa7ab7321a7ced0e30ebe75e5df1670"
+    }
+  ],
+  "observations": {
+    "selected": 20,
+    "retained": 20,
+    "csharp3SyntaxAccepted": 20,
+    "roslyn5CSharp3SyntaxAccepted": 20,
+    "scope": "Syntax-only; no historical compiler reproduction, full compilation or execution claim."
+  }
+}

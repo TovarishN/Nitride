@@ -34,6 +34,8 @@ fn language(builtins: &'static [Builtin]) -> &'static Language {
                     except: &[],
                     precedence: 0,
                     right_associative: false,
+                    transparent: false,
+                    alias: false,
                     owner: None,
                     action: Action::Call {
                         kinds: &["function"],
@@ -49,6 +51,8 @@ fn language(builtins: &'static [Builtin]) -> &'static Language {
                     except: &[],
                     precedence: 0,
                     right_associative: false,
+                    transparent: false,
+                    alias: false,
                     owner: None,
                     action: Action::None,
                 },

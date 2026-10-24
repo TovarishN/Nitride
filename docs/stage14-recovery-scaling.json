@@ -1,0 +1,299 @@
+{
+  "profiler_sha256": "9e83f9a3db3a469933695dfb45864b9afe81c2f5378b247da5c0925b8c627add",
+  "counter_scope": "recovery VM transitions and strict probes; initial failed strict parse and retry attempts excluded; elapsed includes the entire recovery API",
+  "allocator_scope": "requested System bytes; excludes thread stacks, allocator overhead, OS mappings, JSON serialization and caller input",
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "runs_per_case": 1,
+  "failures": [],
+  "measurements": [
+    {
+      "size_target": 262144,
+      "pattern": "one",
+      "diagnostics": 1,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 25103,
+        "baseline_live_bytes": 263004,
+        "elapsed_ns": 671081333,
+        "peak_bytes": 17335738,
+        "retained_bytes": 6573171
+      },
+      "recovery": {
+        "fallback_count": 0,
+        "repair_count": 1,
+        "search_states": 22,
+        "work": 54818621
+      },
+      "source_bytes": 262211,
+      "syntax_capacity_bytes": 6572883,
+      "syntax_nodes": 113003
+    },
+    {
+      "size_target": 262144,
+      "pattern": "dense",
+      "diagnostics": 729,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 767398,
+        "baseline_live_bytes": 262276,
+        "elapsed_ns": 3416986041,
+        "peak_bytes": 20594234,
+        "retained_bytes": 6754811
+      },
+      "recovery": {
+        "fallback_count": 0,
+        "repair_count": 729,
+        "search_states": 53217,
+        "work": 122170454
+      },
+      "source_bytes": 261483,
+      "syntax_capacity_bytes": 6665947,
+      "syntax_nodes": 113003
+    },
+    {
+      "size_target": 262144,
+      "pattern": "junk",
+      "diagnostics": 4,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 26201,
+        "baseline_live_bytes": 263133,
+        "elapsed_ns": 679263833,
+        "peak_bytes": 17537073,
+        "retained_bytes": 6573746
+      },
+      "recovery": {
+        "fallback_count": 1,
+        "repair_count": 5,
+        "search_states": 4873,
+        "work": 54995640
+      },
+      "source_bytes": 262340,
+      "syntax_capacity_bytes": 6573343,
+      "syntax_nodes": 112999
+    },
+    {
+      "size_target": 262144,
+      "pattern": "truncated",
+      "diagnostics": 1,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 19550,
+        "baseline_live_bytes": 197452,
+        "elapsed_ns": 671281166,
+        "peak_bytes": 17383934,
+        "retained_bytes": 4146335
+      },
+      "recovery": {
+        "fallback_count": 1,
+        "repair_count": 0,
+        "search_states": 4097,
+        "work": 41191193
+      },
+      "source_bytes": 196659,
+      "syntax_capacity_bytes": 4146043,
+      "syntax_nodes": 84849
+    },
+    {
+      "size_target": 4194304,
+      "pattern": "one",
+      "diagnostics": 1,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 289112,
+        "baseline_live_bytes": 4195284,
+        "elapsed_ns": 10469272833,
+        "peak_bytes": 234559202,
+        "retained_bytes": 103704051
+      },
+      "recovery": {
+        "fallback_count": 0,
+        "repair_count": 1,
+        "search_states": 30,
+        "work": 852025178
+      },
+      "source_bytes": 4194491,
+      "syntax_capacity_bytes": 103703763,
+      "syntax_nodes": 1756313
+    },
+    {
+      "size_target": 4194304,
+      "pattern": "dense",
+      "diagnostics": 11331,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 11867760,
+        "baseline_live_bytes": 4183954,
+        "elapsed_ns": 52280474208,
+        "peak_bytes": 298150778,
+        "retained_bytes": 106579481
+      },
+      "recovery": {
+        "fallback_count": 0,
+        "repair_count": 11331,
+        "search_states": 827163,
+        "work": 1901340806
+      },
+      "source_bytes": 4183161,
+      "syntax_capacity_bytes": 105168313,
+      "syntax_nodes": 1756313
+    },
+    {
+      "size_target": 4194304,
+      "pattern": "junk",
+      "diagnostics": 4,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 291497,
+        "baseline_live_bytes": 4195413,
+        "elapsed_ns": 10436517583,
+        "peak_bytes": 236189745,
+        "retained_bytes": 103704626
+      },
+      "recovery": {
+        "fallback_count": 1,
+        "repair_count": 5,
+        "search_states": 4873,
+        "work": 852234312
+      },
+      "source_bytes": 4194620,
+      "syntax_capacity_bytes": 103704223,
+      "syntax_nodes": 1756309
+    },
+    {
+      "size_target": 4194304,
+      "pattern": "truncated",
+      "diagnostics": 3,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 236566,
+        "baseline_live_bytes": 3146662,
+        "elapsed_ns": 11594614917,
+        "peak_bytes": 208867723,
+        "retained_bytes": 65329967
+      },
+      "recovery": {
+        "fallback_count": 0,
+        "repair_count": 5,
+        "search_states": 1692,
+        "work": 641251200
+      },
+      "source_bytes": 3145869,
+      "syntax_capacity_bytes": 65329630,
+      "syntax_nodes": 1322028
+    },
+    {
+      "size_target": 16777216,
+      "pattern": "one",
+      "diagnostics": 1,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 1120813,
+        "baseline_live_bytes": 16778084,
+        "elapsed_ns": 41667926917,
+        "peak_bytes": 844020778,
+        "retained_bytes": 411369795
+      },
+      "recovery": {
+        "fallback_count": 0,
+        "repair_count": 1,
+        "search_states": 155,
+        "work": 3352487276
+      },
+      "source_bytes": 16777291,
+      "syntax_capacity_bytes": 411369507,
+      "syntax_nodes": 6902313
+    },
+    {
+      "size_target": 16777216,
+      "pattern": "dense",
+      "diagnostics": 44531,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 46628187,
+        "baseline_live_bytes": 16733554,
+        "elapsed_ns": 202075686833,
+        "peak_bytes": 1070702970,
+        "retained_bytes": 422781817
+      },
+      "recovery": {
+        "fallback_count": 0,
+        "repair_count": 44531,
+        "search_states": 3250763,
+        "work": 7478343206
+      },
+      "source_bytes": 16732761,
+      "syntax_capacity_bytes": 417162521,
+      "syntax_nodes": 6902313
+    },
+    {
+      "size_target": 16777216,
+      "pattern": "junk",
+      "diagnostics": 3,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 1122250,
+        "baseline_live_bytes": 16778213,
+        "elapsed_ns": 42175927000,
+        "peak_bytes": 844019118,
+        "retained_bytes": 411370032
+      },
+      "recovery": {
+        "fallback_count": 1,
+        "repair_count": 3,
+        "search_states": 4163,
+        "work": 3352587142
+      },
+      "source_bytes": 16777420,
+      "syntax_capacity_bytes": 411369676,
+      "syntax_nodes": 6902307
+    },
+    {
+      "size_target": 16777216,
+      "pattern": "truncated",
+      "diagnostics": 2,
+      "execution": null,
+      "language": "csharp4",
+      "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+      "parse": {
+        "allocation_count": 909794,
+        "baseline_live_bytes": 12583762,
+        "elapsed_ns": 41254531542,
+        "peak_bytes": 769773786,
+        "retained_bytes": 258482101
+      },
+      "recovery": {
+        "fallback_count": 0,
+        "repair_count": 3,
+        "search_states": 1991,
+        "work": 2518989962
+      },
+      "source_bytes": 12582969,
+      "syntax_capacity_bytes": 258481781,
+      "syntax_nodes": 5186949
+    }
+  ]
+}

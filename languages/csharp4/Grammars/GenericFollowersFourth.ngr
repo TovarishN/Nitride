@@ -1,0 +1,8 @@
+syntax module CSharp.GenericFollowersFourth
+{
+ extend syntax CSharp.Generics.AdditionalGenericFollower
+ {
+  | BitOrGenericFollower = "|" !"|" !"="
+  | BitXorGenericFollower = "^" !"="
+ }
+}

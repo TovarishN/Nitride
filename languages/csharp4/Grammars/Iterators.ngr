@@ -1,0 +1,8 @@
+syntax module CSharp.Iterators
+{
+ extend syntax CSharp.Statements.EmbeddedStatement
+ {
+  | YieldReturnStatement = CSharp.Lexical.ContextualYield "return" Value:CSharp.Expressions.Expression ";"
+  | YieldBreakStatement = CSharp.Lexical.ContextualYield "break" ";"
+ }
+}

@@ -1,0 +1,39 @@
+syntax module CSharp.Statements
+{
+ syntax VariableInitializer = CSharp.Expressions.ArrayInitializer / CSharp.Expressions.Expression;
+ syntax VariableDeclarator = Name:CSharp.Lexical.Identifier Initializer:("=" VariableInitializer)?;
+ syntax VariableDeclaration = Type:CSharp.NamesTypes.TypeReference Variables:(VariableDeclarator; ",")+;
+ syntax ConstantDeclarator = Name:CSharp.Lexical.Identifier "=" Value:CSharp.Expressions.Expression;
+ syntax ConstantDeclaration = !CSharp.Lexical.Identifier "const" Type:CSharp.NamesTypes.TypeReference Variables:(ConstantDeclarator; ",")+;
+ syntax Block = "{" Statements:Statement* "}";
+ syntax StatementExpression = Value:CSharp.Expressions.Expression;
+ syntax StatementExpressionList = Items:(StatementExpression; ",")+;
+ syntax ExpressionStatement = Value:StatementExpression ";";
+ syntax IfStatement = "if" "(" Condition:CSharp.Expressions.Expression ")" Body:EmbeddedStatement Else:("else" EmbeddedStatement)?;
+ syntax WhileStatement = "while" "(" Condition:CSharp.Expressions.Expression ")" Body:EmbeddedStatement;
+ syntax DoStatement = "do" Body:EmbeddedStatement "while" "(" Condition:CSharp.Expressions.Expression ")" ";";
+ syntax ForStatement = "for" "(" Initializer:(VariableDeclaration / StatementExpressionList)? ";" Condition:CSharp.Expressions.Expression? ";" Iterator:StatementExpressionList? ")" Body:EmbeddedStatement;
+ syntax ForeachStatement = "foreach" "(" Type:CSharp.NamesTypes.TypeReference Name:CSharp.Lexical.Identifier "in" Source:CSharp.Expressions.Expression ")" Body:EmbeddedStatement;
+ syntax SwitchLabel = "case" Value:CSharp.Expressions.Expression ":" / "default" ":";
+ syntax SwitchSection = Labels:SwitchLabel+ Statements:Statement+;
+ syntax SwitchStatement = "switch" "(" Value:CSharp.Expressions.Expression ")" "{" Sections:SwitchSection* "}";
+ syntax CatchClause = "catch" Declaration:("(" CSharp.NamesTypes.TypeReference CSharp.Lexical.Identifier? ")")? Body:Block;
+ syntax SpecificCatchClause = &("catch" "(") Value:CatchClause;
+ syntax GeneralCatchClause = &("catch" "{") Value:CatchClause;
+ syntax FinallyClause = "finally" Body:Block;
+ syntax TryStatement = "try" Body:Block Handlers:(SpecificCatchClause+ GeneralCatchClause? FinallyClause? / GeneralCatchClause FinallyClause? / FinallyClause);
+ syntax UsingStatement = "using" "(" Resource:(VariableDeclaration / CSharp.Expressions.Expression) ")" Body:EmbeddedStatement;
+ syntax LockStatement = "lock" "(" Value:CSharp.Expressions.Expression ")" Body:EmbeddedStatement;
+ syntax CheckedStatement = ("checked" / "unchecked") Body:Block;
+ syntax JumpStatement = !CSharp.Lexical.Identifier ("break" ";" / "continue" ";" / "return" CSharp.Expressions.Expression? ";" / "throw" CSharp.Expressions.Expression? ";" / "goto" ("case" CSharp.Expressions.Expression / "default" / CSharp.Lexical.Identifier) ";");
+ extensible syntax EmbeddedStatement
+ {
+  | transparent StandardEmbeddedStatement = Body:(Block / IfStatement / WhileStatement / DoStatement / ForStatement / ForeachStatement / SwitchStatement / TryStatement / UsingStatement / LockStatement / CheckedStatement / JumpStatement / ExpressionStatement / ";")
+ }
+ syntax LabeledStatement = Name:CSharp.Lexical.Identifier ":" Body:Statement;
+ extensible syntax Statement
+ {
+  | StandardStatement = Body:(ConstantDeclaration ";" / VariableDeclaration ";" / LabeledStatement / EmbeddedStatement)
+ }
+ syntax StatementFragment = Value:Statement;
+}

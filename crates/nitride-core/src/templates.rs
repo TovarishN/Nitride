@@ -5,6 +5,7 @@ use std::{collections::HashMap, rc::Rc};
 type Id = u32;
 #[derive(Clone)]
 enum RawKind {
+    Error,
     Constant(f64),
     Operation(u16, Vec<Rc<Raw>>),
 }
@@ -14,6 +15,8 @@ struct Raw {
     origins: Vec<[u32; 2]>,
 }
 struct Compiler<'a> {
+    recovering: bool,
+    missing: std::collections::HashSet<Id>,
     language: &'static Language,
     tree: &'a SyntaxTree,
     limits: Limits,
@@ -43,7 +46,7 @@ impl<'a> Compiler<'a> {
         self.tree
             .children(id)
             .iter()
-            .filter(|e| e.label == label)
+            .filter(|e| self.tree.label(e) == label)
             .map(|e| e.node)
             .collect()
     }
@@ -117,10 +120,10 @@ impl<'a> Compiler<'a> {
                 Action::Template {
                     kind, parameters, ..
                 } => {
-                    globals
-                        .entry((kind, self.text(self.name(id)?)))
-                        .or_default()
-                        .push(id);
+                    let name = self.name(id)?;
+                    if !self.recovering || !self.missing.contains(&name) {
+                        globals.entry((kind, self.text(name))).or_default().push(id);
+                    }
                     let params = self.fields(id, parameters);
                     for parameter in &params {
                         if !matches!(self.action(*parameter), Action::Parameter { .. }) {
@@ -134,10 +137,10 @@ impl<'a> Compiler<'a> {
                     self.parameters[id as usize] = params;
                 }
                 Action::Alias { kind, .. } => {
-                    globals
-                        .entry((kind, self.text(self.name(id)?)))
-                        .or_default()
-                        .push(id);
+                    let name = self.name(id)?;
+                    if !self.recovering || !self.missing.contains(&name) {
+                        globals.entry((kind, self.text(name))).or_default().push(id);
+                    }
                 }
                 Action::Parameter {
                     kind, annotation, ..
@@ -145,11 +148,18 @@ impl<'a> Compiler<'a> {
                     let owner = self.owner[id as usize].ok_or_else(|| {
                         Diagnostic::new("grammar", self.span(id), "parameter outside template")
                     })?;
-                    locals
-                        .entry((owner, kind, self.text(self.name(id)?)))
-                        .or_default()
-                        .push(id);
+                    let name = self.name(id)?;
+                    if !self.recovering || !self.missing.contains(&name) {
+                        locals
+                            .entry((owner, kind, self.text(name)))
+                            .or_default()
+                            .push(id);
+                    }
                     let annotation = self.field(id, annotation)?;
+                    if self.recovering && self.missing.contains(&annotation) {
+                        self.parameter_types[id as usize] = Some(ERROR_TYPE);
+                        continue;
+                    }
                     let name = self.text(annotation);
                     let matches = self
                         .language
@@ -161,6 +171,9 @@ impl<'a> Compiler<'a> {
                     if matches.len() == 1 {
                         self.parameter_types[id as usize] = Some(matches[0]);
                     } else {
+                        if self.recovering {
+                            self.parameter_types[id as usize] = Some(ERROR_TYPE);
+                        }
                         self.errors.push(Diagnostic::new(
                             "type",
                             self.span(annotation),
@@ -196,6 +209,9 @@ impl<'a> Compiler<'a> {
                 *self.action(id)
             {
                 let name = self.field(id, field)?;
+                if self.recovering && self.missing.contains(&name) {
+                    continue;
+                }
                 let text = self.text(name);
                 let found = self.owner[id as usize]
                     .and_then(|owner| {
@@ -226,7 +242,9 @@ impl<'a> Compiler<'a> {
         }
         self.bound = bound;
         self.program.bindings = observations;
-        if !binding_errors.is_empty() {
+        if self.recovering {
+            self.errors.extend(binding_errors);
+        } else if !binding_errors.is_empty() {
             binding_errors.sort_by_key(|d| d.span[0]);
             return Err(binding_errors.remove(0));
         }
@@ -238,24 +256,43 @@ impl<'a> Compiler<'a> {
             return Ok(self.types[id as usize]);
         }
         self.states[id as usize] = 1;
+        if self.recovering && self.missing.contains(&id) {
+            self.types[id as usize] = Some(ERROR_TYPE);
+            self.states[id as usize] = 2;
+            return Ok(Some(ERROR_TYPE));
+        }
         let ty = match *self.action(id) {
             Action::Literal { ty, field } => {
                 let number = self.field(id, field)?;
-                if self
-                    .text(number)
-                    .parse::<f64>()
-                    .ok()
-                    .is_none_or(|n| !n.is_finite())
-                {
-                    self.errors.push(Diagnostic::new(
-                        "type",
+                if self.recovering && self.missing.contains(&number) {
+                    Some(ERROR_TYPE)
+                } else {
+                    if self
+                        .text(number)
+                        .parse::<f64>()
+                        .ok()
+                        .is_none_or(|n| !n.is_finite())
+                    {
+                        self.errors.push(Diagnostic::new(
+                            "type",
+                            self.span(id),
+                            "literal must be finite",
+                        ));
+                    }
+                    Some(ty)
+                }
+            }
+            Action::Reference { .. } => match self.bound.get(&id) {
+                Some(declaration) => self.parameter_types[*declaration as usize],
+                None if self.recovering => Some(ERROR_TYPE),
+                None => {
+                    return Err(Diagnostic::new(
+                        "binding",
                         self.span(id),
-                        "literal must be finite",
+                        "unresolved reference",
                     ));
                 }
-                Some(ty)
-            }
-            Action::Reference { .. } => self.parameter_types[self.bound[&id] as usize],
+            },
             Action::Operation {
                 id: operation,
                 fields,
@@ -275,12 +312,14 @@ impl<'a> Compiler<'a> {
                         "operation arity mismatch",
                     ));
                 }
+                let mut poisoned = false;
                 for (field, expected) in fields.iter().zip(signature.inputs) {
                     let arg = self.field(id, field)?;
-                    if self
-                        .ty(arg, depth + 1)?
-                        .is_some_and(|actual| actual != *expected)
-                    {
+                    let actual = self.ty(arg, depth + 1)?;
+                    if self.recovering && actual == Some(ERROR_TYPE) {
+                        poisoned = true;
+                    } else if actual.is_some_and(|actual| actual != *expected) {
+                        poisoned = true;
                         self.errors.push(Diagnostic::new(
                             "type",
                             self.span(arg),
@@ -288,17 +327,34 @@ impl<'a> Compiler<'a> {
                         ));
                     }
                 }
-                Some(signature.result)
+                Some(if self.recovering && poisoned {
+                    ERROR_TYPE
+                } else {
+                    signature.result
+                })
             }
             Action::Expand {
                 field, arguments, ..
             } => {
-                let declaration = self.bound[&id];
+                let Some(&declaration) = self.bound.get(&id) else {
+                    if self.recovering {
+                        self.types[id as usize] = Some(ERROR_TYPE);
+                        self.states[id as usize] = 2;
+                        return Ok(Some(ERROR_TYPE));
+                    }
+                    return Err(Diagnostic::new(
+                        "binding",
+                        self.span(id),
+                        "unresolved template",
+                    ));
+                };
                 let args = self.fields(id, arguments);
                 let mut actuals = Vec::new();
                 for arg in &args {
                     actuals.push(self.ty(*arg, depth + 1)?);
                 }
+                let errors_before = self.errors.len();
+                let poisoned = actuals.contains(&Some(ERROR_TYPE));
                 if let Action::Template { body, .. } = *self.action(declaration) {
                     let parameters = self.parameters[declaration as usize].clone();
                     if args.len() != parameters.len() {
@@ -312,7 +368,10 @@ impl<'a> Compiler<'a> {
                             if let (Some(actual), Some(expected)) =
                                 (actual, self.parameter_types[parameter as usize])
                             {
-                                if actual != expected {
+                                if actual != expected
+                                    && !(self.recovering
+                                        && (actual == ERROR_TYPE || expected == ERROR_TYPE))
+                                {
                                     self.errors.push(Diagnostic::new(
                                         "type",
                                         self.span(*arg),
@@ -322,7 +381,12 @@ impl<'a> Compiler<'a> {
                             }
                         }
                     }
-                    self.ty(self.field(declaration, body)?, depth + 1)?
+                    let result = self.ty(self.field(declaration, body)?, depth + 1)?;
+                    if self.recovering && (poisoned || self.errors.len() > errors_before) {
+                        Some(ERROR_TYPE)
+                    } else {
+                        result
+                    }
                 } else {
                     self.errors.push(Diagnostic::new(
                         "type",
@@ -364,6 +428,13 @@ impl<'a> Compiler<'a> {
     ) -> Result<Rc<Raw>, Diagnostic> {
         self.guard(id, depth)?;
         let own = self.span(id);
+        if self.recovering && self.types[id as usize] == Some(ERROR_TYPE) {
+            return Ok(Rc::new(Raw {
+                kind: RawKind::Error,
+                ty: ERROR_TYPE,
+                origins: vec![own],
+            }));
+        }
         let raw = match *self.action(id) {
             Action::Literal { ty, field } => Raw {
                 kind: RawKind::Constant(
@@ -478,6 +549,7 @@ impl<'a> Compiler<'a> {
             ));
         }
         let kind = match &raw.kind {
+            RawKind::Error => HirKind::Error,
             RawKind::Constant(n) => HirKind::Constant(*n),
             RawKind::Operation(operation, args) => {
                 let mut ids = Vec::new();
@@ -516,10 +588,11 @@ fn prepend(span: [u32; 2], origins: &[[u32; 2]]) -> Vec<[u32; 2]> {
     result
 }
 
-pub(crate) fn compile(
+pub(crate) fn compile_mode(
     language: &'static Language,
     tree: &SyntaxTree,
     limits: Limits,
+    recovering: bool,
 ) -> Result<Program, Diagnostic> {
     if tree.nodes.len() as u64 > limits.work {
         return Err(Diagnostic::new(
@@ -530,6 +603,10 @@ pub(crate) fn compile(
     }
     let count = tree.nodes.len();
     let mut c = Compiler {
+        recovering,
+        missing: tree.recovery().map_or_else(Default::default, |r| {
+            r.damaged_nodes.iter().copied().collect()
+        }),
         language,
         tree,
         limits,
@@ -552,6 +629,9 @@ pub(crate) fn compile(
             origin_ranges: Vec::new(),
             origin_rewrites: Vec::new(),
             text: String::new(),
+            diagnostics: tree
+                .recovery()
+                .map_or_else(Vec::new, |r| r.diagnostics.clone()),
         },
     };
     c.bind()?;
@@ -571,7 +651,7 @@ pub(crate) fn compile(
             break;
         }
     }
-    if !c.errors.is_empty() {
+    if !c.errors.is_empty() && !recovering {
         c.errors.sort_by_key(|d| d.span[0]);
         return Err(c.errors.remove(0));
     }
@@ -592,12 +672,29 @@ pub(crate) fn compile(
                 "selected syntax has no supported declarative lowering",
             ));
         }
-        let raw = c.lower(body, &HashMap::new(), &mut Vec::new(), 0)?;
+        let raw = match c.lower(body, &HashMap::new(), &mut Vec::new(), 0) {
+            Ok(raw) => raw,
+            Err(error)
+                if recovering && error.category != "grammar" && error.category != "limit" =>
+            {
+                c.errors.push(error);
+                Rc::new(Raw {
+                    kind: RawKind::Error,
+                    ty: ERROR_TYPE,
+                    origins: vec![c.span(body)],
+                })
+            }
+            Err(error) => return Err(error),
+        };
         let value = c.flatten(&raw, 0)?;
         c.program.statements.push(Statement {
             value,
             symbol: None,
         });
+    }
+    if recovering {
+        c.program.diagnostics.extend(c.errors);
+        c.program.diagnostics.sort_by_key(|e| e.span[0]);
     }
     Ok(c.program)
 }

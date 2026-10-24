@@ -217,3 +217,111 @@ fn text_arguments_are_positional_and_keep_plain_text_fields() {
     assert!(clause.get("text_args").is_none());
     assert!(typed(&grammar("syntax Start = V:W lowers T.Parse(text Missing);")).is_err());
 }
+
+#[test]
+fn vendored_csharp4_matches_provenance() {
+    use sha2::{Digest, Sha256};
+    let directory = root().join("languages/csharp4");
+    let provenance: Value =
+        serde_json::from_str(&std::fs::read_to_string(directory.join("provenance.json")).unwrap())
+            .unwrap();
+    let manifest: Value =
+        serde_json::from_str(&std::fs::read_to_string(directory.join("project.json")).unwrap())
+            .unwrap();
+    let files = provenance["files"].as_object().unwrap();
+    assert_eq!(files.len(), 30);
+    assert_eq!(manifest["grammars"].as_array().unwrap().len(), files.len());
+    for (path, hash) in files {
+        let bytes = std::fs::read(directory.join(path)).unwrap();
+        assert_eq!(
+            format!("{:x}", Sha256::digest(&bytes)),
+            hash.as_str().unwrap(),
+            "{path}"
+        );
+    }
+}
+
+#[test]
+fn transparent_marker_requires_name_or_element() {
+    let prepared = prepare(
+        "syntax module Test { syntax Start = S; extensible syntax S { | transparent Plain = Body:(W / \";\") | transparent W2 = W | Other = transparent } syntax W = \"w\"; syntax transparent = \"t\"; }",
+    )
+    .unwrap();
+    let rule = |name: &str| {
+        prepared["rules"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["name"] == name)
+            .unwrap()
+            .clone()
+    };
+    assert_eq!(rule("Test.Plain")["transparent"], true);
+    assert_eq!(rule("Test.W2")["transparent"], true);
+    assert!(rule("Test.Other").get("transparent").is_none());
+    assert_eq!(rule("Test.Other")["expr"]["name"], "Test.transparent");
+    for invalid in [
+        "| transparent P = W precedence 5",
+        "| transparent P = W W",
+        "| transparent P = W?",
+        "| transparent P = S \"+\" W precedence 10",
+    ] {
+        let source = format!(
+            "syntax module Test {{ syntax Start = S; extensible syntax S {{ {invalid} | X = \"x\" }} syntax W = \"w\"; }}"
+        );
+        assert!(prepare(&source).is_err(), "{invalid}");
+    }
+}
+
+fn generated_syntax(text: &str) -> Result<String, String> {
+    let prepared = prepare(text).map_err(|e| e.message)?;
+    nitride_codegen::generate(&prepared.to_string())
+}
+
+#[test]
+fn surrogate_pair_classes_match_supplementary_characters() {
+    let source = "syntax module Test { token T = ['\\ud835'] ['\\udc65'..'\\udc66']; syntax Start = Value:T; }";
+    let prepared = prepare(source).unwrap();
+    // Normalized JSON keeps Nitrogen's UTF-16 ranges.
+    assert_eq!(
+        prepared["rules"][0]["expr"]["items"][0]["ranges"],
+        serde_json::json!([[0xD835, 0xD835]])
+    );
+    let generated = generated_syntax(source).unwrap();
+    assert!(
+        generated.contains("Expr::Class(&[('\u{1d465}','\u{1d466}')])"),
+        "{generated}"
+    );
+}
+
+#[test]
+fn unpaired_surrogate_class_is_inert() {
+    let generated = generated_syntax(
+        "syntax module Test { token T = ['\\ud835'] / \"a\"; syntax Start = Value:T; }",
+    )
+    .unwrap();
+    assert!(generated.contains("Expr::Class(&[])"), "{generated}");
+    // Strings still reject unpaired surrogates.
+    assert!(prepare("syntax module Test { syntax Start = \"\\ud835\"; }").is_err());
+}
+
+#[test]
+fn prefix_associativity_is_accepted_and_ignored() {
+    let grammar = |associativity: &str| {
+        format!(
+            "syntax module Test {{ syntax Start = E; token Id = ['a'..'z']+; extensible syntax E {{ | Name = Value:Id | Lambda = P:Id \"=>\" B:E precedence 10{associativity} }} }}"
+        )
+    };
+    let rule = |prepared: &Value| {
+        prepared["rules"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["name"] == "Test.Lambda")
+            .unwrap()
+            .clone()
+    };
+    let right = prepare(&grammar(" right")).unwrap();
+    assert!(rule(&right)["associativity"].is_null());
+    assert_eq!(rule(&right), rule(&prepare(&grammar("")).unwrap()));
+}

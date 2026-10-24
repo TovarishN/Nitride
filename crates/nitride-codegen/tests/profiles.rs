@@ -19,8 +19,10 @@ fn syntax_profile_cannot_smuggle_semantic_actions() {
     assert!(generate(&data.to_string()).is_err());
 }
 
+// Alternatives may share an operator, as in Nitrogen; an exact tie is the
+// parser's ambiguity diagnostic at parse time, not a codegen rejection.
 #[test]
-fn conflicting_infix_operators_are_rejected() {
+fn shared_infix_operators_are_admitted() {
     let mut data: serde_json::Value =
         serde_json::from_str(include_str!("../../../languages/portable/language.json")).unwrap();
     let mut twin = data["rules"]
@@ -40,5 +42,84 @@ fn conflicting_infix_operators_are_rejected() {
                 .push("Portable.AddTwin".into());
         }
     }
-    assert!(generate(&data.to_string()).is_err());
+    assert!(generate(&data.to_string()).is_ok());
+}
+
+#[test]
+fn reference_operator_infix_is_generated() {
+    let hash = "0".repeat(64);
+    let data = serde_json::json!({
+        "version": 1, "mode": "syntax", "source_hash": hash, "catalog_hash": hash,
+        "start": "M.E", "builtins": [], "symbol_kinds": [],
+        "catalog": {"types": [], "operations": [], "statements": {}},
+        "rules": [
+            {"name":"M.MultiplyOp","lexical":true,"expr":{"kind":"literal","text":"*"},"clauses":[],"except":[]},
+            {"name":"M.Num","lexical":false,"expr":{"kind":"class","negated":false,"ranges":[[48,57]]},"clauses":[],"except":[],"owner":"M.E","precedence":null},
+            {"name":"M.Multiply","lexical":false,"expr":{"kind":"sequence","items":[
+                {"kind":"label","label":"Left","inner":{"kind":"ref","name":"M.E"}},
+                {"kind":"ref","name":"M.MultiplyOp"},
+                {"kind":"label","label":"Right","inner":{"kind":"ref","name":"M.E"}}]},
+             "clauses":[],"except":[],"owner":"M.E","precedence":160,"associativity":"Left"},
+            {"name":"M.E","lexical":false,"expr":{"kind":"pratt","prefixes":["M.Num"],"infixes":["M.Multiply"]},"clauses":[],"except":[]}
+        ]
+    });
+    nitride_codegen::generate(&data.to_string()).unwrap();
+}
+
+#[test]
+fn shared_operator_is_generated() {
+    let hash = "0".repeat(64);
+    let member = |name: &str, extra: bool| {
+        let mut items = vec![
+            serde_json::json!({"kind":"label","label":"Target","inner":{"kind":"ref","name":"M.E"}}),
+            serde_json::json!({"kind":"literal","text":"."}),
+            serde_json::json!({"kind":"label","label":"Name","inner":{"kind":"ref","name":"M.Num"}}),
+        ];
+        if extra {
+            items.push(serde_json::json!({"kind":"literal","text":"!"}));
+        }
+        serde_json::json!({"name":name,"lexical":false,"expr":{"kind":"sequence","items":items},
+            "clauses":[],"except":[],"owner":"M.E","precedence":180,"associativity":"Left"})
+    };
+    let data = serde_json::json!({
+        "version": 1, "mode": "syntax", "source_hash": hash, "catalog_hash": hash,
+        "start": "M.E", "builtins": [], "symbol_kinds": [],
+        "catalog": {"types": [], "operations": [], "statements": {}},
+        "rules": [
+            {"name":"M.Num","lexical":false,"expr":{"kind":"class","negated":false,"ranges":[[48,57]]},"clauses":[],"except":[],"owner":"M.E","precedence":null},
+            member("M.Member", false),
+            member("M.Shout", true),
+            {"name":"M.E","lexical":false,"expr":{"kind":"pratt","prefixes":["M.Num"],"infixes":["M.Member","M.Shout"]},"clauses":[],"except":[]}
+        ]
+    });
+    nitride_codegen::generate(&data.to_string()).unwrap();
+}
+
+#[test]
+fn only_points_with_shared_first_characters_memoize() {
+    let hash = "0".repeat(64);
+    let language = |second: serde_json::Value| {
+        serde_json::json!({
+            "version": 1, "mode": "syntax", "source_hash": hash, "catalog_hash": hash,
+            "start": "M.E", "builtins": [], "symbol_kinds": [],
+            "catalog": {"types": [], "operations": [], "statements": {}},
+            "rules": [
+                {"name":"M.Digits","lexical":true,"expr":{"kind":"repeat","min":1,"max":2147483647,"inner":{"kind":"class","negated":false,"ranges":[[48,57]]}},"clauses":[],"except":[]},
+                {"name":"M.Num","lexical":false,"expr":{"kind":"label","label":"Value","inner":{"kind":"ref","name":"M.Digits"}},"clauses":[],"except":[],"owner":"M.E","precedence":null},
+                {"name":"M.Paren","lexical":false,"expr":{"kind":"sequence","items":[{"kind":"literal","text":"("},{"kind":"ref","name":"M.E"},{"kind":"literal","text":")"}]},"clauses":[],"except":[],"owner":"M.E","precedence":null},
+                {"name":"M.Other","lexical":false,"expr":second,"clauses":[],"except":[],"owner":"M.E","precedence":null},
+                {"name":"M.E","lexical":false,"expr":{"kind":"pratt","prefixes":["M.Num","M.Paren","M.Other"],"infixes":[]},"clauses":[],"except":[]}
+            ]
+        })
+    };
+    let disjoint = nitride_codegen::generate(
+        &language(serde_json::json!({"kind":"sequence","items":[{"kind":"literal","text":"-"},{"kind":"ref","name":"M.E"}]})).to_string(),
+    )
+    .unwrap();
+    assert!(disjoint.contains("memoize:false"), "{disjoint}");
+    let shared = nitride_codegen::generate(
+        &language(serde_json::json!({"kind":"sequence","items":[{"kind":"literal","text":"("},{"kind":"ref","name":"M.Digits"},{"kind":"literal","text":")"},{"kind":"ref","name":"M.E"}]})).to_string(),
+    )
+    .unwrap();
+    assert!(shared.contains("memoize:true"), "{shared}");
 }

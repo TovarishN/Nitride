@@ -31,6 +31,11 @@ static class Exporter
             if (parsed.File!.Languages.Count != 0) throw Unsupported("language declarations belong in the manifest");
             modules.AddRange(parsed.File.Modules);
         }
+        // Grammar functions expand before validation, exactly as Nitrogen's compiler does.
+        var expanded = GrammarFunctions.Expand(modules);
+        var functionErrors = expanded.Diagnostics.Where(d => d.Severity == GrammarSeverity.Error).ToArray();
+        if (functionErrors.Length > 0) throw Unsupported(string.Join("; ", functionErrors.Select(d => d.Message)));
+        modules = expanded.Modules.ToList();
         var inputs = sources.Select((source, i) => new GrammarInput($"input{i}.ngr", source, "Fixture")).ToArray();
         var compiled = syntaxOnly ? GrammarCompiler.CompileQuotationSyntax(inputs) : GrammarCompiler.Compile(inputs);
         if (compiled.HasErrors) throw Unsupported(string.Join("; ", compiled.Diagnostics.Select(d => d.Diagnostic.Message)));
@@ -50,7 +55,7 @@ static class Exporter
             .ToDictionary(p => p.Key, p => p.Rule.Alternatives.Select(a => (Alternative: a, Module: p.Module, Implicit: p.Module.Name)).ToList());
         foreach (var module in modules)
         {
-            if (module.SymbolProperties.Count + module.Functions.Count != 0) throw Unsupported("properties or grammar functions");
+            if (module.SymbolProperties.Count != 0) throw Unsupported("symbol properties");
             foreach (var extension in module.Extends)
             {
                 string target = Resolve(extension.Target, module);
@@ -183,7 +188,7 @@ static class Exporter
                     foreach (var p in points[point])
                     {
                         var a = p.Alternative;
-                        if (a.IsTransparent || string.IsNullOrEmpty(a.Name)) throw Unsupported("transparent or unnamed alternative");
+                        if (string.IsNullOrEmpty(a.Name)) throw Unsupported("unnamed alternative");
                         bool infix = First(a.Body) is ReferenceExpr r && Resolve(r.Name, p.Module, p.Implicit) == point;
                         if (infix && a.Precedence is null) throw Unsupported("infix precedence required");
                         if (infix)
@@ -191,11 +196,11 @@ static class Exporter
                             var items = a.Body is SequenceExpr sequence ? sequence.Items.ToArray() : [];
                             Expr? suffix = items.Length > 1 ? items[1] : null;
                             if (suffix is LabeledExpr label) suffix = label.Inner;
-                            if (suffix is not LiteralExpr literal) throw Unsupported("infix must start with a literal operator");
-                            if (!operators.Add(literal.Value)) throw Unsupported("conflicting extension operator " + literal.Value + " for " + point);
+
                         }
                         Add(p.Module, a.Name, a.Body, false, a.Clauses, a.Semantics, precedence: a.Precedence, owner: point,
                             implicitModule: p.Implicit, associativity: infix ? (a.Associativity ?? GrammarAssociativity.Left).ToString() : null);
+                        if (a.IsTransparent) ((JsonObject)rules[^1]!)["transparent"] = true;
                         (infix ? infixes : prefixes).Add(p.Module.Name + "." + a.Name);
                     }
                     rules.Add(new JsonObject { ["name"] = point, ["lexical"] = false,

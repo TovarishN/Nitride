@@ -1,0 +1,34 @@
+syntax module CSharp.Queries
+{
+ token From = "from" !CSharp.Lexical.IdPart;
+ token Let = "let" !CSharp.Lexical.IdPart;
+ token Where = "where" !CSharp.Lexical.IdPart;
+ token Join = "join" !CSharp.Lexical.IdPart;
+ token On = "on" !CSharp.Lexical.IdPart;
+ token EqualsWord = "equals" !CSharp.Lexical.IdPart;
+ token Into = "into" !CSharp.Lexical.IdPart;
+ token OrderBy = "orderby" !CSharp.Lexical.IdPart;
+ token Select = "select" !CSharp.Lexical.IdPart;
+ token Group = "group" !CSharp.Lexical.IdPart;
+ token By = "by" !CSharp.Lexical.IdPart;
+ token Ascending = "ascending" !CSharp.Lexical.IdPart;
+ token Descending = "descending" !CSharp.Lexical.IdPart;
+ syntax TypedBinding = Type:CSharp.NamesTypes.TypeReference Name:CSharp.Lexical.Identifier "in";
+ syntax UntypedBinding = Name:CSharp.Lexical.Identifier "in";
+ syntax Binding = TypedBinding / UntypedBinding;
+ syntax FromClause = From Binding:Binding Source:CSharp.Expressions.Expression;
+ syntax LetClause = Let Name:CSharp.Lexical.Identifier "=" Value:CSharp.Expressions.Expression;
+ syntax WhereClause = Where Condition:CSharp.Expressions.Expression;
+ syntax JoinClause = Join Binding:Binding Source:CSharp.Expressions.Expression On Left:CSharp.Expressions.Expression EqualsWord Right:CSharp.Expressions.Expression Into:(Into CSharp.Lexical.Identifier)?;
+ syntax Ordering = Value:CSharp.Expressions.Expression Direction:(Ascending / Descending)?;
+ syntax OrderByClause = OrderBy Items:(Ordering; ",")+;
+ syntax BodyClause = FromClause / LetClause / WhereClause / JoinClause / OrderByClause;
+ syntax SelectClause = Select Value:CSharp.Expressions.Expression;
+ syntax GroupClause = Group Value:CSharp.Expressions.Expression By Key:CSharp.Expressions.Expression;
+ syntax Continuation = Into Name:CSharp.Lexical.Identifier Body:QueryBody;
+ syntax QueryBody = Clauses:BodyClause* Result:(SelectClause / GroupClause) Continuation:Continuation?;
+ extend syntax CSharp.Expressions.Expression
+ {
+  | QueryExpression = From:FromClause Body:QueryBody
+ }
+}

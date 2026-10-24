@@ -1,0 +1,43 @@
+{
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "measurements": [
+    {
+      "bytes": 65828,
+      "native_parse_seconds": 0.1044265,
+      "native_parse_allocations": 178,
+      "native_parse_peak_bytes": 4075316,
+      "native_tree_bytes": 2949412,
+      "nitrogen_parse_seconds": 0.0637861,
+      "nitrogen_parse_allocated_bytes": 656
+    },
+    {
+      "bytes": 1048613,
+      "native_parse_seconds": 1.615700042,
+      "native_parse_allocations": 211,
+      "native_parse_peak_bytes": 64631348,
+      "native_tree_bytes": 47185957,
+      "nitrogen_parse_seconds": 0.2221872,
+      "nitrogen_parse_allocated_bytes": 126449840
+    },
+    {
+      "bytes": 4194492,
+      "native_parse_seconds": 6.417547042,
+      "native_parse_allocations": 231,
+      "native_parse_peak_bytes": 242782772,
+      "native_tree_bytes": 188743868,
+      "nitrogen_parse_seconds": 0.8468751,
+      "nitrogen_parse_allocated_bytes": 505227008
+    },
+    {
+      "bytes": 16777292,
+      "native_parse_seconds": 25.399977834,
+      "native_parse_allocations": 243,
+      "native_parse_peak_bytes": 858296884,
+      "native_tree_bytes": 754974796,
+      "nitrogen_parse_seconds": 3.6168967,
+      "nitrogen_parse_allocated_bytes": 1882461264
+    }
+  ],
+  "metric": "Best of 3 parse-phase wall times; native allocations/peak are requested System bytes; Nitrogen allocated bytes are GC.GetAllocatedBytesForCurrentThread over a warm parse (Release build)"
+}

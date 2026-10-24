@@ -1,0 +1,13 @@
+syntax module CSharp.Lambdas
+{
+ syntax LambdaEmptySignature = "(" ")";
+ syntax LambdaSingleSignature = Name:CSharp.Lexical.Identifier;
+ syntax LambdaImplicitSignature = "(" Items:(CSharp.Lexical.Identifier; ",")+ ")";
+ syntax LambdaExplicitSignature = "(" Items:(CSharp.AnonymousMethods.AnonymousParameter; ",")+ ")";
+ syntax LambdaSignature = LambdaEmptySignature / LambdaExplicitSignature / LambdaImplicitSignature / LambdaSingleSignature;
+ syntax LambdaBody = CSharp.Statements.Block / CSharp.Expressions.Expression;
+ extend syntax CSharp.Expressions.Expression
+ {
+  | LambdaExpression = Parameters:LambdaSignature "=>" Body:LambdaBody precedence 10 right
+ }
+}
