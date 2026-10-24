@@ -103,8 +103,14 @@ pub fn parse(source: &Source, index: usize) -> Result<Vec<Module>, PrepareError>
         depths.push(depth);
         // Recognition is generated; UTF-16 pairing is a model constraint,
         // including captured literals within opaque semantic regions.
-        if matches!(decoder.kind(id), "String" | "Char" | "OpaqueCharLiteral") {
-            decoder.literal(id)?;
+        match decoder.kind(id) {
+            "String" | "OpaqueCharLiteral" => {
+                decoder.literal(id)?;
+            }
+            "Char" => {
+                crate::literal::decode_unit(decoder.source, decoder.span(id))?;
+            }
+            _ => {}
         }
     }
     drop(depths);
@@ -422,13 +428,10 @@ impl Decoder<'_> {
             "Class" => {
                 let mut ranges = Vec::new();
                 for n in self.fields(id, "Ranges") {
-                    let low = self.literal(self.field(n, "Low"))?.chars().next().unwrap() as u32;
+                    let unit = |n| crate::literal::decode_unit(self.source, self.span(n));
+                    let low = unit(self.field(n, "Low"))? as u32;
                     let high = match self.tree.field(n, "High") {
-                        Some(h) => self
-                            .literal(self.field(h, "Value"))?
-                            .chars()
-                            .next()
-                            .unwrap() as u32,
+                        Some(h) => unit(self.field(h, "Value"))? as u32,
                         None => low,
                     };
                     if high < low {

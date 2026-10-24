@@ -105,6 +105,11 @@ def main():
         (project / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
         (project / "project.json").write_text(json.dumps(dict(mode="syntax",start="R.Start",grammars=["R.ngr"],catalog="catalog.json")))
         compare(project / "project.json",tmp,141)
+        project = tmp / "surrogates";project.mkdir()
+        (project / "S.ngr").write_text("syntax module S { syntax Start = Items:Id*; token Id = (['a'..'z'] / ['\\ud835'] ['\\udc00'..'\\udfff'] / ['\\ud800']) ([^ ' ' '\\ud800'..'\\udbff'])*; }")
+        (project / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
+        (project / "project.json").write_text(json.dumps(dict(mode="syntax",start="S.Start",grammars=["S.ngr"],catalog="catalog.json")))
+        compare(project / "project.json",tmp,142)
         rejected = [
             'syntax module Bad { syntax Start = (Item; Separator)*; syntax Item = "a"; token Separator = ","; }',
             'syntax module Bad { syntax Start = (Item; "")*; syntax Item = "a"; }',
@@ -137,7 +142,7 @@ def main():
             reference = run("export-project", bad / "project.json", bad / "output.json")
             native = subprocess.run([ROOT / "target/release/nitride", "prepare", bad / "project.json"], capture_output=True)
             assert reference.returncode != 0 and native.returncode != 0, source
-    print("90 prepared profiles match live .NET export; 21 invalid grammars are rejected by both")
+    print("91 prepared profiles match live .NET export; 21 invalid grammars are rejected by both")
 
 
 if __name__ == "__main__":

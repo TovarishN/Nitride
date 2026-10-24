@@ -704,7 +704,7 @@ pub fn generate(input: &str) -> Result<String, String> {
             return Err("precedence out of range".into());
         }
         output_rules.push(format!("Rule {{name:{},lexical:{},expr:{},except:{},precedence:{precedence},right_associative:{},transparent:{},owner:{owner},action:{action}}}",
-            quoted(name), rule["lexical"].as_bool().ok_or("invalid lexical flag")?, emit_expr(&rule["expr"], &ids)?,
+            quoted(name), rule["lexical"].as_bool().ok_or("invalid lexical flag")?, emit_expr(&pair_surrogates(&rule["expr"]), &ids)?,
             list(strings(&rule["except"])?.into_iter().map(quoted)), rule["associativity"] == "Right", rule["transparent"] == true));
     }
 
@@ -876,6 +876,106 @@ fn collect_labels<'a>(e: &'a Value, labels: &mut HashSet<&'a str>) {
     if e.get("inner").is_some() {
         collect_labels(&e["inner"], labels);
     }
+}
+
+const HIGH: [u32; 2] = [0xD800, 0xDBFF];
+const LOW: [u32; 2] = [0xDC00, 0xDFFF];
+
+fn class_ranges(e: &Value) -> Option<Vec<[u32; 2]>> {
+    if e["kind"] != "class" || e["negated"] == true {
+        return None;
+    }
+    e["ranges"]
+        .as_array()?
+        .iter()
+        .map(|r| Some([r[0].as_u64()? as u32, r[1].as_u64()? as u32]))
+        .collect()
+}
+
+fn clip(ranges: &[[u32; 2]], bounds: [u32; 2]) -> Vec<[u32; 2]> {
+    ranges
+        .iter()
+        .filter_map(|[a, b]| {
+            let (a, b) = ((*a).max(bounds[0]), (*b).min(bounds[1]));
+            (a <= b).then_some([a, b])
+        })
+        .collect()
+}
+
+/// Gives Nitrogen's UTF-16 classes their meaning over UTF-8 text. In a
+/// sequence, a class with high surrogates followed by a class of only low
+/// surrogates matches the supplementary code points of every pair (a BMP
+/// character cannot be followed by a lone low surrogate in valid text).
+/// Any other surrogate unit can never occur in UTF-8 text and is removed; a
+/// class left empty matches nothing.
+pub fn pair_surrogates(e: &Value) -> Value {
+    let mut e = e.clone();
+    let sequence = e["kind"] == "sequence";
+    if let Some(items) = e.get_mut("items").and_then(Value::as_array_mut) {
+        let paired: Vec<Value> = items.iter().map(pair_surrogates).collect();
+        let mut out = Vec::with_capacity(paired.len());
+        let mut index = 0;
+        while index < paired.len() {
+            if sequence && index + 1 < paired.len() {
+                if let (Some(first), Some(second)) =
+                    (class_ranges(&items[index]), class_ranges(&items[index + 1]))
+                {
+                    let high = clip(&first, HIGH);
+                    let low = clip(&second, LOW);
+                    if !high.is_empty()
+                        && !low.is_empty()
+                        && clip(&second, [0, 0xDBFF]).is_empty()
+                        && clip(&second, [0xE000, u32::MAX]).is_empty()
+                    {
+                        let mut ranges = Vec::new();
+                        for [a, b] in &high {
+                            for h in *a..=*b {
+                                let base = 0x10000 + (h - 0xD800) * 0x400;
+                                for [l, m] in &low {
+                                    ranges.push(serde_json::json!([
+                                        base + l - 0xDC00,
+                                        base + m - 0xDC00
+                                    ]));
+                                }
+                            }
+                        }
+                        out.push(
+                            serde_json::json!({"kind":"class","negated":false,"ranges":ranges}),
+                        );
+                        index += 2;
+                        continue;
+                    }
+                }
+            }
+            out.push(paired[index].clone());
+            index += 1;
+        }
+        *items = out;
+        return e;
+    }
+    if let Some(inner) = e.get("inner") {
+        e["inner"] = pair_surrogates(inner);
+    }
+    if e["kind"] == "class" {
+        let ranges: Vec<Value> = e["ranges"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .flat_map(|r| {
+                let (a, b) = (
+                    r[0].as_u64().unwrap_or(0) as u32,
+                    r[1].as_u64().unwrap_or(0) as u32,
+                );
+                [[a, b.min(0xD7FF)], [a.max(0xE000), b]]
+                    .into_iter()
+                    .filter(|[x, y]| x <= y)
+                    .map(|[x, y]| serde_json::json!([x, y]))
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        e["ranges"] = Value::Array(ranges);
+    }
+    e
 }
 
 fn emit_expr(e: &Value, ids: &HashMap<&str, u16>) -> Result<String, String> {

@@ -272,3 +272,35 @@ fn transparent_marker_requires_name_or_element() {
         assert!(prepare(&source).is_err(), "{invalid}");
     }
 }
+
+fn generated_syntax(text: &str) -> Result<String, String> {
+    let prepared = prepare(text).map_err(|e| e.message)?;
+    nitride_codegen::generate(&prepared.to_string())
+}
+
+#[test]
+fn surrogate_pair_classes_match_supplementary_characters() {
+    let source = "syntax module Test { token T = ['\\ud835'] ['\\udc65'..'\\udc66']; syntax Start = Value:T; }";
+    let prepared = prepare(source).unwrap();
+    // Normalized JSON keeps Nitrogen's UTF-16 ranges.
+    assert_eq!(
+        prepared["rules"][0]["expr"]["items"][0]["ranges"],
+        serde_json::json!([[0xD835, 0xD835]])
+    );
+    let generated = generated_syntax(source).unwrap();
+    assert!(
+        generated.contains("Expr::Class(&[('\u{1d465}','\u{1d466}')])"),
+        "{generated}"
+    );
+}
+
+#[test]
+fn unpaired_surrogate_class_is_inert() {
+    let generated = generated_syntax(
+        "syntax module Test { token T = ['\\ud835'] / \"a\"; syntax Start = Value:T; }",
+    )
+    .unwrap();
+    assert!(generated.contains("Expr::Class(&[])"), "{generated}");
+    // Strings still reject unpaired surrogates.
+    assert!(prepare("syntax module Test { syntax Start = \"\\ud835\"; }").is_err());
+}
