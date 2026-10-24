@@ -77,6 +77,7 @@ pub fn parse(source: &Source, index: usize) -> Result<Vec<Module>, PrepareError>
             strict_comments: true,
             // Literal validation inspects quoted text inside opaque blocks.
             token_children: true,
+            alias_nodes: true,
         },
     )
     .map_err(|e| {
@@ -106,7 +107,7 @@ pub fn parse(source: &Source, index: usize) -> Result<Vec<Module>, PrepareError>
             .max()
             .unwrap_or(0);
         let postfix = if decoder.kind(id) == "Postfixed" {
-            children.iter().filter(|e| e.label == "Ops").count()
+            children.iter().filter(|e| tree.label(e) == "Ops").count()
         } else {
             0
         };
@@ -159,7 +160,7 @@ impl Decoder<'_> {
         self.tree
             .children(id)
             .iter()
-            .filter(|e| e.label == label)
+            .filter(|e| self.tree.label(e) == label)
             .map(|e| e.node)
             .collect()
     }

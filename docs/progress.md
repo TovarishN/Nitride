@@ -327,3 +327,12 @@ trees; 107 valid / 29 invalid preparation profiles match the live exporter.
 Linear scaling to 16 MiB, about 6x slower than Nitrogen. CLI 1,501,968 B.
 A clean offline build prepares and parses C# without .NET. Recovery
 (Milestone B) and incremental parsing (Milestone C) follow.
+
+## Stage 13: Compact syntax trees
+
+Evidence: stage13-evidence.md. Measured Nitrogen's retained tree (pooled arrays
+plus UTF-16 text) instead of allocated bytes. Syntax-mode alias rules build no
+node, edges are 8 bytes with per-tree interned labels, and tree vectors are
+exact-size. The CSharp4 tree at 16 MiB fell from 755 MB to 210 MB (Nitrogen:
+270 MB) and the parse peak from 858 MB to 327 MB. 148 Rust tests; all parity
+passes.

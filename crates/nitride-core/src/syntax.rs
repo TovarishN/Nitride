@@ -8,7 +8,9 @@ pub struct Node {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Edge {
-    pub label: &'static str,
+    /// The field label, an index into the tree's labels (see
+    /// [`SyntaxTree::label`]); 0 is the empty label.
+    pub label: u16,
     pub node: u32,
 }
 
@@ -19,6 +21,8 @@ pub struct SyntaxTree {
     pub nodes: Vec<Node>,
     pub edges: Vec<Edge>,
     pub root: u32,
+    /// The distinct labels of this tree's edges; entry 0 is "".
+    pub(crate) labels: Vec<&'static str>,
 }
 
 impl SyntaxTree {
@@ -36,10 +40,14 @@ impl SyntaxTree {
             .get(n.first_child as usize..end as usize)
             .unwrap_or(&[])
     }
+    /// The field label of an edge of this tree.
+    pub fn label(&self, edge: &Edge) -> &'static str {
+        self.labels.get(edge.label as usize).copied().unwrap_or("")
+    }
     pub fn field(&self, id: u32, label: &str) -> Option<u32> {
         self.children(id)
             .iter()
-            .find(|e| e.label == label)
+            .find(|e| self.label(e) == label)
             .map(|e| e.node)
     }
     pub fn text(&self, id: u32) -> Option<&str> {
@@ -50,5 +58,6 @@ impl SyntaxTree {
         self.source.capacity()
             + self.nodes.capacity() * std::mem::size_of::<Node>()
             + self.edges.capacity() * std::mem::size_of::<Edge>()
+            + self.labels.capacity() * std::mem::size_of::<&str>()
     }
 }

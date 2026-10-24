@@ -22,6 +22,7 @@ fn invalid_pratt_rule_ids_return_diagnostics() {
             precedence: 0,
             right_associative: false,
             transparent: false,
+            alias: false,
             owner: None,
             action: Action::None,
         };

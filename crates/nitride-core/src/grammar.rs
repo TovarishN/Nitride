@@ -157,6 +157,9 @@ pub struct Rule {
     pub right_associative: bool,
     /// A prefix alternative with no node of its own: its one element stands in.
     pub transparent: bool,
+    /// A syntax-only rule of references and literals with no node of its own
+    /// (Nitrogen's alias): its one child, if any, stands in for it.
+    pub alias: bool,
     pub owner: Option<u16>,
     pub action: Action,
 }

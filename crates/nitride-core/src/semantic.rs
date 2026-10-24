@@ -455,7 +455,7 @@ fn same_syntax(language: &Language, a: &SyntaxTree, x: u32, b: &SyntaxTree, y: u
         && left
             .iter()
             .zip(right)
-            .all(|(l, r)| l.label == r.label && same_syntax(language, a, l.node, b, r.node))
+            .all(|(l, r)| a.label(l) == b.label(r) && same_syntax(language, a, l.node, b, r.node))
 }
 
 /// Matches original caller syntax against a pattern, binding captures.
@@ -493,7 +493,8 @@ fn match_pattern(
     let (left, right) = (pattern.tree.children(node), tree.children(target));
     left.len() == right.len()
         && left.iter().zip(right).all(|(l, r)| {
-            l.label == r.label && match_pattern(language, pattern, l.node, tree, r.node, captures)
+            pattern.tree.label(l) == tree.label(r)
+                && match_pattern(language, pattern, l.node, tree, r.node, captures)
         })
 }
 

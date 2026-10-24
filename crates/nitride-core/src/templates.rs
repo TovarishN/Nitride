@@ -43,7 +43,7 @@ impl<'a> Compiler<'a> {
         self.tree
             .children(id)
             .iter()
-            .filter(|e| e.label == label)
+            .filter(|e| self.tree.label(e) == label)
             .map(|e| e.node)
             .collect()
     }

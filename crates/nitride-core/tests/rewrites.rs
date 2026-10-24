@@ -15,6 +15,7 @@ fn language(extra: &'static [Helper]) -> &'static Language {
         precedence,
         right_associative: false,
         transparent: false,
+        alias: false,
         owner,
     };
     let mut helpers = vec![

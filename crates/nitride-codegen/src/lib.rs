@@ -703,7 +703,8 @@ pub fn generate(input: &str) -> Result<String, String> {
         if precedence > u32::MAX as u64 - 1 {
             return Err("precedence out of range".into());
         }
-        output_rules.push(format!("Rule {{name:{},lexical:{},expr:{},except:{},precedence:{precedence},right_associative:{},transparent:{},owner:{owner},action:{action}}}",
+        let alias = syntax_only && name != data["start"] && alias_rule(rule);
+        output_rules.push(format!("Rule {{name:{},lexical:{},expr:{},except:{},precedence:{precedence},right_associative:{},transparent:{},alias:{alias},owner:{owner},action:{action}}}",
             quoted(name), rule["lexical"].as_bool().ok_or("invalid lexical flag")?, emit_expr_with(&pair_surrogates(&rule["expr"]), &ids, rule["expr"]["kind"] == "pratt" && memoize_point(&rule["expr"], rules, &ids))?,
             list(strings(&rule["except"])?.into_iter().map(quoted)), rule["associativity"] == "Right", rule["transparent"] == true));
     }
@@ -1118,6 +1119,33 @@ fn memoize_point(e: &Value, rules: &[Value], ids: &HashMap<&str, u16>) -> bool {
         })
     };
     overlap(sets("prefixes", 0)) || overlap(sets("infixes", 1))
+}
+
+/// Nitrogen's EmitModel.IsAlias: a syntax rule that is a reference (possibly
+/// labeled) or a choice of them, or a plain rule of literals and references,
+/// builds no node. Each matches at most one child node.
+fn alias_rule(rule: &Value) -> bool {
+    fn reference(e: &Value) -> bool {
+        match e["kind"].as_str() {
+            Some("ref") => true,
+            Some("label") => reference(&e["inner"]),
+            Some("choice") => e["items"]
+                .as_array()
+                .is_some_and(|items| !items.is_empty() && items.iter().all(reference)),
+            _ => false,
+        }
+    }
+    fn plain(e: &Value) -> bool {
+        let leaf = |e: &Value| matches!(e["kind"].as_str(), Some("ref" | "literal"));
+        leaf(e)
+            || (e["kind"] == "choice"
+                && e["items"]
+                    .as_array()
+                    .is_some_and(|items| items.iter().all(leaf)))
+    }
+    rule["lexical"] != true
+        && rule["transparent"] != true
+        && (reference(&rule["expr"]) || (rule["owner"].is_null() && plain(&rule["expr"])))
 }
 
 fn emit_expr(e: &Value, ids: &HashMap<&str, u16>) -> Result<String, String> {

@@ -39,12 +39,15 @@ def main():
             reference = json.loads(subprocess.check_output(["dotnet", RELEASE_DLL, "bench-syntax", "csharp4", path, "3"], text=True))
             rows.append({"bytes": path.stat().st_size, "native_parse_seconds": best["parse"]["elapsed_ns"] / 1e9,
                          "native_parse_allocations": best["parse"]["allocation_count"], "native_parse_peak_bytes": best["parse"]["peak_bytes"],
-                         "native_tree_bytes": best["syntax_capacity_bytes"], "nitrogen_parse_seconds": reference["seconds_min"],
-                         "nitrogen_parse_allocated_bytes": reference["allocated_bytes"]})
+                         "native_tree_bytes": best["syntax_capacity_bytes"], "native_nodes": best["syntax_nodes"],
+                         "nitrogen_parse_seconds": reference["seconds_min"],
+                         "nitrogen_parse_allocated_bytes": reference["allocated_bytes"], "nitrogen_nodes": reference["nodes"],
+                         "nitrogen_tree_array_bytes": reference["tree_array_bytes"], "nitrogen_text_bytes": reference["text_bytes"],
+                         "nitrogen_heap_growth_bytes": reference["heap_growth_bytes"]})
             print(json.dumps(rows[-1]))
     report = {"host": platform.platform(), "machine": platform.machine(), "measurements": rows,
-              "metric": "Best of 3 parse-phase wall times; native allocations/peak are requested System bytes; Nitrogen allocated bytes are GC.GetAllocatedBytesForCurrentThread over a warm parse (Release build)"}
-    (ROOT / "docs/stage12-scaling.json").write_text(json.dumps(report, indent=2) + "\n")
+              "metric": "Best of 3 parse-phase wall times; native allocations/peak are requested System bytes; native tree bytes are the retained tree including its UTF-8 source copy; Nitrogen allocated bytes are GC.GetAllocatedBytesForCurrentThread over a warm parse (Release build), which omits pooled rentals; Nitrogen retained size is the tree's arrays at their (pooled or exact) length plus its UTF-16 text, cross-checked by managed heap growth while the tree is alive"}
+    (ROOT / "docs/stage13-scaling.json").write_text(json.dumps(report, indent=2) + "\n")
 
 
 if __name__ == "__main__":
