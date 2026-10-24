@@ -18,6 +18,7 @@ fn language(candidates: &'static [u16]) -> &'static Language {
         types: &["Core.Scalar"],
         handlers: &[],
         checks: &[],
+        helpers: &[],
         operations: &[
             Signature {
                 id: "A",

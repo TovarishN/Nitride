@@ -550,6 +550,7 @@ pub(crate) fn compile(
             builtin_bindings: Vec::new(),
             origin_spans: Vec::new(),
             origin_ranges: Vec::new(),
+            origin_rewrites: Vec::new(),
             text: String::new(),
         },
     };

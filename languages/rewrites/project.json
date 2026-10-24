@@ -1,0 +1,9 @@
+{
+  "mode": "typed",
+  "start": "Dates.Program",
+  "grammars": [
+    "../dates/Dates.ngr",
+    "Rewrites.ngr"
+  ],
+  "catalog": "../dates/catalog.json"
+}

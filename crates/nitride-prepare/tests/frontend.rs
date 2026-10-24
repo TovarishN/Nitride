@@ -18,6 +18,7 @@ fn existing_exports_match_native_frontend() {
         "calls",
         "functions",
         "dates",
+        "rewrites",
     ] {
         let directory = root().join("languages").join(profile);
         let manifest: Value =
@@ -35,7 +36,8 @@ fn existing_exports_match_native_frontend() {
                 }
             })
             .collect();
-        let catalog = std::fs::read_to_string(directory.join("catalog.json")).unwrap();
+        let catalog =
+            std::fs::read_to_string(directory.join(manifest["catalog"].as_str().unwrap())).unwrap();
         let result = prepare_sources(
             &sources,
             &catalog,
@@ -102,7 +104,10 @@ fn malformed_and_unadmitted_constructs_are_rejected() {
         "syntax module Test { syntax Start = (\"x\"?)*; }",
         "syntax module Test { syntax Start = E; extensible syntax E { | N = \"x\"? } }",
         "syntax module Test { token T = \"x\"?; syntax Start = T; }",
-        "syntax module Test { syntax Start = \"x\" rewrites <[x]>; }",
+        "syntax module Test { syntax function F(X: Start*) : Start = <[x]>; syntax Start = \"x\"; }",
+        "syntax module Test { syntax function F(X: Start) : Start = match X { | <[x]> => <[x]>; }; syntax Start = \"x\"; }",
+        "syntax module Test { syntax function F(X: Start) : Start = match X { | _ => <[x]>; | <[x]> => <[x]>; }; syntax Start = \"x\"; }",
+        "syntax module Test { syntax function F(X: N) : Start = <[x]>; token N = \"n\"; syntax Start = \"x\"; }",
         "syntax module Test { syntax Start = E; extensible syntax E { | Num = \"x\" | Add = E \"+\" E precedence 256 } }",
         "syntax module Test { syntax Start = \"x\"; } /* unterminated",
     ] {

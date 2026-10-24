@@ -27,5 +27,6 @@
       <AdditionalFiles Include="../../languages/functions/Functions.ngr" Namespace="Nitride.Reference.Functions" />
     <AdditionalFiles Include="../../languages/dates/Dates.Reference.ngr" Namespace="Nitride.Reference.Dates" />
     <Compile Include="../../languages/dates/DatesSemantics.cs" />
+    <AdditionalFiles Include="../../languages/rewrites/Rewrites.ngr" Namespace="Nitride.Reference.Dates" />
   </ItemGroup>
 </Project>

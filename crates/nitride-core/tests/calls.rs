@@ -8,6 +8,7 @@ fn language(builtins: &'static [Builtin]) -> &'static Language {
         types: &["Core.Scalar"],
         handlers: &[],
         checks: &[],
+        helpers: &[],
         operations: &[
             Signature {
                 id: "A",

@@ -33,6 +33,7 @@ fn language(expr: Expr) -> &'static Language {
         operations: &[],
         handlers: &[],
         checks: &[],
+        helpers: &[],
         source_hash: "test",
     }))
 }
@@ -98,6 +99,7 @@ fn prefix_language(prefixes: &'static [u16], second: Expr) -> &'static Language 
         operations: &[],
         handlers: &[],
         checks: &[],
+        helpers: &[],
         source_hash: "test",
     }))
 }

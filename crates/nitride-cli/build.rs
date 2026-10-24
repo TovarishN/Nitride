@@ -9,6 +9,7 @@ fn main() {
         ("calls", "calls"),
         ("functions", "functions"),
         ("dates", "dates"),
+        ("rewrites", "rewrites"),
     ] {
         let manifest = format!("../../languages/{profile}/project.json");
         println!("cargo:rerun-if-changed={manifest}");

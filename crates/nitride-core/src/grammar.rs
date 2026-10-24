@@ -80,6 +80,12 @@ pub enum Action {
     Show {
         field: &'static str,
     },
+    /// Replaces the use with its helper's template, holes filled by `fields`.
+    Rewrite {
+        helper: u16,
+        fields: &'static [&'static str],
+        name: &'static str,
+    },
 }
 
 #[derive(Debug)]
@@ -110,6 +116,33 @@ pub struct Check {
     pub predicate: Predicate,
     pub code: &'static str,
     pub message: &'static str,
+}
+
+/// A `$Name` template hole and the syntax category it stands for.
+#[derive(Debug)]
+pub struct Hole {
+    pub name: &'static str,
+    pub category: u16,
+}
+
+/// An ordered match arm: captures, the pattern quote and the result quote.
+#[derive(Debug)]
+pub struct Arm {
+    pub captures: &'static [Hole],
+    pub pattern: &'static str,
+    pub result: &'static str,
+}
+
+/// A typed quote helper; inline rewrites are synthesized helpers whose
+/// parameters are the use's syntax fields. A match helper's body is its fallback.
+#[derive(Debug)]
+pub struct Helper {
+    pub name: &'static str,
+    pub parameters: &'static [Hole],
+    pub result: u16,
+    pub body: &'static str,
+    pub selector: Option<u8>,
+    pub arms: &'static [Arm],
 }
 
 #[derive(Debug)]
@@ -146,5 +179,6 @@ pub struct Language {
     pub operations: &'static [Signature],
     pub handlers: &'static [&'static str],
     pub checks: &'static [Check],
+    pub helpers: &'static [Helper],
     pub source_hash: &'static str,
 }

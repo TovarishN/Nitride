@@ -21,6 +21,8 @@ try
         Console.WriteLine(JsonSerializer.Serialize(FunctionsOracle.Observe(File.ReadAllText(functionSource), File.ReadAllText(functionCatalog))));
     else if (args is ["oracle-dates", var dateSource, var dateCatalog, var today])
         Console.WriteLine(JsonSerializer.Serialize(DatesOracle.Observe(File.ReadAllText(dateSource), File.ReadAllText(dateCatalog), today)));
+    else if (args is ["oracle-rewrites", var rewriteSource, var rewriteCatalog, var rewriteToday])
+        Console.WriteLine(JsonSerializer.Serialize(DatesOracle.Observe(File.ReadAllText(rewriteSource), File.ReadAllText(rewriteCatalog), rewriteToday, rewrites: true)));
     else if (args is ["oracle", var source, var operations])
         Console.WriteLine(JsonSerializer.Serialize(Oracle.Observe(File.ReadAllText(source), File.ReadAllText(operations))));
     else throw new ArgumentException("usage: export <grammar> <catalog> <output> | oracle <source> <catalog>");

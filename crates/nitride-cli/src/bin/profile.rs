@@ -106,7 +106,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).collect();
     let [profile, path] = args.as_slice() else {
         return Err(
-            "usage: nitride-profile <portable|power|xml|composition|namespaces|inference|calls|functions|dates> <source>"
+            "usage: nitride-profile <portable|power|xml|composition|namespaces|inference|calls|functions|dates|rewrites> <source>"
                 .into(),
         );
     };
@@ -116,6 +116,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         "calls" => &nitride_cli::calls::LANGUAGE,
         "functions" => &nitride_cli::functions::LANGUAGE,
         "dates" => &nitride_cli::dates::LANGUAGE,
+        "rewrites" => &nitride_cli::rewrites::LANGUAGE,
         "namespaces" => &nitride_cli::namespaces::LANGUAGE,
         "power" => &nitride_cli::power::LANGUAGE,
         "xml" => &nitride_cli::xml::LANGUAGE,
@@ -125,7 +126,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let source = std::fs::read_to_string(path)?;
     let bindings = nitride_cli::fixture_bindings_for(language);
     // A fixed 2026-10-24 keeps Dates measurements reproducible.
-    let values = if profile == "dates" {
+    let values = if profile == "dates" || profile == "rewrites" {
         nitride_cli::dates_values(739_912.0)
     } else {
         Vec::new()

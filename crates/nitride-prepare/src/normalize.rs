@@ -139,6 +139,77 @@ pub fn prepare(
             builtins.push(json!({"kind":kind,"name":name}));
         }
     }
+    // Quote helpers: categories must be syntax rules; names are module-qualified.
+    let mut helper_names = HashSet::new();
+    let mut helpers = Vec::new();
+    for module in &modules {
+        let source = &sources[module.source];
+        for helper in &module.helpers {
+            let name = format!("{}.{}", module.name, helper.name);
+            if symbols.contains_key(&name) || !helper_names.insert(name.clone()) {
+                return Err(source.error(helper.span, "duplicate helper name"));
+            }
+            let category = |name: &str, span| -> Result<String, PrepareError> {
+                let resolved = resolve(name, module, None, span)?;
+                let (mi, ri) = symbols[&resolved];
+                if modules[mi].rules[ri].lexical {
+                    return Err(source.error(span, "helper categories must be syntax rules"));
+                }
+                Ok(resolved)
+            };
+            let parameters = |list: &[parser::Parameter], taken: &mut HashSet<String>| {
+                list.iter()
+                    .map(|p| {
+                        if !taken.insert(p.name.clone()) {
+                            return Err(source.error(p.span, "duplicate helper parameter"));
+                        }
+                        Ok(json!({"name":p.name,"category":category(&p.category, p.span)?}))
+                    })
+                    .collect::<Result<Vec<_>, _>>()
+            };
+            let mut taken = HashSet::new();
+            let mut value = json!({"name":name,"parameters":parameters(&helper.parameters, &mut taken)?,
+                "result":category(&helper.result.0, helper.result.1)?,"body":helper.body,"match":null});
+            if let Some(selector) = &helper.selector {
+                if !helper.parameters.iter().any(|p| &p.name == selector) {
+                    return Err(source.error(helper.span, "match selector must be a parameter"));
+                }
+                let mut arms = Vec::new();
+                for arm in &helper.arms {
+                    let mut names = taken.clone();
+                    arms.push(json!({"captures":parameters(&arm.captures, &mut names)?,
+                        "pattern":arm.pattern,"result":arm.result}));
+                }
+                value["match"] = json!({"selector":selector,"arms":arms});
+            }
+            helpers.push(value);
+        }
+    }
+    let resolve_helper = |name: &str, module: &Module, span| -> Result<String, PrepareError> {
+        let error =
+            || sources[module.source].error(span, format!("unknown or ambiguous helper {name}"));
+        if name.contains('.') {
+            return helper_names
+                .contains(name)
+                .then(|| name.into())
+                .ok_or_else(error);
+        }
+        let local = format!("{}.{}", module.name, name);
+        if helper_names.contains(&local) {
+            return Ok(local);
+        }
+        let candidates: Vec<_> = module
+            .imports
+            .iter()
+            .map(|m| format!("{m}.{name}"))
+            .filter(|n| helper_names.contains(n))
+            .collect();
+        if candidates.len() == 1 {
+            Ok(candidates.into_iter().next().unwrap())
+        } else {
+            Err(error())
+        }
+    };
     let mut rules = Vec::new();
     let mut omitted = Vec::new();
     let mut add = |module: &Module,
@@ -177,6 +248,16 @@ pub fn prepare(
                 }
             }
         }
+        let mut clauses = rule.clauses.clone();
+        for clause in &mut clauses {
+            if clause["kind"] == "Rewrites" && !clause["target"].is_null() {
+                clause["target"] = json!(resolve_helper(
+                    clause["target"].as_str().unwrap(),
+                    module,
+                    rule.span
+                )?);
+            }
+        }
         let mut expr = rule.body.clone();
         normalize_expr(&mut expr, &mut |name, span| {
             let resolved = resolve(name, module, implicit, span)?;
@@ -187,7 +268,7 @@ pub fn prepare(
             Ok(resolved)
         })?;
         Ok(json!({"name":name,"lexical":rule.lexical,"expr":expr,
-            "clauses":if mode=="syntax"{Vec::<Value>::new()}else{rule.clauses.clone()},"except":rule.except,
+            "clauses":if mode=="syntax"{Vec::<Value>::new()}else{clauses},"except":rule.except,
             "precedence":rule.precedence,"owner":owner,"associativity":associativity}))
     };
     for module in &modules {
@@ -278,9 +359,13 @@ pub fn prepare(
             }
         }
     }
-    let output = json!({"version":1,"symbol_kinds":symbol_kinds,"builtins":builtins,"mode":mode,"omitted_semantics":omitted,
+    let mut output = json!({"version":1,"symbol_kinds":symbol_kinds,"builtins":builtins,"mode":mode,"omitted_semantics":omitted,
         "modules":modules.iter().map(|m|json!({"name":m.name,"imports":m.imports})).collect::<Vec<_>>(),
         "source_hash":hash(&identity),"catalog_hash":hash(catalog),"start":start,"rules":rules,"catalog":catalog_value});
+    // Helpers are validated in both modes; syntax-only admission omits them.
+    if !helpers.is_empty() && mode == "typed" {
+        output["helpers"] = json!(helpers);
+    }
     nitride_codegen::generate(&output.to_string())
         .map_err(|e| first.error([0, 0], format!("profile validation: {e}")))?;
     Ok(output)
@@ -395,7 +480,7 @@ fn validate_fields(rule: &Rule, source: &Source, plain: bool) -> Result<(), Prep
     let mut seen = HashSet::new();
     for clause in &rule.clauses {
         let kind = clause["kind"].as_str().unwrap();
-        let key = if kind.starts_with("Lowers") {
+        let key = if kind.starts_with("Lowers") || kind == "Rewrites" {
             "Lowers"
         } else {
             kind
@@ -403,7 +488,7 @@ fn validate_fields(rule: &Rule, source: &Source, plain: bool) -> Result<(), Prep
         if !seen.insert(key) {
             return Err(source.error(rule.span, format!("duplicate {key} clause")));
         }
-        if kind != "Lowers" && kind != "Scope" {
+        if !matches!(kind, "Lowers" | "Scope" | "Rewrites") {
             let field = clause["field"].as_str().unwrap();
             if field != "this" && !fields.contains(field) {
                 return Err(source.error(rule.span, format!("unknown clause field {field}")));

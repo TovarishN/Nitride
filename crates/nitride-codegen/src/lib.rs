@@ -322,6 +322,94 @@ pub fn generate(input: &str) -> Result<String, String> {
     {
         return Err("template profile cannot mix builtin calls or overload policies".into());
     }
+    // Quote helpers. Templates are parsed by the generated language at compile
+    // time; here categories, names and arities are validated.
+    let syntax_category = |name: &str| -> Result<u16, String> {
+        let id = lookup(&ids, name)?;
+        if rules[id as usize]["lexical"] != false {
+            return Err("helper categories must be syntax rules".into());
+        }
+        Ok(id)
+    };
+    let hole = |p: &Value| -> Result<(String, u16), String> {
+        Ok((
+            text(&p["name"])?.to_owned(),
+            syntax_category(text(&p["category"])?)?,
+        ))
+    };
+    let emit_holes = |holes: &[(String, u16)]| {
+        list(holes.iter().map(|(name, category)| {
+            format!(
+                "nitride_core::Hole {{name:{},category:{category}}}",
+                quoted(name)
+            )
+        }))
+    };
+    let mut helper_ids = HashMap::new();
+    let mut helper_signatures = Vec::new();
+    let mut helper_tables = Vec::new();
+    for helper in data
+        .get("helpers")
+        .map(array)
+        .transpose()?
+        .into_iter()
+        .flatten()
+    {
+        let name = text(&helper["name"])?;
+        let parameters = array(&helper["parameters"])?
+            .iter()
+            .map(hole)
+            .collect::<Result<Vec<_>, _>>()?;
+        let result = syntax_category(text(&helper["result"])?)?;
+        let mut names: HashSet<_> = HashSet::new();
+        if parameters.iter().any(|(n, _)| !names.insert(n.clone())) {
+            return Err("duplicate helper parameter".into());
+        }
+        let (selector, arms) = if helper["match"].is_null() {
+            ("None".to_owned(), Vec::new())
+        } else {
+            let selector = text(&helper["match"]["selector"])?;
+            let index = parameters
+                .iter()
+                .position(|(n, _)| n == selector)
+                .ok_or("match selector must be a parameter")?;
+            let mut arms = Vec::new();
+            for arm in array(&helper["match"]["arms"])? {
+                let captures = array(&arm["captures"])?
+                    .iter()
+                    .map(hole)
+                    .collect::<Result<Vec<_>, _>>()?;
+                let mut taken = names.clone();
+                if captures.iter().any(|(n, _)| !taken.insert(n.clone())) {
+                    return Err("duplicate match capture".into());
+                }
+                arms.push(format!(
+                    "nitride_core::Arm {{captures:{},pattern:{},result:{}}}",
+                    emit_holes(&captures),
+                    quoted(text(&arm["pattern"])?),
+                    quoted(text(&arm["result"])?)
+                ));
+            }
+            (format!("Some({index})"), arms)
+        };
+        if helper_ids
+            .insert(name.to_owned(), helper_tables.len() as u16)
+            .is_some()
+        {
+            return Err("duplicate helper".into());
+        }
+        helper_signatures.push((parameters.clone(), result));
+        helper_tables.push(format!(
+            "nitride_core::Helper {{name:{},parameters:{},result:{result},body:{},selector:{selector},arms:{}}}",
+            quoted(name),
+            emit_holes(&parameters),
+            quoted(text(&helper["body"])?),
+            list(arms)
+        ));
+    }
+    if (syntax_only || template_mode) && !helper_tables.is_empty() {
+        return Err("quote helpers require an ordinary typed profile".into());
+    }
     let mut legacy_kind = None;
     for rule in rules {
         for clause in array(&rule["clauses"])? {
@@ -489,6 +577,74 @@ pub fn generate(input: &str) -> Result<String, String> {
                         )
                     }
                 }
+                "Rewrites" => {
+                    if syntax_only || template_mode {
+                        return Err("rewrites require an ordinary typed profile".into());
+                    }
+                    let owner = rule["owner"]
+                        .as_str()
+                        .ok_or("rewrites require an extensible alternative")?;
+                    let owner = lookup(&ids, owner)?;
+                    // A labeled field's category: its direct reference to a syntax rule.
+                    let category_of = |label: &str| -> Option<u16> {
+                        fn find<'a>(e: &'a Value, label: &str) -> Option<&'a Value> {
+                            if e["kind"] == "label" && e["label"] == label {
+                                return Some(&e["inner"]);
+                            }
+                            e["items"]
+                                .as_array()
+                                .into_iter()
+                                .flatten()
+                                .chain(e.get("inner"))
+                                .find_map(|c| find(c, label))
+                        }
+                        let inner = find(&rule["expr"], label)?;
+                        let id = *ids.get(text(&inner["name"]).ok()?)?;
+                        (inner["kind"] == "ref" && rules[id as usize]["lexical"] == false)
+                            .then_some(id)
+                    };
+                    let (helper, fields) = if clause["target"].is_null() {
+                        let mut labels: Vec<_> = labels.iter().copied().collect();
+                        labels.sort_unstable();
+                        let holes: Vec<_> = labels
+                            .into_iter()
+                            .filter_map(|l| category_of(l).map(|c| (l.to_owned(), c)))
+                            .collect();
+                        let fields = holes.iter().map(|(l, _)| quoted(l)).collect::<Vec<_>>();
+                        helper_signatures.push((holes.clone(), owner));
+                        helper_tables.push(format!(
+                            "nitride_core::Helper {{name:{},parameters:{},result:{owner},body:{},selector:None,arms:&[]}}",
+                            quoted(name),
+                            emit_holes(&holes),
+                            quoted(text(&clause["template"])?)
+                        ));
+                        (helper_tables.len() as u16 - 1, fields)
+                    } else {
+                        let helper = *helper_ids
+                            .get(text(&clause["target"])?)
+                            .ok_or("unknown rewrite helper")?;
+                        let (parameters, result) = &helper_signatures[helper as usize];
+                        let args = strings(&clause["args"])?;
+                        if *result != owner
+                            || args.len() != parameters.len()
+                            || args
+                                .iter()
+                                .zip(parameters)
+                                .any(|(a, (_, c))| category_of(a) != Some(*c))
+                        {
+                            return Err("rewrite helper categories must match exactly".into());
+                        }
+                        (
+                            helper,
+                            args.into_iter().map(field).collect::<Result<_, _>>()?,
+                        )
+                    };
+                    format!(
+                        "Action::Rewrite {{helper:{helper},fields:{},name:{}}}",
+                        list(fields),
+                        quoted(name.rsplit('.').next().unwrap())
+                    )
+                }
                 "Declares" => {
                     if template_mode {
                         return Err("sequential globals are outside template profile".into());
@@ -603,12 +759,13 @@ pub fn generate(input: &str) -> Result<String, String> {
         }
     }
     Ok(format!(
-        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},source_hash:{},profile:Profile::{}}};\n",
+        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},helpers:{},source_hash:{},profile:Profile::{}}};\n",
         list(output_rules),
         list(types.into_iter().map(quoted)),
         list(signatures),
         list(handlers),
         list(check_tables),
+        list(helper_tables),
         quoted(text(&data["source_hash"])?),
         if syntax_only { "SyntaxOnly" } else { "Typed" }
     ))
