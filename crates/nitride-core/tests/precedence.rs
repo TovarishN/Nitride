@@ -178,3 +178,73 @@ fn call_postfix_with_reference_operator() {
     assert_eq!(name(target(target(target(tree.root)))), "Id");
     assert_eq!(tree.nodes[target(tree.root) as usize].span, [0, 7]);
 }
+
+#[test]
+fn shared_operator_alternatives_take_longest_match() {
+    let rule = |name, expr, precedence, owner| Rule {
+        name,
+        expr,
+        precedence,
+        owner,
+        lexical: false,
+        except: &[],
+        right_associative: false,
+        transparent: false,
+        action: Action::None,
+    };
+    let language: &'static Language = Box::leak(Box::new(Language {
+        profile: Profile::SyntaxOnly,
+        start: 0,
+        rules: Box::leak(
+            vec![
+                rule(
+                    "E",
+                    Expr::Pratt {
+                        prefixes: &[1],
+                        infixes: &[2, 3],
+                    },
+                    0,
+                    None,
+                ),
+                rule("Id", Expr::Class(&[('a', 'z')]), 0, Some(0)),
+                rule(
+                    "Member",
+                    Expr::Sequence(&[
+                        Expr::Label("Target", &Expr::Ref(0)),
+                        Expr::Literal("."),
+                        Expr::Label("Name", &Expr::Ref(4)),
+                    ]),
+                    180,
+                    Some(0),
+                ),
+                rule(
+                    "GenericMember",
+                    Expr::Sequence(&[
+                        Expr::Label("Target", &Expr::Ref(0)),
+                        Expr::Literal("."),
+                        Expr::Label("Name", &Expr::Ref(4)),
+                        Expr::Literal("<"),
+                        Expr::Label("Argument", &Expr::Ref(4)),
+                        Expr::Literal(">"),
+                    ]),
+                    180,
+                    Some(0),
+                ),
+                rule("Name", Expr::Class(&[('a', 'z')]), 0, None),
+            ]
+            .into_boxed_slice(),
+        ),
+        types: &[],
+        operations: &[],
+        handlers: &[],
+        checks: &[],
+        helpers: &[],
+        source_hash: "test",
+    }));
+    let root = |source: &str| {
+        let tree = parse(language, source, Limits::default()).unwrap();
+        language.rules[tree.nodes[tree.root as usize].rule as usize].name
+    };
+    assert_eq!(root("a.b<c>"), "GenericMember");
+    assert_eq!(root("a.b"), "Member");
+}

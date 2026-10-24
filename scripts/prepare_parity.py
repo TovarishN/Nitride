@@ -110,6 +110,11 @@ def main():
         (project / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
         (project / "project.json").write_text(json.dumps(dict(mode="syntax",start="S.Start",grammars=["S.ngr"],catalog="catalog.json")))
         compare(project / "project.json",tmp,142)
+        project = tmp / "shared-operator";project.mkdir()
+        (project / "M.ngr").write_text('syntax module M { syntax Start = E; token Id = [\'a\'..\'z\']+; extensible syntax E { | Name = Value:Id | Member = Target:E "." Name:Id precedence 180 left | GenericMember = Target:E "." Name:Id "<" Argument:Id ">" precedence 180 left } }')
+        (project / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
+        (project / "project.json").write_text(json.dumps(dict(mode="syntax",start="M.Start",grammars=["M.ngr"],catalog="catalog.json")))
+        compare(project / "project.json",tmp,143)
         # Grammar functions: CSNitrogen's real Lexical.ngr, then generated coverage.
         project = tmp / "csharp-lexical";project.mkdir()
         (project / "Lexical.ngr").write_bytes((ROOT / "languages/csharp4/Grammars/Lexical.ngr").read_bytes())
@@ -177,7 +182,7 @@ def main():
             reference = run("export-project", bad / "project.json", bad / "output.json")
             native = subprocess.run([ROOT / "target/release/nitride", "prepare", bad / "project.json"], capture_output=True)
             assert reference.returncode != 0 and native.returncode != 0, source
-    print("104 prepared profiles match live .NET export; 29 invalid grammars are rejected by both")
+    print("105 prepared profiles match live .NET export; 29 invalid grammars are rejected by both")
 
 
 if __name__ == "__main__":

@@ -715,7 +715,6 @@ pub fn generate(input: &str) -> Result<String, String> {
         expr
     }
     for point in rules.iter().filter(|r| r["expr"]["kind"] == "pratt") {
-        let mut operators = HashSet::new();
         for name in strings(&point["expr"]["infixes"])? {
             let candidate = &rules[lookup(&ids, name)? as usize];
             let parts = array(&candidate["expr"]["items"])?;
@@ -726,11 +725,8 @@ pub fn generate(input: &str) -> Result<String, String> {
             {
                 return Err("invalid infix target".into());
             }
-            // Operators may be rule references; only literal spellings can conflict.
-            let operator = bare(&parts[1]);
-            if operator["kind"] == "literal" && !operators.insert(text(&operator["text"])?) {
-                return Err("conflicting extension operator".into());
-            }
+            // Alternatives may share an operator: the parser ranks them by longest
+            // match, then precedence, as Nitrogen does.
         }
     }
     validate_progress(rules, &ids)?;

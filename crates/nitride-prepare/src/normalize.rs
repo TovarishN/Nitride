@@ -283,7 +283,6 @@ pub fn prepare(
                 let point = format!("{}.{}", module.name, rule.name);
                 let mut prefixes = Vec::new();
                 let mut infixes = Vec::new();
-                let mut operators = HashSet::new();
                 let mut alternative_names = HashSet::new();
                 for (mi, alternative, implicit) in &points[&point] {
                     let from = &modules[*mi];
@@ -301,20 +300,8 @@ pub fn prepare(
                             return Err(sources[from.source]
                                 .error(alternative.span, "infix precedence must be 1..255"));
                         }
-                        let mut operator = &alternative.body["items"][1];
-                        if operator["kind"] == "label" {
-                            operator = &operator["inner"];
-                        }
-                        // Operators may be rule references; only literal spellings can conflict.
-                        if let Some(spelling) = operator["text"]
-                            .as_str()
-                            .filter(|_| operator["kind"] == "literal")
-                        {
-                            if !operators.insert(spelling.to_owned()) {
-                                return Err(sources[from.source]
-                                    .error(alternative.span, "conflicting extension operator"));
-                            }
-                        }
+                        // Alternatives may share an operator: the parser ranks them by
+                        // longest match, then precedence, as Nitrogen does.
                     } else if alternative.associativity.is_some() {
                         return Err(sources[from.source]
                             .error(alternative.span, "prefix associativity is not admitted"));
