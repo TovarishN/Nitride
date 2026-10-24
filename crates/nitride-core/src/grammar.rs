@@ -153,6 +153,8 @@ pub struct Rule {
     pub except: &'static [&'static str],
     pub precedence: u32,
     pub right_associative: bool,
+    /// A prefix alternative with no node of its own: its one element stands in.
+    pub transparent: bool,
     pub owner: Option<u16>,
     pub action: Action,
 }

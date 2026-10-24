@@ -95,6 +95,11 @@ def main():
         (project / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
         (project / "project.json").write_text(json.dumps(dict(mode="syntax",start="Dates.Program",grammars=["Dates.ngr","Rewrites.ngr"],catalog="catalog.json")))
         compare(project / "project.json",tmp,130)
+        project = tmp / "transparent";project.mkdir()
+        (project / "T.ngr").write_text('syntax module T { syntax Start = Items:S*; extensible syntax S { | transparent Plain = Body:(W / ";") | transparent W2 = W | Other = transparent | Block = "{" Items:S* "}" } syntax W = "w"; syntax transparent = "t"; }')
+        (project / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
+        (project / "project.json").write_text(json.dumps(dict(mode="syntax",start="T.Start",grammars=["T.ngr"],catalog="catalog.json")))
+        compare(project / "project.json",tmp,140)
         rejected = [
             'syntax module Bad { syntax Start = (Item; Separator)*; syntax Item = "a"; token Separator = ","; }',
             'syntax module Bad { syntax Start = (Item; "")*; syntax Item = "a"; }',
@@ -116,6 +121,7 @@ def main():
             'syntax module Bad { syntax function F(X: Start) : Start = match X { | <[ a ]> => <[ a ]>; }; syntax Start = "a"; }',
             'syntax module Bad { syntax function F(X: Start) : Start = match X { | _ => <[ a ]>; | <[ a ]> => <[ a ]>; }; syntax Start = "a"; }',
             'syntax module Bad { syntax function F(X: T) : Start = <[ a ]>; token T = "t"; syntax Start = "a"; }',
+            'syntax module Bad { syntax Start = S; extensible syntax S { | transparent P = W W | X = "x" } syntax W = "w"; }',
         ]
         bad = tmp / "bad"
         bad.mkdir()
@@ -126,7 +132,7 @@ def main():
             reference = run("export-project", bad / "project.json", bad / "output.json")
             native = subprocess.run([ROOT / "target/release/nitride", "prepare", bad / "project.json"], capture_output=True)
             assert reference.returncode != 0 and native.returncode != 0, source
-    print("88 prepared profiles match live .NET export; 20 invalid grammars are rejected by both")
+    print("89 prepared profiles match live .NET export; 21 invalid grammars are rejected by both")
 
 
 if __name__ == "__main__":

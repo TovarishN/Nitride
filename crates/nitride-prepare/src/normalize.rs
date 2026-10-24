@@ -267,9 +267,13 @@ pub fn prepare(
             }
             Ok(resolved)
         })?;
-        Ok(json!({"name":name,"lexical":rule.lexical,"expr":expr,
+        let mut value = json!({"name":name,"lexical":rule.lexical,"expr":expr,
             "clauses":if mode=="syntax"{Vec::<Value>::new()}else{clauses},"except":rule.except,
-            "precedence":rule.precedence,"owner":owner,"associativity":associativity}))
+            "precedence":rule.precedence,"owner":owner,"associativity":associativity});
+        if rule.transparent {
+            value["transparent"] = json!(true);
+        }
+        Ok(value)
     };
     for module in &modules {
         for rule in &module.rules {
@@ -315,6 +319,28 @@ pub fn prepare(
                     } else if alternative.associativity.is_some() {
                         return Err(sources[from.source]
                             .error(alternative.span, "prefix associativity is not admitted"));
+                    }
+                    // A transparent alternative yields exactly one node: a literal,
+                    // class or reference, labeled or not, or a choice of them.
+                    fn single(expr: &Value) -> bool {
+                        match expr["kind"].as_str() {
+                            Some("literal" | "class" | "ref") => true,
+                            Some("label") => single(&expr["inner"]),
+                            Some("choice") => expr["items"].as_array().unwrap().iter().all(single),
+                            _ => false,
+                        }
+                    }
+                    if alternative.transparent
+                        && (infix
+                            || alternative.precedence.is_some()
+                            || !alternative.clauses.is_empty()
+                            || alternative.block
+                            || !single(&alternative.body))
+                    {
+                        return Err(sources[from.source].error(
+                            alternative.span,
+                            "a transparent alternative must be a prefix yielding exactly one node",
+                        ));
                     }
                     let assoc =
                         infix.then(|| alternative.associativity.as_deref().unwrap_or("Left"));

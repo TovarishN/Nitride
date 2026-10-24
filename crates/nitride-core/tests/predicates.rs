@@ -13,6 +13,7 @@ fn language(expr: Expr) -> &'static Language {
                     except: &[],
                     precedence: 0,
                     right_associative: false,
+                    transparent: false,
                     owner: None,
                     action: Action::None,
                 },
@@ -23,6 +24,7 @@ fn language(expr: Expr) -> &'static Language {
                     except: &[],
                     precedence: 0,
                     right_associative: false,
+                    transparent: false,
                     owner: None,
                     action: Action::None,
                 },
@@ -75,6 +77,7 @@ fn prefix_language(prefixes: &'static [u16], second: Expr) -> &'static Language 
         except: &[],
         precedence: 0,
         right_associative: false,
+        transparent: false,
         owner: None,
         action: Action::None,
     };

@@ -183,7 +183,7 @@ static class Exporter
                     foreach (var p in points[point])
                     {
                         var a = p.Alternative;
-                        if (a.IsTransparent || string.IsNullOrEmpty(a.Name)) throw Unsupported("transparent or unnamed alternative");
+                        if (string.IsNullOrEmpty(a.Name)) throw Unsupported("unnamed alternative");
                         bool infix = First(a.Body) is ReferenceExpr r && Resolve(r.Name, p.Module, p.Implicit) == point;
                         if (infix && a.Precedence is null) throw Unsupported("infix precedence required");
                         if (infix)
@@ -196,6 +196,7 @@ static class Exporter
                         }
                         Add(p.Module, a.Name, a.Body, false, a.Clauses, a.Semantics, precedence: a.Precedence, owner: point,
                             implicitModule: p.Implicit, associativity: infix ? (a.Associativity ?? GrammarAssociativity.Left).ToString() : null);
+                        if (a.IsTransparent) ((JsonObject)rules[^1]!)["transparent"] = true;
                         (infix ? infixes : prefixes).Add(p.Module.Name + "." + a.Name);
                     }
                     rules.Add(new JsonObject { ["name"] = point, ["lexical"] = false,

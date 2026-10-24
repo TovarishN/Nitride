@@ -703,9 +703,9 @@ pub fn generate(input: &str) -> Result<String, String> {
         if precedence > u32::MAX as u64 - 1 {
             return Err("precedence out of range".into());
         }
-        output_rules.push(format!("Rule {{name:{},lexical:{},expr:{},except:{},precedence:{precedence},right_associative:{},owner:{owner},action:{action}}}",
+        output_rules.push(format!("Rule {{name:{},lexical:{},expr:{},except:{},precedence:{precedence},right_associative:{},transparent:{},owner:{owner},action:{action}}}",
             quoted(name), rule["lexical"].as_bool().ok_or("invalid lexical flag")?, emit_expr(&rule["expr"], &ids)?,
-            list(strings(&rule["except"])?.into_iter().map(quoted)), rule["associativity"] == "Right"));
+            list(strings(&rule["except"])?.into_iter().map(quoted)), rule["associativity"] == "Right", rule["transparent"] == true));
     }
 
     fn bare(mut expr: &Value) -> &Value {

@@ -9,6 +9,7 @@ fn language() -> Language {
         lexical: false,
         except: &[],
         right_associative: false,
+        transparent: false,
         action: Action::None,
     };
     Language {

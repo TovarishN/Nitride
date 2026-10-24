@@ -50,7 +50,8 @@ pub fn syntax_observe(language: &'static Language, source: &str) -> Value {
     while let Some((id, parent)) = stack.pop() {
         let node = tree.nodes[id as usize];
         let rule = &language.rules[node.rule as usize];
-        let next_parent = if !alias(&rule.expr) {
+        // Aliases and transparent alternatives have no node of their own in Nitrogen.
+        let next_parent = if !alias(&rule.expr) && !rule.transparent {
             let index = nodes.len();
             nodes.push(json!({"rule":rule.name,"span":node.span,"parent":parent}));
             Some(index)

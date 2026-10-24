@@ -343,6 +343,22 @@ impl Parser<'_> {
         Self::recycle(&mut self.edge_buffers, children);
         result
     }
+    /// A transparent alternative's one element node stands in for it. The
+    /// alternative's own node is the last one added, so it is simply removed.
+    /// With no element node (a literal), it stays and observers hide it.
+    fn stand_in(&mut self, node: u32) -> u32 {
+        let current = self.nodes[node as usize];
+        if !self.language.rules[current.rule as usize].transparent
+            || current.child_count != 1
+            || node as usize + 1 != self.nodes.len()
+        {
+            return node;
+        }
+        let child = self.edges[current.first_child as usize].node;
+        self.nodes.pop();
+        self.edges.truncate(current.first_child as usize);
+        child
+    }
     fn pratt(
         &mut self,
         point: u16,
@@ -380,6 +396,7 @@ impl Parser<'_> {
             Some(self.add_node(point, start, &[])?)
         } else {
             self.accept_winner(prefix_mark, winner)?
+                .map(|node| self.stand_in(node))
         };
         let Some(mut left) = left else {
             return Ok(None);

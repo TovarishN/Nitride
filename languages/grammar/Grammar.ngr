@@ -16,6 +16,7 @@ syntax module NitrideGrammar
   token Reserved = ("precedence" / "except" / "then" / "else" / "declares" / "references" / "scope" / "dynamic" / "lowers" / "rewrites") !NameTail;
   token LoweringKeyword = ("literal" / "template" / "expand") !NameTail;
   token TextKeyword = "text" !NameTail;
+  token TransparentKeyword = "transparent" !NameTail;
   token Comment = "//" [^ '\n']* / "/*" (!"*/" .)* "*/";
   token OpaqueCharLiteral = "'" (Escape / [^ '\'' '\\' '\n'])* "'";
   token OpaqueChar = !("/*" / "//" / "@\"" / "\"\"\"") [^ '{' '}' '"' '\''];
@@ -46,8 +47,10 @@ syntax module NitrideGrammar
   syntax Semantics = Body:Opaque;
   syntax ExtensibleRule = "extensible" "syntax" Name:Identifier "{" Alternatives:Alternative* "}";
   syntax Extend = "extend" "syntax" Name:QualifiedName "{" Alternatives:Alternative* "}";
-  syntax Alternative = "|" Named:AlternativeName? Body:Expression Precedence:Precedence? Clauses:Clause* Semantics:Semantics?;
+  syntax Alternative = "|" Transparent:TransparentMarker? Named:AlternativeName? Body:Expression Precedence:Precedence? Clauses:Clause* Semantics:Semantics?;
   syntax AlternativeName = Name:Identifier "=";
+  // `transparent` is the marker only when a name or an element follows it.
+  syntax TransparentMarker = TransparentKeyword &(AlternativeName / Element);
   syntax Precedence = "precedence" Level:Integer Associativity:Associativity?;
   syntax Associativity = "left" / "right";
 

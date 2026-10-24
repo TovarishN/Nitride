@@ -19,6 +19,7 @@ fn invalid_pratt_rule_ids_return_diagnostics() {
             except: &[],
             precedence: 0,
             right_associative: false,
+            transparent: false,
             owner: None,
             action: Action::None,
         };

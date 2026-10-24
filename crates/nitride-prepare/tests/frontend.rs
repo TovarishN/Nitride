@@ -230,10 +230,7 @@ fn vendored_csharp4_matches_provenance() {
             .unwrap();
     let files = provenance["files"].as_object().unwrap();
     assert_eq!(files.len(), 30);
-    assert_eq!(
-        manifest["grammars"].as_array().unwrap().len(),
-        files.len()
-    );
+    assert_eq!(manifest["grammars"].as_array().unwrap().len(), files.len());
     for (path, hash) in files {
         let bytes = std::fs::read(directory.join(path)).unwrap();
         assert_eq!(
@@ -241,5 +238,37 @@ fn vendored_csharp4_matches_provenance() {
             hash.as_str().unwrap(),
             "{path}"
         );
+    }
+}
+
+#[test]
+fn transparent_marker_requires_name_or_element() {
+    let prepared = prepare(
+        "syntax module Test { syntax Start = S; extensible syntax S { | transparent Plain = Body:(W / \";\") | transparent W2 = W | Other = transparent } syntax W = \"w\"; syntax transparent = \"t\"; }",
+    )
+    .unwrap();
+    let rule = |name: &str| {
+        prepared["rules"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["name"] == name)
+            .unwrap()
+            .clone()
+    };
+    assert_eq!(rule("Test.Plain")["transparent"], true);
+    assert_eq!(rule("Test.W2")["transparent"], true);
+    assert!(rule("Test.Other").get("transparent").is_none());
+    assert_eq!(rule("Test.Other")["expr"]["name"], "Test.transparent");
+    for invalid in [
+        "| transparent P = W precedence 5",
+        "| transparent P = W W",
+        "| transparent P = W?",
+        "| transparent P = S \"+\" W precedence 10",
+    ] {
+        let source = format!(
+            "syntax module Test {{ syntax Start = S; extensible syntax S {{ {invalid} | X = \"x\" }} syntax W = \"w\"; }}"
+        );
+        assert!(prepare(&source).is_err(), "{invalid}");
     }
 }

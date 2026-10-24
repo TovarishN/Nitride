@@ -46,6 +46,7 @@ pub struct Rule {
     pub precedence: Option<u32>,
     pub associativity: Option<String>,
     pub alternatives: Option<Vec<Rule>>,
+    pub transparent: bool,
     pub span: [usize; 2],
 }
 
@@ -292,6 +293,7 @@ impl Decoder<'_> {
             precedence: None,
             associativity: None,
             alternatives: None,
+            transparent: self.tree.field(id, "Transparent").is_some(),
             span: self.span(id),
         };
         if let Some(n) = name_node {
