@@ -10,7 +10,7 @@ type checking, typed HIR, exact host binding preflight, and native execution.
 It includes a deliberately restricted typed profile, a cross-module Power
 extension, independent sequential symbol namespaces, inferred declaration types, exact nominal
 overload selection, built-in callable symbols, typed user-defined templates, host-supplied
-built-in values, checked text literals, quote rewrites, and syntax-only admission of existing Base/Uses and XML grammars.
+built-in values, checked text literals, quote rewrites, grammar functions, and syntax-only admission of existing Base/Uses, XML and CSharp4 grammars.
 This is partial Nitrogen compatibility; the full DateCalc language is not admitted.
 
 ## Run
@@ -287,6 +287,26 @@ as `in the expansion of Swapped: …`. List splices, grammar functions and C#
 quotation APIs are not admitted. See
 [rewrite evidence](docs/stage11-evidence.md).
 
+## C# (CSharp4)
+
+`languages/csharp4` vendors CSNitrogen's CSharp4 grammar (30 modules, with
+SHA-256 provenance). Nitride prepares it natively and parses valid,
+preprocessing-free C#:
+
+```sh
+./target/release/nitride --parse-csharp4 languages/csharp4/corpus/Mono2008/gtest-linq-01.cs
+```
+
+Trees match actual Nitrogen on 232 frozen cases and 64 generated programs.
+This needed grammar functions (Nitrogen's compile-time `function ... :
+Grammar.Rule`), `transparent` alternatives, operators that are rule references
+or shared between alternatives, prefix associativity, and UTF-16 surrogate-pair
+classes, which codegen turns into supplementary code points over UTF-8 text.
+Tokens are parse-tree leaves. The parser has its own frame budget and a
+size-relative work budget, so multi-megabyte files parse in linear time. It is
+currently about 6× slower than Nitrogen's parser. See
+[CSharp4 evidence](docs/stage12-evidence.md).
+
 ## Validate
 
 ```sh
@@ -295,12 +315,12 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-There are 120 Rust tests, including parity over 249 frozen observations from
+There are 140 Rust tests, including parity over 481 frozen observations from
 actual Nitrogen parsers and, for typed profiles, binding, typing and HIR,
 with the explicit inference-adapter policy described above.
 The development-only exporter has 15 tests. Live differential scripts compare
-512 deterministic generated programs in total. `scripts/prepare_parity.py`
-compares 88 prepared profiles and 20 invalid grammars against the live exporter.
+576 deterministic generated programs in total. `scripts/prepare_parity.py`
+compares 107 prepared profiles and 29 invalid grammars against the live exporter.
 
 To refresh the reference using a sibling `../Nitrogen` source checkout and a
 .NET 10 SDK or later:

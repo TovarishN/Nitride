@@ -1,0 +1,15 @@
+syntax module CSharp.ObjectInitializers
+{
+ syntax MemberInitializer = Name:CSharp.Lexical.Identifier "=" Value:(Initializer / CSharp.Expressions.Expression);
+ syntax ObjectMemberList = Items:(MemberInitializer; ",")+ Trailing:","?;
+ syntax ObjectInitializer = "{" Members:ObjectMemberList? "}";
+ syntax BracedElement = "{" Items:(CSharp.Expressions.Expression; ",")+ "}";
+ syntax ScalarElement = Value:CSharp.Expressions.Expression;
+ syntax CollectionElement = BracedElement / ScalarElement;
+ syntax CollectionInitializer = "{" Items:(CollectionElement; ",")+ Trailing:","? "}";
+ syntax Initializer = ObjectInitializer / CollectionInitializer;
+ extend syntax CSharp.Expressions.Expression
+ {
+  | InitializedObjectExpression = "new" Type:CSharp.NamesTypes.TypeBase Arguments:CSharp.Expressions.Arguments? Initializer:Initializer
+ }
+}

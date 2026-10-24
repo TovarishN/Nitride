@@ -106,7 +106,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<_> = std::env::args().skip(1).collect();
     let [profile, path] = args.as_slice() else {
         return Err(
-            "usage: nitride-profile <portable|power|xml|composition|namespaces|inference|calls|functions|dates|rewrites> <source>"
+            "usage: nitride-profile <portable|power|xml|composition|namespaces|inference|calls|functions|dates|rewrites|csharp4> <source>"
                 .into(),
         );
     };
@@ -117,6 +117,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         "functions" => &nitride_cli::functions::LANGUAGE,
         "dates" => &nitride_cli::dates::LANGUAGE,
         "rewrites" => &nitride_cli::rewrites::LANGUAGE,
+        "csharp4" => &nitride_cli::csharp4::LANGUAGE,
         "namespaces" => &nitride_cli::namespaces::LANGUAGE,
         "power" => &nitride_cli::power::LANGUAGE,
         "xml" => &nitride_cli::xml::LANGUAGE,
@@ -131,7 +132,12 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         Vec::new()
     };
-    let (tree, parse_phase) = measure(|| parse(language, &source, Limits::default()));
+    // Large generated inputs exceed the default work budget; parsing is measured, not bounded.
+    let limits = Limits {
+        work: u64::MAX,
+        ..Limits::default()
+    };
+    let (tree, parse_phase) = measure(|| parse(language, &source, limits));
     let tree = tree.map_err(|e| e.message)?;
     let mut hir_phase = None;
     let mut execution_phase = None;

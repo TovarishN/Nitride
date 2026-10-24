@@ -1,0 +1,48 @@
+{
+  "repository": "https://github.com/mono/mono",
+  "revision": "13d1764537ce5bbe5a06bf133fb2db1a4b5d2131",
+  "files": [
+    {
+      "local": "Boolean.cs",
+      "sourcePath": "mcs/class/corlib/System/Boolean.cs",
+      "url": "https://raw.githubusercontent.com/mono/mono/13d1764537ce5bbe5a06bf133fb2db1a4b5d2131/mcs/class/corlib/System/Boolean.cs",
+      "sha256": "7940c36b7dacf5f6056314cf81884c8d742c17b8afe148ef8a54140b7092d74b",
+      "license": "Source copyright/license notice preserved verbatim; see file header."
+    },
+    {
+      "local": "EventArgs.cs",
+      "sourcePath": "mcs/class/corlib/System/EventArgs.cs",
+      "url": "https://raw.githubusercontent.com/mono/mono/13d1764537ce5bbe5a06bf133fb2db1a4b5d2131/mcs/class/corlib/System/EventArgs.cs",
+      "sha256": "3d6636c824de086dc6770f06dcf43cada93c7a6d9b4336e35370d994800191df",
+      "license": "Source copyright/license notice preserved verbatim; see file header."
+    },
+    {
+      "local": "ICollection.cs",
+      "sourcePath": "mcs/class/corlib/System.Collections/ICollection.cs",
+      "url": "https://raw.githubusercontent.com/mono/mono/13d1764537ce5bbe5a06bf133fb2db1a4b5d2131/mcs/class/corlib/System.Collections/ICollection.cs",
+      "sha256": "ed3f1bbf5f351f3e5b1eac4a715e4f557b78de0b2505225574a4c845249f4674",
+      "license": "Original source copyright/license notice preserved verbatim; see file header."
+    },
+    {
+      "local": "EventHandler.cs",
+      "sourcePath": "mcs/class/corlib/System/EventHandler.cs",
+      "url": "https://raw.githubusercontent.com/mono/mono/13d1764537ce5bbe5a06bf133fb2db1a4b5d2131/mcs/class/corlib/System/EventHandler.cs",
+      "sha256": "a77e5c29f9dab4355f50b4fef1934eb0fdfdf9e77ffbf8d0e04e3d01d25cba87",
+      "license": "Original source copyright/license notice preserved verbatim; see file header."
+    },
+    {
+      "local": "AttributeUsageAttribute.cs",
+      "sourcePath": "mcs/class/corlib/System/AttributeUsageAttribute.cs",
+      "url": "https://raw.githubusercontent.com/mono/mono/13d1764537ce5bbe5a06bf133fb2db1a4b5d2131/mcs/class/corlib/System/AttributeUsageAttribute.cs",
+      "sha256": "dde155e0e65980f651abdb4f7ec9ed5a34396c68c136eac46750cd1c973f37aa",
+      "license": "Original source copyright/license notice preserved verbatim; see file header."
+    },
+    {
+      "local": "Version.cs",
+      "sourcePath": "mcs/class/corlib/System/Version.cs",
+      "url": "https://raw.githubusercontent.com/mono/mono/13d1764537ce5bbe5a06bf133fb2db1a4b5d2131/mcs/class/corlib/System/Version.cs",
+      "sha256": "528f9546e92216a09d2482a18399496abc8d981c5e5f2028436609ad88d7d9fb",
+      "license": "Original source copyright/license notice preserved verbatim; see file header."
+    }
+  ]
+}

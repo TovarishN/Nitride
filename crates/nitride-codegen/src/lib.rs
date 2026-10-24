@@ -703,9 +703,9 @@ pub fn generate(input: &str) -> Result<String, String> {
         if precedence > u32::MAX as u64 - 1 {
             return Err("precedence out of range".into());
         }
-        output_rules.push(format!("Rule {{name:{},lexical:{},expr:{},except:{},precedence:{precedence},right_associative:{},owner:{owner},action:{action}}}",
-            quoted(name), rule["lexical"].as_bool().ok_or("invalid lexical flag")?, emit_expr(&rule["expr"], &ids)?,
-            list(strings(&rule["except"])?.into_iter().map(quoted)), rule["associativity"] == "Right"));
+        output_rules.push(format!("Rule {{name:{},lexical:{},expr:{},except:{},precedence:{precedence},right_associative:{},transparent:{},owner:{owner},action:{action}}}",
+            quoted(name), rule["lexical"].as_bool().ok_or("invalid lexical flag")?, emit_expr_with(&pair_surrogates(&rule["expr"]), &ids, rule["expr"]["kind"] == "pratt" && memoize_point(&rule["expr"], rules, &ids))?,
+            list(strings(&rule["except"])?.into_iter().map(quoted)), rule["associativity"] == "Right", rule["transparent"] == true));
     }
 
     fn bare(mut expr: &Value) -> &Value {
@@ -715,7 +715,6 @@ pub fn generate(input: &str) -> Result<String, String> {
         expr
     }
     for point in rules.iter().filter(|r| r["expr"]["kind"] == "pratt") {
-        let mut operators = HashSet::new();
         for name in strings(&point["expr"]["infixes"])? {
             let candidate = &rules[lookup(&ids, name)? as usize];
             let parts = array(&candidate["expr"]["items"])?;
@@ -726,13 +725,8 @@ pub fn generate(input: &str) -> Result<String, String> {
             {
                 return Err("invalid infix target".into());
             }
-            let operator = bare(&parts[1]);
-            if operator["kind"] != "literal" {
-                return Err("infix must start with a literal operator".into());
-            }
-            if !operators.insert(text(&operator["text"])?) {
-                return Err("conflicting extension operator".into());
-            }
+            // Alternatives may share an operator: the parser ranks them by longest
+            // match, then precedence, as Nitrogen does.
         }
     }
     validate_progress(rules, &ids)?;
@@ -880,7 +874,257 @@ fn collect_labels<'a>(e: &'a Value, labels: &mut HashSet<&'a str>) {
     }
 }
 
+const HIGH: [u32; 2] = [0xD800, 0xDBFF];
+const LOW: [u32; 2] = [0xDC00, 0xDFFF];
+
+fn class_ranges(e: &Value) -> Option<Vec<[u32; 2]>> {
+    if e["kind"] != "class" || e["negated"] == true {
+        return None;
+    }
+    e["ranges"]
+        .as_array()?
+        .iter()
+        .map(|r| Some([r[0].as_u64()? as u32, r[1].as_u64()? as u32]))
+        .collect()
+}
+
+fn clip(ranges: &[[u32; 2]], bounds: [u32; 2]) -> Vec<[u32; 2]> {
+    ranges
+        .iter()
+        .filter_map(|[a, b]| {
+            let (a, b) = ((*a).max(bounds[0]), (*b).min(bounds[1]));
+            (a <= b).then_some([a, b])
+        })
+        .collect()
+}
+
+/// Gives Nitrogen's UTF-16 classes their meaning over UTF-8 text. In a
+/// sequence, a class with high surrogates followed by a class of only low
+/// surrogates matches the supplementary code points of every pair (a BMP
+/// character cannot be followed by a lone low surrogate in valid text).
+/// Any other surrogate unit can never occur in UTF-8 text and is removed; a
+/// class left empty matches nothing.
+pub fn pair_surrogates(e: &Value) -> Value {
+    let mut e = e.clone();
+    let sequence = e["kind"] == "sequence";
+    if let Some(items) = e.get_mut("items").and_then(Value::as_array_mut) {
+        let paired: Vec<Value> = items.iter().map(pair_surrogates).collect();
+        let mut out = Vec::with_capacity(paired.len());
+        let mut index = 0;
+        while index < paired.len() {
+            if sequence && index + 1 < paired.len() {
+                if let (Some(first), Some(second)) =
+                    (class_ranges(&items[index]), class_ranges(&items[index + 1]))
+                {
+                    let high = clip(&first, HIGH);
+                    let low = clip(&second, LOW);
+                    if !high.is_empty()
+                        && !low.is_empty()
+                        && clip(&second, [0, 0xDBFF]).is_empty()
+                        && clip(&second, [0xE000, u32::MAX]).is_empty()
+                    {
+                        let mut ranges = Vec::new();
+                        for [a, b] in &high {
+                            for h in *a..=*b {
+                                let base = 0x10000 + (h - 0xD800) * 0x400;
+                                for [l, m] in &low {
+                                    ranges.push(serde_json::json!([
+                                        base + l - 0xDC00,
+                                        base + m - 0xDC00
+                                    ]));
+                                }
+                            }
+                        }
+                        out.push(
+                            serde_json::json!({"kind":"class","negated":false,"ranges":ranges}),
+                        );
+                        index += 2;
+                        continue;
+                    }
+                }
+            }
+            out.push(paired[index].clone());
+            index += 1;
+        }
+        *items = out;
+        return e;
+    }
+    if let Some(inner) = e.get("inner") {
+        e["inner"] = pair_surrogates(inner);
+    }
+    if e["kind"] == "class" {
+        let ranges: Vec<Value> = e["ranges"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .flat_map(|r| {
+                let (a, b) = (
+                    r[0].as_u64().unwrap_or(0) as u32,
+                    r[1].as_u64().unwrap_or(0) as u32,
+                );
+                [[a, b.min(0xD7FF)], [a.max(0xE000), b]]
+                    .into_iter()
+                    .filter(|[x, y]| x <= y)
+                    .map(|[x, y]| serde_json::json!([x, y]))
+                    .collect::<Vec<_>>()
+            })
+            .collect();
+        e["ranges"] = Value::Array(ranges);
+    }
+    e
+}
+
+/// How an expression can begin: a whole leading literal or a character range.
+#[derive(Clone)]
+enum Start {
+    Text(String),
+    Range(u32, u32),
+}
+
+type Chars = Vec<Start>;
+
+fn starts_overlap(a: &Start, b: &Start) -> bool {
+    let first = |t: &str| t.chars().next().map_or(0, |c| c as u32);
+    match (a, b) {
+        (Start::Text(a), Start::Text(b)) => a.starts_with(b.as_str()) || b.starts_with(a.as_str()),
+        (Start::Text(t), Start::Range(x, y)) | (Start::Range(x, y), Start::Text(t)) => {
+            (*x..=*y).contains(&first(t))
+        }
+        (Start::Range(x, y), Start::Range(p, q)) => x <= q && p <= y,
+    }
+}
+
+/// How an expression can begin; None when unknown, nullable, negated or
+/// predicate-led (conservatively overlapping everything).
+fn first_chars(
+    e: &Value,
+    rules: &[Value],
+    ids: &HashMap<&str, u16>,
+    visiting: &mut HashSet<u16>,
+) -> Option<Chars> {
+    match e["kind"].as_str()? {
+        "literal" => {
+            let text = e["text"].as_str()?;
+            if text.is_empty() {
+                return None;
+            }
+            Some(vec![Start::Text(text.to_owned())])
+        }
+        "class" if e["negated"] != true => Some(
+            e["ranges"]
+                .as_array()?
+                .iter()
+                .map(|r| Some(Start::Range(r[0].as_u64()? as u32, r[1].as_u64()? as u32)))
+                .collect::<Option<_>>()?,
+        ),
+        "label" => first_chars(&e["inner"], rules, ids, visiting),
+        "repeat" if e["min"].as_u64()? >= 1 => first_chars(&e["inner"], rules, ids, visiting),
+        "sequence" => first_chars(e["items"].as_array()?.first()?, rules, ids, visiting),
+        "choice" => {
+            let mut all = Vec::new();
+            for item in e["items"].as_array()? {
+                all.extend(first_chars(item, rules, ids, visiting)?);
+            }
+            Some(all)
+        }
+        "ref" => {
+            let id = *ids.get(e["name"].as_str()?)?;
+            if !visiting.insert(id) {
+                return None;
+            }
+            let result = first_chars(&rules[id as usize]["expr"], rules, ids, visiting);
+            visiting.remove(&id);
+            result
+        }
+        "pratt" => {
+            let mut all = Vec::new();
+            for name in e["prefixes"].as_array()? {
+                let id = *ids.get(name.as_str()?)?;
+                if !visiting.insert(id) {
+                    return None;
+                }
+                let part = first_chars(&rules[id as usize]["expr"], rules, ids, visiting);
+                visiting.remove(&id);
+                all.extend(part?);
+            }
+            Some(all)
+        }
+        _ => None,
+    }
+}
+
+/// Whether `e` can reach an extension point through references.
+fn reaches_point(
+    e: &Value,
+    rules: &[Value],
+    ids: &HashMap<&str, u16>,
+    seen: &mut HashSet<u16>,
+) -> bool {
+    match e {
+        Value::Object(map) => {
+            if map.get("kind").and_then(Value::as_str) == Some("ref") {
+                let Some(&id) = map
+                    .get("name")
+                    .and_then(Value::as_str)
+                    .and_then(|n| ids.get(n))
+                else {
+                    return false;
+                };
+                let expr = &rules[id as usize]["expr"];
+                return expr["kind"] == "pratt"
+                    || (seen.insert(id) && reaches_point(expr, rules, ids, seen));
+            }
+            map.values().any(|v| reaches_point(v, rules, ids, seen))
+        }
+        Value::Array(items) => items.iter().any(|v| reaches_point(v, rules, ids, seen)),
+        _ => false,
+    }
+}
+
+/// Whether two alternatives of an extension point can begin alike while both
+/// parse a nested expression (reach any extension point): prefixes by how they start, infixes by their
+/// operators. Only then can a failed alternative's operand be reparsed by the
+/// next (exponentially, when nested), so only then is memoization worth its cost.
+fn memoize_point(e: &Value, rules: &[Value], ids: &HashMap<&str, u16>) -> bool {
+    let sets = |key: &str, element: usize| -> Vec<Option<Chars>> {
+        e[key]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(|name| {
+                let Some(&id) = name.as_str().and_then(|n| ids.get(n)) else {
+                    return Some(None);
+                };
+                let rule = &rules[id as usize];
+                // An infix always parses its operands; a prefix may not.
+                if element == 0 && !reaches_point(&rule["expr"], rules, ids, &mut HashSet::new()) {
+                    return None;
+                }
+                let expr = if element == 0 {
+                    &rule["expr"]
+                } else {
+                    &rule["expr"]["items"][element]
+                };
+                Some(first_chars(expr, rules, ids, &mut HashSet::new()))
+            })
+            .collect()
+    };
+    let overlap = |group: Vec<Option<Chars>>| {
+        group.iter().enumerate().any(|(i, a)| {
+            group[i + 1..].iter().any(|b| match (a, b) {
+                (Some(a), Some(b)) => a.iter().any(|x| b.iter().any(|y| starts_overlap(x, y))),
+                _ => true,
+            })
+        })
+    };
+    overlap(sets("prefixes", 0)) || overlap(sets("infixes", 1))
+}
+
 fn emit_expr(e: &Value, ids: &HashMap<&str, u16>) -> Result<String, String> {
+    emit_expr_with(e, ids, false)
+}
+
+fn emit_expr_with(e: &Value, ids: &HashMap<&str, u16>, memoize: bool) -> Result<String, String> {
     Ok(match text(&e["kind"])? {
         "literal" => format!("Expr::Literal({})", quoted(text(&e["text"])?)),
         "any" => "Expr::Any".into(),
@@ -960,7 +1204,7 @@ fn emit_expr(e: &Value, ids: &HashMap<&str, u16>) -> Result<String, String> {
                 ))
             };
             format!(
-                "Expr::Pratt {{prefixes:{},infixes:{}}}",
+                "Expr::Pratt {{prefixes:{},infixes:{},memoize:{memoize}}}",
                 refs("prefixes")?,
                 refs("infixes")?
             )

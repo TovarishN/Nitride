@@ -1,0 +1,27 @@
+syntax module CSharp.Unsafe
+{
+ extensible syntax ExtendedPointerElement { }
+ extensible syntax AdditionalSizeofType { }
+ syntax PointerNonArrayType = Element:(ExtendedPointerElement /CSharp.NamesTypes.QualifiedName / CSharp.NamesTypes.BuiltinType / "void") Stars:"*"+;
+ syntax PointerCastType = Type:PointerNonArrayType Ranks:CSharp.NamesTypes.ArrayRank*;
+ extend syntax CSharp.NamesTypes.TypeBase
+ {
+  | PointerTypeName = Target:TypeBase "*" precedence 190 left
+  | VoidPointerTypeName = "void" "*"
+ }
+ extend syntax CSharp.Expressions.CastHead { | PointerCastHead = "(" Type:PointerCastType ")" }
+ syntax SizeOfExtendedType = PointerCastType / AdditionalSizeofType / (CSharp.NamesTypes.BuiltinType CSharp.NamesTypes.ArrayRank+) / CSharp.NamesTypes.QualifiedName CSharp.NamesTypes.ArrayRank*;
+ extend syntax CSharp.Expressions.Expression
+ {
+  | PointerIndirectionExpression = CSharp.Expressions.MultiplyOp Value:Expression precedence 170
+  | AddressExpression = CSharp.Expressions.BitAndOp Value:Expression precedence 170
+  | PointerMemberExpression = Target:Expression "->" Name:CSharp.Lexical.Identifier precedence 180 left
+  | SizeOfExtendedExpression = "sizeof" "(" Type:SizeOfExtendedType ")"
+  | StackAllocExpression = "stackalloc" Type:CSharp.NamesTypes.TypeBase "[" Size:Expression "]"
+ }
+ extend syntax CSharp.Declarations.Modifier { | UnsafeModifier = !CSharp.Lexical.Identifier "unsafe" }
+ syntax FixedDeclarator = Name:CSharp.Lexical.Identifier "=" Value:CSharp.Expressions.Expression;
+ syntax FixedStatement = "fixed" "(" Type:PointerNonArrayType Variables:(FixedDeclarator; ",")+ ")" Body:CSharp.Statements.EmbeddedStatement;
+ syntax UnsafeBlock = "unsafe" Body:CSharp.Statements.Block;
+ extend syntax CSharp.Statements.EmbeddedStatement { | transparent UnsafeEmbeddedStatement = Value:(FixedStatement / UnsafeBlock) }
+}

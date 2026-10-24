@@ -83,6 +83,10 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
                 &nitride_cli::xml::LANGUAGE,
                 &std::fs::read_to_string(path)?,
             )),
+            "--parse-csharp4" => Some(nitride_cli::syntax_observe(
+                &nitride_cli::csharp4::LANGUAGE,
+                &std::fs::read_to_string(path)?,
+            )),
             "--parse-composition" => Some(nitride_cli::syntax_observe(
                 &nitride_cli::composition::LANGUAGE,
                 &std::fs::read_to_string(path)?,
@@ -125,7 +129,7 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         );
         return Ok(true);
     }
-    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.json> [--output <language.json>] | <source.portable> | --observe <source> | --functions <source> | --calls <source> | --dates <source> [--today yyyy-MM-dd] | --rewrites <source> [--today yyyy-MM-dd] | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --bench <source> <iterations> | --version".into()) };
+    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.json> [--output <language.json>] | <source.portable> | --observe <source> | --functions <source> | --calls <source> | --dates <source> [--today yyyy-MM-dd] | --rewrites <source> [--today yyyy-MM-dd] | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --parse-csharp4 <source> | --bench <source> <iterations> | --version".into()) };
     let result = nitride_cli::observe(&std::fs::read_to_string(path)?);
     println!("{result}");
     Ok(result["ok"] == true)

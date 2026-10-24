@@ -13,7 +13,13 @@ pub fn parse(
 #[derive(Debug, Default, Clone, Copy)]
 pub struct ParseOptions {
     pub strict_comments: bool,
+    /// Keep nodes for rules matched inside a token. Tokens are leaves by
+    /// default, as in Nitrogen; the grammar frontend inspects their insides.
+    pub token_children: bool,
 }
+
+/// A rule matched inside a token: it consumed input but left no node.
+const NO_NODE: u32 = u32::MAX;
 
 pub fn parse_with_options(
     language: &'static Language,
@@ -62,6 +68,18 @@ pub fn parse_template(
     Ok((tree, found))
 }
 
+const STACK_EXHAUSTED: &str = "parser stack limit exceeded";
+
+/// The address of a local: the current stack position.
+#[inline(never)]
+fn stack_position() -> usize {
+    let marker = 0u8;
+    std::hint::black_box(std::ptr::addr_of!(marker) as usize)
+}
+
+/// Parses within a measured stack budget on the caller's thread. Deep input
+/// reruns once on a dedicated thread with a large stack, as Roslyn moves deep
+/// work off small stacks; beyond that it is a structured `limit` diagnostic.
 fn parse_from(
     language: &'static Language,
     source: &str,
@@ -69,6 +87,48 @@ fn parse_from(
     options: ParseOptions,
     start: u16,
     holes: &[&'static Hole],
+) -> Result<SyntaxTree, Diagnostic> {
+    match parse_on_stack(
+        language,
+        source,
+        limits,
+        options,
+        start,
+        holes,
+        limits.parser_stack_bytes,
+    ) {
+        Err(e)
+            if e.message == STACK_EXHAUSTED
+                && limits.parser_spill_stack_bytes > limits.parser_stack_bytes =>
+        {
+            // Leave headroom on the spill thread for frames between checks.
+            let budget = limits.parser_spill_stack_bytes - limits.parser_spill_stack_bytes / 8;
+            std::thread::scope(|scope| {
+                std::thread::Builder::new()
+                    .name("nitride-parse".into())
+                    .stack_size(limits.parser_spill_stack_bytes)
+                    .spawn_scoped(scope, || {
+                        parse_on_stack(language, source, limits, options, start, holes, budget)
+                    })
+                    .map_err(|_| {
+                        Diagnostic::new("limit", [0, 0], "cannot start a deep-parse thread")
+                    })?
+                    .join()
+                    .unwrap_or_else(|_| Err(Diagnostic::new("limit", [0, 0], "deep parse failed")))
+            })
+        }
+        result => result,
+    }
+}
+
+fn parse_on_stack(
+    language: &'static Language,
+    source: &str,
+    limits: Limits,
+    options: ParseOptions,
+    start: u16,
+    holes: &[&'static Hole],
+    stack_budget: usize,
 ) -> Result<SyntaxTree, Diagnostic> {
     if source.len() > u32::MAX as usize {
         return Err(Diagnostic::new(
@@ -90,6 +150,16 @@ fn parse_from(
         edge_buffers: Vec::new(),
         node_buffers: Vec::new(),
         holes,
+        in_token: 0,
+        work_budget: limits
+            .work
+            .max((source.len() as u64).saturating_mul(limits.parser_work_per_byte)),
+        memo: Default::default(),
+        // Reparsing revisits recent positions, so a window suffices: an eighth
+        // of the input, between 4,096 and about a million nodes per generation.
+        memo_capacity: (source.len() / 8).clamp(4096, 1 << 20),
+        stack_base: stack_position(),
+        stack_budget,
     };
     let root = parser.rule(start, 0, 0)?;
     parser.trivia()?;
@@ -101,6 +171,7 @@ fn parse_from(
     // returned tree's owned source copy.
     drop(parser.edge_buffers);
     drop(parser.node_buffers);
+    drop(parser.memo);
     Ok(SyntaxTree {
         language,
         source: source.into(),
@@ -139,6 +210,43 @@ struct Parser<'a> {
     node_buffers: Vec<Vec<Node>>,
     // Template mode only: `$Name` stands for one node of the hole's category.
     holes: &'a [&'static Hole],
+    in_token: u32,
+    work_budget: u64,
+    // Extension-point results by (point, position, minimum precedence).
+    // Alternatives sharing a prefix reparse the same operand; replaying the
+    // stored subtree keeps nesting linear, as Nitrogen's memoization does.
+    // Two generations bound the cache: when the current one fills, the older is
+    // dropped. Eviction only costs reparsing; it never changes a result.
+    memo: [MemoGeneration; 2],
+    memo_capacity: usize,
+    stack_base: usize,
+    stack_budget: usize,
+}
+
+/// Memoized subtrees live in shared arenas, so entries allocate nothing.
+#[derive(Default)]
+struct MemoGeneration {
+    entries: std::collections::HashMap<(u16, u32, u32), Memo>,
+    nodes: Vec<Node>,
+    edges: Vec<Edge>,
+}
+
+/// Larger subtrees (whole members, classes) are not memoized: repeated
+/// reparsing comes from operands that several alternatives share.
+const MEMO_SUBTREE_LIMIT: usize = 8192;
+
+/// A memoized extension-point parse, relative to its own first node and edge.
+enum Memo {
+    Fail {
+        furthest: usize,
+    },
+    Hit {
+        end: usize,
+        furthest: usize,
+        root: u32,
+        nodes: std::ops::Range<u32>,
+        edges: std::ops::Range<u32>,
+    },
 }
 
 impl Parser<'_> {
@@ -210,7 +318,14 @@ impl Parser<'_> {
     }
     fn tick(&mut self, depth: u32) -> Result<(), Diagnostic> {
         self.work += 1;
-        if depth > self.limits.depth || self.work > self.limits.work {
+        if stack_position().abs_diff(self.stack_base) > self.stack_budget {
+            return Err(Diagnostic::new(
+                "limit",
+                [self.position as u32; 2],
+                STACK_EXHAUSTED,
+            ));
+        }
+        if depth > self.limits.parser_frames || self.work > self.work_budget {
             return Err(Diagnostic::new(
                 "limit",
                 [self.position as u32; 2],
@@ -283,6 +398,29 @@ impl Parser<'_> {
         .then_some(end + 1)
     }
     fn rule(&mut self, id: u16, minimum: u32, depth: u32) -> Result<Option<u32>, Diagnostic> {
+        let lexical = self
+            .language
+            .rules
+            .get(id as usize)
+            .is_some_and(|r| r.lexical);
+        if !lexical || self.options.token_children {
+            return self.match_rule(id, minimum, depth);
+        }
+        self.in_token += 1;
+        let result = self.match_rule(id, minimum, depth);
+        self.in_token -= 1;
+        match result {
+            // A token inside a token leaves no node: the outermost token is a leaf.
+            Ok(Some(node)) if self.in_token > 0 && node != NO_NODE => {
+                let first_child = self.nodes[node as usize].first_child;
+                self.nodes.pop();
+                self.edges.truncate(first_child as usize);
+                Ok(Some(NO_NODE))
+            }
+            other => other,
+        }
+    }
+    fn match_rule(&mut self, id: u16, minimum: u32, depth: u32) -> Result<Option<u32>, Diagnostic> {
         self.tick(depth)?;
         let rule = self
             .language
@@ -294,8 +432,17 @@ impl Parser<'_> {
             self.trivia()?;
         }
         let start = self.position;
-        if let Expr::Pratt { prefixes, infixes } = rule.expr {
-            return self.pratt(id, prefixes, infixes, minimum, depth + 1);
+        if let Expr::Pratt {
+            prefixes,
+            infixes,
+            memoize,
+        } = rule.expr
+        {
+            return if memoize {
+                self.pratt(id, prefixes, infixes, minimum, depth + 1)
+            } else {
+                self.pratt_uncached(id, prefixes, infixes, minimum, depth + 1)
+            };
         }
         if !rule.lexical {
             if let Some(length) = self.hole(id) {
@@ -343,7 +490,119 @@ impl Parser<'_> {
         Self::recycle(&mut self.edge_buffers, children);
         result
     }
+    /// A transparent alternative's one element node stands in for it. The
+    /// alternative's own node is the last one added, so it is simply removed.
+    /// With no element node (a literal), it stays and observers hide it.
+    fn stand_in(&mut self, node: u32) -> u32 {
+        let current = self.nodes[node as usize];
+        if !self.language.rules[current.rule as usize].transparent
+            || current.child_count != 1
+            || node as usize + 1 != self.nodes.len()
+        {
+            return node;
+        }
+        let child = self.edges[current.first_child as usize].node;
+        self.nodes.pop();
+        self.edges.truncate(current.first_child as usize);
+        child
+    }
     fn pratt(
+        &mut self,
+        point: u16,
+        prefixes: &'static [u16],
+        infixes: &'static [u16],
+        minimum: u32,
+        depth: u32,
+    ) -> Result<Option<u32>, Diagnostic> {
+        let key = (point, self.position as u32, minimum);
+        let found = (0..2).find_map(|g| self.memo[g].entries.get(&key).map(|e| (g, e)));
+        if let Some((generation, entry)) = found {
+            return match entry {
+                Memo::Fail { furthest } => {
+                    self.furthest = self.furthest.max(*furthest);
+                    Ok(None)
+                }
+                Memo::Hit {
+                    end,
+                    furthest,
+                    root,
+                    nodes,
+                    edges,
+                } => {
+                    let (end, furthest, root) = (*end, *furthest, *root);
+                    let memo = &self.memo[generation];
+                    let nodes = &memo.nodes[nodes.start as usize..nodes.end as usize];
+                    let edges = &memo.edges[edges.start as usize..edges.end as usize];
+                    let (node_base, edge_base) = (self.nodes.len() as u32, self.edges.len() as u32);
+                    if node_base as usize + nodes.len() >= u32::MAX as usize
+                        || edge_base as usize + edges.len() > u32::MAX as usize
+                    {
+                        return Err(Diagnostic::new(
+                            "limit",
+                            [self.position as u32; 2],
+                            "syntax storage capacity exceeded",
+                        ));
+                    }
+                    self.nodes.extend(nodes.iter().map(|n| Node {
+                        first_child: n.first_child + edge_base,
+                        ..*n
+                    }));
+                    self.edges.extend(edges.iter().map(|e| Edge {
+                        node: e.node + node_base,
+                        ..*e
+                    }));
+                    self.position = end;
+                    self.furthest = self.furthest.max(furthest);
+                    Ok(Some(root + node_base))
+                }
+            };
+        }
+        let mark = self.mark();
+        let result = self.pratt_uncached(point, prefixes, infixes, minimum, depth)?;
+        if result.is_some_and(|_| self.nodes.len() - mark.nodes > MEMO_SUBTREE_LIMIT) {
+            return Ok(result);
+        }
+        if self.memo[0].nodes.len() + self.memo[0].entries.len() > self.memo_capacity {
+            self.memo.swap(0, 1);
+            let current = &mut self.memo[0];
+            current.entries.clear();
+            current.nodes.clear();
+            current.edges.clear();
+        }
+        let furthest = self.furthest;
+        let position = self.position;
+        let current = &mut self.memo[0];
+        let entry = match result {
+            None => Memo::Fail { furthest },
+            Some(root) => {
+                let node_start = current.nodes.len() as u32;
+                let edge_start = current.edges.len() as u32;
+                current
+                    .nodes
+                    .extend(self.nodes[mark.nodes..].iter().map(|n| Node {
+                        first_child: n.first_child - mark.edges as u32,
+                        ..*n
+                    }));
+                current
+                    .edges
+                    .extend(self.edges[mark.edges..].iter().map(|e| Edge {
+                        node: e.node - mark.nodes as u32,
+                        ..*e
+                    }));
+                Memo::Hit {
+                    end: position,
+                    furthest,
+                    root: root - mark.nodes as u32,
+                    nodes: node_start..current.nodes.len() as u32,
+                    edges: edge_start..current.edges.len() as u32,
+                }
+            }
+        };
+        current.entries.insert(key, entry);
+        Ok(result)
+    }
+
+    fn pratt_uncached(
         &mut self,
         point: u16,
         prefixes: &'static [u16],
@@ -380,6 +639,7 @@ impl Parser<'_> {
             Some(self.add_node(point, start, &[])?)
         } else {
             self.accept_winner(prefix_mark, winner)?
+                .map(|node| self.stand_in(node))
         };
         let Some(mut left) = left else {
             return Ok(None);
@@ -528,7 +788,9 @@ impl Parser<'_> {
                 if let Some(node) =
                     self.rule(*id, if Some(*id) == owner { power } else { 0 }, depth + 1)?
                 {
-                    out.push(Edge { label: "", node });
+                    if node != NO_NODE {
+                        out.push(Edge { label: "", node });
+                    }
                     true
                 } else {
                     false

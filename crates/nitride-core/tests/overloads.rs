@@ -9,6 +9,7 @@ fn language(candidates: &'static [u16]) -> &'static Language {
         except: &[],
         precedence: 0,
         right_associative: false,
+        transparent: false,
         owner: None,
     };
     Box::leak(Box::new(Language {

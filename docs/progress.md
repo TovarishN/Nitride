@@ -310,3 +310,20 @@ Rewrites without .NET on PATH. CLI 918,416 B (+83,200). Older allocation
 counts and retained bytes are unchanged; HIR peaks fell. Self-review only; not
 yet published. List splices, grammar functions, weekday/Math calls and live
 editors remain deferred.
+
+
+## Stage 12: CSharp4 admission (Milestone A of C# recovery)
+
+Design: superpowers/specs/2026-10-24-csharp-recovery-incremental-design.md; plan:
+superpowers/plans/2026-10-24-csharp4-admission.md; evidence: stage12-evidence.md.
+Vendored CSNitrogen's CSharp4 grammar with provenance. Admitted grammar
+functions (a Rust port of Nitrogen's checker, evaluator and factoring),
+transparent alternatives, reference and shared operators, prefix
+associativity, and surrogate-pair classes. The parser now has leaf tokens, a
+separate frame budget and a size-relative work budget.
+
+140 Rust tests; 232 frozen C# cases and 64 generated programs match Nitrogen's
+trees; 107 valid / 29 invalid preparation profiles match the live exporter.
+Linear scaling to 16 MiB, about 6x slower than Nitrogen. CLI 1,501,968 B.
+A clean offline build prepares and parses C# without .NET. Recovery
+(Milestone B) and incremental parsing (Milestone C) follow.

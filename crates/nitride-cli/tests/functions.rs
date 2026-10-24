@@ -92,7 +92,8 @@ fn template_expansion_has_structured_depth_and_work_limits() {
             &tree,
             Limits {
                 depth: 2,
-                work: 10000
+                work: 10000,
+                ..Limits::default()
             }
         )
         .unwrap_err()[0]
@@ -105,7 +106,8 @@ fn template_expansion_has_structured_depth_and_work_limits() {
             &tree,
             Limits {
                 depth: 128,
-                work: 1
+                work: 1,
+                ..Limits::default()
             }
         )
         .unwrap_err()[0]
@@ -171,7 +173,8 @@ fn expansion_work_budget_limits_exponential_body_growth() {
             &tree,
             Limits {
                 depth: 128,
-                work: 1000
+                work: 1000,
+                ..Limits::default()
             }
         )
         .unwrap_err()[0]
@@ -184,6 +187,7 @@ fn expansion_work_budget_limits_exponential_body_growth() {
         Limits {
             depth: 128,
             work: 100000,
+            ..Limits::default()
         },
     )
     .unwrap();

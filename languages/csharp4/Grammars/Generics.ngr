@@ -1,0 +1,48 @@
+syntax module CSharp.Generics
+{
+ syntax TypeArgumentList = "<" Items:(CSharp.NamesTypes.TypeReference; ",")+ ">";
+ syntax GenericNamePart = Name:CSharp.Lexical.Identifier Arguments:TypeArgumentList?;
+ syntax GenericQualifiedName = Prefix:(CSharp.Lexical.Identifier ".")* Name:CSharp.Lexical.Identifier Arguments:TypeArgumentList Suffix:("." GenericNamePart)*;
+ extensible syntax VarianceAnnotation {}
+ syntax TypeParameter = Attributes:CSharp.Attributes.AttributeSection* Variance:VarianceAnnotation? Name:CSharp.Lexical.Identifier;
+ syntax Constraint = ("class" / "struct" / "new" "(" ")") / CSharp.NamesTypes.TypeReference;
+ syntax ConstraintClause = CSharp.Lexical.ContextualWhere Name:CSharp.Lexical.Identifier ":" Items:(Constraint; ",")+;
+ extensible syntax AdditionalGenericFollower {}
+ syntax GenericFollower = "(" / ")" / "]" / ":" / ";" / "," / "." / ("?" !"?") / "==" / "!=" / AdditionalGenericFollower;
+ syntax UnboundPart = Name:CSharp.Lexical.Identifier "<" Commas:","* ">";
+ syntax UnboundName = Alias:CSharp.NamesTypes.TypeNamePrefix? Prefix:(CSharp.Lexical.Identifier ".")* Generic:UnboundPart Suffix:("." (UnboundPart / CSharp.Lexical.Identifier))*;
+ extend syntax CSharp.Declarations.TypeParameters
+ {
+  | GenericParameters = "<" Items:(TypeParameter; ",")+ ">"
+ }
+ extend syntax CSharp.Declarations.TypeConstraints
+ {
+  | GenericConstraints = Items:ConstraintClause+
+ }
+ extend syntax CSharp.NamesTypes.ExpressionTypeArguments { | GenericExpressionArguments = Value:TypeArgumentList &GenericFollower }
+ extend syntax CSharp.NamesTypes.TypeNameSuffix
+ {
+  | GenericTypeSuffix = Arguments:TypeArgumentList Suffix:("." GenericNamePart)*
+ }
+ extend syntax CSharp.Declarations.MemberNameSuffix
+ {
+  | GenericMemberNameSuffix = Arguments:TypeArgumentList "." Prefix:(GenericNamePart ".")* Name:CSharp.Lexical.Identifier
+ }
+ extend syntax CSharp.NamesTypes.TypeBase
+ {
+  | GenericTypeName = Name:GenericQualifiedName
+ }
+ extend syntax CSharp.Expressions.CastHead
+ {
+  | GenericArrayCast = "(" Type:GenericQualifiedName Ranks:CSharp.NamesTypes.ArrayRank+ ")"
+  | GenericCast = "(" Type:GenericQualifiedName ")" &CSharp.Expressions.AfterNamedCast
+ }
+ extend syntax CSharp.Expressions.Expression
+ {
+  | GenericNameExpression = Name:CSharp.Lexical.Identifier Arguments:TypeArgumentList &GenericFollower
+  | GenericBaseMemberExpression = "base" "." Name:CSharp.Lexical.Identifier Arguments:TypeArgumentList &GenericFollower
+  | GenericPredefinedMemberExpression = Type:CSharp.NamesTypes.BuiltinType "." Name:CSharp.Lexical.Identifier Arguments:TypeArgumentList &GenericFollower
+  | GenericMemberExpression = Target:Expression "." Name:CSharp.Lexical.Identifier Arguments:TypeArgumentList &GenericFollower precedence 180 left
+  | UnboundTypeOfExpression = "typeof" "(" Type:UnboundName ")"
+ }
+}

@@ -14,6 +14,7 @@ fn language(extra: &'static [Helper]) -> &'static Language {
         except: &[],
         precedence,
         right_associative: false,
+        transparent: false,
         owner,
     };
     let mut helpers = vec![
@@ -62,6 +63,7 @@ fn language(extra: &'static [Helper]) -> &'static Language {
                     Expr::Pratt {
                         prefixes: &[2, 3, 4],
                         infixes: &[5],
+                        memoize: false,
                     },
                     Action::None,
                     0,

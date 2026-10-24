@@ -1,0 +1,17 @@
+syntax module CSharp.AliasQualification
+{
+ syntax ExternalAliasDirective = "extern" CSharp.Lexical.ContextualAlias Name:CSharp.Lexical.Identifier ";";
+ syntax AliasQualifiedType = Prefix:CSharp.NamesTypes.TypeNamePrefix Name:CSharp.NamesTypes.QualifiedName Suffix:CSharp.NamesTypes.TypeNameSuffix?;
+ extend syntax CSharp.CompilationUnits.ExternalAliasDirectives { | ExternalAliasList = Items:ExternalAliasDirective+ }
+ extend syntax CSharp.NamesTypes.TypeNamePrefix { | AliasPrefix = Alias:CSharp.Lexical.Identifier "::" }
+ extend syntax CSharp.NamesTypes.TypeBase { | AliasQualifiedTypeName = Value:AliasQualifiedType }
+ extend syntax CSharp.Expressions.CastHead
+ {
+  | AliasArrayCast = "(" Type:AliasQualifiedType Ranks:CSharp.NamesTypes.ArrayRank+ ")"
+  | AliasCast = !("(" CSharp.Expressions.Expression ")" !CSharp.Expressions.AfterNamedCast) "(" Type:AliasQualifiedType ")"
+ }
+ extend syntax CSharp.Expressions.Expression
+ {
+  | AliasNameExpression = Prefix:CSharp.NamesTypes.TypeNamePrefix Name:CSharp.Lexical.Identifier Arguments:CSharp.NamesTypes.ExpressionTypeArguments? &"."
+ }
+}

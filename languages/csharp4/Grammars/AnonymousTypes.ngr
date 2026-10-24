@@ -1,0 +1,12 @@
+syntax module CSharp.AnonymousTypes
+{
+ syntax NamedMember = Name:CSharp.Lexical.Identifier "=" Value:CSharp.Expressions.Expression;
+ syntax InferredMember = Value:CSharp.Expressions.Expression;
+ syntax AnonymousMember = NamedMember / InferredMember;
+ syntax AnonymousMemberList = Items:(AnonymousMember; ",")+ Trailing:","?;
+ syntax AnonymousInitializer = "{" Members:AnonymousMemberList? "}";
+ extend syntax CSharp.Expressions.Expression
+ {
+  | AnonymousObjectExpression = "new" Initializer:AnonymousInitializer
+ }
+}

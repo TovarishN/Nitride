@@ -23,6 +23,8 @@ try
         Console.WriteLine(JsonSerializer.Serialize(DatesOracle.Observe(File.ReadAllText(dateSource), File.ReadAllText(dateCatalog), today)));
     else if (args is ["oracle-rewrites", var rewriteSource, var rewriteCatalog, var rewriteToday])
         Console.WriteLine(JsonSerializer.Serialize(DatesOracle.Observe(File.ReadAllText(rewriteSource), File.ReadAllText(rewriteCatalog), rewriteToday, rewrites: true)));
+    else if (args is ["bench-syntax", var benchProfile, var benchSource, var benchRuns])
+        Console.WriteLine(JsonSerializer.Serialize(SyntaxOracle.Bench(benchProfile, File.ReadAllText(benchSource), int.Parse(benchRuns))));
     else if (args is ["oracle", var source, var operations])
         Console.WriteLine(JsonSerializer.Serialize(Oracle.Observe(File.ReadAllText(source), File.ReadAllText(operations))));
     else throw new ArgumentException("usage: export <grammar> <catalog> <output> | oracle <source> <catalog>");

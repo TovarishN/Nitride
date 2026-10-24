@@ -1,0 +1,4 @@
+syntax module CSharp.ExtensionReceivers
+{
+ extend syntax CSharp.Attributes.ParameterReceiver { | ExtensionReceiver = "this" }
+}

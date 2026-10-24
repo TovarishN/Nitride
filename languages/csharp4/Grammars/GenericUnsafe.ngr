@@ -1,0 +1,17 @@
+syntax module CSharp.GenericUnsafe
+{
+ extend syntax CSharp.Unsafe.ExtendedPointerElement
+ {
+  | GenericPointerElement = Name:CSharp.Generics.GenericQualifiedName
+  | AliasPointerElement = Prefix:CSharp.NamesTypes.TypeNamePrefix Name:CSharp.NamesTypes.QualifiedName Suffix:CSharp.NamesTypes.TypeNameSuffix?
+ }
+ extend syntax CSharp.Unsafe.AdditionalSizeofType
+ {
+  | GenericSizeofType = Name:CSharp.Generics.GenericQualifiedName Ranks:CSharp.NamesTypes.ArrayRank*
+  | AliasSizeofType = Prefix:CSharp.NamesTypes.TypeNamePrefix Name:CSharp.NamesTypes.QualifiedName Suffix:CSharp.NamesTypes.TypeNameSuffix? Ranks:CSharp.NamesTypes.ArrayRank*
+ }
+ extend syntax CSharp.Expressions.Expression
+ {
+  | GenericPointerMemberExpression = Target:Expression "->" Name:CSharp.Lexical.Identifier Arguments:CSharp.Generics.TypeArgumentList &CSharp.Generics.GenericFollower precedence 180 left
+ }
+}

@@ -1,0 +1,22 @@
+syntax module CSharp.Attributes
+{
+ // BEGIN GENERATED ATTRIBUTE TARGETS
+ extensible syntax GlobalAttributeTarget {}
+ syntax AttributeTarget = CSharp.Lexical.Identifier / "abstract" / "as" / "base" / "bool" / "break" / "byte" / "case" / "catch" / "char" / "checked" / "class" / "const" / "continue" / "decimal" / "default" / "delegate" / "do" / "double" / "else" / "enum" / "event" / "explicit" / "extern" / "false" / "finally" / "fixed" / "float" / "for" / "foreach" / "goto" / "if" / "implicit" / "in" / "int" / "interface" / "internal" / "is" / "lock" / "long" / "namespace" / "new" / "null" / "object" / "operator" / "out" / "override" / "params" / "private" / "protected" / "public" / "readonly" / "ref" / "return" / "sbyte" / "sealed" / "short" / "sizeof" / "stackalloc" / "static" / "string" / "struct" / "switch" / "this" / "throw" / "true" / "try" / "typeof" / "uint" / "ulong" / "unchecked" / "unsafe" / "ushort" / "using" / "virtual" / "void" / "volatile" / "while";
+ // END GENERATED ATTRIBUTE TARGETS
+ syntax AttributeArgument = NamedAttributeArgument / PositionalAttributeArgument;
+ syntax NamedAttributeArgument = Name:CSharp.Lexical.Identifier "=" Value:CSharp.Expressions.Expression;
+ syntax PositionalAttributeArgument = Name:CSharp.Expressions.ArgumentName? Value:CSharp.Expressions.Expression;
+ syntax Attribute = Alias:CSharp.NamesTypes.TypeNamePrefix? Name:CSharp.NamesTypes.QualifiedName Suffix:CSharp.NamesTypes.TypeNameSuffix? Arguments:("(" Items:(AttributeArgument; ",")* ")")?;
+ syntax AttributeSection = "[" Target:(AttributeTarget ":" !":")? Items:(Attribute; ",")+ ","? "]";
+ syntax GlobalAttributeSection = "[" Target:GlobalAttributeTarget ":" Items:(Attribute; ",")+ ","? "]";
+ extensible syntax ParameterReceiver {}
+ extensible syntax ParameterDefault {}
+ syntax FixedParameter = Attributes:AttributeSection* Receiver:ParameterReceiver? Mode:(!CSharp.Lexical.Identifier ("ref" / "out"))? Type:CSharp.NamesTypes.TypeReference Name:CSharp.Lexical.Identifier Default:ParameterDefault?;
+ syntax ParameterArray = Attributes:AttributeSection* "params" Element:CSharp.NamesTypes.TypeBase Ranks:CSharp.NamesTypes.ArrayRank+ Name:CSharp.Lexical.Identifier;
+ syntax Parameters = (FixedParameter ",")* ParameterArray / (FixedParameter; ",")*;
+ syntax ParameterList = "(" Items:Parameters ")";
+ syntax IndexerParameterList = "[" Items:((FixedParameter ",")* ParameterArray / (FixedParameter; ",")+) "]";
+ syntax AttributeFragment = Value:AttributeSection;
+ syntax ParameterFragment = Value:ParameterList;
+}

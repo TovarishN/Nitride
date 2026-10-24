@@ -1,0 +1,8 @@
+syntax module CSharp.CompilationUnits
+{
+ extensible syntax ExternalAliasDirectives { }
+ syntax UsingDirective = "using" Alias:(CSharp.Lexical.Identifier "=")? NamePrefix:CSharp.NamesTypes.TypeNamePrefix? Name:CSharp.NamesTypes.QualifiedName NameExtension:CSharp.NamesTypes.TypeNameSuffix? ";";
+ syntax NamespaceDeclaration = "namespace" Name:CSharp.NamesTypes.QualifiedName "{" ExternAliases:ExternalAliasDirectives? Usings:UsingDirective* Members:NamespaceMember* "}" ";"?;
+ extensible syntax NamespaceMember { | transparent NamespaceMemberBody = Value:(NamespaceDeclaration / CSharp.Declarations.TypeDeclaration) }
+ syntax CompilationUnit = ExternAliases:ExternalAliasDirectives? Usings:UsingDirective* Attributes:CSharp.Attributes.GlobalAttributeSection* Members:NamespaceMember*;
+}
