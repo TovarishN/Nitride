@@ -295,17 +295,14 @@ pub fn prepare(
                     let infix = head["kind"] == "ref"
                         && resolve(head["name"].as_str().unwrap(), from, Some(implicit), span)?
                             == point;
-                    if infix {
-                        if alternative.precedence.is_none_or(|p| p == 0) {
-                            return Err(sources[from.source]
-                                .error(alternative.span, "infix precedence must be 1..255"));
-                        }
-                        // Alternatives may share an operator: the parser ranks them by
-                        // longest match, then precedence, as Nitrogen does.
+                    // Alternatives may share an operator: the parser ranks them by longest
+                    // match, then precedence, as Nitrogen does. A prefix alternative's
+                    // associativity is accepted and ignored, as Nitrogen's generator ignores
+                    // it: its trailing operand binds at its own precedence.
+                    if infix && alternative.precedence.is_none_or(|p| p == 0) {
+                        return Err(sources[from.source]
+                            .error(alternative.span, "infix precedence must be 1..255"));
                     }
-                    // A prefix alternative's associativity is accepted and ignored, as
-                    // Nitrogen's generator ignores it: its trailing operand binds at its
-                    // own precedence.
                     // A transparent alternative yields exactly one node: a literal,
                     // class or reference, labeled or not, or a choice of them.
                     fn single(expr: &Value) -> bool {
