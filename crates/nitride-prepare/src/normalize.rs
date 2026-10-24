@@ -302,10 +302,10 @@ pub fn prepare(
                         }
                         // Alternatives may share an operator: the parser ranks them by
                         // longest match, then precedence, as Nitrogen does.
-                    } else if alternative.associativity.is_some() {
-                        return Err(sources[from.source]
-                            .error(alternative.span, "prefix associativity is not admitted"));
                     }
+                    // A prefix alternative's associativity is accepted and ignored, as
+                    // Nitrogen's generator ignores it: its trailing operand binds at its
+                    // own precedence.
                     // A transparent alternative yields exactly one node: a literal,
                     // class or reference, labeled or not, or a choice of them.
                     fn single(expr: &Value) -> bool {

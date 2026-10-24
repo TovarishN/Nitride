@@ -304,3 +304,24 @@ fn unpaired_surrogate_class_is_inert() {
     // Strings still reject unpaired surrogates.
     assert!(prepare("syntax module Test { syntax Start = \"\\ud835\"; }").is_err());
 }
+
+#[test]
+fn prefix_associativity_is_accepted_and_ignored() {
+    let grammar = |associativity: &str| {
+        format!(
+            "syntax module Test {{ syntax Start = E; token Id = ['a'..'z']+; extensible syntax E {{ | Name = Value:Id | Lambda = P:Id \"=>\" B:E precedence 10{associativity} }} }}"
+        )
+    };
+    let rule = |prepared: &Value| {
+        prepared["rules"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["name"] == "Test.Lambda")
+            .unwrap()
+            .clone()
+    };
+    let right = prepare(&grammar(" right")).unwrap();
+    assert!(rule(&right)["associativity"].is_null());
+    assert_eq!(rule(&right), rule(&prepare(&grammar("")).unwrap()));
+}
