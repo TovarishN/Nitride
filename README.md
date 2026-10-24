@@ -48,6 +48,8 @@ The ordered manifest supplies grammar paths, a catalog, an explicit syntax start
 rule and `typed` or `syntax` mode. Paths are relative to the manifest. Preparation
 prints normalized JSON to stdout by default. `--output` replaces a file only after
 successful validation and protects grammar/catalog/manifest inputs from overwrite.
+Repository text uses LF checkouts on all platforms via `.gitattributes`.
+Source/catalog hashes identify exact text bytes; line-ending changes change identity.
 Grammar errors carry a file, line, column and UTF-8 byte span. Shared profile-gate
 errors currently fall back to the first source at byte zero with an error message.
 

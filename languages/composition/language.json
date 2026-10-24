@@ -1,5 +1,6 @@
 {
   "version": 1,
+  "symbol_kinds": [],
   "mode": "syntax",
   "omitted_semantics": [],
   "modules": [
@@ -14,7 +15,7 @@
       ]
     }
   ],
-  "source_hash": "c010ab58008f1c8db8daff7ddb182348bfb3cc50f184f66a5c11d1b10885db45",
+  "source_hash": "6c4897c87022a0c2e648fc6034f9a89b1ebe994406367f0d9f15d3955b26b093",
   "catalog_hash": "40499eca863652b41634eee4aff5553d2ec5616ccc0dd1aa8aaa1305145d171f",
   "start": "Uses.Doc",
   "rules": [
