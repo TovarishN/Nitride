@@ -1,0 +1,930 @@
+[
+  {
+    "name": "grammar-0",
+    "source": "class C { A field; }"
+  },
+  {
+    "name": "grammar-1",
+    "source": "class C { A.B field; }"
+  },
+  {
+    "name": "grammar-2",
+    "source": "class C { int field; }"
+  },
+  {
+    "name": "grammar-3",
+    "source": "class C { object field; }"
+  },
+  {
+    "name": "grammar-4",
+    "source": "class C { int[] field; }"
+  },
+  {
+    "name": "grammar-5",
+    "source": "class C { A[,] field; }"
+  },
+  {
+    "name": "grammar-6",
+    "source": "class C { A[][,] field; }"
+  },
+  {
+    "name": "grammar-7",
+    "source": "class C { var field; }"
+  },
+  {
+    "name": "grammar-8",
+    "source": "class C { A. field; }"
+  },
+  {
+    "name": "grammar-9",
+    "source": "class C { A[ field; }"
+  },
+  {
+    "name": "grammar-10",
+    "source": "class C { A<T> field; }"
+  },
+  {
+    "name": "grammar-11",
+    "source": "class C { void field; }"
+  },
+  {
+    "name": "grammar-12",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return a+b*c;} }"
+  },
+  {
+    "name": "grammar-13",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return a-b-c;} }"
+  },
+  {
+    "name": "grammar-14",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return a=b=c;} }"
+  },
+  {
+    "name": "grammar-15",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return a?b:c?d:e;} }"
+  },
+  {
+    "name": "grammar-16",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return (T)x;} }"
+  },
+  {
+    "name": "grammar-17",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return (x)+y;} }"
+  },
+  {
+    "name": "grammar-18",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return (int)-x;} }"
+  },
+  {
+    "name": "grammar-19",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return F(ref x,out y);} }"
+  },
+  {
+    "name": "grammar-20",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return new C(1);} }"
+  },
+  {
+    "name": "grammar-21",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return new int[3][];} }"
+  },
+  {
+    "name": "grammar-22",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return new int[,] {{1,2},{3,4}};} }"
+  },
+  {
+    "name": "grammar-23",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return typeof(void);} }"
+  },
+  {
+    "name": "grammar-24",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return checked(x+1);} }"
+  },
+  {
+    "name": "grammar-25",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return a is T;} }"
+  },
+  {
+    "name": "grammar-26",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return base.F();} }"
+  },
+  {
+    "name": "grammar-27",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return x=>x;} }"
+  },
+  {
+    "name": "grammar-28",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return a??b;} }"
+  },
+  {
+    "name": "grammar-29",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return F(x:1);} }"
+  },
+  {
+    "name": "grammar-30",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return new C { X=1 };} }"
+  },
+  {
+    "name": "grammar-31",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return a+;} }"
+  },
+  {
+    "name": "grammar-32",
+    "source": "class C { object a, b; object nameof(object x){return x;} object M(){return nameof(x);} }"
+  },
+  {
+    "name": "grammar-33",
+    "source": "class C {void M(){{ int x=1; x++; F(); }}}"
+  },
+  {
+    "name": "grammar-34",
+    "source": "class C {void M(){a+b;}}"
+  },
+  {
+    "name": "grammar-35",
+    "source": "class C {void M(){new C();}}"
+  },
+  {
+    "name": "grammar-36",
+    "source": "class C {void M(){if(a) if(b) F(); else G();}}"
+  },
+  {
+    "name": "grammar-37",
+    "source": "class C {void M(){if(a) int x;}}"
+  },
+  {
+    "name": "grammar-38",
+    "source": "class C {void M(){for(int i=0;i<10;i++) F();}}"
+  },
+  {
+    "name": "grammar-39",
+    "source": "class C {void M(){for(;;);}}"
+  },
+  {
+    "name": "grammar-40",
+    "source": "class C {void M(){foreach(T x in xs) F(x);}}"
+  },
+  {
+    "name": "grammar-41",
+    "source": "class C {void M(){switch(x){ case 1: break; default: return; }}}"
+  },
+  {
+    "name": "grammar-42",
+    "source": "class C {void M(){try { F(); } catch(E e) { throw; } finally {}}}"
+  },
+  {
+    "name": "grammar-43",
+    "source": "class C {void M(){try {}}}"
+  },
+  {
+    "name": "grammar-44",
+    "source": "class C {void M(){using(T x=F()) { F(x); }}}"
+  },
+  {
+    "name": "grammar-45",
+    "source": "class C {void M(){lock(x) F();}}"
+  },
+  {
+    "name": "grammar-46",
+    "source": "class C {void M(){label: goto label;}}"
+  },
+  {
+    "name": "grammar-47",
+    "source": "class C {void M(){while(x) {continue;}}}"
+  },
+  {
+    "name": "grammar-48",
+    "source": "class C {void M(){do F(); while(x);}}"
+  },
+  {
+    "name": "grammar-49",
+    "source": "class C {void M(){checked { F(); }}}"
+  },
+  {
+    "name": "grammar-50",
+    "source": "class C {void M(){using T x=F();}}"
+  },
+  {
+    "name": "grammar-51",
+    "source": "class C {void M(){try{}catch(E e) when(x){}}}"
+  },
+  {
+    "name": "grammar-52",
+    "source": "[A] class C{}"
+  },
+  {
+    "name": "grammar-53",
+    "source": "[A(1, Name=2), N.B] class C{}"
+  },
+  {
+    "name": "grammar-54",
+    "source": "[return:A] class C{}"
+  },
+  {
+    "name": "grammar-55",
+    "source": "[A( class C{}"
+  },
+  {
+    "name": "grammar-56",
+    "source": "[A,] class C{}"
+  },
+  {
+    "name": "grammar-57",
+    "source": "class C {void M(){}}"
+  },
+  {
+    "name": "grammar-58",
+    "source": "class C {void M([A] ref int x,out T y,params object[] args){}}"
+  },
+  {
+    "name": "grammar-59",
+    "source": "class C {void M(int x=1){}}"
+  },
+  {
+    "name": "grammar-60",
+    "source": "class C {void M(this T x){}}"
+  },
+  {
+    "name": "grammar-61",
+    "source": "class C {void M(in T x){}}"
+  },
+  {
+    "name": "grammar-62",
+    "source": "class C {void M(params int[] x,int y){}}"
+  },
+  {
+    "name": "grammar-63",
+    "source": "class C { const int N=1; int x=2,y; public C():base(){} ~C(){} int P {get{return x;} set{x=value;}} event E Changed; int this[int i] {get{return x;}} void M(ref int x,params object[] a){} class Nested {} }"
+  },
+  {
+    "name": "grammar-64",
+    "source": "struct S:I { public int M(){return 1;} }"
+  },
+  {
+    "name": "grammar-65",
+    "source": "interface I { void M(); int P {get;set;} event E Changed; int this[int i]{get;} }"
+  },
+  {
+    "name": "grammar-66",
+    "source": "enum E:byte {A=1,B,}"
+  },
+  {
+    "name": "grammar-67",
+    "source": "delegate void D(object x);"
+  },
+  {
+    "name": "grammar-68",
+    "source": "class C { public static C operator +(C a,C b){return a;} public static implicit operator int(C a){return 0;} void I.M(){} event E I.Changed {add{}remove{}} }"
+  },
+  {
+    "name": "grammar-69",
+    "source": "interface I { void M(){} }"
+  },
+  {
+    "name": "grammar-70",
+    "source": "class C<T> {}"
+  },
+  {
+    "name": "grammar-71",
+    "source": "partial class C {}"
+  },
+  {
+    "name": "grammar-72",
+    "source": "class C {int P {get;private set;}}"
+  },
+  {
+    "name": "grammar-73",
+    "source": "class C { int M()=>1; }"
+  },
+  {
+    "name": "grammar-74",
+    "source": "using A; using B=N.B; [assembly:A] namespace N {using Q; class C{void M(){F();}} struct S{}} class D{}"
+  },
+  {
+    "name": "grammar-75",
+    "source": "enum E{A} delegate void D(); interface I{}"
+  },
+  {
+    "name": "grammar-76",
+    "source": ""
+  },
+  {
+    "name": "grammar-77",
+    "source": "class C{} using A;"
+  },
+  {
+    "name": "grammar-78",
+    "source": "using static A;"
+  },
+  {
+    "name": "grammar-79",
+    "source": "namespace N; class C{}"
+  },
+  {
+    "name": "grammar-80",
+    "source": "class C { void M(){a+b;} }"
+  },
+  {
+    "name": "grammar-81",
+    "source": "[assembly:A] using B;"
+  },
+  {
+    "name": "grammar-82",
+    "source": "unsafe class C { int* p; void M(){unsafe {int* q=stackalloc int[4]; *q=1; fixed(int* r=&x){r->M();}}} int x; }"
+  },
+  {
+    "name": "grammar-83",
+    "source": "class C {void M(){ sizeof(int); }}"
+  },
+  {
+    "name": "grammar-84",
+    "source": "class C {int M(){return sizeof(int);}}"
+  },
+  {
+    "name": "grammar-85",
+    "source": "unsafe class C {int M(){return sizeof(C);}}"
+  },
+  {
+    "name": "grammar-86",
+    "source": "unsafe class C { fixed int data[16]; }"
+  },
+  {
+    "name": "grammar-87",
+    "source": "unsafe class C {void M(){int* p=stackalloc[] {1,2};}}"
+  },
+  {
+    "name": "source-88",
+    "source": "unsafe class C { object M(){return (System.Int32)sizeof(int);} }"
+  },
+  {
+    "name": "source-89",
+    "source": "class C {int M(){return int.MaxValue;}}"
+  },
+  {
+    "name": "source-90",
+    "source": "class C {string s=string.Empty; bool M(){return object.ReferenceEquals(null,null);}}"
+  },
+  {
+    "name": "source-91",
+    "source": "class C {int[] a=new int[]{}; int[] b=new int[]{1,};}"
+  },
+  {
+    "name": "source-92",
+    "source": "class C {int[] a=new int[]{,};}"
+  },
+  {
+    "name": "source-93",
+    "source": "class C {int[] a={,};}"
+  },
+  {
+    "name": "source-94",
+    "source": "unsafe class C {void M(){int* p=stackalloc int[4];}}"
+  },
+  {
+    "name": "source-95",
+    "source": "unsafe class C {void M(){int* p; p=stackalloc int[4];}}"
+  },
+  {
+    "name": "source-96",
+    "source": "unsafe class C {int* M(){return stackalloc int[4];}}"
+  },
+  {
+    "name": "source-97",
+    "source": "unsafe class C {void M(){F(stackalloc int[4]);}}"
+  },
+  {
+    "name": "source-98",
+    "source": "unsafe class C {int* p=stackalloc int[4];}"
+  },
+  {
+    "name": "source-99",
+    "source": "unsafe class C {void M(){int* p=(stackalloc int[4]);}}"
+  },
+  {
+    "name": "context-100",
+    "source": "class C{void M(){try{}catch(E e){}catch{}}}"
+  },
+  {
+    "name": "context-101",
+    "source": "class C{void M(){try{}catch{}catch(E e){}}}"
+  },
+  {
+    "name": "context-102",
+    "source": "class C{void M(){try{}catch{}catch{}}}"
+  },
+  {
+    "name": "context-103",
+    "source": "class C{void M(){try{}finally{}}}"
+  },
+  {
+    "name": "context-104",
+    "source": "class C{void M(){try{}}}"
+  },
+  {
+    "name": "context-105",
+    "source": "class C{int P{get{return 0;}set{}}}"
+  },
+  {
+    "name": "context-106",
+    "source": "class C{int P{set{}get{return 0;}}}"
+  },
+  {
+    "name": "context-107",
+    "source": "class C{int P{get{return 0;}get{return 1;}}}"
+  },
+  {
+    "name": "context-108",
+    "source": "class C{int P{set{}set{}}}"
+  },
+  {
+    "name": "context-109",
+    "source": "class C{int P{}}"
+  },
+  {
+    "name": "context-110",
+    "source": "interface I{int P{get;set;}}"
+  },
+  {
+    "name": "context-111",
+    "source": "interface I{int P{set;get;}}"
+  },
+  {
+    "name": "context-112",
+    "source": "interface I{int P{get;get;}}"
+  },
+  {
+    "name": "context-113",
+    "source": "interface I{int this[int x]{get;get;}}"
+  },
+  {
+    "name": "context-114",
+    "source": "class C{int this[int x]{get{return x;}get{return x;}}}"
+  },
+  {
+    "name": "context-115",
+    "source": "class C{event E X{add{}remove{}}}"
+  },
+  {
+    "name": "context-116",
+    "source": "class C{event E X{remove{}add{}}}"
+  },
+  {
+    "name": "context-117",
+    "source": "class C{event E X{add{}}}"
+  },
+  {
+    "name": "context-118",
+    "source": "class C{event E X{remove{}}}"
+  },
+  {
+    "name": "context-119",
+    "source": "class C{event E X{add{}add{}remove{}}}"
+  },
+  {
+    "name": "context-120",
+    "source": "enum E{}"
+  },
+  {
+    "name": "context-121",
+    "source": "enum E{A,}"
+  },
+  {
+    "name": "context-122",
+    "source": "enum E{,}"
+  },
+  {
+    "name": "context-123",
+    "source": "struct S{public S(int x){} }"
+  },
+  {
+    "name": "context-124",
+    "source": "struct S{~S(){}}"
+  },
+  {
+    "name": "context-125",
+    "source": "class C{~C(){}}"
+  },
+  {
+    "name": "context-126",
+    "source": "class C{static C(){}}"
+  },
+  {
+    "name": "context-127",
+    "source": "class C{static C(int x){}}"
+  },
+  {
+    "name": "context-128",
+    "source": "class C{static C():base(){}}"
+  },
+  {
+    "name": "context-129",
+    "source": "struct S{public S(){}}"
+  },
+  {
+    "name": "context-130",
+    "source": "struct S{int x=1;}"
+  },
+  {
+    "name": "context-131",
+    "source": "struct S{static int x=1;}"
+  },
+  {
+    "name": "context-132",
+    "source": "class C{void M(){if(x) label:F();}}"
+  },
+  {
+    "name": "context-133",
+    "source": "class C{void M(){label:int x;}}"
+  },
+  {
+    "name": "context-134",
+    "source": "class C{void M(){using(T x){} }}"
+  },
+  {
+    "name": "context-135",
+    "source": "enum E:float{A}"
+  },
+  {
+    "name": "context-136",
+    "source": "class C{int M(){return a?b:c=d;}}"
+  },
+  {
+    "name": "context-137",
+    "source": "class C{void M(){F(a?b:c=d);}}"
+  },
+  {
+    "name": "attribute-138",
+    "source": "[A()] class C{}"
+  },
+  {
+    "name": "attribute-139",
+    "source": "[A(1,2,X=3,Y=4)] class C{}"
+  },
+  {
+    "name": "attribute-140",
+    "source": "[A(X=1,Y=2)] class C{}"
+  },
+  {
+    "name": "attribute-141",
+    "source": "[A(X=1,2)] class C{}"
+  },
+  {
+    "name": "attribute-142",
+    "source": "[A(1,X=2,3)] class C{}"
+  },
+  {
+    "name": "attribute-143",
+    "source": "[A(X=1), A(2)] class C{}"
+  },
+  {
+    "name": "attribute-144",
+    "source": "[A(X=1)][A(2)] class C{}"
+  },
+  {
+    "name": "attribute-145",
+    "source": "[A(x+=1)] class C{}"
+  },
+  {
+    "name": "attribute-146",
+    "source": "[A(X=y=1)] class C{}"
+  },
+  {
+    "name": "attribute-147",
+    "source": "[A((x=1))] class C{}"
+  },
+  {
+    "name": "attribute-148",
+    "source": "[A(X=(x=1))] class C{}"
+  },
+  {
+    "name": "attribute-149",
+    "source": "[A(1+(x=2))] class C{}"
+  },
+  {
+    "name": "attribute-150",
+    "source": "[A(X=1,)] class C{}"
+  },
+  {
+    "name": "attribute-151",
+    "source": "[A(X:1)] class C{}"
+  },
+  {
+    "name": "attribute-152",
+    "source": "[field:A] class C{}"
+  },
+  {
+    "name": "attribute-153",
+    "source": "[event:A] class C{}"
+  },
+  {
+    "name": "attribute-154",
+    "source": "[class:A] class C{}"
+  },
+  {
+    "name": "attribute-155",
+    "source": "[int:A] class C{}"
+  },
+  {
+    "name": "attribute-156",
+    "source": "[assembly:A] class C{}"
+  },
+  {
+    "name": "attribute-157",
+    "source": "[@assembly:A] class C{}"
+  },
+  {
+    "name": "attribute-158",
+    "source": "[\\u0061ssembly:A] class C{}"
+  },
+  {
+    "name": "attribute-159",
+    "source": "[assembly:A] using N;"
+  },
+  {
+    "name": "attribute-160",
+    "source": "class C{[assembly:A]void M(){}}"
+  },
+  {
+    "name": "csharp4-161",
+    "source": "class C{string x=@\"x\";}"
+  },
+  {
+    "name": "csharp4-negative-162",
+    "source": "class C{string x=@\"x;}"
+  },
+  {
+    "name": "csharp4-163",
+    "source": "class C{A.B<int> x;}"
+  },
+  {
+    "name": "csharp4-negative-164",
+    "source": "class C{A.B<int x;}"
+  },
+  {
+    "name": "csharp4-165",
+    "source": "class C{dynamic x;}"
+  },
+  {
+    "name": "csharp4-negative-166",
+    "source": "class C{dynamic ;}"
+  },
+  {
+    "name": "csharp4-167",
+    "source": "class C{void M(){F(x:1);}}"
+  },
+  {
+    "name": "csharp4-negative-168",
+    "source": "class C{void M(){F(x:);}}"
+  },
+  {
+    "name": "csharp4-169",
+    "source": "class C{void M(){F(name:2);}}"
+  },
+  {
+    "name": "csharp4-negative-170",
+    "source": "class C{void M(){F(name::2);}}"
+  },
+  {
+    "name": "csharp4-171",
+    "source": "class C{void M(){F(x:1+2);}}"
+  },
+  {
+    "name": "csharp4-negative-172",
+    "source": "class C{void M(){F(x:1+);}}"
+  },
+  {
+    "name": "csharp4-173",
+    "source": "class C{void M(){F(x:ref a);}}"
+  },
+  {
+    "name": "csharp4-negative-174",
+    "source": "class C{void M(){F(x:ref);}}"
+  },
+  {
+    "name": "csharp4-175",
+    "source": "class C{void M(){F(x:out a);}}"
+  },
+  {
+    "name": "csharp4-negative-176",
+    "source": "class C{void M(){F(x:out);}}"
+  },
+  {
+    "name": "csharp4-177",
+    "source": "class C{object M(){return a[index:1];}}"
+  },
+  {
+    "name": "csharp4-negative-178",
+    "source": "class C{object M(){return a[index:ref x];}}"
+  },
+  {
+    "name": "csharp4-179",
+    "source": "class C{object M(){return base[index:1];}}"
+  },
+  {
+    "name": "csharp4-negative-180",
+    "source": "class C{object M(){return base[index:];}}"
+  },
+  {
+    "name": "csharp4-181",
+    "source": "class C{void M(int x=1){}}"
+  },
+  {
+    "name": "csharp4-negative-182",
+    "source": "class C{void M(int x=1,int y){}}"
+  },
+  {
+    "name": "csharp4-183",
+    "source": "class C{void M(int x=default(int)){}}"
+  },
+  {
+    "name": "csharp4-negative-184",
+    "source": "class C{void M(int x=default(){}}"
+  },
+  {
+    "name": "csharp4-185",
+    "source": "interface I<out T>{}"
+  },
+  {
+    "name": "csharp4-negative-186",
+    "source": "interface I<out>{}"
+  },
+  {
+    "name": "csharp4-187",
+    "source": "interface I<out T,in U>{}"
+  },
+  {
+    "name": "csharp4-negative-188",
+    "source": "interface I<out T,>{}"
+  },
+  {
+    "name": "csharp4-negative-189",
+    "source": "interface I<out T,in>{}"
+  },
+  {
+    "name": "csharp4-190",
+    "source": "interface I<in T>{}"
+  },
+  {
+    "name": "csharp4-negative-191",
+    "source": "interface I<in out T>{}"
+  },
+  {
+    "name": "csharp4-negative-192",
+    "source": "interface I<out in T>{}"
+  },
+  {
+    "name": "csharp4-193",
+    "source": "delegate T D<out T>();"
+  },
+  {
+    "name": "csharp4-negative-194",
+    "source": "delegate T D<out T>(;"
+  },
+  {
+    "name": "csharp4-195",
+    "source": "[A(x:1)]class C{}"
+  },
+  {
+    "name": "csharp4-negative-196",
+    "source": "[A(x:1,2)]class C{}"
+  },
+  {
+    "name": "csharp4-197",
+    "source": "unsafe class C{void M(){int x=0;fixed(int* p=&x){}}}"
+  },
+  {
+    "name": "csharp4-negative-198",
+    "source": "unsafe class C{void M(){int x=0;fixed(int* =&x){}}}"
+  },
+  {
+    "name": "csharp4-199",
+    "source": "unsafe struct S{fixed int b[4];}"
+  },
+  {
+    "name": "csharp4-negative-200",
+    "source": "unsafe struct S{fixed int b[];}"
+  },
+  {
+    "name": "supplementary-201",
+    "source": "class C { int 𝑥; int \\U0001D465x; }"
+  },
+  {
+    "name": "supplementary-202",
+    "source": "class 𝑥 { }"
+  },
+  {
+    "name": "corpus-Mono2004-AttributeUsageAttribute",
+    "source": "//\n// System.AttributeUsageAttribute.cs\n//\n// Author:\n//   Miguel de Icaza (miguel@ximian.com)\n//\n// (C) Ximian, Inc.  http://www.ximian.com\n//\n\n//\n// Copyright (C) 2004 Novell, Inc (http://www.novell.com)\n//\n// Permission is hereby granted, free of charge, to any person obtaining\n// a copy of this software and associated documentation files (the\n// \"Software\"), to deal in the Software without restriction, including\n// without limitation the rights to use, copy, modify, merge, publish,\n// distribute, sublicense, and/or sell copies of the Software, and to\n// permit persons to whom the Software is furnished to do so, subject to\n// the following conditions:\n// \n// The above copyright notice and this permission notice shall be\n// included in all copies or substantial portions of the Software.\n// \n// THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\n// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\n// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n//\n\nnamespace System\n{\n\t[Serializable]\n\t[AttributeUsage(AttributeTargets.All)]\n\tpublic sealed class AttributeUsageAttribute : Attribute\n\t{\n\t\tAttributeTargets valid_on;\n\t\tbool allow_multiple;\n\t\tbool inherited = true;\n\n\t\tpublic AttributeUsageAttribute (AttributeTargets validOn)\n\t\t{\n\t\t\tvalid_on = validOn;\n\t\t}\n\n\t\tpublic bool AllowMultiple {\n\t\t\tget {\n\t\t\t\treturn allow_multiple;\n\t\t\t}\n\t\t\tset {\n\t\t\t\tallow_multiple = value;\n\t\t\t}\n\t\t}\n\n\t\tpublic bool Inherited {\n\t\t\tget {\n\t\t\t\treturn inherited;\n\t\t\t}\n\t\t\tset {\n\t\t\t\tinherited = value;\n\t\t\t}\n\t\t}\n\n\t\tpublic AttributeTargets ValidOn {\n\t\t\tget {\n\t\t\t\treturn valid_on;\n\t\t\t}\n\t\t}\n\t}\n}\n\n\n"
+  },
+  {
+    "name": "corpus-Mono2004-Boolean",
+    "source": "//\n// System.Boolean.cs\n//\n// Author:\n//   Derek Holden (dholden@draper.com)\n//\n// (C) Ximian, Inc.  http://www.ximian.com\n//\n\n//\n// Copyright (C) 2004 Novell, Inc (http://www.novell.com)\n//\n// Permission is hereby granted, free of charge, to any person obtaining\n// a copy of this software and associated documentation files (the\n// \"Software\"), to deal in the Software without restriction, including\n// without limitation the rights to use, copy, modify, merge, publish,\n// distribute, sublicense, and/or sell copies of the Software, and to\n// permit persons to whom the Software is furnished to do so, subject to\n// the following conditions:\n// \n// The above copyright notice and this permission notice shall be\n// included in all copies or substantial portions of the Software.\n// \n// THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\n// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\n// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n//\n\n//\n// I guess this is the Boolean class. This was written word for word\n// off the Library specification for System.Boolean in the ECMA\n// TC39 TG2 and TG3 working documents.\n//\n// The XML style documentation isn't that elegant, but it seems to \n// be the standard way according to the poorly documented C# \n// Programmer's Reference section on XML Documentation.\n//\n\nusing System.Globalization;\n\nnamespace System\n{\n\t/// <summary>\n\t/// Represents the boolean values of logical true and false.\n\t/// </summary>\n\t[Serializable]\n\tpublic struct Boolean : IComparable, IConvertible\n\t{\n\t\t/// <value>\n\t\t/// The String representation of Boolean False\n\t\t/// </value>\t\n\t\tpublic static readonly string FalseString = \"False\";\n\n\t\t/// <value>\n\t\t/// The String representation of Boolean True\n\t\t/// </value>\t\n\t\tpublic static readonly string TrueString = \"True\";\n\n\t\tinternal bool m_value;\n\n\t\t/// <summary>\n\t\t/// Compares the current Boolean instance against another object.\n\t\t/// </summary>\n\t\t/// <remarks>\n\t\t/// Throws an ArgumentException if <c>obj</c> isn't null or \n\t\t/// a Boolean.\n\t\t/// </remarks>\n\t\t/// <param name=\"obj\">\n\t\t/// The object to compare against\n\t\t/// </param>\n\t\t/// <returns>\n\t\t/// An int reflecting the sort order of this instance as \n\t\t/// compared to <c>obj</c>\n\t\t/// -1 if this instance is false and <c>obj</c> is true\n\t\t///  0 if this instance is equal to <c>obj</c>\n\t\t///  1 if this instance is true and <c>obj</c> is false, \n\t\t///    or <c>obj</c> is null\n\t\t/// </returns>\n\t\tpublic int CompareTo (object obj)\n\t\t{\n\t\t\tif (obj == null)\n\t\t\t\treturn 1;\n\n\t\t\tif (!(obj is System.Boolean))\n\t\t\t\tthrow new ArgumentException (Locale.GetText (\n\t\t\t\t\t\"Object is not a Boolean.\"));\n\n\t\t\t// for case #3\n\t\t\tif (obj == null || (m_value == true && (bool) obj == false))\n\t\t\t\treturn 1;\n\n\t\t\t// for case #2, else it's #1\n\t\t\treturn (m_value == (bool) obj) ? 0 : -1;\n\t\t}\n\n\t\t/// <summary>\n\t\t/// Determines whether this instance and another object represent the\n\t\t/// same type and value.\n\t\t/// </summary>\n\t\t/// <param name=\"obj\">\n\t\t/// The object to check against\n\t\t/// </param>\n\t\t/// <returns>\n\t\t/// true if this instnace and <c>obj</c> are same value, \n\t\t/// otherwise false if it is not or null\n\t\t/// </returns>\n\t\tpublic override bool Equals (Object obj)\n\t\t{\n\t\t\tif (obj == null || !(obj is System.Boolean))\n\t\t\t\treturn false;\n\n\t\t\treturn ((m_value) ? ((bool) obj) : !((bool) obj));\n\t\t}\n\n\t\t/// <summary>\n\t\t/// Generates a hashcode for this object.\n\t\t/// </summary>\n\t\t/// <returns>\n\t\t/// An Int32 value holding the hash code\n\t\t/// </returns>\n\t\tpublic override int GetHashCode ()\n\t\t{\n\t\t\t// Guess there's not too many ways to hash a Boolean\n\t\t\treturn m_value ? 1 : 0;\n\t\t}\n\n\t\t/// <summary>\n\t\t/// Returns a given string as a boolean value. The string must be \n\t\t/// equivalent to either TrueString or FalseString, with leading and/or\n\t\t/// trailing spaces, and is parsed case-insensitively.\n\t\t/// </summary>\n\t\t/// <remarks>\n\t\t/// Throws an ArgumentNullException if <c>val</c> is null, or a \n\t\t/// FormatException if <c>val</c> doesn't match <c>TrueString</c> \n\t\t/// or <c>FalseString</c>\n\t\t/// </remarks>\n\t\t/// <param name=\"val\">\n\t\t/// The string value to parse\n\t\t/// </param>\n\t\t/// <returns>\n\t\t/// true if <c>val</c> is equivalent to TrueString, \n\t\t/// otherwise false\n\t\t/// </returns>\n\t\tpublic static bool Parse (string value)\n\t\t{\n\t\t\tif (value == null)\n\t\t\t\tthrow new ArgumentNullException (\"value\");\n\n\t\t\tvalue = value.Trim ();\n\n\t\t\tif (String.Compare (value, TrueString, true, CultureInfo.InvariantCulture) == 0)\n\t\t\t\treturn true;\n\n\t\t\tif (String.Compare (value, FalseString, true, CultureInfo.InvariantCulture) == 0)\n\t\t\t\treturn false;\n\n\t\t\tthrow new FormatException (Locale.GetText (\n\t\t\t\t\"Value is not equivalent to either TrueString or FalseString.\"));\n\t\t}\n\n\t\t/// <summary>\n\t\t/// Returns a string representation of this Boolean object.\n\t\t/// </summary>\n\t\t/// <returns>\n\t\t/// <c>FalseString</c> if the instance value is false, otherwise \n\t\t/// <c>TrueString</c>\n\t\t/// </returns>\n\t\tpublic override string ToString ()\n\t\t{\n\t\t\treturn m_value ? TrueString : FalseString;\n\t\t}\n\n\t\t// =========== IConvertible Methods =========== //\n\t\tpublic TypeCode GetTypeCode ()\n\t\t{\n\t\t\treturn TypeCode.Boolean;\n\t\t}\n\n\t\tobject IConvertible.ToType (Type conversionType, IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToType (m_value, conversionType, provider);\n\t\t}\n\n\t\tbool IConvertible.ToBoolean (IFormatProvider provider)\n\t\t{\n\t\t\treturn m_value;\n\t\t}\n\n\t\tbyte IConvertible.ToByte (IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToByte (m_value);\n\t\t}\n\n\t\tchar IConvertible.ToChar (IFormatProvider provider)\n\t\t{\n\t\t\tthrow new InvalidCastException ();\n\t\t}\n\n\t\tDateTime IConvertible.ToDateTime (IFormatProvider provider)\n\t\t{\n\t\t\tthrow new InvalidCastException ();\n\t\t}\n\n\t\tdecimal IConvertible.ToDecimal (IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToDecimal (m_value);\n\t\t}\n\n\t\tdouble IConvertible.ToDouble (IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToDouble (m_value);\n\t\t}\n\n\t\tshort IConvertible.ToInt16 (IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToInt16 (m_value);\n\t\t}\n\n\t\tint IConvertible.ToInt32 (IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToInt32 (m_value);\n\t\t}\n\n\t\tlong IConvertible.ToInt64 (IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToInt64 (m_value);\n\t\t}\n\n\t\tsbyte IConvertible.ToSByte (IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToSByte (m_value);\n\t\t}\n\n\t\tfloat IConvertible.ToSingle (IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToSingle (m_value);\n\t\t}\n\n\t\tpublic string ToString (IFormatProvider provider)\n\t\t{\n\t\t\treturn ToString ();\n\t\t}\n\n\t\tushort IConvertible.ToUInt16 (IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToUInt16 (m_value);\n\t\t}\n\n\t\tuint IConvertible.ToUInt32 (IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToUInt32 (m_value);\n\t\t}\n\n\t\tulong IConvertible.ToUInt64 (IFormatProvider provider)\n\t\t{\n\t\t\treturn System.Convert.ToUInt64 (m_value);\n\t\t}\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2004-EventArgs",
+    "source": "//\n// System.EventArgs.cs \n//\n// Author:\n//   Michael Lambert (michaellambert@email.com)\n//\n// (C) 2001 Michael Lambert, All Rights Reserved\n//\n\n//\n// Copyright (C) 2004 Novell, Inc (http://www.novell.com)\n//\n// Permission is hereby granted, free of charge, to any person obtaining\n// a copy of this software and associated documentation files (the\n// \"Software\"), to deal in the Software without restriction, including\n// without limitation the rights to use, copy, modify, merge, publish,\n// distribute, sublicense, and/or sell copies of the Software, and to\n// permit persons to whom the Software is furnished to do so, subject to\n// the following conditions:\n// \n// The above copyright notice and this permission notice shall be\n// included in all copies or substantial portions of the Software.\n// \n// THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\n// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\n// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n//\n\nnamespace System\n{\n\t[Serializable]\n\tpublic class EventArgs\n\t{\n\t\tpublic static readonly EventArgs Empty = new EventArgs ();\n\n\t\tpublic EventArgs ()\n\t\t{\n\t\t}\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2004-EventHandler",
+    "source": "//\n// System.EventHandler.cs\n//\n// Author:\n//   Miguel de Icaza (miguel@ximian.com)\n//\n// (C) Ximian, Inc.  http://www.ximian.com\n//\n\n//\n// Copyright (C) 2004 Novell, Inc (http://www.novell.com)\n//\n// Permission is hereby granted, free of charge, to any person obtaining\n// a copy of this software and associated documentation files (the\n// \"Software\"), to deal in the Software without restriction, including\n// without limitation the rights to use, copy, modify, merge, publish,\n// distribute, sublicense, and/or sell copies of the Software, and to\n// permit persons to whom the Software is furnished to do so, subject to\n// the following conditions:\n// \n// The above copyright notice and this permission notice shall be\n// included in all copies or substantial portions of the Software.\n// \n// THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\n// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\n// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n//\n\nnamespace System {\n\n\tpublic delegate void EventHandler (object sender, EventArgs e);\n\n}\n\n\n"
+  },
+  {
+    "name": "corpus-Mono2004-ICollection",
+    "source": "// -*- Mode: C; tab-width: 8; indent-tabs-mode: t; c-basic-offset: 8 -*-\n//\n// System.Collections.ICollection\n//\n// Author:\n//    Vladimir Vukicevic (vladimir@pobox.com)\n//\n// (C) 2001 Vladimir Vukicevic\n//\n\n//\n// Copyright (C) 2004 Novell, Inc (http://www.novell.com)\n//\n// Permission is hereby granted, free of charge, to any person obtaining\n// a copy of this software and associated documentation files (the\n// \"Software\"), to deal in the Software without restriction, including\n// without limitation the rights to use, copy, modify, merge, publish,\n// distribute, sublicense, and/or sell copies of the Software, and to\n// permit persons to whom the Software is furnished to do so, subject to\n// the following conditions:\n// \n// The above copyright notice and this permission notice shall be\n// included in all copies or substantial portions of the Software.\n// \n// THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\n// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\n// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n//\n\nusing System;\n\nnamespace System.Collections {\n\n\tpublic interface ICollection : IEnumerable {\n\t\tint Count { get; }\n\n\t\tbool IsSynchronized { get; }\n\n\t\tobject SyncRoot { get; }\n\n\t\tvoid CopyTo (Array array, int index);\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2004-Version",
+    "source": "//\n// System.Version.cs\n//\n// Author:\n//   Miguel de Icaza (miguel@ximian.com)\n//\n// (C) Ximian, Inc.  http://www.ximian.com\n//\n\n//\n// Copyright (C) 2004 Novell, Inc (http://www.novell.com)\n//\n// Permission is hereby granted, free of charge, to any person obtaining\n// a copy of this software and associated documentation files (the\n// \"Software\"), to deal in the Software without restriction, including\n// without limitation the rights to use, copy, modify, merge, publish,\n// distribute, sublicense, and/or sell copies of the Software, and to\n// permit persons to whom the Software is furnished to do so, subject to\n// the following conditions:\n// \n// The above copyright notice and this permission notice shall be\n// included in all copies or substantial portions of the Software.\n// \n// THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND,\n// EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF\n// MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND\n// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE\n// LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION\n// OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION\n// WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.\n//\n\nnamespace System\n{\n\t[Serializable]\n\tpublic sealed class Version : ICloneable, IComparable\n\t{\n\n\t\tint _Major, _Minor, _Build, _Revision;\n\n\t\tprivate const int UNDEFINED = -1;\n\n\t\tprivate void CheckedSet (int defined, int major, int minor, int build, int revision)\n\t\t{\n\t\t\t// defined should be 2, 3 or 4\n\n\t\t\tif (major < 0) {\n\t\t\t\tthrow new ArgumentOutOfRangeException (\"major\");\n\t\t\t}\n\t\t\tthis._Major = major;\n\n\t\t\tif (minor < 0) {\n\t\t\t\tthrow new ArgumentOutOfRangeException (\"minor\");\n\t\t\t}\n\t\t\tthis._Minor = minor;\n\n\t\t\tif (defined == 2) {\n\t\t\t\tthis._Build = UNDEFINED;\n\t\t\t\tthis._Revision = UNDEFINED;\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\tif (build < 0) {\n\t\t\t\tthrow new ArgumentOutOfRangeException (\"build\");\n\t\t\t}\n\t\t\tthis._Build = build;\n\n\t\t\tif (defined == 3) {\n\t\t\t\tthis._Revision = UNDEFINED;\n\t\t\t\treturn;\n\t\t\t}\n\n\t\t\tif (revision < 0) {\n\t\t\t\tthrow new ArgumentOutOfRangeException (\"revision\");\n\t\t\t}\n\t\t\tthis._Revision = revision;\n\t\t}\n\n\t\tpublic Version ()\n\t\t{\n\t\t\tCheckedSet (2, 0, 0, -1, -1);\n\t\t}\n\n\t\tpublic Version (string version)\n\t\t{\n\t\t\tint n;\n\t\t\tstring [] vals;\n\t\t\tint major = -1, minor = -1, build = -1, revision = -1;\n\n\t\t\tif (version == null) {\n\t\t\t\tthrow new ArgumentNullException (\"version\");\n\t\t\t}\n\n\t\t\tvals = version.Split (new Char [] {'.'});\n\t\t\tn = vals.Length;\n\n\t\t\tif (n < 2 || n > 4) {\n\t\t\t\tthrow new ArgumentException (Locale.GetText\n\t\t\t\t\t(\"There must be 2, 3 or 4 components in the version string.\"));\n\t\t\t}\n\n\t\t\tif (n > 0)\n\t\t\t\tmajor = int.Parse (vals [0]);\n\t\t\tif (n > 1)\n\t\t\t\tminor = int.Parse (vals [1]);\n\t\t\tif (n > 2)\n\t\t\t\tbuild = int.Parse (vals [2]);\n\t\t\tif (n > 3)\n\t\t\t\trevision = int.Parse (vals [3]);\n\n\t\t\tCheckedSet (n, major, minor, build, revision);\n\t\t}\n\n\t\tpublic Version (int major, int minor)\n\t\t{\n\t\t\tCheckedSet (2, major, minor, 0, 0);\n\t\t}\n\n\t\tpublic Version (int major, int minor, int build)\n\t\t{\n\t\t\tCheckedSet (3, major, minor, build, 0);\n\t\t}\n\n\t\tpublic Version (int major, int minor, int build, int revision)\n\t\t{\n\t\t\tCheckedSet (4, major, minor, build, revision);\n\t\t}\n\n\t\tpublic int Build {\n\t\t\tget {\n\t\t\t\treturn _Build;\n\t\t\t}\n\t\t}\n\n\t\tpublic int Major {\n\t\t\tget {\n\t\t\t\treturn _Major;\n\t\t\t}\n\t\t}\n\n\t\tpublic int Minor {\n\t\t\tget {\n\t\t\t\treturn _Minor;\n\t\t\t}\n\t\t}\n\n\t\tpublic int Revision {\n\t\t\tget {\n\t\t\t\treturn _Revision;\n\t\t\t}\n\t\t}\n\n\t\tpublic object Clone ()\n\t\t{\n\t\t\treturn new Version (_Major, _Minor, _Build, _Revision);\n\t\t}\n\n\t\tpublic int CompareTo (object version)\n\t\t{\n\t\t\tVersion v;\n\n\t\t\tif (version == null)\n\t\t\t\treturn 1;\n\n\t\t\tif (! (version is Version))\n\t\t\t\tthrow new ArgumentException (Locale.GetText (\"Argument to Version.CompareTo must be a Version.\"));\n\n\t\t\tv = version as Version;\n\n\t\t\tif (this._Major > v._Major)\n\t\t\t\treturn 1;\n\t\t\telse if (this._Major < v._Major)\n\t\t\t\treturn -1;\n\n\t\t\tif (this._Minor > v._Minor)\n\t\t\t\treturn 1;\n\t\t\telse if (this._Minor < v._Minor)\n\t\t\t\treturn -1;\n\n\t\t\tif (this._Build > v._Build)\n\t\t\t\treturn 1;\n\t\t\telse if (this._Build < v._Build)\n\t\t\t\treturn -1;\n\n\t\t\tif (this._Revision > v._Revision)\n\t\t\t\treturn 1;\n\t\t\telse if (this._Revision < v._Revision)\n\t\t\t\treturn -1;\n\n\t\t\treturn 0;\n\t\t}\n\n\t\tpublic override bool Equals (object obj)\n\t\t{\n\t\t\tVersion x;\n\t\t\t\n\t\t\tif (obj == null || !(obj is Version))\n\t\t\t\treturn false;\n\n\t\t\tx = (Version) obj;\n\t\t\t\n\t\t\tif ((x._Major == _Major) &&\n\t\t\t    (x._Minor == _Minor) &&\n\t\t\t    (x._Build == _Build) &&\n\t\t\t    (x._Revision == _Revision))\n\t\t\t\treturn true;\n\t\t\treturn false;\n\t\t}\n\n\t\tpublic override int GetHashCode ()\n\t\t{\n\t\t\treturn (_Revision << 24) | (_Build << 16) | (_Minor << 8) | _Major;\n\t\t}\n\n\t\t// <summary>\n\t\t//   Returns a stringified representation of the version, format:\n\t\t//   major.minor[.build[.revision]]\n\t\t// </summary>\n\t\tpublic override string ToString ()\n\t\t{\n\t\t\tstring mm = _Major.ToString () + \".\" + _Minor.ToString ();\n\t\t\t\n\t\t\tif (_Build != UNDEFINED)\n\t\t\t\tmm = mm + \".\" + _Build.ToString ();\n\t\t\tif (_Revision != UNDEFINED)\n\t\t\t\tmm = mm + \".\" + _Revision.ToString ();\n\n\t\t\treturn mm;\n\t\t}\n\n\t\t// <summary>\n\t\t//    LAME: This API is lame, since there is no way of knowing\n\t\t//    how many fields a Version object has, it is unfair to throw\n\t\t//    an ArgumentException, but this is what the spec claims.\n\t\t//\n\t\t//    ie, Version a = new Version (1, 2);  a.ToString (3) should\n\t\t//    throw the expcetion.\n\t\t// </summary>\n\t\tpublic string ToString (int fields)\n\t\t{\n\t\t\tif (fields == 0)\n\t\t\t\treturn \"\";\n\t\t\tif (fields == 1)\n\t\t\t\treturn _Major.ToString ();\n\t\t\tif (fields == 2)\n\t\t\t\treturn _Major.ToString () + \".\" + _Minor.ToString ();\n\t\t\tif (fields == 3){\n\t\t\t\tif (_Build == UNDEFINED)\n\t\t\t\t\tthrow new ArgumentException (Locale.GetText\n\t\t\t\t\t(\"fields is larger than the number of components defined in this instance.\"));\n\t\t\t\treturn _Major.ToString () + \".\" + _Minor.ToString () + \".\" +\n\t\t\t\t\t_Build.ToString ();\n\t\t\t}\n\t\t\tif (fields == 4){\n\t\t\t\tif (_Build == UNDEFINED || _Revision == UNDEFINED)\n\t\t\t\t\tthrow new ArgumentException (Locale.GetText\n\t\t\t\t\t(\"fields is larger than the number of components defined in this instance.\"));\n\t\t\t\treturn _Major.ToString () + \".\" + _Minor.ToString () + \".\" +\n\t\t\t\t\t_Build.ToString () + \".\" + _Revision.ToString ();\n\t\t\t}\n\t\t\tthrow new ArgumentException (Locale.GetText (\"Invalid fields parameter: \") + fields.ToString());\t\n\t\t}\n\n\t\tpublic static bool operator== (Version v1, Version v2) \n\t\t{\n\t\t\treturn Equals (v1, v2);\n\t\t}\n\n\t\tpublic static bool operator!= (Version v1, Version v2)\n\t\t{\n\t\t\treturn !Equals (v1, v2);\n\t\t}\n\n\t\tpublic static bool operator> (Version v1, Version v2)\n\t\t{\n\t\t\treturn v1.CompareTo (v2) > 0;\n\t\t}\n\n\t\tpublic static bool operator>= (Version v1, Version v2)\n\t\t{\n\t\t\treturn v1.CompareTo (v2) >= 0;\n\t\t}\n\n\t\tpublic static bool operator< (Version v1, Version v2)\n\t\t{\n\t\t\treturn v1.CompareTo (v2) < 0;\n\t\t}\n\n\t\tpublic static bool operator<= (Version v1, Version v2)\n\t\t{\n\t\t\treturn v1.CompareTo (v2) <= 0;\n\t\t}\n\n\t\t// a very gentle way to construct a Version object which takes \n\t\t// the first four numbers in a string as the version\n\t\tinternal static Version CreateFromString (string info)\n\t\t{\n\t\t\tint major = 0;\n\t\t\tint minor = 0;\n\t\t\tint build = 0;\n\t\t\tint revision = 0;\n\t\t\tint state = 1;\n\t\t\tint number = UNDEFINED; // string may not begin with a digit\n\n\t\t\tfor (int i=0; i < info.Length; i++) {\n\t\t\t\tchar c = info [i];\n\t\t\t\tif (Char.IsDigit (c)) {\n\t\t\t\t\tif (number < 0) {\n\t\t\t\t\t\tnumber = (c - '0');\n\t\t\t\t\t}\n\t\t\t\t\telse {\n\t\t\t\t\t\tnumber = (number * 10) + (c - '0');\n\t\t\t\t\t}\n\t\t\t\t}\n\t\t\t\telse if (number >= 0) {\n\t\t\t\t\t// assign\n\t\t\t\t\tswitch (state) {\n\t\t\t\t\tcase 1:\n\t\t\t\t\t\tmajor = number;\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 2:\n\t\t\t\t\t\tminor = number;\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 3:\n\t\t\t\t\t\tbuild = number;\n\t\t\t\t\t\tbreak;\n\t\t\t\t\tcase 4:\n\t\t\t\t\t\trevision = number;\n\t\t\t\t\t\tbreak;\n\t\t\t\t\t}\n\t\t\t\t\tnumber = -1;\n\t\t\t\t\tstate ++;\n\t\t\t\t}\n\t\t\t\t// ignore end of string\n\t\t\t\tif (state == 5)\n\t\t\t\t\tbreak;\n\t\t\t}\n\t\t\treturn new Version (major, minor, build, revision);\n\t\t}\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2006-gtest-001",
+    "source": "class Stack < type > {\n\n}\n\nclass Boot {\n\tstatic void Main ()\n\t{\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2006-gtest-002",
+    "source": "class Cell <X> {\n\tX value;\n\n}\n\nclass D {\n\tstatic void Main ()\n\t{\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2006-gtest-003",
+    "source": "class Stack<T> {\n}\n\nclass Test {\n}\n\nclass T {\n\tStack<Test> a;\n\n\tstatic void Main()\n\t{\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-anontype-01",
+    "source": "\n// Tests anonymous types\nusing System;\nusing System.Collections;\n\npublic class Test\n{\n\tstatic int Main ()\n\t{\n\t\tvar v = new { Foo = \"Bar\", Baz = 42 };\n\t\t\n\t\tif (v.Foo != \"Bar\")\n\t\t\treturn 1;\n\t\tif (v.Baz != 42)\n\t\t\treturn 2;\n\t\t\n\t\treturn 0;\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-anontype-02",
+    "source": "\n// Tests anonymous types initialized with local variables\nusing System;\nusing System.Collections;\n\npublic class Test\n{\n\tstatic object TestA (string s)\n\t{\n\t\treturn new { s };\n\t}\n\t\n\tstatic int Main ()\n\t{\n\t\tstring Foo = \"Bar\";\n\t\tint Baz = 42;\n\t\tvar v = new { Foo, Baz };\n\t\t\n\t\tif (v.Foo != \"Bar\")\n\t\t\treturn 1;\n\t\tif (v.Baz != 42)\n\t\t\treturn 2;\n\t\t\t\n\t\tif (!TestA (\"foo\").Equals (new { s = \"foo\" }))\n\t\t\treturn 3;\n\t\t\n\t\tConsole.WriteLine (\"OK\");\n\t\treturn 0;\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-anontype-03",
+    "source": "\n// Tests anonymous types initialized with object members\nusing System;\nusing System.Collections;\n\npublic class MyClass\n{\n\tpublic string Foo = \"Bar\";\n\tpublic int Baz {\n\t\tget { return 42; }\n\t}\n}\n\npublic class Test\n{\n\tstatic int Main ()\n\t{\n\t\tMyClass mc = new MyClass();\n\t\tvar v = new { mc.Foo, mc.Baz };\n\t\t\n\t\tif (v.Foo != \"Bar\")\n\t\t\treturn 1;\n\t\tif (v.Baz != 42)\n\t\t\treturn 2;\n\t\t\t\n\t\treturn 0;\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-autoproperty-01",
+    "source": "\n// Tests automatic properties\nusing System;\n\npublic class Test\n{\n\tprivate class A\n\t{\n\t\tpublic string B { get; set; }\n\t}\n\t\n\tpublic string Foo { get; set; }\n\tpublic int Answer { get; private set; }\n\t\n\tpublic Test ()\n\t{\n\t\tAnswer = 42;\n\t}\n\t\n\tstatic int Main ()\n\t{\n\t\tTest t = new Test ();\n\t\tt.Foo = \"Bar\";\n\t\tif (t.Foo != \"Bar\")\n\t\t\treturn 1;\n\t\t\n\t\tif (t.Answer != 42)\n\t\t\treturn 2;\n\t\t\n\t\tA a = new A ();\n\t\ta.B = \"C\";\n\t\tif (a.B != \"C\")\n\t\t\treturn 3;\n\t\t\n\t\treturn 0;\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-autoproperty-02",
+    "source": "\n// Tests static automatic properties\nusing System;\n\npublic class Test\n{\n\tprivate class A\n\t{\n\t\tpublic static string B { get; set; }\n\t\tpublic static string C { get; private set; }\n\t\tpublic static void DoThings ()\n\t\t{\n\t\t\tC = \"C\";\n\t\t}\n\t}\n\t\n\tpublic static string Foo { get; set; }\n\tpublic static int Answer { get; private set; }\n\t\n\tstatic int Main ()\n\t{\n\t\tFoo = \"Bar\";\n\t\tif (Foo != \"Bar\")\n\t\t\treturn 1;\n\t\t\n\t\tAnswer = 42;\n\t\tif (Answer != 42)\n\t\t\treturn 2;\n\t\t\n\t\tA.B = \"B\";\n\t\tif (A.B != \"B\")\n\t\t\treturn 3;\n\t\t\n\t\tA.DoThings();\n\t\tif (A.C != \"C\")\n\t\t\treturn 4;\n\t\t\n\t\treturn 0;\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-autoproperty-03",
+    "source": "\n// Make sure that the field and accessor methods of an automatic property have the CompilerGenerated attribute\nusing System;\nusing System.Reflection;\nusing System.Runtime.CompilerServices;\n\npublic class Test\n{\n\tpublic string Foo { get; set; }\n\t\n\tstatic int Main ()\n\t{\n\t\tFieldInfo [] fields = typeof (Test).GetFields(BindingFlags.NonPublic | BindingFlags.Instance);\n\t\tif (!(fields.Length > 0))\n\t\t\treturn 1;\n\t\tobject [] field_atts = fields[0].GetCustomAttributes (false);\n\t\tif (!(field_atts.Length > 0))\n\t\t\treturn 2;\n\t\tif (field_atts[0].GetType() != typeof (CompilerGeneratedAttribute))\n\t\t\treturn 3;\n\t\t\t\n\t\tif (fields [0].Name != \"<Foo>k__BackingField\")\n\t\t\treturn 10;\n\t\t\n\t\tPropertyInfo property = typeof (Test).GetProperty (\"Foo\");\n\t\tMethodInfo get = property.GetGetMethod (false);\n\t\tobject [] get_atts = get.GetCustomAttributes (false);\n\t\tif (!(get_atts.Length > 0))\n\t\t\treturn 4;\n\t\tif (get_atts[0].GetType() != typeof (CompilerGeneratedAttribute))\n\t\t\treturn 5;\n\t\t\t\n\t\tMethodInfo set = property.GetSetMethod (false);\n\t\tobject [] set_atts = set.GetCustomAttributes (false);\n\t\tif (!(set_atts.Length > 0))\n\t\t\treturn 6;\n\t\tif (set_atts[0].GetType() != typeof (CompilerGeneratedAttribute))\n\t\t\treturn 7;\n\n\t\treturn 0;\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-collectioninit-01",
+    "source": "\n// Tests collection initialization\n\nusing System;\nusing System.Collections;\nusing System.Collections.Generic;\n\npublic class Test\n{\n\tclass Wrap\n\t{\n\t\tArrayList numbers = new ArrayList ();\n\t\tpublic int Id;\n\t\tpublic Wrap Next;\n\t\t\n\t\tpublic Wrap ()\n\t\t{\n\t\t\tNext = new Wrap (100);\n\t\t}\n\t\t\n\t\tpublic Wrap (int i)\n\t\t{\n\t\t\tNext = this;\n\t\t}\n\t\t\n\t\tpublic ArrayList Numbers { \n\t\t\tget { \n\t\t\t\treturn numbers;\n\t\t\t}\n\t\t}\n\t}\n\t\n\tstatic void TestList (List<int> list, int expectedCount)\n\t{\n\t\tif (list.Count != expectedCount)\n\t\t\tthrow new ApplicationException (expectedCount.ToString ());\n\t\t\n\t\tforeach (int i in list)\n\t\t\tConsole.WriteLine (i);\n\t}\n\t\n\tstatic int Main ()\n\t{\n\t\tArrayList collection = new ArrayList { \"Foo\", null, 1 };\n\t\tif (collection.Count != 3)\n\t\t\treturn 1;\n\t\t\t\n\t\tif ((string)collection [0] != \"Foo\")\n\t\t\treturn 2;\n\t\t\t\n\t\tif ((int)collection [2] != 1)\n\t\t\treturn 3;\n\t\t\t\t\t\n\t\tList<string> generic_collection = new List<string> { \"Hello\", \"World\" };\n\t\tforeach (string s in generic_collection)\n\t\t\tif (s.Length != 5)\n\t\t\t\treturn 4;\n\t\t\n\t\tList<Wrap> a = null;\n\t\ta = new List<Wrap> () {\t\t\n\t\t\tnew Wrap (0) {\n\t\t\t\tId = 0,\n\t\t\t\tNumbers = { 5, 10 },\n\t\t\t\tNext = { Id = 55 }\n\t\t\t},\n\t\t\tnew Wrap {\n\t\t\t\tId = 1,\n\t\t\t\tNumbers = { collection, }\n\t\t\t},\n\t\t\tnew Wrap {\n\t\t\t\tId = 2,\n\t\t\t\tNumbers = { },\n\t\t\t},\n\t\t\tnull\n\t\t};\n\t\t\n\t\tif (a.Count != 4)\n\t\t\treturn 5;\n\t\t\n\t\tif ((int)a [0].Numbers [1] != 10)\n\t\t\treturn 6;\n\t\t\n\t\tnew List<int> { 1, 2, 3, 4 };\n\t\tTestList (new List<int> { 1, 2, 3, 4 }, 4);\n\t\t\n\t\tnew List<int> { };\n\t\t\n\t\tConsole.WriteLine (\"OK\");\n\t\treturn 0;\n\t}\n}\n\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-collectioninit-02",
+    "source": "\n\nusing System.Collections.Generic;\n\npublic class C\n{\n\tpublic static int Main ()\n\t{\n\t\tvar o = new Dictionary<string, int>() { { \"Foo\", 3 } };\n\t\tif (o [\"Foo\"] != 3)\n\t\t\treturn 1;\n\t\t\n\t\to = new Dictionary<string, int>() { { \"A\", 1 }, { \"B\", 2 } };\n\n\t\treturn 0;\n\t}\n}\n\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-collectioninit-03",
+    "source": "using System.Collections;\n\nclass X\n{\n\tstatic int Main ()\n\t{\n\t\tobject x = null;\n\t\tR (ref x);\n\t\treturn ((Hashtable)x).Count == 1 ? 0 : 1;\n\t}\n\n\tstatic void R (ref object o)\n\t{\n\t\to = new Hashtable () { { 1, 2 } };\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-exmethod-01",
+    "source": "\n\nusing System;\n\nstatic class SimpleTest\n{\n\tpublic static string Prefix (this string s, string prefix)\n\t{\n\t\treturn prefix + s;\n\t}\n}\n\npublic class M\n{\n\tpublic static int Main ()\n\t{\n\t\tSimpleTest.Prefix (\"foo\", \"1\");\n\t\tstring s = \"foo\".Prefix (\"1\");\n\t\t\n\t\tType ex_attr = typeof (System.Runtime.CompilerServices.ExtensionAttribute);\n\t\tif (!typeof (SimpleTest).IsDefined (ex_attr, false))\n\t\t\treturn 1;\n\t\t\n\t\tif (!typeof (SimpleTest).Assembly.IsDefined (ex_attr, false))\n\t\t\treturn 2;\n\n\t\tif (!typeof (SimpleTest).GetMethod (\"Prefix\").IsDefined (ex_attr, false))\n\t\t\treturn 3;\n\n\t\tif (s != \"1foo\")\n\t\t\treturn 9;\n\t\t\n\t\tConsole.WriteLine (s);\n\t\treturn 0;\n\t}\n}"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-exmethod-02",
+    "source": "// Compiler options: -r:gtest-exmethod-02-lib.dll\n\nusing System;\n\npublic class M\n{\n\tpublic static void Main ()\n\t{\n\t\t\"foo\".Test_1 ();\n\t}\n}\n\nnamespace N\n{\n\tpublic class M\n\t{\n\t\tpublic static void Test2 ()\n\t\t{\n\t\t\t\"foo\".Test_1 ();\n\t\t}\n\t}\n}"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-exmethod-03",
+    "source": "\n\nusing System;\n\nnamespace A\n{\n\tpublic static class A\n\t{\n\t\tpublic static int Foo (this int i)\n\t\t{\n\t\t\treturn 1;\n\t\t}\n\t\t\n\t\tpublic static int Foo (this int i, string s)\n\t\t{\n\t\t\treturn 30;\n\t\t}\n\t}\n}\n\nnamespace B\n{\n\tpublic static class X\n\t{\n\t\tpublic static int Foo (this int i)\n\t\t{\n\t\t\treturn 2;\n\t\t}\n\t\t\n\t\tpublic static int Foo (this int i, bool b)\n\t\t{\n\t\t\treturn 20;\n\t\t}\n\t}\n}\n\nnamespace C\n{\n\tusing A;\n\tusing B;\n\tusing D;\n\t\n\tpublic static class F\n\t{\n\t\tpublic static bool Foo (this byte i)\n\t\t{\n\t\t\treturn false;\n\t\t}\n\t}\n\t\n\tnamespace D\n\t{\n\t\tpublic static class F\n\t\t{\n\t\t\tpublic static int Foo (this int i)\n\t\t\t{\n\t\t\t\treturn 66;\n\t\t\t}\n\t\t\t\n\t\t\tpublic static void TestX ()\n\t\t\t{\n\t\t\t\tint i = 2.Foo (false);\n\t\t\t}\n\t\t}\n\t}\n\t\n\tpublic static class M\n\t{\n\t\tpublic static int Foo (this int i)\n\t\t{\n\t\t\treturn 4;\n\t\t}\n\n\t\tpublic static int Main ()\n\t\t{\n\t\t\tif (3.Foo (\"a\") != 30)\n\t\t\t\treturn 1;\n\t\t\t\n\t\t\tif (((byte)0).Foo ())\n\t\t\t\treturn 2;\n\t\t\t\n\t\t\tif (4.Foo (false) != 20)\n\t\t\t\treturn 3;\n\t\t\t\n\t\t\tConsole.WriteLine (\"OK\");\n\t\t\treturn 0;\n\t\t}\n\t}\n}"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-implicitarray-01",
+    "source": "\n// Tests implicitly typed arrays\n\npublic class Test\n{\n\tstatic int Main ()\n\t{\n\t\tstring[] array = new [] { \"Foo\", \"Bar\", \"Baz\" };\n\t\tforeach (string s in array)\n\t\t\tif (s.Length != 3)\n\t\t\t\treturn 1;\n\n\t\tstring[] s1 = new[] { null, \"a\", default (string) };\n\t\tdouble[] s2 = new[] { 0, 1.0, 2 };\n\t\t\t\n\t\tvar a1 = new[] { null, \"a\", default (string) };\n\t\tvar a2 = new[] { 0, 1.0, 2 }; \n\t\tvar a3 = new[] { new Test (), null }; \n\t\tvar a4 = new[,] { { 1, 2, 3 }, { 4, 5, 6 } };\n\t\tvar a5 = new[] { default (object) };\n\t\tvar a6 = new[] { new [] { 1, 2, 3 }, new [] { 4, 5, 6 } };\n\t\t\n\t\tconst byte b = 100;\n\t\tvar a7 = new[] { b, 10, b, 999, b };\n\t\t\n\t\treturn 0;\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-implicitarray-02",
+    "source": "class MyString\n{\n\tpublic static implicit operator string (MyString s)\n\t{\n\t\treturn \"ggtt\";\n\t}\n}\n\npublic class Test\n{\n\tstatic int Main ()\n\t{\n\t\tvar v = new [] { new MyString (), \"a\" };\n\t\tif (v [0] != \"ggtt\")\n\t\t\treturn 1;\n\t\treturn 0;\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-initialize-01",
+    "source": "\n// Tests object initialization\nusing System;\nusing System.Collections;\n\npublic class MyClass\n{\n\tpublic string Foo = \"Bar\";\n\tprivate int answer;\n\tpublic int Answer {\n\t\tget { return answer; }\n\t\tset { answer = value; }\n\t}\n}\n\npublic class Test\n{\n\tstatic int Main ()\n\t{\n\t\tMyClass mc = new MyClass() { Foo = \"Baz\", Answer = 42 };\n\t\tif (mc.Foo != \"Baz\")\n\t\t\treturn 1;\n\t\tif (mc.Answer != 42)\n\t\t\treturn 2;\n\t\t\n\t\treturn 0;\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-initialize-02",
+    "source": "\n// Uber-test for object and collection initialization\nusing System;\nusing System.Collections.Generic;\n\npublic class Test\n{\n\tprivate class Point\n\t{\n\t\tpublic int X;\n\t\tpublic int Y;\n\t}\n\tprivate class Line\n\t{\n\t\tpublic Point P1 = new Point ();\n\t\tpublic Point P2 = new Point ();\n\t}\n\tprivate class Rectangle\n\t{\n\t\tpublic Line Top = new Line ();\n\t\tpublic Line Right = new Line ();\n\t\tpublic Line Left = new Line ();\n\t\tpublic Line Bottom = new Line ();\n\t}\n\tprivate class Library\n\t{\n\t\tpublic string Name;\n\t\tpublic string PhoneNumber;\n\t\tpublic List<string>  Books;\n\t\tpublic Library ()\n\t\t{\n\t\t\tBooks = new List<string> { \"Tale of Two Cities\", \"Catcher in the Rye\", \"Great Gatsby\" };\n\t\t}\n\t}\n\tprivate class Thing\n\t{\n\t\tpublic int Number;\n\t\tpublic string Name;\n\t}\n\tprivate class Box\n\t{\n\t\tpublic Thing Thing1;\n\t\tpublic Thing Thing2;\n\t}\n\tstatic int Main ()\n\t{\n\t\tThing thing1 = new Thing() { Number = 1, Name = \"Bob\" };\n\t\t\n\t\tLine line = new Line { P1 = { X = 1, Y = 5 }, P2 = { X = 3, Y = 6 } };\n\t\tif (line.P1.X != 1 || line.P1.Y != 5 || line.P2.X != 3 || line.P2.Y != 6)\n\t\t\treturn 1;\n\n\t\tRectangle rectangle = new Rectangle () {\n\t\t\tTop = {\n\t\t\t\tP1 = { X = 0, Y = 5 },\n\t\t\t\tP2 = { X = 5, Y = 5 } },\n\t\t\tBottom = {\n\t\t\t\tP1 = { X = 0, Y = 0, },\n\t\t\t\tP2 = { X = 5, Y = 0, }, },\n\t\t\tRight = {\n\t\t\t\tP1 = { X = 5, Y = 5 },\n\t\t\t\tP2 = { X = 5, Y = 0 } },\n\t\t\tLeft = {\n\t\t\t\tP1 = { X = 0, Y = 0, },\n\t\t\t\tP2 = { X = 0, Y = 5 } } };\n\t\tif (rectangle.Top.P1.X != 0 || rectangle.Bottom.P2.X != 5 || rectangle.Right.P2.Y != 0 || rectangle.Left.P1.Y != 0)\n\t\t\treturn 2;\n\n\t\tList<string> list = new List<string> (3) { \"Foo\", \"Bar\", \"Baz\" };\n\t\tif (list[0] != \"Foo\" || list[1] != \"Bar\" || list[2] != \"Baz\")\n\t\t\treturn 3;\n\n\t\tLibrary library = new Library {\n\t\t\tName = \"New York Public Library\",\n\t\t\tBooks = { \"Grapes of Wrath\", \"Dracula\", },\n\t\t\tPhoneNumber = \"212-621-0626\" };\n\t\tif (library.Name != \"New York Public Library\" || library.PhoneNumber != \"212-621-0626\" ||\n\t\t\tlibrary.Books[0] != \"Tale of Two Cities\" ||\n\t\t\tlibrary.Books[1] != \"Catcher in the Rye\" ||\n\t\t\tlibrary.Books[2] != \"Great Gatsby\" ||\n\t\t\tlibrary.Books[3] != \"Grapes of Wrath\" ||\n\t\t\tlibrary.Books[4] != \"Dracula\")\n\t\t\treturn 4;\n\n\t\tBox box = new Box {\n\t\t\tThing1 = new Thing { Number = 1, Name = \"Wilber\" },\n\t\t\tThing2 = new Thing() { Number = 2, Name = \"Chris\" } };\n\t\tif (box.Thing1.Number != 1 || box.Thing1.Name != \"Wilber\" || box.Thing2.Number != 2 || box.Thing2.Name != \"Chris\")\n\t\t\treturn 5;\n\t\t\n\t\tLibrary library2 = new Library { Books = new List<string> { \"The Hound of Baskerville\", \"Flatland\", \"The Origin of Species\" } };\n\t\tif (library2.Books[0] != \"The Hound of Baskerville\" ||\n\t\t\tlibrary2.Books[1] != \"Flatland\" ||\n\t\t\tlibrary2.Books[2] != \"The Origin of Species\")\n\t\t\treturn 6;\n\n\t\treturn 0;\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-initialize-03",
+    "source": "\n\nusing System;\nusing System.Collections;\n\nclass Data\n{\n\tpublic int Value;\n}\n\npublic class Test\n{\n\tstatic Data Prop {\n\t\tset {\n\t\t}\n\t}\n\t\n\tpublic object Foo ()\n\t{\n\t\treturn new Data () { Value = 3 };\n\t}\n\t\n\tstatic void Main ()\n\t{\n\t\tProp = new Data () { Value = 3 };\n\t\tData data = new Data () { Value = 6 };\n\t\tData a, b;\n\t\ta = b = new Data () { Value = 3 };\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-linq-01",
+    "source": "\n\nusing System;\nusing System.Collections.Generic;\nusing System.Linq;\n\nnamespace from\n{\n\tinterface ITest\n\t{\n\t\tint Id { get; }\n\t}\n\n\tclass C\n\t{\n\t\t// This is pure grammar test\n\t\tpublic static void Main ()\n\t\t{\n\t\t\tint[] i2 = new int [] { 0, 1 };\n\t\t\tint[] i_b = new int [] { 0, 1 };\n\t\t\tITest[] join_test = new ITest[0];\n\t\t\t\n\t\t\tIEnumerable<int> e;\n\t\t\tIEnumerable<IGrouping<int,int>> g;\n\n\t\t\t// FROM\n\t\t\te = from i in i2 select i;\n\t\t\te = from int i in i2 select i;\n\t\t\tvar e2 = from bool? i in i2 select i;\n\t\t\te = from i in new int[0] select i;\n\t\t\te = from x in i2 from y in i2 select y;\n\n\t\t\t// WHERE\n\t\t\te = from i in i2 where i % 3 != 0 select i;\n\n\t\t\t// ORDER BY\n\t\t\te = from i in i2 orderby i select i;\n\t\t\te = from i in i2 orderby i, i, i, i select i;\n\t\t\te = from i in i2 orderby i descending select i;\n\t\t\te = from i in i2 orderby i ascending select i;\n\t\t\t\n\t\t\t// JOIN\n\t\t\te = from i in i2 join j in join_test on i equals j.Id select i;\n\t\t\te = from i in i2 join ITest j in join_test on i equals j.Id select i;\n\t\t\te = from i in i2 join j in join_test on i equals j.Id\n\t\t\t\tjoin j2 in join_test on i equals j2.Id select i;\n\t\t\te = from i in i2 join j in i_b on i equals j into j select i;\n\t\t\te = from i in i2 join int j in i_b on i equals j into j select i;\n\n\t\t\t// GROUP BY\n\t\t\tg = from i in i2 group i by 2;\n\t\t\tg = from i in i2 group i by 2 into i select i;\n\n\t\t\t// LET\n\t\t\te = from i in i2 let l = i + 4 select i;\n\t\t\te = from i in i2 let l = i + 4 let l2 = l + 2 select i;\n\t\t\t\n\t\t\t// INTO\n\t\t\tg = from i in i2 group i by 2 into i9\n\t\t\t\tfrom i in i2 group i by 2 into i9\n\t\t\t\tfrom i in i2 group i by 2 into i9\n\t\t\t\tfrom i in i2 group i by 2 into i9\n\t\t\t\tselect i9;\n\t\t\t\t\n\t\t\t// NESTED\n\t\t\tvar e3 = from a in\n\t\t\t\t\tfrom b in i2\n\t\t\t\t\tselect b\n\t\t\t\torderby a\n\t\t\t\tselect a;\n\n\t\t\tint from = 0;\n\t\t\tbool let = false;\n\t\t\t\n\t\t\t// TODO: Re-enable when we fix cast of query expression\n\t\t\t//object o = (object)from i in i2 select i;\n\t\t}\n\t\t\n\t\tvoid Foo (int from, bool where)\n\t\t{\n\t\t\tint Foo = 0;\n\t\t\tif (from < Foo) // This tests generics micro-parser awareness\n\t\t\t\treturn;\n\t\t}\n\t\t\n\t\tint foo;\n\t\tvoid Do (string[] args)\n\t\t{\n\t\t\tint from = this.foo;\n\t\t\tConsole.WriteLine (args [from]);\n\t\t}\t\t\n\t}\n\t\n\tclass D\n\t{\n\t\tpublic bool check (object from, object to)\n\t\t{\n\t\t\tif (from is int && to is int) return true;\n\t\t\t\treturn false;\n\t\t}\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-linq-02",
+    "source": "\n\nusing System;\nusing System.Collections.Generic;\nusing System.Linq;\n\nclass Test\n{\n\tpublic static int Main ()\n\t{\n\t\tint[] int_array = new int [] { 0, 1 };\n\t\t\n\t\tIEnumerable<int> e;\n\t\tint pos;\n\n\t\t// Explicitly typed\n\t\te = from int i in int_array select i;\n\t\tpos = 0;\n\t\tforeach (int actual in e) {\n\t\t\tConsole.WriteLine (actual);\n\t\t\tif (int_array [pos++] != actual)\n\t\t\t\treturn pos;\n\t\t}\n\t\t\n\t\te = from int i in int_array select 19;\n\t\tpos = 0;\n\t\tforeach (int actual in e) {\n\t\t\tConsole.WriteLine (actual);\n\t\t\tif (actual != 19)\n\t\t\t\treturn actual;\n\t\t}\n\n\t\t// Implicitly typed\n\t\te = from i in int_array select i;\n\t\tpos = 0;\n\t\tforeach (int actual in e) {\n\t\t\tConsole.WriteLine (actual);\n\t\t\tif (int_array [pos++] != actual)\n\t\t\t\treturn pos;\n\t\t}\n\t\t\n\t\te = from i in int_array select 19;\n\t\tpos = 0;\n\t\tforeach (int actual in e) {\n\t\t\tConsole.WriteLine (actual);\n\t\t\tif (actual != 19)\n\t\t\t\treturn actual;\n\t\t}\n\t\t\n\t\tConsole.WriteLine (\"OK\");\n\t\treturn 0;\n\t}\n}\n"
+  },
+  {
+    "name": "corpus-Mono2008-gtest-linq-03",
+    "source": "\n\nusing System;\nusing System.Collections.Generic;\nusing System.Linq;\n\nclass WhereTest\n{\n\tpublic static int Main ()\n\t{\n\t\tint[] int_array = new int [] { 0, 1 };\n\t\t\n\t\tIEnumerable<int> e;\n\t\t\n\t\te = from int i in int_array where i > 0 select i;\n\t\t\n\t\tif (e.ToList ()[0] != 1)\n\t\t\treturn 1;\n\n\t\te = from int i in int_array where i == 0 select i + 1;\n\t\t\n\t\tif (e.ToList ()[0] != 1)\n\t\t\treturn 2;\n\t\t\n\t\tConsole.WriteLine (\"OK\");\n\t\treturn 0;\n\t}\n}\n"
+  }
+]

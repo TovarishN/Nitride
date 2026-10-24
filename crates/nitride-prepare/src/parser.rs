@@ -70,7 +70,7 @@ pub fn parse(source: &Source, index: usize) -> Result<Vec<Module>, PrepareError>
         &crate::grammar_seed::LANGUAGE,
         &source.text,
         Limits {
-            depth: 512,
+            parser_frames: 512,
             ..Limits::default()
         },
         nitride_core::ParseOptions {

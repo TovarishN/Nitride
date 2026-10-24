@@ -47,8 +47,9 @@ fn depth_limit_returns_diagnostic() {
             &LANGUAGE,
             &input,
             Limits {
-                depth: 32,
-                work: 100_000
+                parser_frames: 32,
+                work: 100_000,
+                ..Limits::default()
             }
         )
         .unwrap_err()

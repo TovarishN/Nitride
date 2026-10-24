@@ -1,6 +1,9 @@
 pub mod functions {
     include!(concat!(env!("OUT_DIR"), "/functions.rs"));
 }
+pub mod csharp4 {
+    include!(concat!(env!("OUT_DIR"), "/csharp4.rs"));
+}
 pub mod rewrites {
     include!(concat!(env!("OUT_DIR"), "/rewrites.rs"));
 }
@@ -50,14 +53,31 @@ pub fn syntax_observe(language: &'static Language, source: &str) -> Value {
     while let Some((id, parent)) = stack.pop() {
         let node = tree.nodes[id as usize];
         let rule = &language.rules[node.rule as usize];
-        // Aliases and transparent alternatives have no node of their own in Nitrogen.
-        let next_parent = if !alias(&rule.expr) && !rule.transparent {
+        // Nitrogen (EmitModel.IsAlias): a plain syntax rule of literals and
+        // references, or a choice of them, has no node; neither does a
+        // transparent alternative. Alternatives and tokens keep theirs.
+        fn literals_and_references(expr: &Expr) -> bool {
+            match expr {
+                Expr::Ref(_) | Expr::Literal(_) => true,
+                Expr::Choice(items) => items
+                    .iter()
+                    .all(|i| matches!(i, Expr::Ref(_) | Expr::Literal(_))),
+                _ => false,
+            }
+        }
+        let plain_alias =
+            rule.owner.is_none() && !rule.lexical && literals_and_references(&rule.expr);
+        let next_parent = if !alias(&rule.expr) && !plain_alias && !rule.transparent {
             let index = nodes.len();
             nodes.push(json!({"rule":rule.name,"span":node.span,"parent":parent}));
             Some(index)
         } else {
             parent
         };
+        // Tokens are leaves in Nitrogen: rules matched inside a token have no nodes.
+        if rule.lexical {
+            continue;
+        }
         stack.extend(
             tree.children(id)
                 .iter()

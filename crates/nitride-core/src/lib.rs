@@ -71,8 +71,12 @@ pub fn iso_date_day_number(text: &str) -> Option<i64> {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Limits {
+    /// Semantic nesting: HIR depth and rewrite expansion depth.
     pub depth: u32,
     pub work: u64,
+    /// Parser recursion frames. Generated wrappers consume frames too, so a
+    /// layered grammar such as C# needs several frames per nesting level.
+    pub parser_frames: u32,
 }
 
 impl Default for Limits {
@@ -80,6 +84,7 @@ impl Default for Limits {
         Self {
             depth: 128,
             work: 10_000_000,
+            parser_frames: 512,
         }
     }
 }

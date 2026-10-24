@@ -210,7 +210,7 @@ impl Parser<'_> {
     }
     fn tick(&mut self, depth: u32) -> Result<(), Diagnostic> {
         self.work += 1;
-        if depth > self.limits.depth || self.work > self.limits.work {
+        if depth > self.limits.parser_frames || self.work > self.limits.work {
             return Err(Diagnostic::new(
                 "limit",
                 [self.position as u32; 2],

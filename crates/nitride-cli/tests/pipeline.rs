@@ -124,6 +124,7 @@ fn work_limits_prevent_execution_effects() {
         Limits {
             depth: 128,
             work: 1,
+            ..Limits::default()
         },
     )
     .unwrap_err();
