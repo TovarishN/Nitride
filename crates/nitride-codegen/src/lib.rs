@@ -10,6 +10,8 @@ fn array(v: &Value) -> Result<&Vec<Value>, String> {
 fn strings(v: &Value) -> Result<Vec<&str>, String> {
     array(v)?.iter().map(text).collect()
 }
+const TEXT: &str = "Core.Text";
+
 fn quoted(s: &str) -> String {
     format!("{s:?}")
 }
@@ -83,18 +85,22 @@ pub fn generate(input: &str) -> Result<String, String> {
         signatures.push(format!(
             "nitride_core::Signature {{id:{}, inputs:{}, result:{}}}",
             quoted(id),
-            list(inputs.into_iter().map(quoted)),
+            list(inputs.iter().copied().map(quoted)),
             quoted(result)
         ));
         let handler = text(&op["handler"])?;
         let arity = match handler {
             "zero" => 0,
-            "identity" | "neg" => 1,
+            "identity" | "neg" | "iso-date" => 1,
             "add" | "sub" | "mul" | "div" | "pow" => 2,
             _ => return Err("unknown fixture host handler".into()),
         };
         if array(&op["inputs"])?.len() != arity {
             return Err("fixture host handler arity mismatch".into());
+        }
+        // Text is only an operation input fed directly by source spelling.
+        if result == TEXT || (handler == "iso-date") != inputs.contains(&TEXT) {
+            return Err("text operations require a text host handler".into());
         }
         handlers.push(quoted(handler));
     }
@@ -113,6 +119,9 @@ pub fn generate(input: &str) -> Result<String, String> {
             for name in ids {
                 let id = lookup(&op_ids, name)?;
                 let signature = strings(&operations[id as usize]["inputs"])?;
+                if signature.contains(&TEXT) {
+                    return Err("overloads cannot take text arguments".into());
+                }
                 if !inputs.insert(signature) {
                     return Err("ambiguous overload input signature".into());
                 }
@@ -185,6 +194,41 @@ pub fn generate(input: &str) -> Result<String, String> {
             }
         }
     }
+    let mut values = Vec::new();
+    if let Some(mapping) = data["catalog"].get("values") {
+        for (kind, names) in mapping
+            .as_object()
+            .ok_or("value catalog must be an object")?
+        {
+            if inventory
+                .as_ref()
+                .is_none_or(|k| !k.contains(&kind.as_str()))
+            {
+                return Err("unknown builtin value namespace".into());
+            }
+            for (name, ty) in names.as_object().ok_or("value names must be an object")? {
+                let ty = text(ty)?;
+                if !builtin_declarations.contains(&(kind.as_str(), name.as_str())) {
+                    return Err("undeclared builtin value mapping".into());
+                }
+                if !type_set.contains(ty) || ty == TEXT {
+                    return Err("unknown builtin value type".into());
+                }
+                if !mapped_builtins.insert((kind.as_str(), name.as_str())) {
+                    return Err("builtin is both callable and a value".into());
+                }
+                values.push((
+                    kind.as_str(),
+                    format!(
+                        "nitride_core::BuiltinValue {{kind:{},name:{},ty:{}}}",
+                        quoted(kind),
+                        quoted(name),
+                        quoted(ty)
+                    ),
+                ));
+            }
+        }
+    }
     if !syntax_only && mapped_builtins != builtin_declarations {
         return Err("missing builtin mapping".into());
     }
@@ -206,13 +250,60 @@ pub fn generate(input: &str) -> Result<String, String> {
                     "call mapping requires one reference clause and unique arguments".into(),
                 );
             }
-            if !strings(&clauses[0]["symbol_kinds"])?
+            let kinds = strings(&clauses[0]["symbol_kinds"])?;
+            if !kinds
                 .iter()
                 .any(|kind| builtins.iter().any(|(k, _)| k == kind))
             {
                 return Err("call has no builtin namespace".into());
             }
+            if kinds
+                .iter()
+                .any(|kind| values.iter().any(|(k, _)| k == kind))
+            {
+                return Err("calls cannot reach builtin values".into());
+            }
         }
+    }
+    let checks = data["catalog"]
+        .get("checks")
+        .map(|v| v.as_object().ok_or("checks must be an object"))
+        .transpose()?;
+    let mut check_tables = Vec::new();
+    for (name, list) in checks.into_iter().flatten() {
+        let id = lookup(&ids, name)?;
+        let rule = &rules[id as usize];
+        let mut labels = HashSet::new();
+        collect_labels(&rule["expr"], &mut labels);
+        if rule["lexical"] != false {
+            return Err("checks require syntax rules".into());
+        }
+        for check in array(list)? {
+            let (code, field, message) = (
+                text(&check["code"])?,
+                text(&check["field"])?,
+                text(&check["message"])?,
+            );
+            if code.is_empty() || !code.bytes().all(|b| b.is_ascii_alphanumeric()) {
+                return Err("invalid check code".into());
+            }
+            if message.is_empty() || !labels.contains(field) {
+                return Err("check requires a rule field and message".into());
+            }
+            let predicate = match text(&check["predicate"])? {
+                "iso-date" => "IsoDate",
+                _ => return Err("unknown check predicate".into()),
+            };
+            check_tables.push(format!(
+                "nitride_core::Check {{rule:{id},field:{},predicate:nitride_core::Predicate::{predicate},code:{},message:{}}}",
+                quoted(field),
+                quoted(code),
+                quoted(message)
+            ));
+        }
+    }
+    if syntax_only && (!values.is_empty() || !check_tables.is_empty()) {
+        return Err("syntax-only value or check semantics".into());
     }
     if syntax_only && (!builtins.is_empty() || calls.is_some_and(|m| !m.is_empty())) {
         return Err("syntax-only call semantics".into());
@@ -225,9 +316,99 @@ pub fn generate(input: &str) -> Result<String, String> {
     if template_mode
         && (!builtin_declarations.is_empty()
             || calls.is_some_and(|m| !m.is_empty())
-            || !groups.is_empty())
+            || !groups.is_empty()
+            || !check_tables.is_empty()
+            || operations.iter().any(|op| op["handler"] == "iso-date"))
     {
         return Err("template profile cannot mix builtin calls or overload policies".into());
+    }
+    // Quote helpers. Templates are parsed by the generated language at compile
+    // time; here categories, names and arities are validated.
+    let syntax_category = |name: &str| -> Result<u16, String> {
+        let id = lookup(&ids, name)?;
+        if rules[id as usize]["lexical"] != false {
+            return Err("helper categories must be syntax rules".into());
+        }
+        Ok(id)
+    };
+    let hole = |p: &Value| -> Result<(String, u16), String> {
+        Ok((
+            text(&p["name"])?.to_owned(),
+            syntax_category(text(&p["category"])?)?,
+        ))
+    };
+    let emit_holes = |holes: &[(String, u16)]| {
+        list(holes.iter().map(|(name, category)| {
+            format!(
+                "nitride_core::Hole {{name:{},category:{category}}}",
+                quoted(name)
+            )
+        }))
+    };
+    let mut helper_ids = HashMap::new();
+    let mut helper_signatures = Vec::new();
+    let mut helper_tables = Vec::new();
+    for helper in data
+        .get("helpers")
+        .map(array)
+        .transpose()?
+        .into_iter()
+        .flatten()
+    {
+        let name = text(&helper["name"])?;
+        let parameters = array(&helper["parameters"])?
+            .iter()
+            .map(hole)
+            .collect::<Result<Vec<_>, _>>()?;
+        let result = syntax_category(text(&helper["result"])?)?;
+        let mut names: HashSet<_> = HashSet::new();
+        if parameters.iter().any(|(n, _)| !names.insert(n.clone())) {
+            return Err("duplicate helper parameter".into());
+        }
+        let (selector, arms) = if helper["match"].is_null() {
+            ("None".to_owned(), Vec::new())
+        } else {
+            let selector = text(&helper["match"]["selector"])?;
+            let index = parameters
+                .iter()
+                .position(|(n, _)| n == selector)
+                .ok_or("match selector must be a parameter")?;
+            let mut arms = Vec::new();
+            for arm in array(&helper["match"]["arms"])? {
+                let captures = array(&arm["captures"])?
+                    .iter()
+                    .map(hole)
+                    .collect::<Result<Vec<_>, _>>()?;
+                let mut taken = names.clone();
+                if captures.iter().any(|(n, _)| !taken.insert(n.clone())) {
+                    return Err("duplicate match capture".into());
+                }
+                arms.push(format!(
+                    "nitride_core::Arm {{captures:{},pattern:{},result:{}}}",
+                    emit_holes(&captures),
+                    quoted(text(&arm["pattern"])?),
+                    quoted(text(&arm["result"])?)
+                ));
+            }
+            (format!("Some({index})"), arms)
+        };
+        if helper_ids
+            .insert(name.to_owned(), helper_tables.len() as u16)
+            .is_some()
+        {
+            return Err("duplicate helper".into());
+        }
+        helper_signatures.push((parameters.clone(), result));
+        helper_tables.push(format!(
+            "nitride_core::Helper {{name:{},parameters:{},result:{result},body:{},selector:{selector},arms:{}}}",
+            quoted(name),
+            emit_holes(&parameters),
+            quoted(text(&helper["body"])?),
+            list(arms)
+        ));
+    }
+    if (syntax_only || template_mode) && !helper_tables.is_empty() {
+        return Err("quote helpers require an ordinary typed profile".into());
     }
     let mut legacy_kind = None;
     for rule in rules {
@@ -288,7 +469,7 @@ pub fn generate(input: &str) -> Result<String, String> {
             action = match text(&clause["kind"])? {
                 "LowersLiteral" => {
                     let ty = text(&clause["target"])?;
-                    if !type_set.contains(ty) {
+                    if !type_set.contains(ty) || ty == TEXT {
                         return Err("unknown literal type".into());
                     }
                     format!(
@@ -300,6 +481,11 @@ pub fn generate(input: &str) -> Result<String, String> {
                 "References" => {
                     let kinds = strings(&clause["symbol_kinds"])?;
                     let admitted: Vec<_> = builtins
+                        .iter()
+                        .filter(|(kind, _)| kinds.contains(kind))
+                        .map(|(_, code)| code.clone())
+                        .collect();
+                    let visible_values: Vec<_> = values
                         .iter()
                         .filter(|(kind, _)| kinds.contains(kind))
                         .map(|(_, code)| code.clone())
@@ -322,9 +508,10 @@ pub fn generate(input: &str) -> Result<String, String> {
                             return Err("builtin references require a call mapping".into());
                         }
                         format!(
-                            "Action::Reference {{field:{},kinds:{}}}",
+                            "Action::Reference {{field:{},kinds:{},values:{}}}",
                             field(text(&clause["field"])?)?,
-                            list(kinds.into_iter().map(quoted))
+                            list(kinds.into_iter().map(quoted)),
+                            list(visible_values)
                         )
                     }
                 }
@@ -335,7 +522,25 @@ pub fn generate(input: &str) -> Result<String, String> {
                         .iter()
                         .map(|arg| field(arg))
                         .collect::<Result<Vec<_>, _>>()?;
+                    let mut texts = vec![false; args.len()];
+                    if let Some(positions) = clause.get("text_args") {
+                        for position in array(positions)? {
+                            let index = position
+                                .as_u64()
+                                .filter(|i| (*i as usize) < args.len())
+                                .ok_or("invalid text argument position")?;
+                            if std::mem::replace(&mut texts[index as usize], true) {
+                                return Err("duplicate text argument position".into());
+                            }
+                        }
+                        if !texts.contains(&true) {
+                            return Err("empty text argument positions".into());
+                        }
+                    }
                     if let Some(candidates) = groups.get(target) {
+                        if texts.contains(&true) {
+                            return Err("overloads cannot take text arguments".into());
+                        }
                         if !candidates.iter().any(|id| {
                             operations[*id as usize]["inputs"]
                                 .as_array()
@@ -350,11 +555,95 @@ pub fn generate(input: &str) -> Result<String, String> {
                         )
                     } else {
                         let id = lookup(&op_ids, target)?;
-                        if args.len() != array(&operations[id as usize]["inputs"])?.len() {
+                        let inputs = strings(&operations[id as usize]["inputs"])?;
+                        if args.len() != inputs.len() {
                             return Err("operation arity mismatch".into());
                         }
-                        format!("Action::Operation {{id:{id},fields:{}}}", list(fields))
+                        if inputs
+                            .iter()
+                            .zip(&texts)
+                            .any(|(ty, text)| (*ty == TEXT) != *text)
+                        {
+                            return Err("text arguments must match Core.Text inputs".into());
+                        }
+                        format!(
+                            "Action::Operation {{id:{id},fields:{},texts:{}}}",
+                            list(fields),
+                            if texts.contains(&true) {
+                                list(texts.iter().map(bool::to_string))
+                            } else {
+                                "&[]".into()
+                            }
+                        )
                     }
+                }
+                "Rewrites" => {
+                    if syntax_only || template_mode {
+                        return Err("rewrites require an ordinary typed profile".into());
+                    }
+                    let owner = rule["owner"]
+                        .as_str()
+                        .ok_or("rewrites require an extensible alternative")?;
+                    let owner = lookup(&ids, owner)?;
+                    // A labeled field's category: its direct reference to a syntax rule.
+                    let category_of = |label: &str| -> Option<u16> {
+                        fn find<'a>(e: &'a Value, label: &str) -> Option<&'a Value> {
+                            if e["kind"] == "label" && e["label"] == label {
+                                return Some(&e["inner"]);
+                            }
+                            e["items"]
+                                .as_array()
+                                .into_iter()
+                                .flatten()
+                                .chain(e.get("inner"))
+                                .find_map(|c| find(c, label))
+                        }
+                        let inner = find(&rule["expr"], label)?;
+                        let id = *ids.get(text(&inner["name"]).ok()?)?;
+                        (inner["kind"] == "ref" && rules[id as usize]["lexical"] == false)
+                            .then_some(id)
+                    };
+                    let (helper, fields) = if clause["target"].is_null() {
+                        let mut labels: Vec<_> = labels.iter().copied().collect();
+                        labels.sort_unstable();
+                        let holes: Vec<_> = labels
+                            .into_iter()
+                            .filter_map(|l| category_of(l).map(|c| (l.to_owned(), c)))
+                            .collect();
+                        let fields = holes.iter().map(|(l, _)| quoted(l)).collect::<Vec<_>>();
+                        helper_signatures.push((holes.clone(), owner));
+                        helper_tables.push(format!(
+                            "nitride_core::Helper {{name:{},parameters:{},result:{owner},body:{},selector:None,arms:&[]}}",
+                            quoted(name),
+                            emit_holes(&holes),
+                            quoted(text(&clause["template"])?)
+                        ));
+                        (helper_tables.len() as u16 - 1, fields)
+                    } else {
+                        let helper = *helper_ids
+                            .get(text(&clause["target"])?)
+                            .ok_or("unknown rewrite helper")?;
+                        let (parameters, result) = &helper_signatures[helper as usize];
+                        let args = strings(&clause["args"])?;
+                        if *result != owner
+                            || args.len() != parameters.len()
+                            || args
+                                .iter()
+                                .zip(parameters)
+                                .any(|(a, (_, c))| category_of(a) != Some(*c))
+                        {
+                            return Err("rewrite helper categories must match exactly".into());
+                        }
+                        (
+                            helper,
+                            args.into_iter().map(field).collect::<Result<_, _>>()?,
+                        )
+                    };
+                    format!(
+                        "Action::Rewrite {{helper:{helper},fields:{},name:{}}}",
+                        list(fields),
+                        quoted(name.rsplit('.').next().unwrap())
+                    )
                 }
                 "Declares" => {
                     if template_mode {
@@ -470,11 +759,13 @@ pub fn generate(input: &str) -> Result<String, String> {
         }
     }
     Ok(format!(
-        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},source_hash:{},profile:Profile::{}}};\n",
+        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},helpers:{},source_hash:{},profile:Profile::{}}};\n",
         list(output_rules),
         list(types.into_iter().map(quoted)),
         list(signatures),
         list(handlers),
+        list(check_tables),
+        list(helper_tables),
         quoted(text(&data["source_hash"])?),
         if syntax_only { "SyntaxOnly" } else { "Typed" }
     ))

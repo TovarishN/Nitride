@@ -1,0 +1,188 @@
+[
+  {
+    "name": "fortnights",
+    "source": "3 fortnights;",
+    "values": [
+      42
+    ]
+  },
+  {
+    "name": "fortnights_after_date",
+    "source": "2026-10-05 + 2 fortnights;",
+    "values": [
+      739921
+    ]
+  },
+  {
+    "name": "fortnights_parenthesized",
+    "source": "(1 + 2) fortnights;",
+    "values": [
+      42
+    ]
+  },
+  {
+    "name": "swapped_reference",
+    "source": "let count = 3; count + 2 swapped;",
+    "values": [
+      5
+    ]
+  },
+  {
+    "name": "swapped_durations",
+    "source": "2 days + 3 days swapped;",
+    "values": [
+      5
+    ]
+  },
+  {
+    "name": "swapped_fallback",
+    "source": "let count = 3; count swapped;",
+    "values": [
+      3
+    ]
+  },
+  {
+    "name": "swapped_parentheses_fall_back",
+    "source": "let count = 3; (count + 2) swapped;",
+    "values": [
+      5
+    ]
+  },
+  {
+    "name": "swapped_left_associative",
+    "source": "1 + 2 + 3 swapped;",
+    "values": [
+      6
+    ]
+  },
+  {
+    "name": "swapped_matches_before_expansion",
+    "source": "3 fortnights swapped;",
+    "values": [
+      42
+    ]
+  },
+  {
+    "name": "swapped_caller_type_error",
+    "source": "2 days + 3 swapped;",
+    "error": "type"
+  },
+  {
+    "name": "swapped_result_type_error",
+    "source": "2026-10-05 + 1 days swapped;",
+    "error": "type"
+  },
+  {
+    "name": "soon_builtin",
+    "source": "~1;",
+    "values": [
+      739913
+    ]
+  },
+  {
+    "name": "soon_template_ignores_locals",
+    "source": "let today = 2026-01-01; ~1; today;",
+    "values": [
+      739913,
+      739616
+    ]
+  },
+  {
+    "name": "soon_hole_expression",
+    "source": "~(2 * 3);",
+    "values": [
+      739918
+    ]
+  },
+  {
+    "name": "soon_hole_type_error",
+    "source": "~2026-10-05;",
+    "error": "type"
+  },
+  {
+    "name": "twice_repeats_effects",
+    "source": "twice(2 days);",
+    "values": [
+      4
+    ]
+  },
+  {
+    "name": "twice_expansion_type_error",
+    "source": "twice(2026-10-05);",
+    "error": "type"
+  },
+  {
+    "name": "twice_expansion_before_inner_check",
+    "source": "twice(2026-02-30);",
+    "error": "type"
+  },
+  {
+    "name": "caller_check_first",
+    "source": "2026-02-30 + twice(1);",
+    "error": "check"
+  },
+  {
+    "name": "unresolved_inside_hole",
+    "source": "twice(missing);",
+    "error": "binding"
+  },
+  {
+    "name": "pad_trims_template",
+    "source": "pad(5);",
+    "values": [
+      5
+    ]
+  },
+  {
+    "name": "nested_rewrite_in_hole",
+    "source": "twice(3 fortnights);",
+    "values": [
+      84
+    ]
+  },
+  {
+    "name": "swapped_inside_twice",
+    "source": "twice(1 + 2 swapped);",
+    "values": [
+      6
+    ]
+  },
+  {
+    "name": "rewrite_initializer_reused",
+    "source": "let s = 1 + 2 swapped; s + s;",
+    "values": [
+      6
+    ]
+  },
+  {
+    "name": "fortnights_wrong_type",
+    "source": "2026-10-05 fortnights;",
+    "error": "type"
+  },
+  {
+    "name": "keyword_as_identifier",
+    "source": "fortnights;",
+    "error": "binding"
+  },
+  {
+    "name": "wrapped_hole_result",
+    "source": "wrap(1 + 2);",
+    "values": [
+      3
+    ]
+  },
+  {
+    "name": "wrapped_hole_repeated",
+    "source": "twice(wrap(2 days)) in days;",
+    "values": [
+      4
+    ]
+  },
+  {
+    "name": "wrapped_hole_swapped_falls_back",
+    "source": "wrap(1 + 2) swapped;",
+    "values": [
+      3
+    ]
+  }
+]

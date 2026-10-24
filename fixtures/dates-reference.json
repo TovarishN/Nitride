@@ -1,0 +1,2056 @@
+[
+  {
+    "name": "sample",
+    "source": "let start = 2026-10-05;\nlet sprint = 2 * 7 days;\nstart + sprint;\n(2026-12-25 - start) in days;\nlet pi = pi * 2;\npi;\n(today - start) in days;\n",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Let",
+          "span": [
+            0,
+            23
+          ]
+        },
+        {
+          "kind": "Dates.Day",
+          "span": [
+            12,
+            22
+          ]
+        },
+        {
+          "kind": "Dates.Let",
+          "span": [
+            24,
+            48
+          ]
+        },
+        {
+          "kind": "Dates.Mul",
+          "span": [
+            37,
+            47
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            37,
+            38
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            41,
+            47
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            41,
+            42
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            49,
+            64
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            49,
+            63
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            49,
+            54
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            57,
+            63
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            65,
+            94
+          ]
+        },
+        {
+          "kind": "Dates.InDays",
+          "span": [
+            65,
+            93
+          ]
+        },
+        {
+          "kind": "Dates.Paren",
+          "span": [
+            65,
+            85
+          ]
+        },
+        {
+          "kind": "Dates.Sub",
+          "span": [
+            66,
+            84
+          ]
+        },
+        {
+          "kind": "Dates.Day",
+          "span": [
+            66,
+            76
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            79,
+            84
+          ]
+        },
+        {
+          "kind": "Dates.Let",
+          "span": [
+            95,
+            111
+          ]
+        },
+        {
+          "kind": "Dates.Mul",
+          "span": [
+            104,
+            110
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            104,
+            106
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            109,
+            110
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            112,
+            115
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            112,
+            114
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            116,
+            140
+          ]
+        },
+        {
+          "kind": "Dates.InDays",
+          "span": [
+            116,
+            139
+          ]
+        },
+        {
+          "kind": "Dates.Paren",
+          "span": [
+            116,
+            131
+          ]
+        },
+        {
+          "kind": "Dates.Sub",
+          "span": [
+            117,
+            130
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            117,
+            122
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            125,
+            130
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            49,
+            54
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            57,
+            63
+          ],
+          "symbol": 28,
+          "kind": "value"
+        },
+        {
+          "span": [
+            79,
+            84
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            104,
+            106
+          ],
+          "builtin": "pi",
+          "kind": "value"
+        },
+        {
+          "span": [
+            112,
+            114
+          ],
+          "symbol": 99,
+          "kind": "value"
+        },
+        {
+          "span": [
+            117,
+            122
+          ],
+          "builtin": "today",
+          "kind": "value"
+        },
+        {
+          "span": [
+            125,
+            130
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Date",
+          "span": [
+            12,
+            22
+          ],
+          "operation": "Dates.ParseDate",
+          "args": [
+            {
+              "kind": "text",
+              "type": "Core.Text",
+              "span": [
+                12,
+                22
+              ],
+              "text": "2026-10-05"
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Dates.Duration",
+          "span": [
+            37,
+            47
+          ],
+          "operation": "Dates.Scale",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                37,
+                38
+              ],
+              "number": 2
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "span": [
+                41,
+                47
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    41,
+                    42
+                  ],
+                  "number": 7
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Dates.Date",
+          "span": [
+            49,
+            63
+          ],
+          "operation": "Dates.Later",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Dates.Date",
+              "span": [
+                49,
+                54
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "reference",
+              "type": "Dates.Duration",
+              "span": [
+                57,
+                63
+              ],
+              "symbol": 28
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            65,
+            93
+          ],
+          "operation": "Dates.InDays",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "span": [
+                66,
+                84
+              ],
+              "operation": "Dates.Between",
+              "args": [
+                {
+                  "kind": "operation",
+                  "type": "Dates.Date",
+                  "span": [
+                    66,
+                    76
+                  ],
+                  "operation": "Dates.ParseDate",
+                  "args": [
+                    {
+                      "kind": "text",
+                      "type": "Core.Text",
+                      "span": [
+                        66,
+                        76
+                      ],
+                      "text": "2026-12-25"
+                    }
+                  ]
+                },
+                {
+                  "kind": "reference",
+                  "type": "Dates.Date",
+                  "span": [
+                    79,
+                    84
+                  ],
+                  "symbol": 4
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            104,
+            110
+          ],
+          "operation": "Dates.MulScalar",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                104,
+                106
+              ],
+              "builtin": "pi"
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                109,
+                110
+              ],
+              "number": 2
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            112,
+            114
+          ],
+          "symbol": 99
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            116,
+            139
+          ],
+          "operation": "Dates.InDays",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "span": [
+                117,
+                130
+              ],
+              "operation": "Dates.Between",
+              "args": [
+                {
+                  "kind": "reference",
+                  "type": "Dates.Date",
+                  "span": [
+                    117,
+                    122
+                  ],
+                  "builtin": "today"
+                },
+                {
+                  "kind": "reference",
+                  "type": "Dates.Date",
+                  "span": [
+                    125,
+                    130
+                  ],
+                  "symbol": 4
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        739907,
+        81,
+        6.283185307179586,
+        19
+      ],
+      "trace": [
+        "Dates.ParseDate",
+        "Dates.Days",
+        "Dates.Scale",
+        "Dates.Later",
+        "Dates.ParseDate",
+        "Dates.Between",
+        "Dates.InDays",
+        "Dates.MulScalar",
+        "Dates.Between",
+        "Dates.InDays"
+      ]
+    }
+  },
+  {
+    "name": "date_literal",
+    "source": "2026-10-05;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            11
+          ]
+        },
+        {
+          "kind": "Dates.Day",
+          "span": [
+            0,
+            10
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Date",
+          "span": [
+            0,
+            10
+          ],
+          "operation": "Dates.ParseDate",
+          "args": [
+            {
+              "kind": "text",
+              "type": "Core.Text",
+              "span": [
+                0,
+                10
+              ],
+              "text": "2026-10-05"
+            }
+          ]
+        }
+      ],
+      "values": [
+        739893
+      ],
+      "trace": [
+        "Dates.ParseDate"
+      ]
+    }
+  },
+  {
+    "name": "leap_day",
+    "source": "2024-02-29;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            11
+          ]
+        },
+        {
+          "kind": "Dates.Day",
+          "span": [
+            0,
+            10
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Date",
+          "span": [
+            0,
+            10
+          ],
+          "operation": "Dates.ParseDate",
+          "args": [
+            {
+              "kind": "text",
+              "type": "Core.Text",
+              "span": [
+                0,
+                10
+              ],
+              "text": "2024-02-29"
+            }
+          ]
+        }
+      ],
+      "values": [
+        738944
+      ],
+      "trace": [
+        "Dates.ParseDate"
+      ]
+    }
+  },
+  {
+    "name": "invalid_day_check",
+    "source": "2026-02-30;",
+    "observation": {
+      "ok": false,
+      "error": "check",
+      "span": [
+        0,
+        10
+      ],
+      "code": "DATE0001",
+      "message": "not a calendar date",
+      "trace": []
+    }
+  },
+  {
+    "name": "non_leap_check",
+    "source": "2023-02-29;",
+    "observation": {
+      "ok": false,
+      "error": "check",
+      "span": [
+        0,
+        10
+      ],
+      "code": "DATE0001",
+      "message": "not a calendar date",
+      "trace": []
+    }
+  },
+  {
+    "name": "century_non_leap_check",
+    "source": "1900-02-29;",
+    "observation": {
+      "ok": false,
+      "error": "check",
+      "span": [
+        0,
+        10
+      ],
+      "code": "DATE0001",
+      "message": "not a calendar date",
+      "trace": []
+    }
+  },
+  {
+    "name": "month_check",
+    "source": "2026-13-01;",
+    "observation": {
+      "ok": false,
+      "error": "check",
+      "span": [
+        0,
+        10
+      ],
+      "code": "DATE0001",
+      "message": "not a calendar date",
+      "trace": []
+    }
+  },
+  {
+    "name": "year_zero_check",
+    "source": "0000-01-01;",
+    "observation": {
+      "ok": false,
+      "error": "check",
+      "span": [
+        0,
+        10
+      ],
+      "code": "DATE0001",
+      "message": "not a calendar date",
+      "trace": []
+    }
+  },
+  {
+    "name": "check_before_later_type_error",
+    "source": "2026-02-30; 1 + 2026-10-05;",
+    "observation": {
+      "ok": false,
+      "error": "check",
+      "span": [
+        0,
+        10
+      ],
+      "code": "DATE0001",
+      "message": "not a calendar date",
+      "trace": []
+    }
+  },
+  {
+    "name": "type_error_before_later_check",
+    "source": "1 + 2026-10-05; 2026-02-30;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        14
+      ],
+      "message": "no exact overload",
+      "trace": []
+    }
+  },
+  {
+    "name": "inner_check_wins_tie",
+    "source": "2026-02-30 + 1;",
+    "observation": {
+      "ok": false,
+      "error": "check",
+      "span": [
+        0,
+        10
+      ],
+      "code": "DATE0001",
+      "message": "not a calendar date",
+      "trace": []
+    }
+  },
+  {
+    "name": "invalid_date_has_no_effects",
+    "source": "let a = 2026-10-05; a + 1 days; 2026-04-31;",
+    "observation": {
+      "ok": false,
+      "error": "check",
+      "span": [
+        32,
+        42
+      ],
+      "code": "DATE0001",
+      "message": "not a calendar date",
+      "trace": []
+    }
+  },
+  {
+    "name": "builtin_pi",
+    "source": "pi * 2;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            7
+          ]
+        },
+        {
+          "kind": "Dates.Mul",
+          "span": [
+            0,
+            6
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            0,
+            2
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            5,
+            6
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            2
+          ],
+          "builtin": "pi",
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            6
+          ],
+          "operation": "Dates.MulScalar",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "span": [
+                0,
+                2
+              ],
+              "builtin": "pi"
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "span": [
+                5,
+                6
+              ],
+              "number": 2
+            }
+          ]
+        }
+      ],
+      "values": [
+        6.283185307179586
+      ],
+      "trace": [
+        "Dates.MulScalar"
+      ]
+    }
+  },
+  {
+    "name": "builtin_today",
+    "source": "today;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            6
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            0,
+            5
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            5
+          ],
+          "builtin": "today",
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "reference",
+          "type": "Dates.Date",
+          "span": [
+            0,
+            5
+          ],
+          "builtin": "today"
+        }
+      ],
+      "values": [
+        739912
+      ],
+      "trace": []
+    }
+  },
+  {
+    "name": "builtin_in_parentheses",
+    "source": "(today - 2026-10-05) in days;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            29
+          ]
+        },
+        {
+          "kind": "Dates.InDays",
+          "span": [
+            0,
+            28
+          ]
+        },
+        {
+          "kind": "Dates.Paren",
+          "span": [
+            0,
+            20
+          ]
+        },
+        {
+          "kind": "Dates.Sub",
+          "span": [
+            1,
+            19
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            1,
+            6
+          ]
+        },
+        {
+          "kind": "Dates.Day",
+          "span": [
+            9,
+            19
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            1,
+            6
+          ],
+          "builtin": "today",
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            28
+          ],
+          "operation": "Dates.InDays",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "span": [
+                1,
+                19
+              ],
+              "operation": "Dates.Between",
+              "args": [
+                {
+                  "kind": "reference",
+                  "type": "Dates.Date",
+                  "span": [
+                    1,
+                    6
+                  ],
+                  "builtin": "today"
+                },
+                {
+                  "kind": "operation",
+                  "type": "Dates.Date",
+                  "span": [
+                    9,
+                    19
+                  ],
+                  "operation": "Dates.ParseDate",
+                  "args": [
+                    {
+                      "kind": "text",
+                      "type": "Core.Text",
+                      "span": [
+                        9,
+                        19
+                      ],
+                      "text": "2026-10-05"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        19
+      ],
+      "trace": [
+        "Dates.ParseDate",
+        "Dates.Between",
+        "Dates.InDays"
+      ]
+    }
+  },
+  {
+    "name": "local_shadows_builtin",
+    "source": "let pi = 3; pi;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Let",
+          "span": [
+            0,
+            11
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            9,
+            10
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            12,
+            15
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            12,
+            14
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            12,
+            14
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "span": [
+            9,
+            10
+          ],
+          "number": 3
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "span": [
+            12,
+            14
+          ],
+          "symbol": 4
+        }
+      ],
+      "values": [
+        3
+      ],
+      "trace": []
+    }
+  },
+  {
+    "name": "initializer_sees_builtin",
+    "source": "let today = today + 2 days; today; today - 2026-10-24;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Let",
+          "span": [
+            0,
+            27
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            12,
+            26
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            12,
+            17
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            20,
+            26
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            20,
+            21
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            28,
+            34
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            28,
+            33
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            35,
+            54
+          ]
+        },
+        {
+          "kind": "Dates.Sub",
+          "span": [
+            35,
+            53
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            35,
+            40
+          ]
+        },
+        {
+          "kind": "Dates.Day",
+          "span": [
+            43,
+            53
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            12,
+            17
+          ],
+          "builtin": "today",
+          "kind": "value"
+        },
+        {
+          "span": [
+            28,
+            33
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            35,
+            40
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Date",
+          "span": [
+            12,
+            26
+          ],
+          "operation": "Dates.Later",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Dates.Date",
+              "span": [
+                12,
+                17
+              ],
+              "builtin": "today"
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "span": [
+                20,
+                26
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    20,
+                    21
+                  ],
+                  "number": 2
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Dates.Date",
+          "span": [
+            28,
+            33
+          ],
+          "symbol": 4
+        },
+        {
+          "kind": "operation",
+          "type": "Dates.Duration",
+          "span": [
+            35,
+            53
+          ],
+          "operation": "Dates.Between",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Dates.Date",
+              "span": [
+                35,
+                40
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Date",
+              "span": [
+                43,
+                53
+              ],
+              "operation": "Dates.ParseDate",
+              "args": [
+                {
+                  "kind": "text",
+                  "type": "Core.Text",
+                  "span": [
+                    43,
+                    53
+                  ],
+                  "text": "2026-10-24"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        739914,
+        2
+      ],
+      "trace": [
+        "Dates.Days",
+        "Dates.Later",
+        "Dates.ParseDate",
+        "Dates.Between"
+      ]
+    }
+  },
+  {
+    "name": "builtin_used_twice",
+    "source": "today - today;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            14
+          ]
+        },
+        {
+          "kind": "Dates.Sub",
+          "span": [
+            0,
+            13
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            0,
+            5
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            8,
+            13
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            0,
+            5
+          ],
+          "builtin": "today",
+          "kind": "value"
+        },
+        {
+          "span": [
+            8,
+            13
+          ],
+          "builtin": "today",
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Duration",
+          "span": [
+            0,
+            13
+          ],
+          "operation": "Dates.Between",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Dates.Date",
+              "span": [
+                0,
+                5
+              ],
+              "builtin": "today"
+            },
+            {
+              "kind": "reference",
+              "type": "Dates.Date",
+              "span": [
+                8,
+                13
+              ],
+              "builtin": "today"
+            }
+          ]
+        }
+      ],
+      "values": [
+        0
+      ],
+      "trace": [
+        "Dates.Between"
+      ]
+    }
+  },
+  {
+    "name": "unresolved",
+    "source": "missing;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        0,
+        7
+      ],
+      "message": "unresolved value 'missing'",
+      "trace": []
+    }
+  },
+  {
+    "name": "unresolved_before_type",
+    "source": "1 + 2026-10-05; missing;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        16,
+        23
+      ],
+      "message": "unresolved value 'missing'",
+      "trace": []
+    }
+  },
+  {
+    "name": "date_plus_date",
+    "source": "2026-10-05 + 2026-10-06;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        23
+      ],
+      "message": "no exact overload",
+      "trace": []
+    }
+  },
+  {
+    "name": "between",
+    "source": "2026-12-25 - 2026-10-05;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            24
+          ]
+        },
+        {
+          "kind": "Dates.Sub",
+          "span": [
+            0,
+            23
+          ]
+        },
+        {
+          "kind": "Dates.Day",
+          "span": [
+            0,
+            10
+          ]
+        },
+        {
+          "kind": "Dates.Day",
+          "span": [
+            13,
+            23
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Duration",
+          "span": [
+            0,
+            23
+          ],
+          "operation": "Dates.Between",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Date",
+              "span": [
+                0,
+                10
+              ],
+              "operation": "Dates.ParseDate",
+              "args": [
+                {
+                  "kind": "text",
+                  "type": "Core.Text",
+                  "span": [
+                    0,
+                    10
+                  ],
+                  "text": "2026-12-25"
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Date",
+              "span": [
+                13,
+                23
+              ],
+              "operation": "Dates.ParseDate",
+              "args": [
+                {
+                  "kind": "text",
+                  "type": "Core.Text",
+                  "span": [
+                    13,
+                    23
+                  ],
+                  "text": "2026-10-05"
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        81
+      ],
+      "trace": [
+        "Dates.ParseDate",
+        "Dates.ParseDate",
+        "Dates.Between"
+      ]
+    }
+  },
+  {
+    "name": "durations",
+    "source": "2 days + 3 days; (5 days - 2 days) in days;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            16
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            0,
+            15
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            0,
+            6
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            0,
+            1
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            9,
+            15
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            9,
+            10
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            17,
+            43
+          ]
+        },
+        {
+          "kind": "Dates.InDays",
+          "span": [
+            17,
+            42
+          ]
+        },
+        {
+          "kind": "Dates.Paren",
+          "span": [
+            17,
+            34
+          ]
+        },
+        {
+          "kind": "Dates.Sub",
+          "span": [
+            18,
+            33
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            18,
+            24
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            18,
+            19
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            27,
+            33
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            27,
+            28
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Duration",
+          "span": [
+            0,
+            15
+          ],
+          "operation": "Dates.AddDurations",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "span": [
+                0,
+                6
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    0,
+                    1
+                  ],
+                  "number": 2
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "span": [
+                9,
+                15
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    9,
+                    10
+                  ],
+                  "number": 3
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            17,
+            42
+          ],
+          "operation": "Dates.InDays",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "span": [
+                18,
+                33
+              ],
+              "operation": "Dates.SubDurations",
+              "args": [
+                {
+                  "kind": "operation",
+                  "type": "Dates.Duration",
+                  "span": [
+                    18,
+                    24
+                  ],
+                  "operation": "Dates.Days",
+                  "args": [
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "span": [
+                        18,
+                        19
+                      ],
+                      "number": 5
+                    }
+                  ]
+                },
+                {
+                  "kind": "operation",
+                  "type": "Dates.Duration",
+                  "span": [
+                    27,
+                    33
+                  ],
+                  "operation": "Dates.Days",
+                  "args": [
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "span": [
+                        27,
+                        28
+                      ],
+                      "number": 2
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        5,
+        3
+      ],
+      "trace": [
+        "Dates.Days",
+        "Dates.Days",
+        "Dates.AddDurations",
+        "Dates.Days",
+        "Dates.Days",
+        "Dates.SubDurations",
+        "Dates.InDays"
+      ]
+    }
+  },
+  {
+    "name": "earlier",
+    "source": "2026-03-01 - 1 days;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            20
+          ]
+        },
+        {
+          "kind": "Dates.Sub",
+          "span": [
+            0,
+            19
+          ]
+        },
+        {
+          "kind": "Dates.Day",
+          "span": [
+            0,
+            10
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            13,
+            19
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            13,
+            14
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Date",
+          "span": [
+            0,
+            19
+          ],
+          "operation": "Dates.Earlier",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Date",
+              "span": [
+                0,
+                10
+              ],
+              "operation": "Dates.ParseDate",
+              "args": [
+                {
+                  "kind": "text",
+                  "type": "Core.Text",
+                  "span": [
+                    0,
+                    10
+                  ],
+                  "text": "2026-03-01"
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "span": [
+                13,
+                19
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    13,
+                    14
+                  ],
+                  "number": 1
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        739674
+      ],
+      "trace": [
+        "Dates.ParseDate",
+        "Dates.Days",
+        "Dates.Earlier"
+      ]
+    }
+  },
+  {
+    "name": "scale_precedence",
+    "source": "3 * 2 days in days;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            19
+          ]
+        },
+        {
+          "kind": "Dates.InDays",
+          "span": [
+            0,
+            18
+          ]
+        },
+        {
+          "kind": "Dates.Mul",
+          "span": [
+            0,
+            10
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            0,
+            1
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            4,
+            10
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            4,
+            5
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "span": [
+            0,
+            18
+          ],
+          "operation": "Dates.InDays",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "span": [
+                0,
+                10
+              ],
+              "operation": "Dates.Scale",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "span": [
+                    0,
+                    1
+                  ],
+                  "number": 3
+                },
+                {
+                  "kind": "operation",
+                  "type": "Dates.Duration",
+                  "span": [
+                    4,
+                    10
+                  ],
+                  "operation": "Dates.Days",
+                  "args": [
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "span": [
+                        4,
+                        5
+                      ],
+                      "number": 2
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        6
+      ],
+      "trace": [
+        "Dates.Days",
+        "Dates.Scale",
+        "Dates.InDays"
+      ]
+    }
+  },
+  {
+    "name": "scalar_in_days",
+    "source": "let x = 1; x in days;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        11,
+        12
+      ],
+      "message": "'Dates.InDays' needs Dates.Duration, not Core.Scalar",
+      "trace": []
+    }
+  },
+  {
+    "name": "builtin_wrong_type",
+    "source": "today in days;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        5
+      ],
+      "message": "'Dates.InDays' needs Dates.Duration, not Dates.Date",
+      "trace": []
+    }
+  },
+  {
+    "name": "keyword_prefix_identifier",
+    "source": "daysx;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        0,
+        5
+      ],
+      "message": "unresolved value 'daysx'",
+      "trace": []
+    }
+  },
+  {
+    "name": "empty",
+    "source": "",
+    "observation": {
+      "ok": true,
+      "syntax": [],
+      "bindings": [],
+      "hir": [],
+      "values": [],
+      "trace": []
+    }
+  },
+  {
+    "name": "syntax_error",
+    "source": "2026-10-05 +;",
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        12,
+        12
+      ],
+      "message": "invalid source",
+      "trace": []
+    }
+  },
+  {
+    "name": "non_ascii",
+    "source": "é;",
+    "observation": {
+      "ok": false,
+      "error": "syntax",
+      "span": [
+        0,
+        0
+      ],
+      "message": "invalid source",
+      "trace": []
+    }
+  }
+]

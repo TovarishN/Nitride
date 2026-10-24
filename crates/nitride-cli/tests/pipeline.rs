@@ -101,6 +101,8 @@ fn mismatched_language_snapshot_is_rejected() {
         types: LANGUAGE.types,
         operations: LANGUAGE.operations,
         handlers: LANGUAGE.handlers,
+        checks: LANGUAGE.checks,
+        helpers: LANGUAGE.helpers,
         source_hash: LANGUAGE.source_hash,
     }));
     assert!(compile(other, &tree, Limits::default()).is_err());

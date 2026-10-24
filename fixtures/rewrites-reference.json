@@ -1,0 +1,3005 @@
+[
+  {
+    "name": "fortnights",
+    "source": "3 fortnights;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            13
+          ]
+        },
+        {
+          "kind": "Rewrites.Fortnights",
+          "span": [
+            0,
+            12
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            0,
+            1
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Duration",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                12
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                16
+              ]
+            }
+          ],
+          "operation": "Dates.Scale",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    0,
+                    1
+                  ]
+                }
+              ],
+              "number": 3
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    9,
+                    16
+                  ]
+                }
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "nitrogen:rewrite",
+                      "span": [
+                        9,
+                        11
+                      ]
+                    }
+                  ],
+                  "number": 14
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        42
+      ],
+      "trace": [
+        "Dates.Days",
+        "Dates.Scale"
+      ]
+    }
+  },
+  {
+    "name": "fortnights_after_date",
+    "source": "2026-10-05 + 2 fortnights;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            26
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            0,
+            25
+          ]
+        },
+        {
+          "kind": "Dates.Day",
+          "span": [
+            0,
+            10
+          ]
+        },
+        {
+          "kind": "Rewrites.Fortnights",
+          "span": [
+            13,
+            25
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            13,
+            14
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Date",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                25
+              ]
+            }
+          ],
+          "operation": "Dates.Later",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Date",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    0,
+                    10
+                  ]
+                }
+              ],
+              "operation": "Dates.ParseDate",
+              "args": [
+                {
+                  "kind": "text",
+                  "type": "Core.Text",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        0,
+                        10
+                      ]
+                    }
+                  ],
+                  "text": "2026-10-05"
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    13,
+                    25
+                  ]
+                },
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    0,
+                    16
+                  ]
+                }
+              ],
+              "operation": "Dates.Scale",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        13,
+                        14
+                      ]
+                    }
+                  ],
+                  "number": 2
+                },
+                {
+                  "kind": "operation",
+                  "type": "Dates.Duration",
+                  "origins": [
+                    {
+                      "path": "nitrogen:rewrite",
+                      "span": [
+                        9,
+                        16
+                      ]
+                    }
+                  ],
+                  "operation": "Dates.Days",
+                  "args": [
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "origins": [
+                        {
+                          "path": "nitrogen:rewrite",
+                          "span": [
+                            9,
+                            11
+                          ]
+                        }
+                      ],
+                      "number": 14
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        739921
+      ],
+      "trace": [
+        "Dates.ParseDate",
+        "Dates.Days",
+        "Dates.Scale",
+        "Dates.Later"
+      ]
+    }
+  },
+  {
+    "name": "fortnights_parenthesized",
+    "source": "(1 + 2) fortnights;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            19
+          ]
+        },
+        {
+          "kind": "Rewrites.Fortnights",
+          "span": [
+            0,
+            18
+          ]
+        },
+        {
+          "kind": "Dates.Paren",
+          "span": [
+            0,
+            7
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            1,
+            6
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            1,
+            2
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            5,
+            6
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Duration",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                18
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                16
+              ]
+            }
+          ],
+          "operation": "Dates.Scale",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    1,
+                    6
+                  ]
+                }
+              ],
+              "operation": "Dates.AddScalar",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        1,
+                        2
+                      ]
+                    }
+                  ],
+                  "number": 1
+                },
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        5,
+                        6
+                      ]
+                    }
+                  ],
+                  "number": 2
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    9,
+                    16
+                  ]
+                }
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "nitrogen:rewrite",
+                      "span": [
+                        9,
+                        11
+                      ]
+                    }
+                  ],
+                  "number": 14
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        42
+      ],
+      "trace": [
+        "Dates.AddScalar",
+        "Dates.Days",
+        "Dates.Scale"
+      ]
+    }
+  },
+  {
+    "name": "swapped_reference",
+    "source": "let count = 3; count + 2 swapped;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Let",
+          "span": [
+            0,
+            14
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            12,
+            13
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            15,
+            33
+          ]
+        },
+        {
+          "kind": "Rewrites.Swapped",
+          "span": [
+            15,
+            32
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            15,
+            24
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            15,
+            20
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            23,
+            24
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            15,
+            20
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                12,
+                13
+              ]
+            }
+          ],
+          "number": 3
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                15,
+                32
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                14
+              ]
+            }
+          ],
+          "operation": "Dates.AddScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    23,
+                    24
+                  ]
+                }
+              ],
+              "number": 2
+            },
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    15,
+                    20
+                  ]
+                }
+              ],
+              "symbol": 4
+            }
+          ]
+        }
+      ],
+      "values": [
+        5
+      ],
+      "trace": [
+        "Dates.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "swapped_durations",
+    "source": "2 days + 3 days swapped;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            24
+          ]
+        },
+        {
+          "kind": "Rewrites.Swapped",
+          "span": [
+            0,
+            23
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            0,
+            15
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            0,
+            6
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            0,
+            1
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            9,
+            15
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            9,
+            10
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Duration",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                23
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                14
+              ]
+            }
+          ],
+          "operation": "Dates.AddDurations",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    9,
+                    15
+                  ]
+                }
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        9,
+                        10
+                      ]
+                    }
+                  ],
+                  "number": 3
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    0,
+                    6
+                  ]
+                }
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        0,
+                        1
+                      ]
+                    }
+                  ],
+                  "number": 2
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        5
+      ],
+      "trace": [
+        "Dates.Days",
+        "Dates.Days",
+        "Dates.AddDurations"
+      ]
+    }
+  },
+  {
+    "name": "swapped_fallback",
+    "source": "let count = 3; count swapped;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Let",
+          "span": [
+            0,
+            14
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            12,
+            13
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            15,
+            29
+          ]
+        },
+        {
+          "kind": "Rewrites.Swapped",
+          "span": [
+            15,
+            28
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            15,
+            20
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            15,
+            20
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                12,
+                13
+              ]
+            }
+          ],
+          "number": 3
+        },
+        {
+          "kind": "reference",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                15,
+                20
+              ]
+            }
+          ],
+          "symbol": 4
+        }
+      ],
+      "values": [
+        3
+      ],
+      "trace": []
+    }
+  },
+  {
+    "name": "swapped_parentheses_fall_back",
+    "source": "let count = 3; (count + 2) swapped;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Let",
+          "span": [
+            0,
+            14
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            12,
+            13
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            15,
+            35
+          ]
+        },
+        {
+          "kind": "Rewrites.Swapped",
+          "span": [
+            15,
+            34
+          ]
+        },
+        {
+          "kind": "Dates.Paren",
+          "span": [
+            15,
+            26
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            16,
+            25
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            16,
+            21
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            24,
+            25
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            16,
+            21
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "constant",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                12,
+                13
+              ]
+            }
+          ],
+          "number": 3
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                16,
+                25
+              ]
+            }
+          ],
+          "operation": "Dates.AddScalar",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    16,
+                    21
+                  ]
+                }
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    24,
+                    25
+                  ]
+                }
+              ],
+              "number": 2
+            }
+          ]
+        }
+      ],
+      "values": [
+        5
+      ],
+      "trace": [
+        "Dates.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "swapped_left_associative",
+    "source": "1 + 2 + 3 swapped;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            18
+          ]
+        },
+        {
+          "kind": "Rewrites.Swapped",
+          "span": [
+            0,
+            17
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            0,
+            9
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            0,
+            5
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            0,
+            1
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            4,
+            5
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            8,
+            9
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                17
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                14
+              ]
+            }
+          ],
+          "operation": "Dates.AddScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    8,
+                    9
+                  ]
+                }
+              ],
+              "number": 3
+            },
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    0,
+                    5
+                  ]
+                }
+              ],
+              "operation": "Dates.AddScalar",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        0,
+                        1
+                      ]
+                    }
+                  ],
+                  "number": 1
+                },
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        4,
+                        5
+                      ]
+                    }
+                  ],
+                  "number": 2
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        6
+      ],
+      "trace": [
+        "Dates.AddScalar",
+        "Dates.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "swapped_matches_before_expansion",
+    "source": "3 fortnights swapped;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            21
+          ]
+        },
+        {
+          "kind": "Rewrites.Swapped",
+          "span": [
+            0,
+            20
+          ]
+        },
+        {
+          "kind": "Rewrites.Fortnights",
+          "span": [
+            0,
+            12
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            0,
+            1
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Duration",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                12
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                16
+              ]
+            }
+          ],
+          "operation": "Dates.Scale",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    0,
+                    1
+                  ]
+                }
+              ],
+              "number": 3
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    9,
+                    16
+                  ]
+                }
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "nitrogen:rewrite",
+                      "span": [
+                        9,
+                        11
+                      ]
+                    }
+                  ],
+                  "number": 14
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        42
+      ],
+      "trace": [
+        "Dates.Days",
+        "Dates.Scale"
+      ]
+    }
+  },
+  {
+    "name": "swapped_caller_type_error",
+    "source": "2 days + 3 swapped;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        10
+      ],
+      "message": "no exact overload",
+      "trace": []
+    }
+  },
+  {
+    "name": "swapped_result_type_error",
+    "source": "2026-10-05 + 1 days swapped;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        27
+      ],
+      "message": "in the expansion of Swapped: no exact overload",
+      "trace": []
+    }
+  },
+  {
+    "name": "soon_builtin",
+    "source": "~1;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            3
+          ]
+        },
+        {
+          "kind": "Rewrites.Soon",
+          "span": [
+            0,
+            2
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            1,
+            2
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Date",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                2
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                20
+              ]
+            }
+          ],
+          "operation": "Dates.Later",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Dates.Date",
+              "origins": [
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    0,
+                    5
+                  ]
+                }
+              ],
+              "builtin": "today"
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    8,
+                    20
+                  ]
+                }
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        1,
+                        2
+                      ]
+                    }
+                  ],
+                  "number": 1
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        739913
+      ],
+      "trace": [
+        "Dates.Days",
+        "Dates.Later"
+      ]
+    }
+  },
+  {
+    "name": "soon_template_ignores_locals",
+    "source": "let today = 2026-01-01; ~1; today;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Let",
+          "span": [
+            0,
+            23
+          ]
+        },
+        {
+          "kind": "Dates.Day",
+          "span": [
+            12,
+            22
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            24,
+            27
+          ]
+        },
+        {
+          "kind": "Rewrites.Soon",
+          "span": [
+            24,
+            26
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            25,
+            26
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            28,
+            34
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            28,
+            33
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            28,
+            33
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Date",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                12,
+                22
+              ]
+            }
+          ],
+          "operation": "Dates.ParseDate",
+          "args": [
+            {
+              "kind": "text",
+              "type": "Core.Text",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    12,
+                    22
+                  ]
+                }
+              ],
+              "text": "2026-01-01"
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Dates.Date",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                24,
+                26
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                20
+              ]
+            }
+          ],
+          "operation": "Dates.Later",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Dates.Date",
+              "origins": [
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    0,
+                    5
+                  ]
+                }
+              ],
+              "builtin": "today"
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    8,
+                    20
+                  ]
+                }
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        25,
+                        26
+                      ]
+                    }
+                  ],
+                  "number": 1
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "kind": "reference",
+          "type": "Dates.Date",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                28,
+                33
+              ]
+            }
+          ],
+          "symbol": 4
+        }
+      ],
+      "values": [
+        739913,
+        739616
+      ],
+      "trace": [
+        "Dates.ParseDate",
+        "Dates.Days",
+        "Dates.Later"
+      ]
+    }
+  },
+  {
+    "name": "soon_hole_expression",
+    "source": "~(2 * 3);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            9
+          ]
+        },
+        {
+          "kind": "Rewrites.Soon",
+          "span": [
+            0,
+            8
+          ]
+        },
+        {
+          "kind": "Dates.Paren",
+          "span": [
+            1,
+            8
+          ]
+        },
+        {
+          "kind": "Dates.Mul",
+          "span": [
+            2,
+            7
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            2,
+            3
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            6,
+            7
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Date",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                8
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                20
+              ]
+            }
+          ],
+          "operation": "Dates.Later",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Dates.Date",
+              "origins": [
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    0,
+                    5
+                  ]
+                }
+              ],
+              "builtin": "today"
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    8,
+                    20
+                  ]
+                }
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "operation",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        2,
+                        7
+                      ]
+                    }
+                  ],
+                  "operation": "Dates.MulScalar",
+                  "args": [
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "origins": [
+                        {
+                          "path": "input",
+                          "span": [
+                            2,
+                            3
+                          ]
+                        }
+                      ],
+                      "number": 2
+                    },
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "origins": [
+                        {
+                          "path": "input",
+                          "span": [
+                            6,
+                            7
+                          ]
+                        }
+                      ],
+                      "number": 3
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        739918
+      ],
+      "trace": [
+        "Dates.MulScalar",
+        "Dates.Days",
+        "Dates.Later"
+      ]
+    }
+  },
+  {
+    "name": "soon_hole_type_error",
+    "source": "~2026-10-05;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        11
+      ],
+      "message": "in the expansion of Soon: 'Dates.Days' needs Core.Scalar, not Dates.Date",
+      "trace": []
+    }
+  },
+  {
+    "name": "twice_repeats_effects",
+    "source": "twice(2 days);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            14
+          ]
+        },
+        {
+          "kind": "Rewrites.Twice",
+          "span": [
+            0,
+            13
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            6,
+            12
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            6,
+            7
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Duration",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                13
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                15
+              ]
+            }
+          ],
+          "operation": "Dates.AddDurations",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    6,
+                    12
+                  ]
+                }
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        6,
+                        7
+                      ]
+                    }
+                  ],
+                  "number": 2
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    6,
+                    12
+                  ]
+                }
+              ],
+              "operation": "Dates.Days",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        6,
+                        7
+                      ]
+                    }
+                  ],
+                  "number": 2
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        4
+      ],
+      "trace": [
+        "Dates.Days",
+        "Dates.Days",
+        "Dates.AddDurations"
+      ]
+    }
+  },
+  {
+    "name": "twice_expansion_type_error",
+    "source": "twice(2026-10-05);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        17
+      ],
+      "message": "in the expansion of Twice: no exact overload",
+      "trace": []
+    }
+  },
+  {
+    "name": "twice_expansion_before_inner_check",
+    "source": "twice(2026-02-30);",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        17
+      ],
+      "message": "in the expansion of Twice: no exact overload",
+      "trace": []
+    }
+  },
+  {
+    "name": "caller_check_first",
+    "source": "2026-02-30 + twice(1);",
+    "observation": {
+      "ok": false,
+      "error": "check",
+      "span": [
+        0,
+        10
+      ],
+      "code": "DATE0001",
+      "message": "not a calendar date",
+      "trace": []
+    }
+  },
+  {
+    "name": "unresolved_inside_hole",
+    "source": "twice(missing);",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        6,
+        13
+      ],
+      "message": "unresolved value 'missing'",
+      "trace": []
+    }
+  },
+  {
+    "name": "pad_trims_template",
+    "source": "pad(5);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            7
+          ]
+        },
+        {
+          "kind": "Rewrites.Pad",
+          "span": [
+            0,
+            6
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            4,
+            5
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                6
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                12
+              ]
+            }
+          ],
+          "operation": "Dates.AddScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    4,
+                    5
+                  ]
+                }
+              ],
+              "number": 5
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    11,
+                    12
+                  ]
+                }
+              ],
+              "number": 0
+            }
+          ]
+        }
+      ],
+      "values": [
+        5
+      ],
+      "trace": [
+        "Dates.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "nested_rewrite_in_hole",
+    "source": "twice(3 fortnights);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            20
+          ]
+        },
+        {
+          "kind": "Rewrites.Twice",
+          "span": [
+            0,
+            19
+          ]
+        },
+        {
+          "kind": "Rewrites.Fortnights",
+          "span": [
+            6,
+            18
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            6,
+            7
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Dates.Duration",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                19
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                15
+              ]
+            }
+          ],
+          "operation": "Dates.AddDurations",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    6,
+                    18
+                  ]
+                },
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    0,
+                    16
+                  ]
+                }
+              ],
+              "operation": "Dates.Scale",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        6,
+                        7
+                      ]
+                    }
+                  ],
+                  "number": 3
+                },
+                {
+                  "kind": "operation",
+                  "type": "Dates.Duration",
+                  "origins": [
+                    {
+                      "path": "nitrogen:rewrite",
+                      "span": [
+                        9,
+                        16
+                      ]
+                    }
+                  ],
+                  "operation": "Dates.Days",
+                  "args": [
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "origins": [
+                        {
+                          "path": "nitrogen:rewrite",
+                          "span": [
+                            9,
+                            11
+                          ]
+                        }
+                      ],
+                      "number": 14
+                    }
+                  ]
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    6,
+                    18
+                  ]
+                },
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    0,
+                    16
+                  ]
+                }
+              ],
+              "operation": "Dates.Scale",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        6,
+                        7
+                      ]
+                    }
+                  ],
+                  "number": 3
+                },
+                {
+                  "kind": "operation",
+                  "type": "Dates.Duration",
+                  "origins": [
+                    {
+                      "path": "nitrogen:rewrite",
+                      "span": [
+                        9,
+                        16
+                      ]
+                    }
+                  ],
+                  "operation": "Dates.Days",
+                  "args": [
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "origins": [
+                        {
+                          "path": "nitrogen:rewrite",
+                          "span": [
+                            9,
+                            11
+                          ]
+                        }
+                      ],
+                      "number": 14
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        84
+      ],
+      "trace": [
+        "Dates.Days",
+        "Dates.Scale",
+        "Dates.Days",
+        "Dates.Scale",
+        "Dates.AddDurations"
+      ]
+    }
+  },
+  {
+    "name": "swapped_inside_twice",
+    "source": "twice(1 + 2 swapped);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            21
+          ]
+        },
+        {
+          "kind": "Rewrites.Twice",
+          "span": [
+            0,
+            20
+          ]
+        },
+        {
+          "kind": "Rewrites.Swapped",
+          "span": [
+            6,
+            19
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            6,
+            11
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            6,
+            7
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            10,
+            11
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                20
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                15
+              ]
+            }
+          ],
+          "operation": "Dates.AddScalar",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    6,
+                    19
+                  ]
+                },
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    0,
+                    14
+                  ]
+                }
+              ],
+              "operation": "Dates.AddScalar",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        10,
+                        11
+                      ]
+                    }
+                  ],
+                  "number": 2
+                },
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        6,
+                        7
+                      ]
+                    }
+                  ],
+                  "number": 1
+                }
+              ]
+            },
+            {
+              "kind": "operation",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    6,
+                    19
+                  ]
+                },
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    0,
+                    14
+                  ]
+                }
+              ],
+              "operation": "Dates.AddScalar",
+              "args": [
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        10,
+                        11
+                      ]
+                    }
+                  ],
+                  "number": 2
+                },
+                {
+                  "kind": "constant",
+                  "type": "Core.Scalar",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        6,
+                        7
+                      ]
+                    }
+                  ],
+                  "number": 1
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        6
+      ],
+      "trace": [
+        "Dates.AddScalar",
+        "Dates.AddScalar",
+        "Dates.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "rewrite_initializer_reused",
+    "source": "let s = 1 + 2 swapped; s + s;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Let",
+          "span": [
+            0,
+            22
+          ]
+        },
+        {
+          "kind": "Rewrites.Swapped",
+          "span": [
+            8,
+            21
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            8,
+            13
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            8,
+            9
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            12,
+            13
+          ]
+        },
+        {
+          "kind": "Dates.Show",
+          "span": [
+            23,
+            29
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            23,
+            28
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            23,
+            24
+          ]
+        },
+        {
+          "kind": "Dates.Ref",
+          "span": [
+            27,
+            28
+          ]
+        }
+      ],
+      "bindings": [
+        {
+          "span": [
+            23,
+            24
+          ],
+          "symbol": 4,
+          "kind": "value"
+        },
+        {
+          "span": [
+            27,
+            28
+          ],
+          "symbol": 4,
+          "kind": "value"
+        }
+      ],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                8,
+                21
+              ]
+            },
+            {
+              "path": "nitrogen:rewrite",
+              "span": [
+                0,
+                14
+              ]
+            }
+          ],
+          "operation": "Dates.AddScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    12,
+                    13
+                  ]
+                }
+              ],
+              "number": 2
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    8,
+                    9
+                  ]
+                }
+              ],
+              "number": 1
+            }
+          ]
+        },
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                23,
+                28
+              ]
+            }
+          ],
+          "operation": "Dates.AddScalar",
+          "args": [
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    23,
+                    24
+                  ]
+                }
+              ],
+              "symbol": 4
+            },
+            {
+              "kind": "reference",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    27,
+                    28
+                  ]
+                }
+              ],
+              "symbol": 4
+            }
+          ]
+        }
+      ],
+      "values": [
+        6
+      ],
+      "trace": [
+        "Dates.AddScalar",
+        "Dates.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "fortnights_wrong_type",
+    "source": "2026-10-05 fortnights;",
+    "observation": {
+      "ok": false,
+      "error": "type",
+      "span": [
+        0,
+        21
+      ],
+      "message": "in the expansion of Fortnights: no exact overload",
+      "trace": []
+    }
+  },
+  {
+    "name": "keyword_as_identifier",
+    "source": "fortnights;",
+    "observation": {
+      "ok": false,
+      "error": "binding",
+      "span": [
+        0,
+        10
+      ],
+      "message": "unresolved value 'fortnights'",
+      "trace": []
+    }
+  },
+  {
+    "name": "wrapped_hole_result",
+    "source": "wrap(1 + 2);",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            12
+          ]
+        },
+        {
+          "kind": "Rewrites.Wrap",
+          "span": [
+            0,
+            11
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            5,
+            10
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            5,
+            6
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            9,
+            10
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                11
+              ]
+            },
+            {
+              "path": "input",
+              "span": [
+                5,
+                10
+              ]
+            }
+          ],
+          "operation": "Dates.AddScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    5,
+                    6
+                  ]
+                }
+              ],
+              "number": 1
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    9,
+                    10
+                  ]
+                }
+              ],
+              "number": 2
+            }
+          ]
+        }
+      ],
+      "values": [
+        3
+      ],
+      "trace": [
+        "Dates.AddScalar"
+      ]
+    }
+  },
+  {
+    "name": "wrapped_hole_repeated",
+    "source": "twice(wrap(2 days)) in days;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            28
+          ]
+        },
+        {
+          "kind": "Dates.InDays",
+          "span": [
+            0,
+            27
+          ]
+        },
+        {
+          "kind": "Rewrites.Twice",
+          "span": [
+            0,
+            19
+          ]
+        },
+        {
+          "kind": "Rewrites.Wrap",
+          "span": [
+            6,
+            18
+          ]
+        },
+        {
+          "kind": "Dates.Days",
+          "span": [
+            11,
+            17
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            11,
+            12
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                27
+              ]
+            }
+          ],
+          "operation": "Dates.InDays",
+          "args": [
+            {
+              "kind": "operation",
+              "type": "Dates.Duration",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    0,
+                    19
+                  ]
+                },
+                {
+                  "path": "nitrogen:rewrite",
+                  "span": [
+                    0,
+                    15
+                  ]
+                }
+              ],
+              "operation": "Dates.AddDurations",
+              "args": [
+                {
+                  "kind": "operation",
+                  "type": "Dates.Duration",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        6,
+                        18
+                      ]
+                    },
+                    {
+                      "path": "input",
+                      "span": [
+                        11,
+                        17
+                      ]
+                    }
+                  ],
+                  "operation": "Dates.Days",
+                  "args": [
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "origins": [
+                        {
+                          "path": "input",
+                          "span": [
+                            11,
+                            12
+                          ]
+                        }
+                      ],
+                      "number": 2
+                    }
+                  ]
+                },
+                {
+                  "kind": "operation",
+                  "type": "Dates.Duration",
+                  "origins": [
+                    {
+                      "path": "input",
+                      "span": [
+                        6,
+                        18
+                      ]
+                    },
+                    {
+                      "path": "input",
+                      "span": [
+                        11,
+                        17
+                      ]
+                    }
+                  ],
+                  "operation": "Dates.Days",
+                  "args": [
+                    {
+                      "kind": "constant",
+                      "type": "Core.Scalar",
+                      "origins": [
+                        {
+                          "path": "input",
+                          "span": [
+                            11,
+                            12
+                          ]
+                        }
+                      ],
+                      "number": 2
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      ],
+      "values": [
+        4
+      ],
+      "trace": [
+        "Dates.Days",
+        "Dates.Days",
+        "Dates.AddDurations",
+        "Dates.InDays"
+      ]
+    }
+  },
+  {
+    "name": "wrapped_hole_swapped_falls_back",
+    "source": "wrap(1 + 2) swapped;",
+    "observation": {
+      "ok": true,
+      "syntax": [
+        {
+          "kind": "Dates.Show",
+          "span": [
+            0,
+            20
+          ]
+        },
+        {
+          "kind": "Rewrites.Swapped",
+          "span": [
+            0,
+            19
+          ]
+        },
+        {
+          "kind": "Rewrites.Wrap",
+          "span": [
+            0,
+            11
+          ]
+        },
+        {
+          "kind": "Dates.Add",
+          "span": [
+            5,
+            10
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            5,
+            6
+          ]
+        },
+        {
+          "kind": "Dates.Num",
+          "span": [
+            9,
+            10
+          ]
+        }
+      ],
+      "bindings": [],
+      "hir": [
+        {
+          "kind": "operation",
+          "type": "Core.Scalar",
+          "origins": [
+            {
+              "path": "input",
+              "span": [
+                0,
+                11
+              ]
+            },
+            {
+              "path": "input",
+              "span": [
+                5,
+                10
+              ]
+            }
+          ],
+          "operation": "Dates.AddScalar",
+          "args": [
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    5,
+                    6
+                  ]
+                }
+              ],
+              "number": 1
+            },
+            {
+              "kind": "constant",
+              "type": "Core.Scalar",
+              "origins": [
+                {
+                  "path": "input",
+                  "span": [
+                    9,
+                    10
+                  ]
+                }
+              ],
+              "number": 2
+            }
+          ]
+        }
+      ],
+      "values": [
+        3
+      ],
+      "trace": [
+        "Dates.AddScalar"
+      ]
+    }
+  }
+]

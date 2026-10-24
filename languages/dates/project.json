@@ -1,0 +1,8 @@
+{
+  "mode": "typed",
+  "start": "Dates.Program",
+  "grammars": [
+    "Dates.ngr"
+  ],
+  "catalog": "catalog.json"
+}

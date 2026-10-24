@@ -1,0 +1,7 @@
+let start = 2026-10-05;
+let sprint = 2 * 7 days;
+start + sprint;
+(2026-12-25 - start) in days;
+let pi = pi * 2;
+pi;
+(today - start) in days;

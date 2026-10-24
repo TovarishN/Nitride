@@ -62,6 +62,8 @@ fn language() -> Language {
         types: &[],
         operations: &[],
         handlers: &[],
+        checks: &[],
+        helpers: &[],
         source_hash: "test",
     }
 }

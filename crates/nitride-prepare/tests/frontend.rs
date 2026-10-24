@@ -17,6 +17,8 @@ fn existing_exports_match_native_frontend() {
         "inference",
         "calls",
         "functions",
+        "dates",
+        "rewrites",
     ] {
         let directory = root().join("languages").join(profile);
         let manifest: Value =
@@ -34,7 +36,8 @@ fn existing_exports_match_native_frontend() {
                 }
             })
             .collect();
-        let catalog = std::fs::read_to_string(directory.join("catalog.json")).unwrap();
+        let catalog =
+            std::fs::read_to_string(directory.join(manifest["catalog"].as_str().unwrap())).unwrap();
         let result = prepare_sources(
             &sources,
             &catalog,
@@ -101,7 +104,10 @@ fn malformed_and_unadmitted_constructs_are_rejected() {
         "syntax module Test { syntax Start = (\"x\"?)*; }",
         "syntax module Test { syntax Start = E; extensible syntax E { | N = \"x\"? } }",
         "syntax module Test { token T = \"x\"?; syntax Start = T; }",
-        "syntax module Test { syntax Start = \"x\" rewrites <[x]>; }",
+        "syntax module Test { syntax function F(X: Start*) : Start = <[x]>; syntax Start = \"x\"; }",
+        "syntax module Test { syntax function F(X: Start) : Start = match X { | <[x]> => <[x]>; }; syntax Start = \"x\"; }",
+        "syntax module Test { syntax function F(X: Start) : Start = match X { | _ => <[x]>; | <[x]> => <[x]>; }; syntax Start = \"x\"; }",
+        "syntax module Test { syntax function F(X: N) : Start = <[x]>; token N = \"n\"; syntax Start = \"x\"; }",
         "syntax module Test { syntax Start = E; extensible syntax E { | Num = \"x\" | Add = E \"+\" E precedence 256 } }",
         "syntax module Test { syntax Start = \"x\"; } /* unterminated",
     ] {
@@ -183,4 +189,31 @@ fn normalize_legacy_classes(value: &mut Value) {
         }
         _ => {}
     }
+}
+
+#[test]
+fn text_arguments_are_positional_and_keep_plain_text_fields() {
+    let typed = |text: &str| {
+        prepare_sources(
+            &[Source {
+                path: "test.ngr".into(),
+                text: text.into(),
+            }],
+            r#"{"types":["Core.Text","T.D"],"operations":[
+                {"id":"T.Parse","inputs":["Core.Text"],"result":"T.D","handler":"iso-date"},
+                {"id":"T.Same","inputs":["T.D"],"result":"T.D","handler":"identity"}],"statements":{}}"#,
+            "T.Start",
+            "typed",
+        )
+    };
+    let grammar = |rule: &str| format!("syntax module T {{ token W = ['a'..'z']+; {rule} }}");
+    let prepared = typed(&grammar("syntax Start = V:W lowers T.Parse(text V);")).unwrap();
+    let clause = &prepared["rules"][1]["clauses"][0];
+    assert_eq!(clause["args"], serde_json::json!(["V"]));
+    assert_eq!(clause["text_args"], serde_json::json!([0]));
+    let plain = typed(&grammar("syntax Start = text:W lowers T.Same(text);")).unwrap();
+    let clause = &plain["rules"][1]["clauses"][0];
+    assert_eq!(clause["args"], serde_json::json!(["text"]));
+    assert!(clause.get("text_args").is_none());
+    assert!(typed(&grammar("syntax Start = V:W lowers T.Parse(text Missing);")).is_err());
 }

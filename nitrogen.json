@@ -109,6 +109,35 @@
       ]
     },
     {
+      "name": "Dates",
+      "extensions": [
+        ".dates"
+      ],
+      "grammars": [
+        "languages/dates/Dates.Reference.ngr"
+      ],
+      "start": "Dates.Program",
+      "namespace": "Nitride.Reference.Dates",
+      "sources": [
+        "languages/dates/DatesSemantics.cs"
+      ]
+    },
+    {
+      "name": "Rewrites",
+      "extensions": [
+        ".rewrites"
+      ],
+      "grammars": [
+        "languages/dates/Dates.Reference.ngr",
+        "languages/rewrites/Rewrites.ngr"
+      ],
+      "start": "Dates.Program",
+      "namespace": "Nitride.Reference.Dates",
+      "sources": [
+        "languages/dates/DatesSemantics.cs"
+      ]
+    },
+    {
       "name": "NitrideGrammar",
       "extensions": [
         ".nitridegrammar"

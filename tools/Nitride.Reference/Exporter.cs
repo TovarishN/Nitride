@@ -50,7 +50,7 @@ static class Exporter
             .ToDictionary(p => p.Key, p => p.Rule.Alternatives.Select(a => (Alternative: a, Module: p.Module, Implicit: p.Module.Name)).ToList());
         foreach (var module in modules)
         {
-            if (module.SymbolProperties.Count + module.Helpers.Count + module.Functions.Count != 0) throw Unsupported("properties or helpers");
+            if (module.SymbolProperties.Count + module.Functions.Count != 0) throw Unsupported("properties or grammar functions");
             foreach (var extension in module.Extends)
             {
                 string target = Resolve(extension.Target, module);
@@ -71,6 +71,35 @@ static class Exporter
                     builtins.Add(new JsonObject { ["kind"] = declaration.Kind.Name, ["name"] = name.Name });
                 }
             }
+        // Quote helpers: scalar syntax categories only; a match keeps its fallback as the body.
+        var helperNames = modules.SelectMany(m => m.Helpers.Select(h => m.Name + "." + h.Name.Name)).ToHashSet(StringComparer.Ordinal);
+        string Category(string name, ModuleDecl module)
+        {
+            string resolved = Resolve(name, module);
+            if (symbols[resolved].Rule is TokenRule) throw Unsupported("helper categories must be syntax rules");
+            return resolved;
+        }
+        JsonArray Parameters(IEnumerable<QuoteParameter> parameters, ModuleDecl module) => new(parameters.Select(p => p.IsList
+            ? throw Unsupported("list helper parameters")
+            : (JsonNode)new JsonObject { ["name"] = p.Name.Name, ["category"] = Category(p.Category.Name, module) }).ToArray());
+        var helpers = new JsonArray();
+        foreach (var module in modules)
+            foreach (var helper in module.Helpers)
+            {
+                var node = new JsonObject { ["name"] = module.Name + "." + helper.Name.Name, ["parameters"] = Parameters(helper.Parameters, module),
+                    ["result"] = Category(helper.ReturnCategory.Name, module), ["body"] = helper.Body.Text, ["match"] = null };
+                if (helper.Match is { } match)
+                    node["match"] = new JsonObject { ["selector"] = match.Selector.Name, ["arms"] = new JsonArray(match.Arms.Select(a => (JsonNode)new JsonObject {
+                        ["captures"] = Parameters(a.Captures, module), ["pattern"] = a.Pattern.Text, ["result"] = a.Result.Text }).ToArray()) };
+                helpers.Add(node);
+            }
+        string ResolveHelper(string name, ModuleDecl module)
+        {
+            if (name.Contains('.')) return helperNames.Contains(name) ? name : throw Unsupported("unknown helper " + name);
+            if (helperNames.Contains(module.Name + "." + name)) return module.Name + "." + name;
+            var imported = module.Usings.Select(u => u.Module + "." + name).Where(helperNames.Contains).ToArray();
+            return imported.Length == 1 ? imported[0] : throw Unsupported("unknown or ambiguous helper " + name);
+        }
         var rules = new JsonArray();
         var omitted = new JsonArray();
         void NoteOmitted(string name, SemanticsBlock? block, EquatableArray<BindingClause> clauses)
@@ -101,21 +130,31 @@ static class Exporter
             var body=Obj("sequence",("items",new JsonArray(item,tail)));
             return e.AtLeastOne ? body : Obj("repeat",("min",JsonValue.Create(0)),("max",JsonValue.Create(1)),("inner",body));
         }
-        JsonArray Clauses(EquatableArray<BindingClause> clauses)
+        JsonArray Clauses(EquatableArray<BindingClause> clauses, ModuleDecl module)
         {
             var result = new JsonArray();
             if (syntaxOnly) return result;
             foreach (var c in clauses)
             {
+                if (c.Kind == BindingClauseKind.Rewrites)
+                {
+                    var rewrite = new JsonObject { ["kind"] = "Rewrites", ["field"] = "", ["target"] = c.HelperCall is { } call ? ResolveHelper(call.Helper.Name, module) : null,
+                        ["args"] = JsonSerializer.SerializeToNode(c.HelperCall?.Arguments.Select(a => a.Name) ?? []), ["symbol_kinds"] = new JsonArray(), ["sequential"] = false };
+                    if (c.HelperCall is null) rewrite["template"] = c.Target!.Name;
+                    result.Add(rewrite);
+                    continue;
+                }
                 if (c.Kind is not (BindingClauseKind.Declares or BindingClauseKind.References or BindingClauseKind.Lowers or BindingClauseKind.LowersLiteral or BindingClauseKind.Scope or BindingClauseKind.LowersTemplate or BindingClauseKind.LowersExpand) ||
                     c.Optional || c.FileScope || c.Qualifier != null || c.TypeProperty != null || c.OperationProperty != null || c.InitializerProperty != null ||
-                    c.Arguments.Any(a => a.SequenceElementType != null || a.InferSequence || a.AsText || a.OptionalElementType != null || a.OptionalText))
+                    c.Arguments.Any(a => a.SequenceElementType != null || a.InferSequence || (a.AsText && c.Kind != BindingClauseKind.Lowers) || a.OptionalElementType != null || a.OptionalText))
                     throw Unsupported($"semantic clause {c.Kind} at {c.Span.Start}");
 
                 var clause = new JsonObject { ["kind"] = c.Kind.ToString(), ["field"] = c.Field, ["target"] = c.Target?.Name,
                     ["args"] = JsonSerializer.SerializeToNode(c.Arguments.Select(a => a.Name)),
                     ["symbol_kinds"] = JsonSerializer.SerializeToNode(c.Kinds.Select(k => k.Name)), ["sequential"] = c.Sequential };
                 if (c.Export) clause["export"] = true;
+                var texts = c.Arguments.Select((a, i) => (a, i)).Where(p => p.a.AsText).Select(p => p.i).ToArray();
+                if (texts.Length > 0) clause["text_args"] = JsonSerializer.SerializeToNode(texts);
                 result.Add(clause);
             }
             return result;
@@ -127,7 +166,7 @@ static class Exporter
             if (!syntaxOnly && semantics != null) throw Unsupported("C# semantics in " + qualified);
             if (syntaxOnly) NoteOmitted(qualified, semantics, clauses);
             rules.Add(new JsonObject { ["name"] = qualified, ["lexical"] = lexical, ["expr"] = Expression(body, module, implicitModule),
-                ["clauses"] = Clauses(clauses), ["except"] = JsonSerializer.SerializeToNode(except ?? []),
+                ["clauses"] = Clauses(clauses, module), ["except"] = JsonSerializer.SerializeToNode(except ?? []),
                 ["precedence"] = precedence, ["owner"] = owner, ["associativity"] = associativity });
         }
         foreach (var module in modules)
@@ -191,6 +230,7 @@ static class Exporter
             ["modules"] = JsonSerializer.SerializeToNode(modules.Select(m => new { name = m.Name, imports = m.Usings.Select(u => u.Module).ToArray() })),
             ["source_hash"] = Hash(identity), ["catalog_hash"] = Hash(catalog),
             ["start"] = start, ["rules"] = rules, ["catalog"] = JsonNode.Parse(catalog) };
+        if (helpers.Count > 0 && !syntaxOnly) output["helpers"] = helpers;
         return output.ToJsonString(new JsonSerializerOptions { WriteIndented = true });
     }
     static string Hash(string source) => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(source))).ToLowerInvariant();

@@ -272,3 +272,41 @@ positive/negative controls pass. CLI818400B(+17296), profiler519600B; phase memo
 allocation/retained/peak metrics unchanged. Full Nitrogen grammar coverage and
 live editor interaction remain deferred. Final review/publication tracked in the
 stage9 plan and evidence.
+
+
+## Stage 10: Built-in values, text literals and source checks
+
+Plan: stage10-plan.md; evidence: stage10-evidence.md. Added the DateCalc-shaped
+Dates profile. Host-supplied `builtin value` names are resolved after all
+locals and read at most once per execution, after preflight. `lowers Op(text F)`
+passes exact source spellings as Core.Text HIR to text host handlers. Catalog
+`iso-date` checks report coded diagnostics before execution. Grammar.ngr gained
+text arguments; the seed was regenerated, and the fixed point and live export
+parity hold.
+
+111 Rust tests, 15 exporter tests, 220 frozen and 448 generated live
+observations, and 82 valid / 16 invalid preparation profiles pass. A clean
+offline source-only build runs Dates without .NET on PATH. Nitrogen's workspace
+checker passes the sample and reports DATE0001 on an invalid date.
+CLI 835,216 B (+16,816). Older phase allocation counts, retained bytes and peaks
+are unchanged. Self-review only; not yet published. DateCalc rewrites, calls,
+weekday/Math functions and live editors remain deferred.
+
+
+## Stage 11: Quote rewrites and syntax-function helpers
+
+Plan: stage11-plan.md; evidence: stage11-evidence.md. Added `syntax function`
+quote helpers with ordered match arms, and inline and helper `rewrites`
+clauses, over a Rewrites profile composed with Dates. Templates are parsed by
+the generated language in template mode, with `$` holes, and validated on
+every compile. Holes take the caller's HIR; template names see only built-ins.
+Arms match original syntax. Reachable-only re-emission reproduces Nitrogen's
+repeated computation and keeps discarded syntax from running. Origins record
+the use and template-relative spans.
+
+120 Rust tests, 249 frozen and 512 generated live observations, and 88 valid /
+20 invalid preparation profiles pass. A clean offline source-only build runs
+Rewrites without .NET on PATH. CLI 918,416 B (+83,200). Older allocation
+counts and retained bytes are unchanged; HIR peaks fell. Self-review only; not
+yet published. List splices, grammar functions, weekday/Math calls and live
+editors remain deferred.

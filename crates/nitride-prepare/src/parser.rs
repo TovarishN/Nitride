@@ -7,11 +7,34 @@ pub struct Module {
     pub imports: Vec<String>,
     pub symbols: Vec<String>,
     pub builtins: Vec<(String, String)>,
+    pub helpers: Vec<Helper>,
     pub rules: Vec<Rule>,
     pub extensions: Vec<(String, Vec<Rule>)>,
     pub source: usize,
     pub span: [usize; 2],
 }
+/// A typed quote helper: `syntax function Name(P: Category) : Category = <[ ... ]>`.
+/// A match helper keeps its fallback as `body`, as Nitrogen's model does.
+pub struct Helper {
+    pub name: String,
+    pub parameters: Vec<Parameter>,
+    pub result: (String, [usize; 2]),
+    pub body: String,
+    pub selector: Option<String>,
+    pub arms: Vec<Arm>,
+    pub span: [usize; 2],
+}
+pub struct Parameter {
+    pub name: String,
+    pub category: String,
+    pub span: [usize; 2],
+}
+pub struct Arm {
+    pub captures: Vec<Parameter>,
+    pub pattern: String,
+    pub result: String,
+}
+
 #[derive(Clone)]
 pub struct Rule {
     pub name: String,
@@ -137,6 +160,7 @@ impl Decoder<'_> {
                     imports: vec![],
                     symbols: vec![],
                     builtins: vec![],
+                    helpers: vec![],
                     rules: vec![],
                     extensions: vec![],
                     source: index,
@@ -159,6 +183,7 @@ impl Decoder<'_> {
                                     .map(|&n| (kind.clone(), self.text(n).into())),
                             );
                         }
+                        "Helper" => module.helpers.push(self.helper(m)?),
                         "Extend" => {
                             let alternatives = self
                                 .fields(m, "Alternatives")
@@ -175,6 +200,63 @@ impl Decoder<'_> {
                 Ok(module)
             })
             .collect()
+    }
+    /// The raw text between `<[` and the first `]>`, as Nitrogen's QuoteText holds it.
+    fn quote(&self, id: u32) -> String {
+        let text = self.text(id);
+        text[2..text.len() - 2].into()
+    }
+    fn parameters(&self, ids: Vec<u32>) -> Result<Vec<Parameter>, PrepareError> {
+        ids.into_iter()
+            .map(|n| {
+                if self.tree.field(n, "List").is_some() {
+                    return Err(self.error(n, "list helper parameters are not admitted"));
+                }
+                Ok(Parameter {
+                    name: self.named(n, "Name"),
+                    category: self.named(n, "Category"),
+                    span: self.span(n),
+                })
+            })
+            .collect()
+    }
+    fn helper(&self, id: u32) -> Result<Helper, PrepareError> {
+        let result = self.field(id, "Result");
+        let mut helper = Helper {
+            name: self.named(id, "Name"),
+            parameters: self.parameters(self.fields(id, "Parameters"))?,
+            result: (self.text(result).into(), self.span(result)),
+            body: String::new(),
+            selector: None,
+            arms: vec![],
+            span: self.span(id),
+        };
+        let body = self.first(self.field(id, "Body"));
+        if self.kind(body) == "QuoteBody" {
+            helper.body = self.quote(self.field(body, "Text"));
+            return Ok(helper);
+        }
+        helper.selector = Some(self.named(body, "Selector"));
+        let arms = self.fields(body, "Arms");
+        for (index, arm) in arms.iter().enumerate() {
+            let form = self.field(*arm, "Form");
+            if self.kind(form) == "Fallback" {
+                if index + 1 != arms.len() {
+                    return Err(self.error(*arm, "the fallback must be the final arm"));
+                }
+                helper.body = self.quote(self.field(form, "Result"));
+                return Ok(helper);
+            }
+            helper.arms.push(Arm {
+                captures: match self.tree.field(form, "Captures") {
+                    Some(c) => self.parameters(self.fields(c, "Items"))?,
+                    None => vec![],
+                },
+                pattern: self.quote(self.field(form, "Pattern")),
+                result: self.quote(self.field(form, "Result")),
+            });
+        }
+        Err(self.error(body, "a match helper requires a final fallback"))
     }
     fn rule(&self, id: u32) -> Result<Rule, PrepareError> {
         let body = self
@@ -363,6 +445,8 @@ impl Decoder<'_> {
         let mut field = String::new();
         let mut target = None;
         let mut args = Vec::new();
+        let mut text_args = Vec::new();
+        let mut template = None;
         let mut kinds = Vec::new();
         let mut sequential = false;
         let mut exported = false;
@@ -390,6 +474,20 @@ impl Decoder<'_> {
                 "References"
             }
             "Scope" => "Scope",
+            "Rewrites" => {
+                let n = self.field(id, "Form");
+                if self.kind(n) == "QuoteBody" {
+                    template = Some(self.quote(self.field(n, "Text")));
+                } else {
+                    target = Some(self.named(n, "Target"));
+                    args.extend(
+                        self.fields(n, "Args")
+                            .iter()
+                            .map(|&w| self.named(w, "Name")),
+                    );
+                }
+                "Rewrites"
+            }
             "Lowers" => {
                 let n = self.field(id, "Form");
                 match self.kind(n) {
@@ -409,11 +507,13 @@ impl Decoder<'_> {
                     }
                     "Call" => {
                         target = Some(self.named(n, "Target"));
-                        args.extend(
-                            self.fields(n, "Args")
-                                .iter()
-                                .map(|&w| self.named(w, "Name")),
-                        );
+                        for (index, argument) in self.fields(n, "Args").into_iter().enumerate() {
+                            let form = self.first(argument);
+                            if self.kind(form) == "TextArgument" {
+                                text_args.push(index);
+                            }
+                            args.push(self.named(form, "Name"));
+                        }
                         "Lowers"
                     }
                     _ => unreachable!(),
@@ -424,6 +524,12 @@ impl Decoder<'_> {
         let mut value = json!({"kind":kind,"field":field,"target":target,"args":args,"symbol_kinds":kinds,"sequential":sequential});
         if exported {
             value["export"] = json!(true);
+        }
+        if !text_args.is_empty() {
+            value["text_args"] = json!(text_args);
+        }
+        if let Some(template) = template {
+            value["template"] = json!(template);
         }
         value
     }

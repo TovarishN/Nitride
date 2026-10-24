@@ -1,0 +1,21 @@
+// Quote rewrites over the Dates profile: inline templates, typed helpers and
+// ordered match arms. Names inside templates resolve only against built-ins.
+syntax module Rewrites
+{
+  using Dates;
+  syntax function FortnightDuration(Count: Expr) : Expr = <[ $Count * 14 days ]>;
+  syntax function SwapAddition(Value: Expr) : Expr = match Value
+  {
+    | (Left: Expr, Right: Expr) <[ $Left + $Right ]> => <[ $Right + $Left ]>;
+    | _ => <[ $Value ]>;
+  };
+  extend syntax Dates.Expr
+  {
+    | Fortnights = Count:Expr "fortnights" precedence 30 rewrites FortnightDuration(Count)
+    | Swapped = Value:Expr "swapped" precedence 5 rewrites SwapAddition(Value)
+    | Soon = "~" Amount:Expr precedence 40 rewrites <[ today + $Amount days ]>
+    | Twice = "twice" "(" Inner:Expr ")" rewrites <[ $Inner + $Inner ]>
+    | Pad = "pad" "(" Inner:Expr ")" rewrites <[    $Inner  +  0   ]>
+    | Wrap = "wrap" "(" Inner:Expr ")" rewrites <[ ($Inner) ]>
+  }
+}

@@ -192,7 +192,7 @@ impl<'a> Compiler<'a> {
         let mut bound = HashMap::new();
         let mut observations = Vec::new();
         for id in 0..self.tree.nodes.len() as Id {
-            if let Action::Reference { kinds, field } | Action::Expand { kinds, field, .. } =
+            if let Action::Reference { kinds, field, .. } | Action::Expand { kinds, field, .. } =
                 *self.action(id)
             {
                 let name = self.field(id, field)?;
@@ -259,6 +259,7 @@ impl<'a> Compiler<'a> {
             Action::Operation {
                 id: operation,
                 fields,
+                ..
             } => {
                 let signature = *self
                     .language
@@ -386,6 +387,7 @@ impl<'a> Compiler<'a> {
             Action::Operation {
                 id: operation,
                 fields,
+                ..
             } => {
                 let mut args = Vec::new();
                 for field in fields {
@@ -548,6 +550,8 @@ pub(crate) fn compile(
             builtin_bindings: Vec::new(),
             origin_spans: Vec::new(),
             origin_ranges: Vec::new(),
+            origin_rewrites: Vec::new(),
+            text: String::new(),
         },
     };
     c.bind()?;

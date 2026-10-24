@@ -15,17 +15,29 @@ syntax module NitrideGrammar
   token NameTail = IdPart / "." IdStart;
   token Reserved = ("precedence" / "except" / "then" / "else" / "declares" / "references" / "scope" / "dynamic" / "lowers" / "rewrites") !NameTail;
   token LoweringKeyword = ("literal" / "template" / "expand") !NameTail;
+  token TextKeyword = "text" !NameTail;
   token Comment = "//" [^ '\n']* / "/*" (!"*/" .)* "*/";
   token OpaqueCharLiteral = "'" (Escape / [^ '\'' '\\' '\n'])* "'";
   token OpaqueChar = !("/*" / "//" / "@\"" / "\"\"\"") [^ '{' '}' '"' '\''];
   token Opaque = "{" (!("@\"" / "\"\"\"") (Comment / String / OpaqueCharLiteral / Opaque / OpaqueChar))* "}";
+  token QuoteText = "<[" (!"]>" .)* "]>";
 
   syntax File = Modules:Module*;
   syntax Module = "syntax" "module" Name:QualifiedName "{" Members:Member* "}";
-  syntax Member = Using / Symbols / Builtin / TokenRule / SyntaxRule / ExtensibleRule / Extend;
+  syntax Member = Using / Symbols / Builtin / Helper / TokenRule / SyntaxRule / ExtensibleRule / Extend;
   syntax Using = "using" Name:QualifiedName ";";
   syntax Symbols = "symbols" "{" Names:Identifier+ "}";
   syntax Builtin = "builtin" Kind:Identifier "{" Names:QualifiedName+ "}";
+  syntax Helper = "syntax" "function" Name:Identifier "(" Parameters:(Parameter; ",")* ")" ":" Result:QualifiedName "=" Body:HelperBody ";";
+  syntax Parameter = Name:Identifier ":" Category:QualifiedName List:ListMarker?;
+  syntax ListMarker = "*";
+  syntax HelperBody = MatchBody / QuoteBody;
+  syntax QuoteBody = Text:QuoteText;
+  syntax MatchBody = "match" Selector:Identifier "{" Arms:Arm* "}";
+  syntax Arm = "|" Form:(Fallback / PatternArm);
+  syntax Fallback = "_" "=>" Result:QuoteText ";";
+  syntax PatternArm = Captures:Captures? Pattern:QuoteText "=>" Result:QuoteText ";";
+  syntax Captures = "(" Items:(Parameter; ",")* ")";
   syntax TokenRule = "token" Name:Identifier "=" Body:Expression Except:ExceptList? ";";
   syntax ExceptList = "except" Words:String+;
   syntax SyntaxRule = "syntax" Name:Identifier "=" Body:Expression Clauses:Clause* End:End;
@@ -59,7 +71,7 @@ syntax module NitrideGrammar
   syntax Range = Low:Char High:Upper?;
   syntax Upper = ".." Value:Char;
 
-  syntax Clause = Declares / References / Scope / Lowers;
+  syntax Clause = Declares / References / Scope / Lowers / Rewrites;
   syntax Declares = "declares" Kind:Identifier Field:Identifier Sequential:Sequential? Export:Export? Type:DeclaredType?;
   syntax Sequential = "sequential";
   syntax Export = "export";
@@ -74,5 +86,9 @@ syntax module NitrideGrammar
   syntax Template = "template" Field:Identifier "(" Args:Identifier ")";
   syntax Expand = "expand" Field:Identifier "(" Args:Identifier ")";
   syntax LiteralLowering = "literal" Target:QualifiedName Field:Identifier;
-  syntax Call = !LoweringKeyword Target:QualifiedName "(" Args:(Word; ",")* ")";
+  syntax Rewrites = "rewrites" Form:(QuoteBody / HelperCall);
+  syntax HelperCall = Target:QualifiedName "(" Args:(Word; ",")* ")";
+  syntax Call = !LoweringKeyword Target:QualifiedName "(" Args:(Argument; ",")* ")";
+  syntax Argument = TextArgument / Word;
+  syntax TextArgument = TextKeyword Name:Identifier;
 }
