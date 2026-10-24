@@ -1,6 +1,7 @@
 //! Build-time preparation of the explicitly admitted Nitrogen grammar subset.
 #[rustfmt::skip]
 mod grammar_seed;
+mod functions;
 mod literal;
 mod normalize;
 mod parser;

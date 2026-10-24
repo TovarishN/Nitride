@@ -26,6 +26,8 @@ pub fn prepare(
     for (index, source) in sources.iter().enumerate() {
         modules.extend(parser::parse(source, index)?);
     }
+    // Grammar functions expand before validation, as in Nitrogen's compiler.
+    crate::functions::expand(&mut modules, sources)?;
     let mut module_names = HashSet::new();
     let mut symbols = HashMap::new();
     for (mi, module) in modules.iter().enumerate() {

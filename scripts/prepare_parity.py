@@ -110,6 +110,33 @@ def main():
         (project / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
         (project / "project.json").write_text(json.dumps(dict(mode="syntax",start="S.Start",grammars=["S.ngr"],catalog="catalog.json")))
         compare(project / "project.json",tmp,142)
+        # Grammar functions: CSNitrogen's real Lexical.ngr, then generated coverage.
+        project = tmp / "csharp-lexical";project.mkdir()
+        (project / "Lexical.ngr").write_bytes((ROOT / "languages/csharp4/Grammars/Lexical.ngr").read_bytes())
+        (project / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
+        (project / "project.json").write_text(json.dumps(dict(mode="syntax",start="CSharp.Lexical.IdentifierFragment",grammars=["Lexical.ngr"],catalog="catalog.json")))
+        compare(project / "project.json",tmp,150)
+        functions = [
+            'function F(n: Grammar.Int) : Grammar.Rule = [char(n + 65) .. char(n * 2 + 70)]; token T = F(3);',
+            'function F(n: Grammar.Int) : Grammar.Rule = if n % 3 == 0 and not (n / 2 > 7) or n ^ 2 <= 4 then "a" else "b"; token T = F(6) F(16) F(2);',
+            "function F(c: Grammar.Class) : Grammar.Rule = let x = (c | ['x']) - ['b'..'c'] + 1; x; token T = F(['a'..'d']);",
+            "function F(c: Grammar.Class) : Grammar.Rule = let x = ~(c & ['a'..'m']) & ['a'..'z']; x; token T = F(['f'..'q']);",
+            'function F(w: Grammar.Text) : Grammar.Rule = seq c in w { [upper(c) lower(c)] }; token T = F("aBc");',
+            'function F(w: Grammar.Text) : Grammar.Rule = choice i in 0 .. length(w) - 1 { let k = i * 2; where k != 2 : [char(code(\'a\') + k)] }; token T = F("abcd");',
+            "function F(r: Grammar.Rule, c: Grammar.Char) : Grammar.Rule = r r? [c]; token D = ['0'..'9']; token T = F(D, 'x');",
+            "function F(n: Grammar.Int) : Grammar.Rule = choice d in 0 .. n { [char(48 + d)] \"!\" }; token T = F(3);",
+            'function G(r: Grammar.Rule) : Grammar.Rule = r r; function F(n: Grammar.Int) : Grammar.Rule = G({ let x = n + 1; where x > 1 : [char(x + 64)] }); token T = F(1) F(2);',
+            "function G(n: Grammar.Int) : Grammar.Rule = [char(n)]; function F(n: Grammar.Int) : Grammar.Rule = G(n) G(n + 1); syntax U = Value:F(97);",
+            "token D = ['0'..'9']; function F(c: Grammar.Class) : Grammar.Rule = let x = c - ['5']; x; token T = F(D);",
+            "function F(t: Grammar.Text) : Grammar.Rule = \"<\" t \">\"; token T = F(\"ab\") F(\"\");",
+        ]
+        for index, body in enumerate(functions):
+            project = tmp / f"functions-{index}";project.mkdir()
+            source = f"syntax module F {{ {body} syntax Start = Value:{'U' if 'syntax U' in body else 'T'}; }}"
+            (project / "F.ngr").write_text(source)
+            (project / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
+            (project / "project.json").write_text(json.dumps(dict(mode="syntax",start="F.Start",grammars=["F.ngr"],catalog="catalog.json")))
+            compare(project / "project.json",tmp,160 + index)
         rejected = [
             'syntax module Bad { syntax Start = (Item; Separator)*; syntax Item = "a"; token Separator = ","; }',
             'syntax module Bad { syntax Start = (Item; "")*; syntax Item = "a"; }',
@@ -132,6 +159,14 @@ def main():
             'syntax module Bad { syntax function F(X: Start) : Start = match X { | _ => <[ a ]>; | <[ a ]> => <[ a ]>; }; syntax Start = "a"; }',
             'syntax module Bad { syntax function F(X: T) : Start = <[ a ]>; token T = "t"; syntax Start = "a"; }',
             'syntax module Bad { syntax Start = S; extensible syntax S { | transparent P = W W | X = "x" } syntax W = "w"; }',
+            'syntax module Bad { function L(n: Grammar.Int) : Grammar.Rule = L(n + 1); token T = L(0); syntax Start = T; }',
+            'syntax module Bad { function B(n: Grammar.Int) : Grammar.Rule = choice i in 0 .. n { "a" }; token T = B(1099511627776); syntax Start = T; }',
+            'syntax module Bad { token T = Missing(1); syntax Start = T; }',
+            'syntax module Bad { function F(n: Grammar.Int) : Grammar.Rule = [n] (if n then "a" else "b"); syntax Start = "t"; }',
+            'syntax module Bad { function F(n: Grammar.Int) : Grammar.Rule = [char(n)]; token T = F(70000); syntax Start = T; }',
+            'syntax module Bad { function F(n: Grammar.Int) : Grammar.Rule = [char(1 / n)]; token T = F(0); syntax Start = T; }',
+            'syntax module Bad { function F(n: Grammar.Int, n: Grammar.Int) : Grammar.Rule = "a"; syntax Start = "t"; }',
+            'syntax module Bad { function F(n: Grammar.Int) : Grammar.Rule = [] ; syntax Start = "t"; }',
         ]
         bad = tmp / "bad"
         bad.mkdir()
@@ -142,7 +177,7 @@ def main():
             reference = run("export-project", bad / "project.json", bad / "output.json")
             native = subprocess.run([ROOT / "target/release/nitride", "prepare", bad / "project.json"], capture_output=True)
             assert reference.returncode != 0 and native.returncode != 0, source
-    print("91 prepared profiles match live .NET export; 21 invalid grammars are rejected by both")
+    print("104 prepared profiles match live .NET export; 29 invalid grammars are rejected by both")
 
 
 if __name__ == "__main__":

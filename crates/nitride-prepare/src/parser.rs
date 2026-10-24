@@ -8,6 +8,7 @@ pub struct Module {
     pub symbols: Vec<String>,
     pub builtins: Vec<(String, String)>,
     pub helpers: Vec<Helper>,
+    pub functions: Vec<Function>,
     pub rules: Vec<Rule>,
     pub extensions: Vec<(String, Vec<Rule>)>,
     pub source: usize,
@@ -22,6 +23,17 @@ pub struct Helper {
     pub body: String,
     pub selector: Option<String>,
     pub arms: Vec<Arm>,
+    pub span: [usize; 2],
+}
+/// A grammar function, `function Name(p: Grammar.Int, ...) : Grammar.Rule = let ...; Body;`.
+/// Its body uses the expression model plus `call`, `if`, `comprehension` and
+/// `valueclass` nodes; values are JSON objects tagged by `"v"`.
+pub struct Function {
+    pub name: String,
+    pub parameters: Vec<Parameter>,
+    pub result: (String, [usize; 2]),
+    pub lets: Vec<(String, Value)>,
+    pub body: Value,
     pub span: [usize; 2],
 }
 pub struct Parameter {
@@ -168,6 +180,7 @@ impl Decoder<'_> {
                     symbols: vec![],
                     builtins: vec![],
                     helpers: vec![],
+                    functions: vec![],
                     rules: vec![],
                     extensions: vec![],
                     source: index,
@@ -191,6 +204,7 @@ impl Decoder<'_> {
                             );
                         }
                         "Helper" => module.helpers.push(self.helper(m)?),
+                        "Function" => module.functions.push(self.function(m)?),
                         "Extend" => {
                             let alternatives = self
                                 .fields(m, "Alternatives")
@@ -212,6 +226,136 @@ impl Decoder<'_> {
     fn quote(&self, id: u32) -> String {
         let text = self.text(id);
         text[2..text.len() - 2].into()
+    }
+    fn function(&self, id: u32) -> Result<Function, PrepareError> {
+        let result = self.field(id, "Result");
+        Ok(Function {
+            name: self.named(id, "Name"),
+            parameters: self.parameters(self.fields(id, "Parameters"))?,
+            result: (self.text(result).into(), self.span(result)),
+            lets: self.lets(id)?,
+            body: self.expr(self.field(id, "Body"))?,
+            span: self.span(id),
+        })
+    }
+    fn lets(&self, id: u32) -> Result<Vec<(String, Value)>, PrepareError> {
+        self.fields(id, "Lets")
+            .into_iter()
+            .map(|n| Ok((self.named(n, "Name"), self.value(self.field(n, "Value"))?)))
+            .collect()
+    }
+    fn block(&self, id: u32) -> Result<Value, PrepareError> {
+        let condition = self
+            .tree
+            .field(id, "Where")
+            .map(|w| self.value(self.field(w, "Condition")))
+            .transpose()?;
+        Ok(
+            json!({"lets":self.lets(id)?.into_iter().map(|(n, v)| json!([n, v])).collect::<Vec<_>>(),
+            "where":condition,"body":self.expr(self.field(id, "Body"))?}),
+        )
+    }
+    fn call_name(&self, id: u32) -> String {
+        let head = self.text(self.field(id, "Head"));
+        head[..head.len() - 1].into()
+    }
+    fn class_items(&self, id: u32) -> Result<Vec<Value>, PrepareError> {
+        self.fields(id, "Ranges")
+            .into_iter()
+            .map(|n| {
+                let last = self
+                    .tree
+                    .field(n, "High")
+                    .map(|h| self.value(self.field(h, "Value")))
+                    .transpose()?;
+                Ok(json!({"first":self.value(self.field(n, "Low"))?,"last":last}))
+            })
+            .collect()
+    }
+    /// A value expression, as a JSON object tagged by `"v"`.
+    fn value(&self, id: u32) -> Result<Value, PrepareError> {
+        let binary = |op: &str, left: Value, right: Value| json!({"v":"binary","op":op,"left":left,"right":right});
+        let fold = |op: &str| -> Result<Value, PrepareError> {
+            let mut items = self.fields(id, "Items").into_iter();
+            let mut result = self.value(items.next().unwrap())?;
+            for item in items {
+                result = binary(op, result, self.value(item)?);
+            }
+            Ok(result)
+        };
+        let mut value = match self.kind(id) {
+            "Value" | "NotValue" | "UnaryValue" | "AtomValue" | "Bound" => {
+                return self.value(self.first(id));
+            }
+            "GroupValue" => return self.value(self.field(id, "Inner")),
+            "IfValue" => json!({"v":"if","cond":self.value(self.field(id,"Condition"))?,
+                "then":self.value(self.field(id,"Then"))?,"else":self.value(self.field(id,"Else"))?}),
+            "OrValue" => fold("or")?,
+            "AndValue" => fold("and")?,
+            "BitOrValue" => fold("|")?,
+            "BitAndValue" => fold("&")?,
+            "NotApplied" => {
+                json!({"v":"unary","op":"not","operand":self.value(self.field(id,"Operand"))?})
+            }
+            "UnaryApplied" => {
+                json!({"v":"unary","op":self.named(id,"Op"),"operand":self.value(self.field(id,"Operand"))?})
+            }
+            "CompareValue" => {
+                let left = self.value(self.field(id, "Left"))?;
+                match self.tree.field(id, "Tail") {
+                    Some(t) => binary(
+                        &self.named(t, "Op"),
+                        left,
+                        self.value(self.field(t, "Right"))?,
+                    ),
+                    None => return Ok(left),
+                }
+            }
+            "AddValue" | "MulValue" => {
+                let mut result = self.value(self.field(id, "First"))?;
+                for tail in self.fields(id, "Rest") {
+                    result = binary(
+                        &self.named(tail, "Op"),
+                        result,
+                        self.value(self.field(tail, "Item"))?,
+                    );
+                }
+                result
+            }
+            "PowValue" => {
+                let base = self.value(self.field(id, "Base"))?;
+                match self.tree.field(id, "Exponent") {
+                    Some(t) => binary("^", base, self.value(self.field(t, "Value"))?),
+                    None => return Ok(base),
+                }
+            }
+            "IntValue" => {
+                let digits = self.field(id, "Value");
+                let n = self
+                    .text(digits)
+                    .parse::<i64>()
+                    .map_err(|_| self.error(digits, "the integer is too large"))?;
+                json!({"v":"int","n":n})
+            }
+            "CharValue" => {
+                json!({"v":"char","c":crate::literal::decode_unit(self.source, self.span(self.field(id, "Value")))?})
+            }
+            // A bare character bound, as the previous seed's `Range` yields it while bootstrapping.
+            "Char" => {
+                json!({"v":"char","c":crate::literal::decode_unit(self.source, self.span(id))?})
+            }
+            "TextValue" => json!({"v":"text","s":self.literal(self.field(id, "Value"))?}),
+            "ClassValue" => {
+                json!({"v":"class","negated":self.tree.field(id,"Negated").is_some(),"items":self.class_items(id)?})
+            }
+            "BlockValue" => json!({"v":"block","block":self.block(self.field(id, "Body"))?}),
+            "CallValue" => json!({"v":"call","name":self.call_name(id),
+                "args":self.fields(id,"Args").into_iter().map(|a| self.value(a)).collect::<Result<Vec<_>,_>>()?}),
+            "NameValue" => json!({"v":"name","name":self.named(id,"Name")}),
+            other => unreachable!("generated value variant: {other}"),
+        };
+        value["_span"] = json!(self.span(id));
+        Ok(value)
     }
     fn parameters(&self, ids: Vec<u32>) -> Result<Vec<Parameter>, PrepareError> {
         ids.into_iter()
@@ -425,21 +569,46 @@ impl Decoder<'_> {
             "Reference" => json!({"kind":"ref","name":self.named(id,"Name")}),
             "Any" => json!({"kind":"any"}),
             "Group" => return self.expr(self.field(id, "Inner")),
+            "EmptyGroup" => json!({"kind":"sequence","items":[]}),
+            "FunctionCall" => json!({"kind":"call","name":self.call_name(id),
+                "args":self.fields(id,"Args").into_iter().map(|a| self.value(a)).collect::<Result<Vec<_>,_>>()?}),
+            "If" => json!({"kind":"if","cond":self.value(self.field(id,"Condition"))?,
+                "then":self.expr(self.field(id,"Then"))?,"else":self.expr(self.field(id,"Else"))?}),
+            "Comprehension" => {
+                let to = self
+                    .tree
+                    .field(id, "To")
+                    .map(|t| self.value(self.field(t, "Value")))
+                    .transpose()?;
+                json!({"kind":"comprehension","choice":self.named(id,"Kind")=="choice","var":self.named(id,"Variable"),
+                    "from":self.value(self.field(id,"From"))?,"to":to,"block":self.block(self.field(id,"Block"))?})
+            }
             "Class" => {
-                let mut ranges = Vec::new();
-                for n in self.fields(id, "Ranges") {
-                    let unit = |n| crate::literal::decode_unit(self.source, self.span(n));
-                    let low = unit(self.field(n, "Low"))? as u32;
-                    let high = match self.tree.field(n, "High") {
-                        Some(h) => unit(self.field(h, "Value"))? as u32,
-                        None => low,
-                    };
-                    if high < low {
-                        return Err(self.error(n, "empty character range"));
+                let items = self.class_items(id)?;
+                let negated = self.tree.field(id, "Negated").is_some();
+                let char_of =
+                    |v: &Value| (v["v"] == "char").then(|| v["c"].as_u64().unwrap() as u32);
+                if items.iter().all(|i| {
+                    char_of(&i["first"]).is_some()
+                        && (i["last"].is_null() || char_of(&i["last"]).is_some())
+                }) {
+                    let mut ranges = Vec::new();
+                    for (item, n) in items.iter().zip(self.fields(id, "Ranges")) {
+                        let low = char_of(&item["first"]).unwrap();
+                        let high = if item["last"].is_null() {
+                            low
+                        } else {
+                            char_of(&item["last"]).unwrap()
+                        };
+                        if high < low {
+                            return Err(self.error(n, "empty character range"));
+                        }
+                        ranges.push([low, high]);
                     }
-                    ranges.push([low, high]);
+                    json!({"kind":"class","negated":negated,"ranges":ranges})
+                } else {
+                    json!({"kind":"valueclass","negated":negated,"items":items})
                 }
-                json!({"kind":"class","negated":self.tree.field(id,"Negated").is_some(),"ranges":ranges})
             }
             _ => unreachable!("generated expression variant: {}", self.kind(id)),
         };

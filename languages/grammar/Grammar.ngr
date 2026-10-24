@@ -25,11 +25,11 @@ syntax module NitrideGrammar
 
   syntax File = Modules:Module*;
   syntax Module = "syntax" "module" Name:QualifiedName "{" Members:Member* "}";
-  syntax Member = Using / Symbols / Builtin / Helper / TokenRule / SyntaxRule / ExtensibleRule / Extend;
+  syntax Member = Using / Symbols / Builtin / Helper / Function / TokenRule / SyntaxRule / ExtensibleRule / Extend;
   syntax Using = "using" Name:QualifiedName ";";
   syntax Symbols = "symbols" "{" Names:Identifier+ "}";
   syntax Builtin = "builtin" Kind:Identifier "{" Names:QualifiedName+ "}";
-  syntax Helper = "syntax" "function" Name:Identifier "(" Parameters:(Parameter; ",")* ")" ":" Result:QualifiedName "=" Body:HelperBody ";";
+  syntax Helper = "syntax"? "function" Name:Identifier "(" Parameters:(Parameter; ",")* ")" ":" Result:QualifiedName "=" Body:HelperBody ";";
   syntax Parameter = Name:Identifier ":" Category:QualifiedName List:ListMarker?;
   syntax ListMarker = "*";
   syntax HelperBody = MatchBody / QuoteBody;
@@ -39,6 +39,9 @@ syntax module NitrideGrammar
   syntax Fallback = "_" "=>" Result:QuoteText ";";
   syntax PatternArm = Captures:Captures? Pattern:QuoteText "=>" Result:QuoteText ";";
   syntax Captures = "(" Items:(Parameter; ",")* ")";
+  // Grammar functions, evaluated when the grammar is prepared (spec: grammar functions).
+  syntax Function = "syntax"? "function" Name:Identifier "(" Parameters:(Parameter; ",")* ")" ":" Result:QualifiedName "=" Lets:Let* Body:Expression ";";
+  syntax Let = "let" Name:Identifier "=" Value:Value ";";
   syntax TokenRule = "token" Name:Identifier "=" Body:Expression Except:ExceptList? ";";
   syntax ExceptList = "except" Words:String+;
   syntax SyntaxRule = "syntax" Name:Identifier "=" Body:Expression Clauses:Clause* End:End;
@@ -63,16 +66,59 @@ syntax module NitrideGrammar
   syntax PredicateOp = "!" / "&";
   syntax Postfixed = Inner:Primary Ops:Postfix*;
   syntax Postfix = "?" / "*" / "+";
-  syntax Primary = Literal / Reference / Any / Group / Class;
+  syntax Primary = Literal / FunctionCall / If / Comprehension / Reference / Any / EmptyGroup / Group / Class;
   syntax Literal = Value:String;
   syntax Reference = !Reserved !CallHead Name:QualifiedName;
   syntax Any = !".." ".";
+  syntax FunctionCall = Head:CallHead Args:(Value; ",")* ")";
+  syntax If = "if" Condition:Value "then" Then:Expression "else" Else:Expression;
+  syntax Comprehension = Kind:ComprehensionKind Variable:Identifier "in" From:Value To:RangeEnd? Block:Block;
+  token ComprehensionKind = ("choice" / "seq") !NameTail;
+  syntax RangeEnd = ".." Value:Value;
+  syntax Block = "{" Lets:Let* Where:Where? Body:Expression "}";
+  syntax Where = "where" Condition:Value ":";
+  syntax EmptyGroup = "(" ")";
   syntax Group = "(" Inner:Expression Separator:Separator? ")";
   syntax Separator = ";" Value:Expression;
   syntax Class = "[" Negated:Negation? Ranges:Range+ "]";
   syntax Negation = "^";
-  syntax Range = Low:Char High:Upper?;
-  syntax Upper = ".." Value:Char;
+  syntax Range = Low:Bound High:Upper?;
+  syntax Upper = ".." Value:Bound;
+  syntax Bound = CharValue / GroupValue / CallValue / NameValue;
+
+  // Value expressions, loosest first: if, or, and, not, comparison, |, &, + -, * / %, ^ (right), unary - ~.
+  syntax Value = IfValue / OrValue;
+  syntax IfValue = "if" Condition:Value "then" Then:Value "else" Else:Value;
+  syntax OrValue = Items:AndValue ("or" Items:AndValue)*;
+  syntax AndValue = Items:NotValue ("and" Items:NotValue)*;
+  syntax NotValue = NotApplied / CompareValue;
+  syntax NotApplied = "not" Operand:NotValue;
+  syntax CompareValue = Left:BitOrValue Tail:CompareTail?;
+  syntax CompareTail = Op:CompareOp Right:BitOrValue;
+  token CompareOp = "==" / "!=" / "<=" / ">=" / "<" / ">";
+  syntax BitOrValue = Items:BitAndValue ("|" Items:BitAndValue)*;
+  syntax BitAndValue = Items:AddValue ("&" Items:AddValue)*;
+  syntax AddValue = First:MulValue Rest:AddTail*;
+  syntax AddTail = Op:AddOp Item:MulValue;
+  token AddOp = "+" / "-";
+  syntax MulValue = First:PowValue Rest:MulTail*;
+  syntax MulTail = Op:MulOp Item:PowValue;
+  token MulOp = "*" / "/" / "%";
+  syntax PowValue = Base:UnaryValue Exponent:PowTail?;
+  syntax PowTail = "^" Value:PowValue;
+  syntax UnaryValue = UnaryApplied / AtomValue;
+  syntax UnaryApplied = Op:UnaryOp Operand:UnaryValue;
+  token UnaryOp = "-" / "~";
+  syntax AtomValue = IntValue / CharValue / TextValue / ClassValue / BlockValue / GroupValue / CallValue / NameValue;
+  syntax IntValue = Value:Integer;
+  syntax CharValue = Value:Char;
+  syntax TextValue = Value:String;
+  syntax ClassValue = "[" Negated:Negation? Ranges:Range* "]";
+  syntax BlockValue = Body:Block;
+  syntax GroupValue = "(" Inner:Value ")";
+  syntax CallValue = Head:CallHead Args:(Value; ",")* ")";
+  syntax NameValue = !ValueWord Name:QualifiedName;
+  token ValueWord = ("or" / "and" / "not" / "if" / "then" / "else") !NameTail;
 
   syntax Clause = Declares / References / Scope / Lowers / Rewrites;
   syntax Declares = "declares" Kind:Identifier Field:Identifier Sequential:Sequential? Export:Export? Type:DeclaredType?;
