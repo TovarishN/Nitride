@@ -61,6 +61,28 @@ quoted strings/comments are scanned to locate the block end; raw/verbatim C#
 strings are outside this profile. Parsed declarative clauses are validated before
 being omitted. General grammar-function and semantic-helper support remains deferred.
 
+## Grammar bootstrap
+
+The admitted `.ngr` syntax is now described in
+[`Grammar.ngr`](languages/grammar/Grammar.ngr). Preparation uses Nitride's generated
+parser, with Rust code converting the syntax tree into the preparation model.
+The previous handwritten syntax parser and lexer have been removed.
+
+A checked-in Rust seed breaks the build cycle. Regenerate it with the running
+frontend, then rebuild and require an identical result:
+
+```sh
+cargo run -p nitride-prepare --example bootstrap
+cargo run -p nitride-prepare --example bootstrap -- --check
+```
+
+The workspace tests and CI check this fixed point. This self-hosts the admitted
+grammar syntax; it does not yet admit the full Nitrogen grammar language.
+Literal decoding, admission and code generation remain Rust code. Generated
+recognition enforces parser-frame depth/work limits and reports UTF-8 locations;
+its syntax errors currently use a generic message. See
+[bootstrap evidence and limits](docs/stage9-evidence.md).
+
 ## Example language
 
 ```text
@@ -200,12 +222,12 @@ cargo fmt --all --check
 cargo clippy --workspace --all-targets -- -D warnings
 ```
 
-There are 87 Rust tests, including parity over 189 frozen observations from
+There are 99 Rust tests, including parity over 189 frozen observations from
 actual Nitrogen parsers and, for typed profiles, binding, typing and HIR,
 with the explicit inference-adapter policy described above.
 The development-only exporter has 15 tests. Live differential scripts compare
 384 deterministic generated programs in total. `scripts/prepare_parity.py`
-compares 76 prepared profiles and 16 invalid grammars against the live exporter.
+compares 77 prepared profiles and 16 invalid grammars against the live exporter.
 
 To refresh the reference using a sibling `../Nitrogen` source checkout and a
 .NET 10 SDK or later:
@@ -226,7 +248,7 @@ against live Nitrogen without overwriting them. After a native release build,
 live reference.
 
 The registered `nitrogen.json` and generated helper metadata let the existing
-Nitrogen extension discover the portable, composed, XML, namespace, inference call and function language fixtures. Its workspace checker was verified; live VS Code/Rider interactions
+Nitrogen extension discover the portable, composed, XML, namespace, inference, call, function and grammar-language fixtures. Its workspace checker was verified; live VS Code/Rider interactions
 and editor completion/navigation were not exercised.
 
 ## Scope and evidence

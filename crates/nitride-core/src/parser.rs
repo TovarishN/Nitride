@@ -5,6 +5,22 @@ pub fn parse(
     source: &str,
     limits: Limits,
 ) -> Result<SyntaxTree, Diagnostic> {
+    parse_with_options(language, source, limits, ParseOptions::default())
+}
+
+/// Dialect-specific trivia policy. Ordinary language parsing retains Nitrogen's
+/// permissive trailing-comment behavior; grammar authoring opts into strictness.
+#[derive(Debug, Default, Clone, Copy)]
+pub struct ParseOptions {
+    pub strict_comments: bool,
+}
+
+pub fn parse_with_options(
+    language: &'static Language,
+    source: &str,
+    limits: Limits,
+    options: ParseOptions,
+) -> Result<SyntaxTree, Diagnostic> {
     if source.len() > u32::MAX as usize {
         return Err(Diagnostic::new(
             "limit",
@@ -15,6 +31,7 @@ pub fn parse(
     let mut parser = Parser {
         language,
         source,
+        options,
         limits,
         position: 0,
         furthest: 0,
@@ -60,6 +77,7 @@ struct Winner {
 struct Parser<'a> {
     language: &'static Language,
     source: &'a str,
+    options: ParseOptions,
     limits: Limits,
     position: usize,
     furthest: usize,
@@ -160,6 +178,12 @@ impl Parser<'_> {
             } else if let Some(after_open) = rest.strip_prefix("/*") {
                 if let Some(end) = after_open.find("*/") {
                     self.position += end + 4;
+                } else if self.options.strict_comments {
+                    return Err(Diagnostic::new(
+                        "syntax",
+                        [self.position as u32, self.source.len() as u32],
+                        "unterminated comment",
+                    ));
                 } else {
                     self.position = self.source.len();
                 }

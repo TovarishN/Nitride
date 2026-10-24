@@ -1,0 +1,5 @@
+syntax module Example
+{
+  token Number = ['0'..'9']+;
+  syntax Document = Values:Number*;
+}

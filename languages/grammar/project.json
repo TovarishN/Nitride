@@ -1,0 +1,6 @@
+{
+  "mode": "syntax",
+  "start": "NitrideGrammar.File",
+  "grammars": ["Grammar.ngr"],
+  "catalog": "catalog.json"
+}

@@ -5,7 +5,7 @@ pub mod semantic;
 pub mod syntax;
 pub use execution::*;
 pub use grammar::*;
-pub use parser::parse;
+pub use parser::{ParseOptions, parse, parse_with_options};
 pub use semantic::*;
 pub use syntax::*;
 

@@ -107,6 +107,17 @@
       "sources": [
         "languages/functions/FunctionsSemantics.cs"
       ]
+    },
+    {
+      "name": "NitrideGrammar",
+      "extensions": [
+        ".nitridegrammar"
+      ],
+      "grammars": [
+        "languages/grammar/Grammar.ngr"
+      ],
+      "start": "NitrideGrammar.File",
+      "namespace": "Nitride.Grammar.Syntax"
     }
   ]
 }

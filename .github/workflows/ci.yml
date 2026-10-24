@@ -21,6 +21,8 @@ jobs:
         run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
       - run: cargo +stable fmt --all --check
       - run: cargo +stable test --workspace --locked
+      - name: Verify grammar bootstrap fixed point
+        run: cargo +stable run --locked -p nitride-prepare --example bootstrap -- --check
       - run: cargo +stable clippy --workspace --all-targets --locked -- -D warnings
       - run: cargo +stable build --release --locked
       - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- languages/portable/sample.portable
@@ -28,7 +30,7 @@ jobs:
       - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --parse-xml languages/xml/sample.xml
       - name: Prepare languages natively
         run: |
-          for profile in portable power composition xml namespaces inference calls functions; do
+          for profile in portable power composition xml namespaces inference calls functions grammar; do
             cargo +stable run --release --locked -p nitride-cli --bin nitride -- prepare "languages/$profile/project.json" --output "prepared-$profile.json"
           done
       - run: cargo +stable run --release --locked -p nitride-cli --bin nitride -- --namespaces languages/namespaces/sample.namespaces

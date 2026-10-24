@@ -1,7 +1,5 @@
-use crate::{
-    PrepareError, Source,
-    lexer::{Kind, Lexer, Token},
-};
+use crate::{PrepareError, Source};
+use nitride_core::{Limits, SyntaxTree};
 use serde_json::{Value, json};
 
 pub struct Module {
@@ -28,489 +26,405 @@ pub struct Rule {
     pub span: [usize; 2],
 }
 
+// Recognition comes exclusively from the generated admitted grammar. This
+// decoder projects the resulting syntax into the preparation model; it does not
+// consume tokens, choose alternatives or backtrack.
 pub fn parse(source: &Source, index: usize) -> Result<Vec<Module>, PrepareError> {
-    let mut lexer = Lexer {
+    let tree = nitride_core::parse_with_options(
+        &crate::grammar_seed::LANGUAGE,
+        &source.text,
+        Limits {
+            depth: 512,
+            ..Limits::default()
+        },
+        nitride_core::ParseOptions {
+            strict_comments: true,
+        },
+    )
+    .map_err(|e| {
+        source.error(
+            e.span.map(|v| v as usize),
+            if e.category == "limit" {
+                "grammar nesting/work limit exceeded".into()
+            } else {
+                e.message
+            },
+        )
+    })?;
+    let decoder = Decoder {
         source,
-        position: 0,
+        tree: &tree,
     };
-    let current = lexer.next()?;
-    Parser {
-        lexer,
-        current,
-        depth: 0,
-    }
-    .modules(index)
-}
-struct Parser<'a> {
-    lexer: Lexer<'a>,
-    current: Token,
-    depth: usize,
-}
-impl Parser<'_> {
-    fn error(&self, message: impl Into<String>) -> PrepareError {
-        self.lexer.source.error(self.current.span, message)
-    }
-    fn at(&self, text: &str) -> bool {
-        self.current.text == text
-            && self.current.kind != Kind::String
-            && self.current.kind != Kind::Char
-    }
-    fn advance(&mut self) -> Result<Token, PrepareError> {
-        let next = self.lexer.next()?;
-        Ok(std::mem::replace(&mut self.current, next))
-    }
-    fn take(&mut self, text: &str) -> Result<bool, PrepareError> {
-        if self.at(text) {
-            self.advance()?;
-            Ok(true)
+    // Nodes are postorder. Bound the combined model depth before constructing
+    // recursive JSON, cloning separated-list items, or invoking normalization.
+    // Syntax wrappers conservatively cover the object/array wrappers introduced
+    // by list desugaring; each postfix adds another model wrapper of its own.
+    let mut depths = Vec::with_capacity(tree.nodes.len());
+    for id in 0..tree.nodes.len() as u32 {
+        let children = tree.children(id);
+        let nested = children
+            .iter()
+            .map(|e| depths[e.node as usize])
+            .max()
+            .unwrap_or(0);
+        let postfix = if decoder.kind(id) == "Postfixed" {
+            children.iter().filter(|e| e.label == "Ops").count()
         } else {
-            Ok(false)
+            0
+        };
+        let depth = nested + postfix + 1;
+        if depth > 128 {
+            return Err(decoder.error(id, "grammar nesting exceeds 128"));
+        }
+        depths.push(depth);
+        // Recognition is generated; UTF-16 pairing is a model constraint,
+        // including captured literals within opaque semantic regions.
+        if matches!(decoder.kind(id), "String" | "Char" | "OpaqueCharLiteral") {
+            decoder.literal(id)?;
         }
     }
-    fn expect(&mut self, text: &str) -> Result<(), PrepareError> {
-        if self.take(text)? {
-            Ok(())
-        } else {
-            Err(self.error(format!("expected '{text}'")))
-        }
+    drop(depths);
+    decoder.modules(index)
+}
+
+struct Decoder<'a> {
+    source: &'a Source,
+    tree: &'a SyntaxTree,
+}
+impl Decoder<'_> {
+    fn kind(&self, id: u32) -> &str {
+        crate::grammar_seed::LANGUAGE.rules[self.tree.nodes[id as usize].rule as usize]
+            .name
+            .rsplit('.')
+            .next()
+            .unwrap()
     }
-    fn name(&mut self, qualified: bool) -> Result<String, PrepareError> {
-        if self.current.kind != Kind::Name || (!qualified && self.current.text.contains('.')) {
-            return Err(self.error("expected name"));
-        }
-        Ok(self.advance()?.text)
+    fn span(&self, id: u32) -> [usize; 2] {
+        self.tree.nodes[id as usize].span.map(|v| v as usize)
     }
-    fn modules(&mut self, index: usize) -> Result<Vec<Module>, PrepareError> {
-        let mut modules = Vec::new();
-        while self.current.kind != Kind::End {
-            let start = self.current.span[0];
-            self.expect("syntax")?;
-            self.expect("module")?;
-            let name = self.name(true)?;
-            self.expect("{")?;
-            let mut module = Module {
-                name,
-                imports: Vec::new(),
-                symbols: Vec::new(),
-                builtins: Vec::new(),
-                rules: Vec::new(),
-                extensions: Vec::new(),
-                source: index,
-                span: [start, start],
-            };
-            while !self.at("}") {
-                if self.take("using")? {
-                    module.imports.push(self.name(true)?);
-                    self.expect(";")?;
-                } else if self.take("symbols")? {
-                    self.expect("{")?;
-                    let count = module.symbols.len();
-                    while !self.at("}") {
-                        module.symbols.push(self.name(false)?);
-                    }
-                    if count == module.symbols.len() {
-                        return Err(self.error("expected symbol kind"));
-                    }
-                    self.expect("}")?;
-                } else if self.take("builtin")? {
-                    let kind = self.name(false)?;
-                    if self.at("in") {
-                        return Err(self.error("scoped builtins are not admitted"));
-                    }
-                    self.expect("{")?;
-                    let count = module.builtins.len();
-                    while !self.at("}") {
-                        module.builtins.push((kind.clone(), self.name(true)?));
-                    }
-                    if count == module.builtins.len() {
-                        return Err(self.error("expected builtin name"));
-                    }
-                    self.expect("}")?;
-                } else if self.take("token")? {
-                    let mut rule = self.rule(false, true)?;
-                    if self.take("except")? {
-                        if self.current.kind != Kind::String {
-                            return Err(self.error("expected excluded literal"));
+    fn text(&self, id: u32) -> &str {
+        self.tree.text(id).unwrap()
+    }
+    fn error(&self, id: u32, message: &str) -> PrepareError {
+        self.source.error(self.span(id), message)
+    }
+    fn field(&self, id: u32, label: &str) -> u32 {
+        self.tree.field(id, label).expect("generated grammar field")
+    }
+    fn fields(&self, id: u32, label: &str) -> Vec<u32> {
+        self.tree
+            .children(id)
+            .iter()
+            .filter(|e| e.label == label)
+            .map(|e| e.node)
+            .collect()
+    }
+    fn first(&self, id: u32) -> u32 {
+        self.tree.children(id)[0].node
+    }
+    fn named(&self, id: u32, label: &str) -> String {
+        self.text(self.field(id, label)).into()
+    }
+    fn literal(&self, id: u32) -> Result<String, PrepareError> {
+        crate::literal::decode(self.source, self.span(id), self.kind(id) == "Char")
+    }
+    fn modules(&self, index: usize) -> Result<Vec<Module>, PrepareError> {
+        self.fields(self.tree.root, "Modules")
+            .into_iter()
+            .map(|id| {
+                let mut module = Module {
+                    name: self.named(id, "Name"),
+                    imports: vec![],
+                    symbols: vec![],
+                    builtins: vec![],
+                    rules: vec![],
+                    extensions: vec![],
+                    source: index,
+                    span: self.span(id),
+                };
+                for member in self.fields(id, "Members") {
+                    let m = self.first(member);
+                    match self.kind(m) {
+                        "Using" => module.imports.push(self.named(m, "Name")),
+                        "Symbols" => module.symbols.extend(
+                            self.fields(m, "Names")
+                                .iter()
+                                .map(|&n| self.text(n).to_owned()),
+                        ),
+                        "Builtin" => {
+                            let kind = self.named(m, "Kind");
+                            module.builtins.extend(
+                                self.fields(m, "Names")
+                                    .iter()
+                                    .map(|&n| (kind.clone(), self.text(n).into())),
+                            );
                         }
-                        while self.current.kind == Kind::String {
-                            let token = self.advance()?;
-                            if token.text.is_empty() {
-                                return Err(self.error("empty excluded literal"));
-                            }
-                            rule.except.push(token.text);
+                        "Extend" => {
+                            let alternatives = self
+                                .fields(m, "Alternatives")
+                                .into_iter()
+                                .map(|n| self.rule(n))
+                                .collect::<Result<_, _>>()?;
+                            module
+                                .extensions
+                                .push((self.named(m, "Name"), alternatives));
                         }
+                        _ => module.rules.push(self.rule(m)?),
                     }
-                    self.expect(";")?;
-                    module.rules.push(rule);
-                } else if self.take("syntax")? {
-                    let rule = self.rule(false, false)?;
-                    if !rule.block {
-                        self.expect(";")?;
-                    }
-                    module.rules.push(rule);
-                } else if self.take("extensible")? {
-                    self.expect("syntax")?;
-                    module.rules.push(self.rule(true, false)?);
-                } else if self.take("extend")? {
-                    self.expect("syntax")?;
-                    let target = self.name(true)?;
-                    let alternatives = self.alternatives()?;
-                    module.extensions.push((target, alternatives));
-                } else {
-                    return Err(self.error("unsupported or malformed module declaration"));
                 }
-            }
-            module.span[1] = self.current.span[1];
-            self.advance()?;
-            modules.push(module);
-        }
-        Ok(modules)
+                Ok(module)
+            })
+            .collect()
     }
-    fn rule(&mut self, extensible: bool, lexical: bool) -> Result<Rule, PrepareError> {
-        let start = self.current.span[0];
-        let name = self.name(false)?;
+    fn rule(&self, id: u32) -> Result<Rule, PrepareError> {
+        let body = self
+            .tree
+            .field(id, "Body")
+            .map(|n| self.expr(n))
+            .transpose()?
+            .unwrap_or(Value::Null);
+        let name_node = self
+            .tree
+            .field(id, "Name")
+            .or_else(|| self.tree.field(id, "Named").map(|n| self.field(n, "Name")));
+        let name = match name_node {
+            Some(n) => self.text(n).into(),
+            None if body["kind"] == "ref" => body["name"]
+                .as_str()
+                .unwrap()
+                .rsplit('.')
+                .next()
+                .unwrap()
+                .into(),
+            None => {
+                return Err(self.error(id, "unnamed or transparent alternative is not admitted"));
+            }
+        };
         let mut rule = Rule {
             name,
-            body: Value::Null,
-            lexical,
-            clauses: Vec::new(),
+            body,
+            lexical: self.kind(id) == "TokenRule",
+            clauses: vec![],
             block: false,
-            except: Vec::new(),
+            except: vec![],
             precedence: None,
             associativity: None,
             alternatives: None,
-            span: [start, start],
+            span: self.span(id),
         };
-        if extensible {
-            rule.alternatives = Some(self.alternatives()?);
-        } else {
-            self.expect("=")?;
-            rule.body = self.expression()?;
-            if !lexical {
-                rule.clauses = self.clauses()?;
-                rule.block = self.block()?;
-            }
+        if let Some(n) = name_node {
+            rule.span[0] = self.span(n)[0];
         }
-        rule.span[1] = self.current.span[0];
-        Ok(rule)
-    }
-    fn alternatives(&mut self) -> Result<Vec<Rule>, PrepareError> {
-        self.expect("{")?;
-        let mut rules = Vec::new();
-        while self.take("|")? {
-            let start = self.current.span[0];
-            let mut peek = self.lexer.clone();
-            let name = if self.current.kind == Kind::Name && peek.next()?.text == "=" {
-                let n = self.name(false)?;
-                self.expect("=")?;
-                Some(n)
-            } else {
-                None
-            };
-            let body = self.expression()?;
-            let name = match name {
-                Some(n) => n,
-                None if body["kind"] == "ref" => body["name"]
-                    .as_str()
-                    .unwrap()
-                    .rsplit('.')
-                    .next()
-                    .unwrap()
-                    .into(),
-                _ => return Err(self.error("unnamed or transparent alternative is not admitted")),
-            };
-            let precedence = if self.take("precedence")? {
-                if self.current.kind != Kind::Number {
-                    return Err(self.error("expected precedence number"));
-                }
-                let value = self
-                    .advance()?
-                    .text
-                    .parse::<u32>()
-                    .map_err(|_| self.error("precedence too large"))?;
-                if value > 255 {
-                    return Err(self.error("precedence outside 0..255"));
-                }
-                Some(value)
-            } else {
-                None
-            };
-            let associativity = if self.take("left")? {
-                Some("Left".into())
-            } else if self.take("right")? {
-                Some("Right".into())
-            } else {
-                None
-            };
-            if associativity.is_some() && precedence.is_none() {
-                return Err(self.error("associativity requires precedence"));
-            }
-            let clauses = self.clauses()?;
-            let block = self.block()?;
-            rules.push(Rule {
-                name,
-                body,
-                lexical: false,
-                clauses,
-                block,
-                except: Vec::new(),
-                precedence,
-                associativity,
-                alternatives: None,
-                span: [start, self.current.span[0]],
-            });
-        }
-        self.expect("}")?;
-        Ok(rules)
-    }
-    fn block(&mut self) -> Result<bool, PrepareError> {
-        if !self.at("{") {
-            return Ok(false);
-        }
-        self.lexer.opaque_block(self.current.span[0])?;
-        self.current = self.lexer.next()?;
-        Ok(true)
-    }
-    fn element_start(&self) -> bool {
-        match self.current.kind {
-            Kind::String => true,
-            Kind::Name => !matches!(
-                self.current.text.as_str(),
-                "precedence"
-                    | "except"
-                    | "then"
-                    | "else"
-                    | "declares"
-                    | "references"
-                    | "scope"
-                    | "dynamic"
-                    | "lowers"
-                    | "rewrites"
-            ),
-            _ => matches!(self.current.text.as_str(), "[" | "(" | "." | "!" | "&"),
-        }
-    }
-    fn expression(&mut self) -> Result<Value, PrepareError> {
-        self.depth += 1;
-        if self.depth > 128 {
-            return Err(self.error("grammar nesting exceeds 128"));
-        }
-        let start = self.current.span[0];
-        let first = self.sequence()?;
-        let mut items = vec![first];
-        while self.take("/")? {
-            items.push(self.sequence()?);
-        }
-        self.depth -= 1;
-        if items.len() == 1 {
-            Ok(items.pop().unwrap())
-        } else {
-            Ok(json!({"kind":"choice","items":items,"_span":[start,self.current.span[0]]}))
-        }
-    }
-    fn sequence(&mut self) -> Result<Value, PrepareError> {
-        let start = self.current.span[0];
-        let mut items = vec![self.element()?];
-        while self.element_start() {
-            items.push(self.element()?);
-        }
-        if items.len() == 1 {
-            Ok(items.pop().unwrap())
-        } else {
-            Ok(json!({"kind":"sequence","items":items,"_span":[start,self.current.span[0]]}))
-        }
-    }
-    fn element(&mut self) -> Result<Value, PrepareError> {
-        let start = self.current.span[0];
-        let mut peek = self.lexer.clone();
-        if self.current.kind == Kind::Name
-            && !self.current.text.contains('.')
-            && peek.next()?.text == ":"
-        {
-            let label = self.name(false)?;
-            self.expect(":")?;
-            let inner = self.unary()?;
-            return Ok(
-                json!({"kind":"label","label":label,"inner":inner,"_span":[start,self.current.span[0]]}),
+        if self.kind(id) == "ExtensibleRule" {
+            rule.alternatives = Some(
+                self.fields(id, "Alternatives")
+                    .into_iter()
+                    .map(|n| self.rule(n))
+                    .collect::<Result<_, _>>()?,
             );
         }
-        self.unary()
-    }
-    fn unary(&mut self) -> Result<Value, PrepareError> {
-        let original_depth = self.depth;
-        self.depth += 1;
-        if self.depth > 128 {
-            return Err(self.error("grammar nesting exceeds 128"));
+        if let Some(n) = self.tree.field(id, "Except") {
+            for word in self.fields(n, "Words") {
+                let text = self.literal(word)?;
+                if text.is_empty() {
+                    return Err(self.error(word, "empty excluded literal"));
+                }
+                rule.except.push(text);
+            }
         }
-        let token = self.current.clone();
-        let result = if self.at("!") || self.at("&") {
-            self.advance()?;
-            let inner = self.unary()?;
-            json!({"kind":"predicate","positive":token.text=="&","inner":inner,"_span":token.span})
-        } else {
-            let mut expr = self.primary()?;
-            while self.at("?") || self.at("*") || self.at("+") {
-                let op = self.advance()?.text;
-                expr = json!({"kind":"repeat","min":if op=="+"{1}else{0},"max":if op=="?"{1}else{i32::MAX},"inner":expr,"_span":token.span});
-                // Bound nested postfix forms too; they recurse during validation.
-                self.depth += 1;
-                if self.depth > 128 {
-                    return Err(self.error("grammar nesting exceeds 128"));
-                }
+        if let Some(n) = self.tree.field(id, "Precedence") {
+            let level = self.field(n, "Level");
+            let value = self
+                .text(level)
+                .parse::<u32>()
+                .map_err(|_| self.error(level, "precedence too large"))?;
+            if value > 255 {
+                return Err(self.error(level, "precedence outside 0..255"));
             }
-            expr
-        };
-        // expression()/unary() depth tracks recursive calls; postfix wrappers are
-        // separately bounded above, then the caller's level is restored.
-        self.depth = original_depth;
-        Ok(result)
+            rule.precedence = Some(value);
+            rule.associativity = self.tree.field(n, "Associativity").map(|a| {
+                if self.text(a) == "left" {
+                    "Left".into()
+                } else {
+                    "Right".into()
+                }
+            });
+        }
+        for c in self.fields(id, "Clauses") {
+            rule.clauses.push(self.clause(self.first(c)));
+        }
+        let semantics = self.tree.field(id, "Semantics").or_else(|| {
+            self.tree
+                .field(id, "End")
+                .map(|n| self.first(n))
+                .filter(|&n| self.kind(n) == "Semantics")
+        });
+        rule.block = semantics.is_some();
+        Ok(rule)
     }
-    fn primary(&mut self) -> Result<Value, PrepareError> {
-        let token = self.current.clone();
-        let mut result = match token.kind {
-            Kind::String => {
-                self.advance()?;
-                if token.text.is_empty() {
-                    return Err(self.error("empty literal is not admitted"));
+    fn expr(&self, id: u32) -> Result<Value, PrepareError> {
+        let mut value = match self.kind(id) {
+            "Expression" | "Sequence" => {
+                let items = self
+                    .fields(id, "Items")
+                    .into_iter()
+                    .map(|n| self.expr(n))
+                    .collect::<Result<Vec<_>, _>>()?;
+                if items.len() == 1 {
+                    return Ok(items.into_iter().next().unwrap());
                 }
-                json!({"kind":"literal","text":token.text})
+                json!({"kind":if self.kind(id) == "Expression" {"choice"} else {"sequence"},"items":items})
             }
-            Kind::Name if self.element_start() => {
-                self.advance()?;
-                if self.at("(") && self.current.span[0] == token.span[1] {
-                    return Err(self.error("grammar function calls are not admitted"));
-                }
-                json!({"kind":"ref","name":token.text})
+            "Element" | "Unary" | "Primary" => return self.expr(self.first(id)),
+            "Labelled" => {
+                json!({"kind":"label","label":self.named(id,"Name"),"inner":self.expr(self.field(id,"Inner"))?})
             }
-            _ if self.take(".")? => json!({"kind":"any"}),
-            _ if self.take("(")? => {
-                let expr = self.expression()?;
-                if self.take(";")? {
-                    let separator = self.expression()?;
+            "Predicate" => {
+                json!({"kind":"predicate","positive":self.named(id,"Op")=="&","inner":self.expr(self.field(id,"Inner"))?})
+            }
+            "Postfixed" => {
+                let inner = self.field(id, "Inner");
+                // Primary is a structural wrapper around a concrete variant.
+                let primary = self.first(inner);
+                let mut ops = self.fields(id, "Ops").into_iter();
+                let mut value = if self.kind(primary) == "Group"
+                    && self.tree.field(primary, "Separator").is_some()
+                {
+                    let item = self.expr(self.field(primary, "Inner"))?;
+                    let separator =
+                        self.expr(self.field(self.field(primary, "Separator"), "Value"))?;
                     if separator["kind"] != "literal"
                         || separator["text"].as_str().is_none_or(|s| s.is_empty())
                     {
-                        return Err(
-                            self.error("separated lists require a nonempty literal delimiter")
-                        );
+                        return Err(self.error(
+                            primary,
+                            "separated lists require a nonempty literal delimiter",
+                        ));
                     }
-                    self.expect(")")?;
-                    let at_least_one = if self.take("+")? {
-                        true
-                    } else {
-                        self.expect("*")?;
-                        false
-                    };
-                    let tail = json!({"kind":"repeat","min":0,"max":i32::MAX,"inner":{"kind":"sequence","items":[separator,expr.clone()]}});
-                    let body = json!({"kind":"sequence","items":[expr,tail]});
-                    return Ok(if at_least_one {
+                    let op = ops
+                        .next()
+                        .ok_or_else(|| self.error(primary, "separated list requires '*' or '+'"))?;
+                    if !matches!(self.text(op), "*" | "+") {
+                        return Err(self.error(op, "separated list requires '*' or '+'"));
+                    }
+                    let tail = json!({"kind":"repeat","min":0,"max":i32::MAX,"inner":{"kind":"sequence","items":[separator,item.clone()]}});
+                    let body = json!({"kind":"sequence","items":[item,tail]});
+                    if self.text(op) == "+" {
                         body
                     } else {
                         json!({"kind":"repeat","min":0,"max":1,"inner":body})
-                    });
+                    }
+                } else {
+                    self.expr(inner)?
+                };
+                for (depth, op) in ops.enumerate() {
+                    if depth >= 128 {
+                        return Err(self.error(op, "grammar nesting exceeds 128"));
+                    }
+                    value = json!({"kind":"repeat","min":if self.text(op)=="+"{1}else{0},"max":if self.text(op)=="?"{1}else{i32::MAX},"inner":value,"_span":self.span(id)});
                 }
-                self.expect(")")?;
-                return Ok(expr);
+                return Ok(value);
             }
-            _ if self.take("[")? => {
-                let negated = self.take("^")?;
+            "Literal" => {
+                let text = self.literal(self.field(id, "Value"))?;
+                if text.is_empty() {
+                    return Err(self.error(id, "empty literal is not admitted"));
+                }
+                json!({"kind":"literal","text":text})
+            }
+            "Reference" => json!({"kind":"ref","name":self.named(id,"Name")}),
+            "Any" => json!({"kind":"any"}),
+            "Group" => return self.expr(self.field(id, "Inner")),
+            "Class" => {
                 let mut ranges = Vec::new();
-                while self.current.kind == Kind::Char {
-                    let low = self.advance()?.text.chars().next().unwrap() as u32;
-                    let high = if self.take("..")? {
-                        if self.current.kind != Kind::Char {
-                            return Err(self.error("expected character range bound"));
-                        }
-                        self.advance()?.text.chars().next().unwrap() as u32
-                    } else {
-                        low
+                for n in self.fields(id, "Ranges") {
+                    let low = self.literal(self.field(n, "Low"))?.chars().next().unwrap() as u32;
+                    let high = match self.tree.field(n, "High") {
+                        Some(h) => self
+                            .literal(self.field(h, "Value"))?
+                            .chars()
+                            .next()
+                            .unwrap() as u32,
+                        None => low,
                     };
                     if high < low {
-                        return Err(self.error("empty character range"));
+                        return Err(self.error(n, "empty character range"));
                     }
                     ranges.push([low, high]);
                 }
-                if ranges.is_empty() {
-                    return Err(self.error("character class needs at least one character"));
-                }
-                self.expect("]")?;
-                json!({"kind":"class","negated":negated,"ranges":ranges})
+                json!({"kind":"class","negated":self.tree.field(id,"Negated").is_some(),"ranges":ranges})
             }
-            _ => return Err(self.error("expected grammar expression")),
+            _ => unreachable!("generated expression variant: {}", self.kind(id)),
         };
-        result["_span"] = json!(token.span);
-        Ok(result)
+        value["_span"] = json!(self.span(id));
+        Ok(value)
     }
-    fn clauses(&mut self) -> Result<Vec<Value>, PrepareError> {
-        let mut clauses = Vec::new();
-        loop {
-            let mut field = String::new();
-            let mut target = None;
-            let mut args = Vec::new();
-            let mut kinds = Vec::new();
-            let mut sequential = false;
-            let mut exported = false;
-            let kind = if self.take("declares")? {
-                kinds.push(self.name(false)?);
-                field = self.name(false)?;
-                sequential = self.take("sequential")?;
-                exported = self.take("export")?;
-
-                if self.take("type")? {
-                    target = Some(self.name(true)?);
-                }
+    fn clause(&self, id: u32) -> Value {
+        let mut field = String::new();
+        let mut target = None;
+        let mut args = Vec::new();
+        let mut kinds = Vec::new();
+        let mut sequential = false;
+        let mut exported = false;
+        let kind = match self.kind(id) {
+            "Declares" => {
+                field = self.named(id, "Field");
+                kinds.push(self.named(id, "Kind"));
+                sequential = self.tree.field(id, "Sequential").is_some();
+                exported = self.tree.field(id, "Export").is_some();
+                target = self.tree.field(id, "Type").map(|n| self.named(n, "Name"));
                 "Declares"
-            } else if self.take("references")? {
-                if self.take("(")? {
-                    kinds.push(self.name(false)?);
-                    while self.take("|")? {
-                        kinds.push(self.name(false)?);
-                    }
-                    self.expect(")")?;
+            }
+            "References" => {
+                field = self.named(id, "Field");
+                let n = self.first(self.field(id, "Kinds"));
+                if self.kind(n) == "SingleKind" {
+                    kinds.push(self.named(n, "Name"));
                 } else {
-                    kinds.push(self.name(false)?);
+                    kinds.extend(
+                        self.fields(n, "Names")
+                            .iter()
+                            .map(|&w| self.named(w, "Name")),
+                    );
                 }
-                field = self.name(false)?;
                 "References"
-            } else if self.take("scope")? {
-                "Scope"
-            } else if self.take("lowers")? {
-                if self.at("template") || self.at("expand") {
-                    let form = self.advance()?.text;
-                    field = self.name(false)?;
-                    self.expect("(")?;
-                    args.push(self.name(false)?);
-                    self.expect(")")?;
-                    if form == "template" {
-                        "LowersTemplate"
-                    } else {
-                        "LowersExpand"
-                    }
-                } else if self.take("literal")? {
-                    target = Some(self.name(true)?);
-                    field = self.name(false)?;
-                    "LowersLiteral"
-                } else {
-                    target = Some(self.name(true)?);
-                    self.expect("(")?;
-                    if !self.at(")") {
-                        args.push(self.name(false)?);
-                        while self.take(",")? {
-                            args.push(self.name(false)?);
+            }
+            "Scope" => "Scope",
+            "Lowers" => {
+                let n = self.field(id, "Form");
+                match self.kind(n) {
+                    "Template" | "Expand" => {
+                        field = self.named(n, "Field");
+                        args.push(self.named(n, "Args"));
+                        if self.kind(n) == "Template" {
+                            "LowersTemplate"
+                        } else {
+                            "LowersExpand"
                         }
                     }
-                    self.expect(")")?;
-                    "Lowers"
+                    "LiteralLowering" => {
+                        target = Some(self.named(n, "Target"));
+                        field = self.named(n, "Field");
+                        "LowersLiteral"
+                    }
+                    "Call" => {
+                        target = Some(self.named(n, "Target"));
+                        args.extend(
+                            self.fields(n, "Args")
+                                .iter()
+                                .map(|&w| self.named(w, "Name")),
+                        );
+                        "Lowers"
+                    }
+                    _ => unreachable!(),
                 }
-            } else {
-                break;
-            };
-            let mut clause = json!({"kind":kind,"field":field,"target":target,"args":args,"symbol_kinds":kinds,"sequential":sequential});
-            if exported {
-                clause["export"] = json!(true);
             }
-            clauses.push(clause);
+            _ => unreachable!(),
+        };
+        let mut value = json!({"kind":kind,"field":field,"target":target,"args":args,"symbol_kinds":kinds,"sequential":sequential});
+        if exported {
+            value["export"] = json!(true);
         }
-        Ok(clauses)
+        value
     }
 }
