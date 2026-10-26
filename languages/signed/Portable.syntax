@@ -1,0 +1,2 @@
+#!nitrogen grammar
+language Portable { start Portable.Program; grammars "../portable/Portable.ngr"; extensions ".psig"; }

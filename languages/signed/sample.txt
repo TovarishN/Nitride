@@ -1,0 +1,3 @@
+#!nitrogen language "./Portable.syntax"
+let x : Scalar = 6;
+x * 7;
