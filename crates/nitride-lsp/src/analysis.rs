@@ -2,8 +2,10 @@
 use crate::index::SymbolIndex;
 use crate::lines::LineIndex;
 use crate::registry::{EMPTY_CATALOG, LanguageState, Loaded, Registry, same_file};
+use crate::roles::Role;
 use nitride_core::*;
 use nitride_prepare::{GrammarItem, PrepareError, Source};
+use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -85,6 +87,22 @@ pub struct Analysis {
     pub values: Vec<(u32, String)>,
     /// Recovery's repairs, as candidate quick fixes.
     pub repairs: Vec<Fix>,
+    /// Each (rule, literal)'s palette role in the tree's language.
+    pub roles: Arc<HashMap<(u16, String), Role>>,
+}
+
+/// The grammar frontend's literal roles, computed once.
+fn frontend_roles() -> Arc<HashMap<(u16, String), Role>> {
+    static ROLES: std::sync::OnceLock<Arc<HashMap<(u16, String), Role>>> =
+        std::sync::OnceLock::new();
+    ROLES
+        .get_or_init(|| {
+            Arc::new(crate::roles::roles(
+                nitride_prepare::grammar_language(),
+                &|_| false,
+            ))
+        })
+        .clone()
 }
 
 /// A repair recovery made: text it inserted, or source it skipped.
@@ -150,6 +168,7 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
             index: SymbolIndex::default(),
             values: vec![],
             repairs: vec![],
+            roles: Default::default(),
         };
     };
     let language = loaded.language.language();
@@ -193,6 +212,7 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
         index,
         values,
         repairs,
+        roles: loaded.roles.clone(),
     }
 }
 
@@ -292,6 +312,7 @@ fn grammar(
         index: SymbolIndex::default(),
         values: vec![],
         repairs: vec![],
+        roles: frontend_roles(),
     }
 }
 

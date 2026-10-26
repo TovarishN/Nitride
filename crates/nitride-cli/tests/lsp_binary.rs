@@ -37,7 +37,7 @@ fn binary_session() {
     let document = json!({"textDocument":{"uri":uri}});
     let mut input = Vec::new();
     for message in [
-        json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":root_uri,"capabilities":{},"workspaceFolders":[{"uri":root_uri,"name":"nitride"}]}}),
+        json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":root_uri,"capabilities":{},"initializationOptions":{"paletteTokens":true},"workspaceFolders":[{"uri":root_uri,"name":"nitride"}]}}),
         json!({"jsonrpc":"2.0","method":"initialized","params":{}}),
         json!({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":uri,"languageId":"","version":1,"text":text}}}),
         json!({"jsonrpc":"2.0","id":2,"method":"textDocument/semanticTokens/full","params":document}),
@@ -74,7 +74,15 @@ fn binary_session() {
         .expect("diagnostics for the sample");
     assert_eq!(published["params"]["diagnostics"], json!([]));
     let tokens = messages.iter().find(|m| m["id"] == 2).unwrap();
-    assert!(!tokens["result"]["data"].as_array().unwrap().is_empty());
+    let data = tokens["result"]["data"].as_array().unwrap();
+    assert!(!data.is_empty());
+    // `let` (the first token) is a declaration keyword for a palette client.
+    let legend = &messages.iter().find(|m| m["id"] == 1).unwrap()["result"]["capabilities"]["semanticTokensProvider"]
+        ["legend"]["tokenTypes"];
+    assert_eq!(
+        legend[data[3].as_u64().unwrap() as usize],
+        "declarationKeyword"
+    );
     let symbols = messages.iter().find(|m| m["id"] == 3).unwrap();
     assert_eq!(symbols["result"][0]["name"], "x");
     let hover = messages.iter().find(|m| m["id"] == 5).unwrap();

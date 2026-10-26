@@ -416,7 +416,11 @@ workspace programs. Editing help: completion of names, built-ins, rules and
 keywords; signature help for built-in calls; document, range and on-type
 formatting (whitespace only); inlay hints with each statement's computed value;
 and quick fixes from the parser's repairs, plus removing Nitrogen C# semantic
-members from grammars. Grammar rules navigate and rename across every grammar file
+members from grammars. A client that sends `initializationOptions.paletteTokens:
+true` gets Nitrogen's TextMate palette token types: literals colour by their role
+in their rule (declaration keyword, section keyword, modifier, constant,
+operation word, brackets, terminators, separators), and `.ngr` files by the
+scopes of their TextMate grammar. Grammar rules navigate and rename across every grammar file
 of a language. Syntax-only languages bind names by spelling through their
 `declares` and `references` clauses. While the Nitride extension is installed,
 Nitrogen's VS Code extensions stay inactive.
