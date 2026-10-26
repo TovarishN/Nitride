@@ -3,7 +3,6 @@
 
 pub struct Entry {
     pub name: &'static str,
-    #[allow(dead_code)] // Read by the .ngr palette.
     pub scope: &'static str,
     pub fallback: Option<&'static str>,
 }
@@ -537,4 +536,97 @@ pub fn of(role: crate::roles::Role) -> &'static Entry {
         Separator => 9,
         Operator => 10,
     }]
+}
+
+/// The `.ngr` entry for a TextMate scope.
+pub fn ngr(scope: &str) -> Option<&'static Entry> {
+    ENTRIES
+        .iter()
+        .find(|e| e.name.starts_with("ngr") && e.scope == scope)
+}
+
+/// The `.ngr` scope of a literal in a grammar-frontend rule (its last name
+/// segment): Nitrogen's `NgrLiterals`, by rule where the spelling is not
+/// enough, then by spelling. Rules are Nitride's frontend rules.
+pub fn ngr_literal(rule: &str, literal: &str) -> Option<&'static Entry> {
+    let by_rule = match (rule, literal) {
+        ("Question", "?") => Some("keyword.operator.optional"),
+        ("KindGroup", "|") => Some("keyword.operator.peg"),
+        ("KindGroup", "(") | ("Group", "(") | ("EmptyGroup", "(") => {
+            Some("punctuation.section.group.begin")
+        }
+        ("KindGroup", ")") | ("Group", ")") | ("EmptyGroup", ")") => {
+            Some("punctuation.section.group.end")
+        }
+        ("Separator", ";") => Some("punctuation.separator.list"),
+        ("Module", "module") => Some("storage.type.module"),
+        ("Module", "{") => Some("punctuation.section.module.begin"),
+        ("Module", "}") => Some("punctuation.section.module.end"),
+        ("Class" | "ClassValue", "[") => Some("punctuation.definition.character-class.begin"),
+        ("Class" | "ClassValue", "]") => Some("punctuation.definition.character-class.end"),
+        ("Any", ".") => Some("constant.character.any"),
+        ("Labelled", ":") => Some("punctuation.separator.label"),
+        ("Helper" | "Function" | "Captures", "(") => Some("punctuation.section.parameters.begin"),
+        ("Helper" | "Function" | "Captures", ")") => Some("punctuation.section.parameters.end"),
+        ("Call" | "HelperCall" | "Template" | "Expand" | "ComputedCall", "(") => {
+            Some("punctuation.section.arguments.begin")
+        }
+        ("Call" | "HelperCall" | "Template" | "Expand" | "ComputedCall", ")") => {
+            Some("punctuation.section.arguments.end")
+        }
+        _ => None,
+    };
+    let scope = by_rule.or_else(|| {
+        Some(match literal {
+            "syntax" => "storage.type.syntax",
+            "token" => "storage.type.token",
+            "function" => "storage.type.function",
+            "property" => "storage.type.property",
+            "symbol" => "storage.type.symbol",
+            "language" => "storage.type.language",
+            "module" => "storage.type.module",
+            "out" | "in" => "storage.modifier.direction",
+            "extensible" => "storage.modifier.extensible",
+            "extend" => "storage.modifier.extend",
+            "hover" => "storage.modifier.flag",
+            "lowers" | "rewrites" | "scope" | "except" | "sequential" | "export" | "dynamic" => {
+                "keyword.other.clause"
+            }
+            "declares" => "keyword.other.declares",
+            "references" => "keyword.other.references",
+            "precedence" => "keyword.other.precedence",
+            "left" | "right" => "keyword.other.associativity",
+            "builtin" => "keyword.other.builtin",
+            "check" => "keyword.other.check",
+            "symbols" => "keyword.other.symbols",
+            "for" => "keyword.other.for",
+            "using" => "keyword.other.using",
+            "let" => "keyword.other.let",
+            "initializer" | "literal" | "operation" | "reference" | "type" | "text"
+            | "sequence" | "optional" | "value" | "repeat" | "template" | "expand" => {
+                "keyword.other.lowering"
+            }
+            "start" | "namespace" | "grammars" | "sources" | "extensions" | "usings" | "tokens"
+            | "types" => "keyword.other.setting",
+            "match" => "keyword.control.match",
+            "if" | "then" | "else" => "keyword.control.conditional",
+            "where" => "keyword.control.where",
+            "choice" | "seq" => "keyword.control.loop",
+            "and" | "or" | "not" => "keyword.operator.word",
+            "_" => "variable.language.wildcard",
+            "=" => "keyword.operator.assignment",
+            "=>" => "keyword.operator.arrow",
+            ".." => "keyword.operator.range",
+            "^" => "keyword.operator.negation",
+            "," => "punctuation.separator.comma",
+            ";" => "punctuation.terminator",
+            "/" | "*" | "+" | "!" | "&" | "?" => "keyword.operator.peg",
+            "|" => "keyword.operator.alternative",
+            "{" => "punctuation.section.block.begin",
+            "}" => "punctuation.section.block.end",
+            ":" => "punctuation.separator.type",
+            _ => return None,
+        })
+    });
+    scope.and_then(ngr)
 }

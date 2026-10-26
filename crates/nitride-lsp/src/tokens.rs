@@ -3,7 +3,7 @@
 //! (the TextMate palette), number- and string-like tokens, and comments.
 //! A client that asks for palette tokens gets the palette types; any other
 //! gets each entry's standard fallback, or no token.
-use crate::analysis::Analysis;
+use crate::analysis::{Analysis, Grammar};
 use crate::palette::{self, Entry};
 use crate::roles::{Role, punctuation};
 use nitride_prepare::GrammarItem;
@@ -33,7 +33,16 @@ const VARIABLE: u32 = 3;
 const NUMBER: u32 = 8;
 const STRING: u32 = 9;
 const COMMENT: u32 = 10;
+const PROPERTY: u32 = 5;
 const DECLARATION: u32 = 1;
+/// Marks literal text in the leaf list (not a legend index).
+const LITERAL: u32 = u32::MAX;
+
+/// A leaf's standard type and palette entry (`LITERAL` for literal text).
+type Class = (u32, Option<&'static Entry>);
+
+/// A name token: end, standard type, modifiers, palette entry.
+type Name = (u32, u32, u32, Option<&'static Entry>);
 
 /// The legend: the standard types, then, for a palette client, every palette entry.
 pub fn legend(palette: bool) -> Vec<&'static str> {
@@ -47,27 +56,35 @@ pub fn legend(palette: bool) -> Vec<&'static str> {
 struct Token {
     start: u32,
     end: u32,
-    /// A standard type, used when `palette` is `None`.
-    kind: u32,
+    /// The standard type for a client without palette tokens; `None` uses
+    /// the palette entry's fallback.
+    kind: Option<u32>,
     modifiers: u32,
     palette: Option<&'static Entry>,
 }
 
 impl Token {
-    fn standard(start: u32, end: u32, kind: u32, modifiers: u32) -> Self {
+    /// A standard type for plain clients and a palette entry for palette clients.
+    fn both(
+        start: u32,
+        end: u32,
+        kind: u32,
+        modifiers: u32,
+        entry: Option<&'static Entry>,
+    ) -> Self {
         Self {
             start,
             end,
-            kind,
+            kind: Some(kind),
             modifiers,
-            palette: None,
+            palette: entry,
         }
     }
     fn palette(start: u32, end: u32, entry: &'static Entry) -> Self {
         Self {
             start,
             end,
-            kind: 0,
+            kind: None,
             modifiers: 0,
             palette: Some(entry),
         }
@@ -149,6 +166,8 @@ struct Classifier<'a> {
     text: &'a str,
     owner: Owner,
     literals: HashMap<u16, Vec<(&'a str, Role)>>,
+    /// For a grammar file: each rule's last name segment, for the `.ngr` palette.
+    ngr_rules: Option<Vec<&'a str>>,
 }
 
 impl Classifier<'_> {
@@ -184,11 +203,15 @@ impl Classifier<'_> {
                     punctuation(&c.to_string()).unwrap_or(Role::Operator),
                 ),
             };
-            tokens.push(Token::palette(
-                at as u32,
-                (at + length) as u32,
-                palette::of(role),
-            ));
+            let ngr = self.ngr_rules.as_ref().and_then(|rules| {
+                let rule = rule
+                    .and_then(|r| rules.get(r as usize))
+                    .copied()
+                    .unwrap_or_default();
+                palette::ngr_literal(rule, &text[at..at + length])
+            });
+            let entry = ngr.unwrap_or_else(|| palette::of(role));
+            tokens.push(Token::palette(at as u32, (at + length) as u32, entry));
             at += length;
         }
     }
@@ -210,7 +233,14 @@ impl Classifier<'_> {
             };
             if let Some(comment_end) = comment_end {
                 self.literal(run as u32, i as u32, tokens);
-                tokens.push(Token::standard(i as u32, comment_end as u32, COMMENT, 0));
+                let entry = self.ngr_rules.as_ref().and_then(|_| {
+                    palette::ngr(if bytes[i + 1] == b'/' {
+                        "comment.line.double-slash"
+                    } else {
+                        "comment.block"
+                    })
+                });
+                tokens.push(Token::both(i as u32, comment_end as u32, COMMENT, 0, entry));
                 i = comment_end;
                 run = i;
             } else {
@@ -228,32 +258,69 @@ pub fn encode(analysis: &Analysis, palette: bool) -> Vec<u32> {
     let Some(tree) = &analysis.tree else {
         return vec![];
     };
+    let grammar = matches!(tree.grammar, Grammar::Frontend);
+    let rule_names: Vec<&str> = tree
+        .grammar
+        .language()
+        .rules
+        .iter()
+        .map(|r| r.name.rsplit('.').next().unwrap_or_default())
+        .collect();
     // Names first: a declared name colours its whole span.
-    let mut names = HashMap::new();
+    let mut names: HashMap<u32, Name> = HashMap::new();
     for name in &analysis.declarations {
         let kind = if name.kind == "function" {
             FUNCTION
         } else {
             VARIABLE
         };
-        names.insert(name.name_span[0], (name.name_span[1], kind, DECLARATION));
+        names.insert(
+            name.name_span[0],
+            (name.name_span[1], kind, DECLARATION, None),
+        );
     }
-    fn outline(items: &[GrammarItem], names: &mut HashMap<u32, (u32, u32, u32)>) {
+    fn outline(items: &[GrammarItem], names: &mut HashMap<u32, Name>) {
         for item in items {
-            let kind = match item.kind {
-                "module" => NAMESPACE,
-                "function" | "helper" => FUNCTION,
-                _ => TYPE,
+            let (kind, scope) = match item.kind {
+                "module" => (NAMESPACE, "entity.name.namespace"),
+                "function" | "helper" => (FUNCTION, "entity.name.function.rule"),
+                _ => (TYPE, "entity.name.function.rule"),
             };
             let span = item.name_span.map(|b| b as u32);
-            names.insert(span[0], (span[1], kind, DECLARATION));
+            names.insert(span[0], (span[1], kind, DECLARATION, palette::ngr(scope)));
             outline(&item.children, names);
         }
     }
     outline(&analysis.outline, &mut names);
+    if grammar {
+        // Rule uses (element references, extend targets) and field labels.
+        for (id, node) in tree.nodes.iter().enumerate() {
+            let first = tree
+                .children(id as u32)
+                .first()
+                .map(|&c| tree.nodes[c as usize].span);
+            let (span, kind, scope) = match rule_names[node.rule as usize] {
+                "Reference" => (node.span, TYPE, "entity.name.function.rule"),
+                "Extend" => match first {
+                    Some(span) => (span, TYPE, "entity.name.function.rule"),
+                    None => continue,
+                },
+                "Labelled" => match first {
+                    Some(span) => (span, PROPERTY, "variable.other.member.label"),
+                    None => continue,
+                },
+                _ => continue,
+            };
+            if span[0] < span[1] {
+                names
+                    .entry(span[0])
+                    .or_insert((span[1], kind, 0, palette::ngr(scope)));
+            }
+        }
+    }
 
     // Leaves in text order: token nodes, and childless syntax nodes (literals).
-    let mut leaves: Vec<(u32, u32, Option<u32>)> = Vec::new();
+    let mut leaves: Vec<(u32, u32, Option<Class>)> = Vec::new();
     for (id, node) in tree.nodes.iter().enumerate() {
         if node.child_count != 0 || node.span[0] >= node.span[1] {
             continue;
@@ -261,27 +328,35 @@ pub fn encode(analysis: &Analysis, palette: bool) -> Vec<u32> {
         let rule = tree.rule(id as u32);
         let class = if rule.lexical {
             let name = rule.name.rsplit('.').next().unwrap_or_default();
-            if ["Number", "Digit", "Integer"]
-                .iter()
-                .any(|n| name.contains(n))
-            {
-                Some(NUMBER)
-            } else if ["String", "Char"].iter().any(|n| name.contains(n)) {
-                Some(STRING)
-            } else {
-                None
+            let ngr = |scope| if grammar { palette::ngr(scope) } else { None };
+            match name {
+                "String" => Some((STRING, ngr("string.quoted.double"))),
+                "Char" => Some((STRING, ngr("string.quoted.single"))),
+                "Integer" => Some((NUMBER, ngr("constant.numeric.integer"))),
+                "QuoteText" | "TemplateString" => {
+                    Some((STRING, ngr("string.quoted.other.template")))
+                }
+                _ if ["Number", "Digit", "Integer"]
+                    .iter()
+                    .any(|n| name.contains(n)) =>
+                {
+                    Some((NUMBER, None))
+                }
+                _ if ["String", "Char"].iter().any(|n| name.contains(n)) => Some((STRING, None)),
+                _ => None,
             }
         } else {
-            Some(u32::MAX) // Literal text of a syntax rule.
+            Some((LITERAL, None)) // Literal text of a syntax rule.
         };
         leaves.push((node.span[0], node.span[1], class));
     }
-    leaves.sort_unstable();
+    leaves.sort_unstable_by_key(|&(start, end, _)| (start, end));
 
     let mut classifier = Classifier {
         text,
         owner: Owner::new(analysis),
         literals: literals_by_rule(&analysis.roles),
+        ngr_rules: grammar.then(|| rule_names.clone()),
     };
     let mut at = 0u32;
     for (start, end, class) in leaves {
@@ -289,14 +364,14 @@ pub fn encode(analysis: &Analysis, palette: bool) -> Vec<u32> {
             continue;
         }
         classifier.gap(at, start, &mut tokens);
-        if let Some(&(name_end, kind, modifiers)) = names.get(&start) {
-            tokens.push(Token::standard(start, name_end, kind, modifiers));
+        if let Some(&(name_end, kind, modifiers, entry)) = names.get(&start) {
+            tokens.push(Token::both(start, name_end, kind, modifiers, entry));
             at = name_end.max(end);
             continue;
         }
         match class {
-            Some(u32::MAX) => classifier.literal(start, end, &mut tokens),
-            Some(kind) => tokens.push(Token::standard(start, end, kind, 0)),
+            Some((LITERAL, _)) => classifier.literal(start, end, &mut tokens),
+            Some((kind, entry)) => tokens.push(Token::both(start, end, kind, 0, entry)),
             None => {}
         }
         at = end;
@@ -308,8 +383,11 @@ pub fn encode(analysis: &Analysis, palette: bool) -> Vec<u32> {
 /// A token's type in the client's legend, or `None` when it has none there.
 fn type_index(token: &Token, palette: bool) -> Option<u32> {
     let Some(entry) = token.palette else {
-        return Some(token.kind);
+        return token.kind;
     };
+    if let (false, Some(kind)) = (palette, token.kind) {
+        return Some(kind);
+    }
     if palette {
         let index = palette::ENTRIES
             .iter()

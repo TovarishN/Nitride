@@ -219,3 +219,55 @@ fn roles_in_damaged_program() {
         assert!(!found.is_empty(), "{text:?}");
     }
 }
+
+#[test]
+fn ngr_storage_and_rule_names() {
+    let dir = scratch("palette-ngr");
+    let path = dir.join("Calls.ngr");
+    let text = std::fs::read_to_string(lang("calls/Calls.ngr")).unwrap();
+    let found = kinds(&dir, "Calls.ngr", &text, true);
+    let has = |t: &str, k: &str| found.contains(&(t.to_owned(), k.to_owned()));
+    assert!(has("syntax", "ngrStorageTypeSyntax"), "{found:?}");
+    assert!(has("module", "ngrStorageTypeModule"), "{found:?}");
+    assert!(has("Program", "ngrEntityNameFunctionRule"), "{found:?}");
+    assert!(has("\"let\"", "ngrStringQuotedDouble"), "{found:?}");
+    assert!(has("|", "ngrKeywordOperatorAlternative"), "{found:?}");
+    assert!(has("Calls", "ngrEntityNameNamespace"), "{found:?}");
+    let _ = path;
+    // Without palette tokens, rule names keep their standard type.
+    let plain = kinds(&dir, "Calls.ngr", &text, false);
+    assert!(
+        plain.contains(&("Program".into(), "type".into())),
+        "{plain:?}"
+    );
+}
+
+#[test]
+fn ngr_tokens_valid_everywhere() {
+    let root = repo();
+    let mut files = Vec::new();
+    for entry in std::fs::read_dir(root.join("languages")).unwrap() {
+        let dir = entry.unwrap().path();
+        let mut paths: Vec<PathBuf> = std::fs::read_dir(&dir)
+            .unwrap()
+            .map(|e| e.unwrap().path())
+            .collect();
+        if let Ok(grammars) = std::fs::read_dir(dir.join("Grammars")) {
+            paths.extend(grammars.map(|e| e.unwrap().path()));
+        }
+        for path in paths
+            .into_iter()
+            .filter(|p| p.extension().is_some_and(|e| e == "ngr"))
+        {
+            let text = std::fs::read_to_string(&path).unwrap();
+            files.push((path, text));
+        }
+    }
+    for palette in [true, false] {
+        let (legend, data) = session(&scratch("palette-everywhere"), palette, &files);
+        for ((path, text), data) in files.iter().zip(&data) {
+            let tokens = decode(data, text, &legend);
+            assert!(!tokens.is_empty(), "{}", path.display());
+        }
+    }
+}
