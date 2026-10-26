@@ -172,6 +172,7 @@ impl<W: Write> Server<W> {
                 "workspaceSymbolProvider": true,
                 "inlayHintProvider": true,
                 "completionProvider": {"triggerCharacters": ["."]},
+                "signatureHelpProvider": {"triggerCharacters": ["(", ","]},
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -246,6 +247,28 @@ impl<W: Write> Server<W> {
                     .as_ref()
                     .map(|(index, file)| GrammarAt { index, file: *file });
                 Ok(crate::completion::items(analysis, offset, at))
+            }
+            "textDocument/signatureHelp" => {
+                let Some((offset, _)) = self.located(&uri, params) else {
+                    return Ok(Value::Null);
+                };
+                let analysis = &self.analyses[&uri];
+                let Some(tree) = &analysis.tree else {
+                    return Ok(Value::Null);
+                };
+                let mut leaves: Vec<[u32; 2]> = tree
+                    .nodes
+                    .iter()
+                    .filter(|n| n.child_count == 0 && n.span[0] < n.span[1])
+                    .map(|n| n.span)
+                    .collect();
+                leaves.sort_unstable();
+                Ok(crate::signatures::help(
+                    analysis.lines.text(),
+                    offset,
+                    tree.grammar.language(),
+                    &leaves,
+                ))
             }
             "textDocument/inlayHint" => {
                 let Some(analysis) = self.current(&uri) else {

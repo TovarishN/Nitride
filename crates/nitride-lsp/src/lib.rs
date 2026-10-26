@@ -12,6 +12,7 @@ pub mod navigation;
 pub mod registry;
 mod rpc;
 mod server;
+mod signatures;
 mod structure;
 mod tokens;
 pub(crate) mod uri;
