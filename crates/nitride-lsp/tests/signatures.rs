@@ -81,3 +81,14 @@ fn outside_call_is_null() {
     assert_eq!(help(&dir, "sum(1,2);"), Value::Null);
     assert_eq!(help(&dir, "let a=1"), Value::Null);
 }
+
+/// `(` triggers signature help as the user types; non-ASCII text before it
+/// must not crash the server.
+#[test]
+fn non_ascii_before_paren() {
+    let dir = calls("signature-unicode");
+    for text in ["é(", "let b = ü(", "→(", "😀(", "sum(é("] {
+        let result = help(&dir, text);
+        assert!(result.is_null() || result.is_object(), "{text}: {result}");
+    }
+}

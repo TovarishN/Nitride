@@ -198,3 +198,11 @@ fn format_only_whitespace() {
         assert_eq!(edits, json!([]), "not idempotent: {}", path.display());
     }
 }
+
+/// Trailing spaces inside a multi-line token (a C# block) belong to it.
+#[test]
+fn token_content_untouched() {
+    let text = "syntax module M\n{\n  token A = \"a\";\n  syntax P = A* { var s = 1;   \n    s = 2; }\n}\n";
+    let formatted = format_one(text, json!({}));
+    assert!(formatted.contains("var s = 1;   \n"), "{formatted:?}");
+}

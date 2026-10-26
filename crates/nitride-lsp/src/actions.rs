@@ -8,19 +8,23 @@ use serde_json::{Value, json};
 
 pub const SKIPPED_MEMBER: &str = "C# semantic member is not admitted";
 
+/// Candidate repairs checked per request: each costs a full reparse.
+const MAX_CHECKED_REPAIRS: usize = 10;
+
+fn errors(language: &Language<'_>, text: &str) -> usize {
+    parse_recovering(
+        language,
+        text,
+        Limits::default(),
+        RecoveryOptions::default(),
+    )
+    .diagnostics
+    .len()
+}
+
 /// Whether `after` parses with fewer recovery diagnostics than `before`.
 pub fn helps(language: &Language<'_>, before: &str, after: &str) -> bool {
-    let errors = |text: &str| {
-        parse_recovering(
-            language,
-            text,
-            Limits::default(),
-            RecoveryOptions::default(),
-        )
-        .diagnostics
-        .len()
-    };
-    errors(after) < errors(before)
+    errors(language, after) < errors(language, before)
 }
 
 fn edit(analysis: &Analysis, uri: &str, edits: &[([u32; 2], String)]) -> Value {
@@ -63,7 +67,21 @@ pub fn actions(analysis: &Analysis, uri: &str, start: u32, end: u32, only: &[Str
             .filter(|_| !analysis.repairs.is_empty())
         {
             let language = tree.grammar.language();
-            for fix in &analysis.repairs {
+            let before = errors(language, text);
+            let distance = |fix: &&Fix| {
+                let at = match fix {
+                    Fix::Insert { at, .. } => *at,
+                    Fix::Delete { span } => span[0],
+                };
+                if at < start {
+                    start - at
+                } else {
+                    at.saturating_sub(end)
+                }
+            };
+            let mut nearest: Vec<&Fix> = analysis.repairs.iter().collect();
+            nearest.sort_by_key(distance);
+            for fix in nearest.into_iter().take(MAX_CHECKED_REPAIRS) {
                 let (span, new, title) = match fix {
                     Fix::Insert { at, text: inserted } => {
                         // Insert after the previous token, not after the line break.
@@ -91,7 +109,7 @@ pub fn actions(analysis: &Analysis, uri: &str, start: u32, end: u32, only: &[Str
                 }
                 let mut after = text.to_owned();
                 after.replace_range(span[0] as usize..span[1] as usize, &new);
-                if helps(language, text, &after) {
+                if errors(language, &after) < before {
                     found.push(json!({"title": title, "kind": "quickfix",
                         "edit": edit(analysis, uri, &[(span, new)])}));
                 }

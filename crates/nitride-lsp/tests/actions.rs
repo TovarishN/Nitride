@@ -184,3 +184,23 @@ fn only_filters_kinds() {
         1
     );
 }
+
+/// A select-all code action in a file with many repairs stays bounded.
+#[test]
+fn many_repairs_are_capped() {
+    let dir = calls("action-many");
+    let path = dir.join("x.calls");
+    let text: String = (0..800)
+        .map(|i| format!("let a{i}=1\nsum(a{i},1);\n"))
+        .collect();
+    let started = std::time::Instant::now();
+    let found = actions(&dir, &path, &text, whole(), Some(vec!["quickfix"]));
+    assert!(!found.is_empty());
+    assert!(found.len() <= 20, "{}", found.len());
+    eprintln!("found {} in {:?}", found.len(), started.elapsed());
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(5),
+        "{:?}",
+        started.elapsed()
+    );
+}

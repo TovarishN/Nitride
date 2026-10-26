@@ -25,9 +25,13 @@ fn call_at(text: &str, offset: usize, leaves: &[[u32; 2]]) -> Option<(String, us
             b')' => depth += 1,
             b'(' if depth == 0 => {
                 let end = text[..i].trim_end().len();
+                // Step past the whole character that ends the name, which
+                // may be several bytes long.
                 let start = text[..end]
-                    .rfind(|c: char| !(c.is_ascii_alphanumeric() || c == '_' || c == '.'))
-                    .map_or(0, |p| p + 1);
+                    .char_indices()
+                    .rev()
+                    .find(|(_, c)| !(c.is_ascii_alphanumeric() || *c == '_' || *c == '.'))
+                    .map_or(0, |(p, c)| p + c.len_utf8());
                 return (start < end).then(|| (text[start..end].to_owned(), commas));
             }
             b'(' => depth -= 1,

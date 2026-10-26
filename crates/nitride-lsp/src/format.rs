@@ -9,22 +9,26 @@ use crate::server::range;
 use serde_json::{Value, json};
 
 /// Per byte: inside a token or comment (so not literal text).
-fn opaque(analysis: &Analysis) -> Vec<bool> {
+/// Mask values: inside a token, inside a comment; 0 is literal text.
+const TOKEN: u8 = 2;
+const COMMENT: u8 = 1;
+
+fn opaque(analysis: &Analysis) -> Vec<u8> {
     let text = analysis.lines.text();
     let bytes = text.as_bytes();
-    let mut mask = vec![false; bytes.len()];
+    let mut mask = vec![0u8; bytes.len()];
     if let Some(tree) = &analysis.tree {
         for (id, node) in tree.nodes.iter().enumerate() {
             if node.child_count == 0 && tree.rule(id as u32).lexical {
                 let [start, end] = node.span.map(|b| (b as usize).min(bytes.len()));
-                mask[start..end].iter_mut().for_each(|m| *m = true);
+                mask[start..end].iter_mut().for_each(|m| *m = TOKEN);
             }
         }
     }
     // Comments in the text between tokens.
     let mut i = 0;
     while i + 1 < bytes.len() {
-        if mask[i] {
+        if mask[i] != 0 {
             i += 1;
             continue;
         }
@@ -38,7 +42,7 @@ fn opaque(analysis: &Analysis) -> Vec<bool> {
             i += 1;
             continue;
         };
-        mask[i..end].iter_mut().for_each(|m| *m = true);
+        mask[i..end].iter_mut().for_each(|m| *m = COMMENT);
         i = end;
     }
     mask
@@ -58,12 +62,14 @@ struct Line {
     end: usize,
     /// Inside a token or comment at its first byte.
     opaque: bool,
+    /// A token runs on past the line's end: its trailing whitespace is the token's.
+    token_continues: bool,
     braces: usize,
     /// Unclosed `(` and `[` at its start.
     brackets: usize,
 }
 
-fn lines(analysis: &Analysis, mask: &[bool]) -> Vec<Line> {
+fn lines(analysis: &Analysis, mask: &[u8]) -> Vec<Line> {
     let text = analysis.lines.text();
     let index = &analysis.lines;
     let (mut braces, mut brackets) = (0usize, 0usize);
@@ -71,11 +77,13 @@ fn lines(analysis: &Analysis, mask: &[bool]) -> Vec<Line> {
     for line in 0..index.line_count() {
         let start = index.offset(line, 0) as usize;
         let end = index.offset(line, u32::MAX) as usize;
-        let continues = start > 0 && mask.get(start - 1).copied().unwrap_or(false);
+        let masked = |i: usize| mask.get(i).is_some_and(|m| *m != 0);
+        let continues = start > 0 && masked(start - 1);
         out.push(Line {
             start,
             end,
-            opaque: continues && mask.get(start).copied().unwrap_or(false),
+            opaque: continues && masked(start),
+            token_continues: mask.get(end).is_some_and(|m| *m == TOKEN),
             braces,
             brackets,
         });
@@ -88,7 +96,7 @@ fn lines(analysis: &Analysis, mask: &[bool]) -> Vec<Line> {
         let literal = text.as_bytes()[start..stop]
             .iter()
             .zip(&mask[start..stop])
-            .filter(|(_, opaque)| !**opaque);
+            .filter(|(_, opaque)| **opaque == 0);
         for (byte, _) in literal {
             match byte {
                 b'{' => braces += 1,
@@ -159,7 +167,7 @@ pub fn edits(
         let content = &text[line.start..line.end];
         let leading = content.len() - content.trim_start().len();
         let trailing_at = line.start + content.trim_end().len();
-        if trailing_at < line.end {
+        if trailing_at < line.end && !line.token_continues {
             edits.push(json!({"range": range(&analysis.lines, [trailing_at as u32, line.end as u32]), "newText": ""}));
         }
         if line.brackets > 0 {
