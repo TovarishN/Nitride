@@ -25,9 +25,23 @@ syntax module NitrideGrammar
 
   syntax File = Modules:Module*;
   syntax Module = "syntax" "module" Name:QualifiedName "{" Members:Member* "}";
-  syntax Member = Using / Symbols / Builtin / Helper / Function / TokenRule / SyntaxRule / ExtensibleRule / Extend;
+  syntax Member = Using / Symbols / SymbolProperty / Builtin / Helper / Function / TokenRule / SyntaxRule / ExtensibleRule / Extend;
   syntax Using = "using" Name:QualifiedName ";";
   syntax Symbols = "symbols" "{" Names:Identifier+ "}";
+  // Nitrogen's C# semantic members. They are recognised so that tolerant
+  // preparation can skip them with a diagnostic; they are never admitted.
+  syntax SymbolProperty = "symbol" "property" Name:Identifier "for" Kinds:Kinds ":" Type:CsType "=" Default:CsCode ";";
+  syntax PropertyDecl = Direction:PropertyDirection Flags:PropertyFlag* Name:Identifier ":" Type:CsType "=" Default:CsCode ";";
+  token PropertyDirection = ("out" / "in") !NameTail;
+  token PropertyFlag = ("hover" / "expected") !NameTail;
+  token CsEsc = "\\" .;
+  token CsString = ("$@" / "@$" / "@") "\"" ("\"\"" / [^ '"'])* "\"" / "$"? "\"" (CsEsc / [^ '"' '\\' '\n'])* "\"";
+  token CsChar = "'" (CsEsc / [^ '\'' '\\' '\n'])+ "'";
+  token CsComment = "//" [^ '\n']* / "/*" (!"*/" .)* "*/";
+  token CsNested = "(" CsInner* ")" / "[" CsInner* "]" / "{" CsInner* "}";
+  token CsInner = CsString / CsChar / CsComment / CsNested / [^ '(' ')' '[' ']' '{' '}' '"' '\''];
+  token CsCode = (CsString / CsChar / CsComment / CsNested / [^ '(' ')' '[' ']' '{' '}' '"' '\'' ';'])+;
+  token CsType = (CsString / CsChar / CsComment / CsNested / [^ '(' ')' '[' ']' '{' '}' '"' '\'' ';' '='])+;
   syntax Builtin = "builtin" Kind:Identifier "{" Names:QualifiedName+ "}";
   syntax Helper = "syntax"? "function" Name:Identifier "(" Parameters:(Parameter; ",")* ")" ":" Result:QualifiedName "=" Body:HelperBody ";";
   syntax Parameter = Name:Identifier ":" Category:QualifiedName List:ListMarker?;
@@ -48,7 +62,7 @@ syntax module NitrideGrammar
   syntax End = Semantics / Terminator;
   syntax Terminator = ";";
   syntax Semantics = Body:Opaque;
-  syntax ExtensibleRule = "extensible" "syntax" Name:Identifier "{" Alternatives:Alternative* "}";
+  syntax ExtensibleRule = "extensible" "syntax" Name:Identifier "{" Properties:PropertyDecl* Alternatives:Alternative* "}";
   syntax Extend = "extend" "syntax" Name:QualifiedName "{" Alternatives:Alternative* "}";
   syntax Alternative = "|" Transparent:TransparentMarker? Named:AlternativeName? Body:Expression Precedence:Precedence? Clauses:Clause* Semantics:Semantics?;
   syntax AlternativeName = Name:Identifier "=";
@@ -131,7 +145,14 @@ syntax module NitrideGrammar
   syntax SingleKind = Name:Identifier;
   syntax Word = Name:Identifier;
   syntax Scope = "scope";
-  syntax Lowers = "lowers" Form:(Template / Expand / LiteralLowering / Call);
+  syntax Lowers = "lowers" Form:(Template / Expand / LiteralLowering / SemanticLowering / Call);
+  // Lowerings computed by Nitrogen's C# properties; recognised only to be skipped.
+  syntax SemanticLowering = ReferenceLowering / ComputedCall / ValueLowering;
+  syntax ReferenceLowering = "reference" "type" Property:Identifier Initializer:InitializerSpec?;
+  syntax InitializerSpec = "initializer" Name:Identifier;
+  syntax ComputedCall = "operation" Question:Question? Property:Identifier "(" Args:(Argument; ",")* ")";
+  syntax Question = "?";
+  syntax ValueLowering = "value" "type" Property:Identifier Field:Identifier;
   syntax Template = "template" Field:Identifier "(" Args:Identifier ")";
   syntax Expand = "expand" Field:Identifier "(" Args:Identifier ")";
   syntax LiteralLowering = "literal" Target:QualifiedName Field:Identifier;

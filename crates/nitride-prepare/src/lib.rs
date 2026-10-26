@@ -56,5 +56,48 @@ pub fn prepare_sources(
     start: &str,
     mode: &str,
 ) -> Result<Value, PrepareError> {
-    normalize::prepare(sources, catalog, start, mode)
+    normalize::prepare(sources, catalog, start, mode, false).map(|p| p.data)
+}
+
+/// A prepared language with what tolerant preparation skipped and the
+/// grammar's `declares` clauses, which syntax-only output omits.
+#[derive(Debug)]
+pub struct Prepared {
+    pub data: Value,
+    pub warnings: Vec<PrepareError>,
+    pub declarations: Vec<Declaration>,
+}
+
+/// One `declares` clause: the qualified rule, its name field and symbol kinds.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Declaration {
+    pub rule: String,
+    pub field: String,
+    pub kinds: Vec<String>,
+}
+
+/// Syntax-mode preparation for editors: Nitrogen's C# semantic members are
+/// skipped, each reported as a warning, and the parser is still built.
+pub fn prepare_sources_tolerant(
+    sources: &[Source],
+    catalog: &str,
+    start: &str,
+) -> Result<Prepared, PrepareError> {
+    normalize::prepare(sources, catalog, start, "syntax", true)
+}
+
+/// A declaration in a grammar file's outline.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GrammarItem {
+    /// "module", "syntax", "token", "extensible", "extend", "function" or "helper".
+    pub kind: &'static str,
+    pub name: String,
+    pub span: [usize; 2],
+    pub name_span: [usize; 2],
+    pub children: Vec<GrammarItem>,
+}
+
+/// The modules of one grammar file and the members they declare.
+pub fn grammar_outline(source: &Source) -> Result<Vec<GrammarItem>, PrepareError> {
+    parser::outline(source)
 }

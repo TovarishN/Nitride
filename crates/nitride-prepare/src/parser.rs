@@ -65,34 +65,19 @@ pub struct Rule {
 // Recognition comes exclusively from the generated admitted grammar. This
 // decoder projects the resulting syntax into the preparation model; it does not
 // consume tokens, choose alternatives or backtrack.
-pub fn parse(source: &Source, index: usize) -> Result<Vec<Module>, PrepareError> {
-    let tree = nitride_core::parse_with_options(
-        &crate::grammar_seed::LANGUAGE,
-        &source.text,
-        Limits {
-            parser_frames: 512,
-            ..Limits::default()
-        },
-        nitride_core::ParseOptions {
-            strict_comments: true,
-            // Literal validation inspects quoted text inside opaque blocks.
-            token_children: true,
-            alias_nodes: true,
-        },
-    )
-    .map_err(|e| {
-        source.error(
-            e.span.map(|v| v as usize),
-            if e.category == "limit" {
-                "grammar nesting/work limit exceeded".into()
-            } else {
-                e.message
-            },
-        )
-    })?;
+/// Decodes one grammar source. Nitrogen's C# semantic members are errors,
+/// unless `tolerant`, when each is skipped and returned as a warning.
+pub fn parse(
+    source: &Source,
+    index: usize,
+    tolerant: bool,
+) -> Result<(Vec<Module>, Vec<PrepareError>), PrepareError> {
+    let tree = syntax(source)?;
     let decoder = Decoder {
         source,
         tree: &tree,
+        tolerant,
+        skipped: Default::default(),
     };
     // Nodes are postorder. Bound the combined model depth before constructing
     // recursive JSON, cloning separated-list items, or invoking normalization.
@@ -129,12 +114,88 @@ pub fn parse(source: &Source, index: usize) -> Result<Vec<Module>, PrepareError>
         }
     }
     drop(depths);
-    decoder.modules(index)
+    let modules = decoder.modules(index)?;
+    Ok((modules, decoder.skipped.into_inner()))
+}
+
+/// The grammar frontend's tree of one source.
+fn syntax(source: &Source) -> Result<SyntaxTree<'static>, PrepareError> {
+    nitride_core::parse_with_options(
+        &crate::grammar_seed::LANGUAGE,
+        &source.text,
+        Limits {
+            parser_frames: 512,
+            ..Limits::default()
+        },
+        nitride_core::ParseOptions {
+            strict_comments: true,
+            // Literal validation inspects quoted text inside opaque blocks.
+            token_children: true,
+            alias_nodes: true,
+        },
+    )
+    .map_err(|e| {
+        source.error(
+            e.span.map(|v| v as usize),
+            if e.category == "limit" {
+                "grammar nesting/work limit exceeded".into()
+            } else {
+                e.message
+            },
+        )
+    })
+}
+
+/// Outline items: modules and the rules, tokens and functions they declare.
+pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError> {
+    let tree = syntax(source)?;
+    let decoder = Decoder {
+        source,
+        tree: &tree,
+        tolerant: true,
+        skipped: Default::default(),
+    };
+    let item = |kind: &'static str, id: u32, children| {
+        let name = decoder.field(id, "Name");
+        crate::GrammarItem {
+            kind,
+            name: decoder.text(name).into(),
+            span: decoder.span(id),
+            name_span: decoder.span(name),
+            children,
+        }
+    };
+    Ok(decoder
+        .fields(tree.root, "Modules")
+        .into_iter()
+        .map(|module| {
+            let members = decoder
+                .fields(module, "Members")
+                .into_iter()
+                .filter_map(|member| {
+                    let m = decoder.first(member);
+                    let kind = match decoder.kind(m) {
+                        "TokenRule" => "token",
+                        "SyntaxRule" => "syntax",
+                        "ExtensibleRule" => "extensible",
+                        "Extend" => "extend",
+                        "Function" => "function",
+                        "Helper" => "helper",
+                        _ => return None,
+                    };
+                    Some(item(kind, m, vec![]))
+                })
+                .collect();
+            item("module", module, members)
+        })
+        .collect())
 }
 
 struct Decoder<'a> {
     source: &'a Source,
     tree: &'a SyntaxTree<'static>,
+    tolerant: bool,
+    skipped: std::cell::RefCell<Vec<PrepareError>>,
 }
 impl Decoder<'_> {
     fn kind(&self, id: u32) -> &str {
@@ -152,6 +213,15 @@ impl Decoder<'_> {
     }
     fn error(&self, id: u32, message: &str) -> PrepareError {
         self.source.error(self.span(id), message)
+    }
+    /// A C# semantic member: skipped with a warning when tolerant, else an error.
+    fn semantic_member(&self, id: u32) -> Result<(), PrepareError> {
+        let diagnostic = self.error(id, "C# semantic member is not admitted");
+        if !self.tolerant {
+            return Err(diagnostic);
+        }
+        self.skipped.borrow_mut().push(diagnostic);
+        Ok(())
     }
     fn field(&self, id: u32, label: &str) -> u32 {
         self.tree.field(id, label).expect("generated grammar field")
@@ -193,6 +263,7 @@ impl Decoder<'_> {
                     let m = self.first(member);
                     match self.kind(m) {
                         "Using" => module.imports.push(self.named(m, "Name")),
+                        "SymbolProperty" => self.semantic_member(m)?,
                         "Symbols" => module.symbols.extend(
                             self.fields(m, "Names")
                                 .iter()
@@ -453,6 +524,9 @@ impl Decoder<'_> {
             rule.span[0] = self.span(n)[0];
         }
         if self.kind(id) == "ExtensibleRule" {
+            for property in self.fields(id, "Properties") {
+                self.semantic_member(property)?;
+            }
             rule.alternatives = Some(
                 self.fields(id, "Alternatives")
                     .into_iter()
@@ -488,7 +562,14 @@ impl Decoder<'_> {
             });
         }
         for c in self.fields(id, "Clauses") {
-            rule.clauses.push(self.clause(self.first(c)));
+            let clause = self.first(c);
+            let computed = self.kind(clause) == "Lowers"
+                && self.kind(self.field(clause, "Form")) == "SemanticLowering";
+            if computed {
+                self.semantic_member(c)?;
+            } else {
+                rule.clauses.push(self.clause(clause));
+            }
         }
         let semantics = self.tree.field(id, "Semantics").or_else(|| {
             self.tree

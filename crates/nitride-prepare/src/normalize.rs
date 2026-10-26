@@ -11,7 +11,8 @@ pub fn prepare(
     catalog: &str,
     start: &str,
     mode: &str,
-) -> Result<Value, PrepareError> {
+    tolerant: bool,
+) -> Result<crate::Prepared, PrepareError> {
     let fallback = Source {
         path: "<project>".into(),
         text: String::new(),
@@ -23,8 +24,11 @@ pub fn prepare(
     let catalog_value: Value = serde_json::from_str(catalog)
         .map_err(|e| first.error([0, 0], format!("invalid catalog JSON: {e}")))?;
     let mut modules = Vec::new();
+    let mut warnings = Vec::new();
     for (index, source) in sources.iter().enumerate() {
-        modules.extend(parser::parse(source, index)?);
+        let (parsed, skipped) = parser::parse(source, index, tolerant)?;
+        modules.extend(parsed);
+        warnings.extend(skipped);
     }
     // Grammar functions expand before validation, as in Nitrogen's compiler.
     crate::functions::expand(&mut modules, sources)?;
@@ -214,6 +218,7 @@ pub fn prepare(
     };
     let mut rules = Vec::new();
     let mut omitted = Vec::new();
+    let mut declarations = Vec::new();
     let mut add = |module: &Module,
                    rule: &Rule,
                    owner: Option<&str>,
@@ -222,6 +227,18 @@ pub fn prepare(
      -> Result<Value, PrepareError> {
         let source = &sources[module.source];
         let name = format!("{}.{}", module.name, rule.name);
+        for clause in rule.clauses.iter().filter(|c| c["kind"] == "Declares") {
+            declarations.push(crate::Declaration {
+                rule: name.clone(),
+                field: clause["field"].as_str().unwrap_or_default().into(),
+                kinds: clause["symbol_kinds"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|k| k.as_str().map(Into::into))
+                    .collect(),
+            });
+        }
         if mode == "typed" && rule.block {
             return Err(source.error(
                 rule.span,
@@ -377,7 +394,11 @@ pub fn prepare(
     }
     nitride_codegen::generate(&output.to_string())
         .map_err(|e| first.error([0, 0], format!("profile validation: {e}")))?;
-    Ok(output)
+    Ok(crate::Prepared {
+        data: output,
+        warnings,
+        declarations,
+    })
 }
 fn expr_span(expr: &Value) -> [usize; 2] {
     [
