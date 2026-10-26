@@ -138,3 +138,137 @@ fn nothing_under_cursor() {
         );
     }
 }
+
+fn location(line: u32, start: u32, end: u32) -> Value {
+    json!({"start":{"line":line,"character":start},"end":{"line":line,"character":end}})
+}
+
+const PROGRAM: &str = "let a=1;\nsum(a,a);";
+
+#[test]
+fn definition_from_use() {
+    let dir = calls("definition-use");
+    let path = dir.join("x.calls");
+    for method in ["textDocument/definition", "textDocument/declaration"] {
+        let result = at(&dir, &path, PROGRAM, method, 1, 4, json!({}))["result"].clone();
+        assert_eq!(
+            result,
+            json!({"uri": uri(&path), "range": location(0, 4, 5)}),
+            "{method}"
+        );
+    }
+}
+
+#[test]
+fn references_with_and_without_declaration() {
+    let dir = calls("references");
+    let path = dir.join("x.calls");
+    let count = |include: bool| {
+        at(
+            &dir,
+            &path,
+            PROGRAM,
+            "textDocument/references",
+            0,
+            4,
+            json!({"context":{"includeDeclaration":include}}),
+        )["result"]
+            .as_array()
+            .unwrap()
+            .len()
+    };
+    assert_eq!((count(true), count(false)), (3, 2));
+}
+
+#[test]
+fn highlights_kinds() {
+    let dir = calls("highlights");
+    let path = dir.join("x.calls");
+    let result = at(
+        &dir,
+        &path,
+        PROGRAM,
+        "textDocument/documentHighlight",
+        1,
+        6,
+        json!({}),
+    )["result"]
+        .clone();
+    assert_eq!(
+        result,
+        json!([{"range":location(0,4,5),"kind":3},{"range":location(1,4,5),"kind":2},{"range":location(1,6,7),"kind":2}])
+    );
+}
+
+fn power_grammar_position(needle: &str, shift: u32) -> (PathBuf, String, u32, u32) {
+    let path = lang("power/Power.ngr");
+    let text = std::fs::read_to_string(&path).unwrap();
+    let line = text.lines().position(|l| l.contains(needle)).unwrap();
+    let character = text.lines().nth(line).unwrap().find(needle).unwrap() as u32 + shift;
+    (path, text, line as u32, character)
+}
+
+#[test]
+fn rule_definition_across_files() {
+    let dir = power("rule-definition");
+    let (path, text, line, character) = power_grammar_position("Portable.Expr", 10);
+    let result = at(
+        &dir,
+        &path,
+        &text,
+        "textDocument/definition",
+        line,
+        character,
+        json!({}),
+    )["result"]
+        .clone();
+    let portable = lang("portable/Portable.ngr");
+    assert_eq!(result["uri"], uri(&portable));
+    let source = std::fs::read_to_string(&portable).unwrap();
+    let expr_line = source
+        .lines()
+        .position(|l| l.contains("extensible syntax Expr"))
+        .unwrap() as u64;
+    assert_eq!(result["range"]["start"]["line"], expr_line);
+}
+
+#[test]
+fn rule_references_across_files() {
+    let dir = power("rule-references");
+    let (path, text, line, character) = power_grammar_position("Portable.Expr", 10);
+    let result = at(
+        &dir,
+        &path,
+        &text,
+        "textDocument/references",
+        line,
+        character,
+        json!({"context":{"includeDeclaration":false}}),
+    )["result"]
+        .clone();
+    let uris: Vec<_> = result
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|l| l["uri"].as_str().unwrap().to_owned())
+        .collect();
+    assert!(
+        uris.contains(&uri(&path)) && uris.contains(&uri(&lang("portable/Portable.ngr"))),
+        "{uris:?}"
+    );
+}
+
+#[test]
+fn definition_of_builtin_is_null() {
+    let dir = calls("definition-builtin");
+    let result = at(
+        &dir,
+        &dir.join("x.calls"),
+        "sum(1,2);",
+        "textDocument/definition",
+        0,
+        1,
+        json!({}),
+    );
+    assert_eq!(result["result"], Value::Null);
+}

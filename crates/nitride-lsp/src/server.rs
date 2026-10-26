@@ -159,6 +159,10 @@ impl<W: Write> Server<W> {
                 "foldingRangeProvider": true,
                 "selectionRangeProvider": true,
                 "hoverProvider": true,
+                "definitionProvider": true,
+                "declarationProvider": true,
+                "referencesProvider": true,
+                "documentHighlightProvider": true,
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -186,15 +190,34 @@ impl<W: Write> Server<W> {
                     .current(&uri)
                     .map_or(json!([]), |a| structure::selections(a, &positions)))
             }
-            "textDocument/hover" => {
+            "textDocument/hover"
+            | "textDocument/definition"
+            | "textDocument/declaration"
+            | "textDocument/references"
+            | "textDocument/documentHighlight" => {
                 let Some((offset, grammar)) = self.located(&uri, params) else {
-                    return Ok(Value::Null);
+                    return Ok(match method {
+                        "textDocument/references" | "textDocument/documentHighlight" => json!([]),
+                        _ => Value::Null,
+                    });
                 };
                 let analysis = &self.analyses[&uri];
                 let at = grammar
                     .as_ref()
                     .map(|(index, file)| GrammarAt { index, file: *file });
-                Ok(navigation::hover(analysis, offset, at))
+                Ok(match method {
+                    "textDocument/hover" => navigation::hover(analysis, offset, at),
+                    "textDocument/references" => {
+                        let include = params["context"]["includeDeclaration"]
+                            .as_bool()
+                            .unwrap_or(false);
+                        navigation::references(analysis, &uri, offset, at, include)
+                    }
+                    "textDocument/documentHighlight" => {
+                        navigation::highlights(analysis, &uri, offset, at)
+                    }
+                    _ => navigation::definition(analysis, &uri, offset, at),
+                })
             }
             _ => Err((METHOD_NOT_FOUND, "method not found".into())),
         }

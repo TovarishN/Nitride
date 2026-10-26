@@ -109,3 +109,119 @@ pub fn rule_at(index: &GrammarIndex, file: usize, offset: u32) -> Option<(RuleDe
     };
     Some((rule, span))
 }
+
+/// A `Location` in a grammar file of the index.
+fn grammar_location(index: &GrammarIndex, file: usize, span: [u32; 2]) -> Value {
+    let grammar = &index.files[file];
+    let lines = crate::lines::LineIndex::new(&grammar.text);
+    json!({"uri": crate::uri::from_path(&grammar.path), "range": range(&lines, span)})
+}
+
+/// Every occurrence of the symbol at `offset` as (uri, span, is declaration),
+/// or `None` when there is no renameable symbol there.
+fn occurrences(
+    analysis: &Analysis,
+    uri: &str,
+    offset: u32,
+    grammar: Option<&GrammarAt<'_>>,
+) -> Option<Vec<(Value, bool)>> {
+    if let Some(GrammarAt { index, file }) = grammar {
+        let (rule, _) = rule_at(index, *file, offset)?;
+        let mut found = vec![(
+            grammar_location(index, rule.file, rule.item.name_span.map(|b| b as u32)),
+            true,
+        )];
+        found.extend(
+            index
+                .uses(&rule)
+                .into_iter()
+                .map(|(file, span)| (grammar_location(index, file, span), false)),
+        );
+        return Some(found);
+    }
+    let Some(Target::Definition(definition)) = analysis.index.at(offset) else {
+        return None;
+    };
+    Some(
+        analysis
+            .index
+            .occurrences(definition)
+            .into_iter()
+            .map(|(span, declaration)| {
+                (
+                    json!({"uri": uri, "range": range(&analysis.lines, span)}),
+                    declaration,
+                )
+            })
+            .collect(),
+    )
+}
+
+pub fn definition(
+    analysis: &Analysis,
+    uri: &str,
+    offset: u32,
+    grammar: Option<GrammarAt<'_>>,
+) -> Value {
+    if !on_text(analysis, offset) {
+        return Value::Null;
+    }
+    occurrences(analysis, uri, offset, grammar.as_ref())
+        .and_then(|all| all.into_iter().find(|(_, declaration)| *declaration))
+        .map_or(Value::Null, |(location, _)| location)
+}
+
+pub fn references(
+    analysis: &Analysis,
+    uri: &str,
+    offset: u32,
+    grammar: Option<GrammarAt<'_>>,
+    include_declaration: bool,
+) -> Value {
+    if !on_text(analysis, offset) {
+        return json!([]);
+    }
+    let mut found: Vec<Value> = occurrences(analysis, uri, offset, grammar.as_ref())
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(_, declaration)| include_declaration || !declaration)
+        .map(|(location, _)| location)
+        .collect();
+    found.sort_by_key(|l| {
+        let start = &l["range"]["start"];
+        (
+            l["uri"].as_str().unwrap_or_default().to_owned(),
+            start["line"].as_u64(),
+            start["character"].as_u64(),
+        )
+    });
+    Value::Array(found)
+}
+
+/// Occurrences in this document: the declaration is a write (3), uses reads (2).
+pub fn highlights(
+    analysis: &Analysis,
+    uri: &str,
+    offset: u32,
+    grammar: Option<GrammarAt<'_>>,
+) -> Value {
+    if !on_text(analysis, offset) {
+        return json!([]);
+    }
+    let this = grammar
+        .as_ref()
+        .map(|g| crate::uri::from_path(&g.index.files[g.file].path));
+    let mut found: Vec<Value> = occurrences(analysis, uri, offset, grammar.as_ref())
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|(l, _)| this.as_deref().is_none_or(|this| l["uri"] == this))
+        .map(|(l, declaration)| json!({"range": l["range"], "kind": if declaration { 3 } else { 2 }}))
+        .collect();
+    found.sort_by_key(|h| {
+        (
+            h["range"]["start"]["line"].as_u64(),
+            h["range"]["start"]["character"].as_u64(),
+        )
+    });
+    Value::Array(found)
+}

@@ -13,7 +13,7 @@ mod rpc;
 mod server;
 mod structure;
 mod tokens;
-mod uri;
+pub(crate) mod uri;
 
 use std::time::Duration;
 
