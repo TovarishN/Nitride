@@ -352,7 +352,11 @@ C# semantic members are skipped with a warning.
 The server provides diagnostics, semantic coloring, outline, folding and
 selection ranges, plus hover (types in typed languages), go to definition,
 references, highlights, rename and workspace symbols, for `.ngr` grammars and
-workspace programs. Grammar rules navigate and rename across every grammar file
+workspace programs. Editing help: completion of names, built-ins, rules and
+keywords; signature help for built-in calls; document, range and on-type
+formatting (whitespace only); inlay hints with each statement's computed value;
+and quick fixes from the parser's repairs, plus removing Nitrogen C# semantic
+members from grammars. Grammar rules navigate and rename across every grammar file
 of a language. Syntax-only languages bind names by spelling through their
 `declares` and `references` clauses. While the Nitride extension is installed,
 Nitrogen's VS Code extensions stay inactive.

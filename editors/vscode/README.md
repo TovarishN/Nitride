@@ -27,6 +27,11 @@ are skipped with a warning.
   highlights and rename, for program names and grammar rules. Rule renames
   update every grammar file of the language.
 - Workspace symbol search over grammar rules and open documents.
+- Completion, signature help for built-in calls, and formatting (document,
+  selection, and on typing `}`); formatting changes only whitespace.
+- Inlay hints with each statement's computed value (`= 42`).
+- Quick fixes from the parser's repairs (`Insert ;`), and removal of Nitrogen
+  C# semantic members from grammars (one, or all in a file).
 
 Grammar edits apply without restarting the server.
 

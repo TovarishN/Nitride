@@ -44,6 +44,9 @@ fn binary_session() {
         json!({"jsonrpc":"2.0","id":3,"method":"textDocument/documentSymbol","params":document}),
         json!({"jsonrpc":"2.0","id":5,"method":"textDocument/hover","params":{"textDocument":{"uri":uri},"position":{"line":1,"character":0}}}),
         json!({"jsonrpc":"2.0","id":6,"method":"textDocument/definition","params":{"textDocument":{"uri":uri},"position":{"line":1,"character":0}}}),
+        json!({"jsonrpc":"2.0","id":7,"method":"textDocument/completion","params":{"textDocument":{"uri":uri},"position":{"line":1,"character":0}}}),
+        json!({"jsonrpc":"2.0","id":8,"method":"textDocument/inlayHint","params":{"textDocument":{"uri":uri},"range":{"start":{"line":0,"character":0},"end":{"line":9,"character":0}}}}),
+        json!({"jsonrpc":"2.0","id":9,"method":"textDocument/formatting","params":{"textDocument":{"uri":uri},"options":{"tabSize":2,"insertSpaces":true}}}),
         json!({"jsonrpc":"2.0","id":4,"method":"shutdown"}),
         json!({"jsonrpc":"2.0","method":"exit"}),
     ] {
@@ -87,4 +90,16 @@ fn binary_session() {
         definition["result"]["range"]["start"],
         json!({"line":0,"character":4})
     );
+    let completion = messages.iter().find(|m| m["id"] == 7).unwrap();
+    let labels: Vec<_> = completion["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i["label"].clone())
+        .collect();
+    assert!(labels.contains(&json!("let")), "{labels:?}");
+    let hints = messages.iter().find(|m| m["id"] == 8).unwrap();
+    assert_eq!(hints["result"][0]["label"], "= 512");
+    let formatting = messages.iter().find(|m| m["id"] == 9).unwrap();
+    assert!(formatting["result"].is_array());
 }
