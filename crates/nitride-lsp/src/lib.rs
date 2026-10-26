@@ -3,8 +3,11 @@
 //! JSON-RPC over stdio with std threads only. Positions are UTF-16 on the
 //! wire and UTF-8 byte offsets inside; `lines` converts at the boundary.
 pub mod lines;
+pub mod manifest;
+pub mod registry;
 mod rpc;
 mod server;
+mod uri;
 
 use std::time::Duration;
 

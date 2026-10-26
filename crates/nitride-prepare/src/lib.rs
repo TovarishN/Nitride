@@ -17,7 +17,7 @@ pub struct Source {
     pub text: String,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct PrepareError {
     pub path: String,
     pub span: [usize; 2],
@@ -74,6 +74,16 @@ pub struct Declaration {
     pub rule: String,
     pub field: String,
     pub kinds: Vec<String>,
+}
+
+/// Strict preparation that also returns the grammar's declarations.
+pub fn prepare_sources_detailed(
+    sources: &[Source],
+    catalog: &str,
+    start: &str,
+    mode: &str,
+) -> Result<Prepared, PrepareError> {
+    normalize::prepare(sources, catalog, start, mode, false)
 }
 
 /// Syntax-mode preparation for editors: Nitrogen's C# semantic members are

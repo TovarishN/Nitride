@@ -1,8 +1,11 @@
 //! The message loop: document sync, debounced analysis and request dispatch.
-use crate::{ServeOptions, rpc};
+use crate::lines::LineIndex;
+use crate::registry::Registry;
+use crate::{ServeOptions, manifest, rpc, uri};
 use serde_json::{Value, json};
 use std::collections::{BTreeSet, HashMap};
 use std::io::{self, BufRead, Write};
+use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, RecvTimeoutError};
 
 pub const PARSE_ERROR: i64 = -32700;
@@ -25,6 +28,10 @@ pub struct Server<W: Write> {
     pub documents: HashMap<String, Document>,
     /// Documents whose analysis is out of date.
     pending: BTreeSet<String>,
+    folders: Vec<PathBuf>,
+    pub registry: Registry,
+    /// Manifests, grammars or catalogs changed since languages were loaded.
+    reload: bool,
 }
 
 pub fn run(
@@ -83,6 +90,9 @@ impl<W: Write> Server<W> {
             shutdown: false,
             documents: HashMap::new(),
             pending: BTreeSet::new(),
+            folders: Vec::new(),
+            registry: Registry::default(),
+            reload: false,
         }
     }
 
@@ -124,11 +134,18 @@ impl<W: Write> Server<W> {
         Ok(false)
     }
 
-    fn initialize(&mut self, _params: &Value) -> Value {
+    fn initialize(&mut self, params: &Value) -> Value {
+        let folders = params["workspaceFolders"]
+            .as_array()
+            .map(|folders| folders.iter().filter_map(|f| f["uri"].as_str()).collect())
+            .unwrap_or_else(|| params["rootUri"].as_str().into_iter().collect::<Vec<_>>());
+        self.folders = folders.into_iter().filter_map(uri::to_path).collect();
+        self.reload = true;
         json!({
             "capabilities": {
                 "positionEncoding": "utf-16",
                 "textDocumentSync": 1,
+                "workspace": {"workspaceFolders": {"supported": true, "changeNotifications": true}},
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -141,6 +158,21 @@ impl<W: Write> Server<W> {
     fn notification(&mut self, method: &str, params: Value) -> io::Result<bool> {
         match method {
             "exit" => return Ok(true),
+            "workspace/didChangeWatchedFiles" => self.reload = true,
+            "workspace/didChangeWorkspaceFolders" => {
+                let folders = |key: &str| -> Vec<PathBuf> {
+                    params["event"][key]
+                        .as_array()
+                        .into_iter()
+                        .flatten()
+                        .filter_map(|f| f["uri"].as_str().and_then(uri::to_path))
+                        .collect()
+                };
+                let removed = folders("removed");
+                self.folders.retain(|f| !removed.contains(f));
+                self.folders.extend(folders("added"));
+                self.reload = true;
+            }
             "textDocument/didOpen" => {
                 let document = &params["textDocument"];
                 if let (Some(uri), Some(text)) =
@@ -155,6 +187,7 @@ impl<W: Write> Server<W> {
                         },
                     );
                     self.pending.insert(uri.into());
+                    self.reload |= language_input(uri);
                 }
             }
             "textDocument/didChange" => {
@@ -168,6 +201,7 @@ impl<W: Write> Server<W> {
                     document.version =
                         params["textDocument"]["version"].as_i64().unwrap_or(0) as i32;
                     self.pending.insert(uri.into());
+                    self.reload |= language_input(uri);
                 }
             }
             "textDocument/didClose" => {
@@ -177,6 +211,8 @@ impl<W: Write> Server<W> {
                     .to_owned();
                 self.documents.remove(&uri);
                 self.pending.remove(&uri);
+                // The file on disk replaces the closed buffer.
+                self.reload |= language_input(&uri);
             }
             _ => {}
         }
@@ -185,7 +221,69 @@ impl<W: Write> Server<W> {
 
     /// Brings every pending document's analysis up to date.
     fn flush(&mut self) -> io::Result<()> {
+        if std::mem::take(&mut self.reload) {
+            self.reload_languages()?;
+        }
         self.pending.clear();
         Ok(())
     }
+
+    /// Open buffers by path.
+    fn buffers(&self) -> HashMap<PathBuf, String> {
+        self.documents
+            .iter()
+            .filter_map(|(u, d)| Some((uri::to_path(u)?, d.text.clone())))
+            .collect()
+    }
+
+    fn reload_languages(&mut self) -> io::Result<()> {
+        let buffers = self.buffers();
+        self.registry
+            .reload(&self.folders, &|path: &Path| buffers.get(path).cloned());
+        let mut published = Vec::new();
+        for manifest in self.registry.manifests() {
+            let text = buffers
+                .get(&manifest.path)
+                .cloned()
+                .or_else(|| std::fs::read_to_string(&manifest.path).ok())
+                .unwrap_or_default();
+            let lines = LineIndex::new(&text);
+            let diagnostics: Vec<_> = manifest
+                .errors
+                .iter()
+                .map(|e| diagnostic(&lines, e.span, 1, &e.message))
+                .collect();
+            published.push((uri::from_path(&manifest.path), diagnostics));
+        }
+        for (uri, diagnostics) in published {
+            self.publish(&uri, diagnostics)?;
+        }
+        // Every open document may now belong to a different language.
+        self.pending.extend(self.documents.keys().cloned());
+        Ok(())
+    }
+
+    pub fn publish(&mut self, uri: &str, diagnostics: Vec<Value>) -> io::Result<()> {
+        self.send(
+            json!({"jsonrpc":"2.0","method":"textDocument/publishDiagnostics",
+            "params":{"uri":uri,"diagnostics":diagnostics}}),
+        )
+    }
+}
+
+/// Whether a document is an input of workspace languages.
+fn language_input(uri: &str) -> bool {
+    let name = uri.rsplit('/').next().unwrap_or_default();
+    manifest::NAMES.contains(&name) || name.ends_with(".ngr") || name.ends_with(".json")
+}
+
+pub fn range(lines: &LineIndex, span: [u32; 2]) -> Value {
+    let (sl, sc) = lines.position(span[0]);
+    let (el, ec) = lines.position(span[1].max(span[0]));
+    json!({"start":{"line":sl,"character":sc},"end":{"line":el,"character":ec}})
+}
+
+/// An LSP diagnostic; severity 1 is an error, 2 a warning.
+pub fn diagnostic(lines: &LineIndex, span: [u32; 2], severity: u8, message: &str) -> Value {
+    json!({"range":range(lines, span),"severity":severity,"source":"nitride","message":message})
 }
