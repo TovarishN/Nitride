@@ -171,6 +171,7 @@ impl<W: Write> Server<W> {
                 "renameProvider": {"prepareProvider": true},
                 "workspaceSymbolProvider": true,
                 "inlayHintProvider": true,
+                "codeActionProvider": {"codeActionKinds": ["quickfix", "source.fixAll"]},
                 "completionProvider": {"triggerCharacters": ["."]},
                 "signatureHelpProvider": {"triggerCharacters": ["(", ","]},
                 "documentFormattingProvider": true,
@@ -304,6 +305,31 @@ impl<W: Write> Server<W> {
                     spaces,
                     end_of_file,
                 )))
+            }
+            "textDocument/codeAction" => {
+                let Some(analysis) = self.current(&uri) else {
+                    return Ok(json!([]));
+                };
+                let at = |key: &str| {
+                    let p = &params["range"][key];
+                    let line = u32::try_from(p["line"].as_u64().unwrap_or(0)).unwrap_or(u32::MAX);
+                    let character =
+                        u32::try_from(p["character"].as_u64().unwrap_or(0)).unwrap_or(u32::MAX);
+                    analysis.lines.offset(line, character)
+                };
+                let only: Vec<String> = params["context"]["only"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|k| k.as_str().map(str::to_owned))
+                    .collect();
+                Ok(crate::actions::actions(
+                    analysis,
+                    &uri,
+                    at("start"),
+                    at("end"),
+                    &only,
+                ))
             }
             "textDocument/inlayHint" => {
                 let Some(analysis) = self.current(&uri) else {

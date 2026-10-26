@@ -2,6 +2,7 @@
 //!
 //! JSON-RPC over stdio with std threads only. Positions are UTF-16 on the
 //! wire and UTF-8 byte offsets inside; `lines` converts at the boundary.
+pub mod actions;
 pub mod analysis;
 mod completion;
 mod format;
