@@ -349,9 +349,13 @@ catalog is given). Paths are relative to the manifest. This repository's
 grammars at runtime and reloaded as grammars change; in syntax mode, Nitrogen's
 C# semantic members are skipped with a warning.
 
-Milestone 1 covers diagnostics, semantic coloring, outline, folding and
-selection ranges for `.ngr` grammars and workspace programs. While the Nitride
-extension is installed, Nitrogen's VS Code extensions stay inactive.
+The server provides diagnostics, semantic coloring, outline, folding and
+selection ranges, plus hover (types in typed languages), go to definition,
+references, highlights, rename and workspace symbols, for `.ngr` grammars and
+workspace programs. Grammar rules navigate and rename across every grammar file
+of a language. Syntax-only languages bind names by spelling through their
+`declares` and `references` clauses. While the Nitride extension is installed,
+Nitrogen's VS Code extensions stay inactive.
 
 ## Validate
 

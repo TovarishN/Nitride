@@ -272,3 +272,29 @@ fn definition_of_builtin_is_null() {
     );
     assert_eq!(result["result"], Value::Null);
 }
+
+fn symbols(root: &Path, opened: Vec<Value>, query: &str) -> Vec<Value> {
+    let mut messages = opened;
+    messages.push(request(5, "workspace/symbol", json!({"query": query})));
+    let messages = Session::run(root, messages);
+    response(&messages, 5)["result"].as_array().unwrap().clone()
+}
+
+#[test]
+fn workspace_symbols_find_rules() {
+    let dir = power("symbols-rules");
+    let found = symbols(&dir, vec![], "pow");
+    let pow = found.iter().find(|s| s["name"] == "Pow").expect("Pow");
+    assert_eq!(pow["containerName"], "Portable.Power");
+    assert_eq!(pow["location"]["uri"], uri(&lang("power/Power.ngr")));
+}
+
+#[test]
+fn workspace_symbols_find_open_definitions() {
+    let dir = calls("symbols-open");
+    let path = dir.join("x.calls");
+    let found = symbols(&dir, vec![open(&path, "let total=1;\ntotal;")], "tot");
+    let total = found.iter().find(|s| s["name"] == "total").expect("total");
+    assert_eq!(total["location"]["uri"], uri(&path));
+    assert_eq!(total["kind"], 13);
+}

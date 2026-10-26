@@ -42,6 +42,8 @@ fn binary_session() {
         json!({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":uri,"languageId":"","version":1,"text":text}}}),
         json!({"jsonrpc":"2.0","id":2,"method":"textDocument/semanticTokens/full","params":document}),
         json!({"jsonrpc":"2.0","id":3,"method":"textDocument/documentSymbol","params":document}),
+        json!({"jsonrpc":"2.0","id":5,"method":"textDocument/hover","params":{"textDocument":{"uri":uri},"position":{"line":1,"character":0}}}),
+        json!({"jsonrpc":"2.0","id":6,"method":"textDocument/definition","params":{"textDocument":{"uri":uri},"position":{"line":1,"character":0}}}),
         json!({"jsonrpc":"2.0","id":4,"method":"shutdown"}),
         json!({"jsonrpc":"2.0","method":"exit"}),
     ] {
@@ -72,4 +74,17 @@ fn binary_session() {
     assert!(!tokens["result"]["data"].as_array().unwrap().is_empty());
     let symbols = messages.iter().find(|m| m["id"] == 3).unwrap();
     assert_eq!(symbols["result"][0]["name"], "x");
+    let hover = messages.iter().find(|m| m["id"] == 5).unwrap();
+    assert!(
+        hover["result"]["contents"]["value"]
+            .as_str()
+            .unwrap()
+            .contains("Scalar"),
+        "{hover}"
+    );
+    let definition = messages.iter().find(|m| m["id"] == 6).unwrap();
+    assert_eq!(
+        definition["result"]["range"]["start"],
+        json!({"line":0,"character":4})
+    );
 }

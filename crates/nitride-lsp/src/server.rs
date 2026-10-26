@@ -37,6 +37,9 @@ pub struct Server<W: Write> {
     /// Manifests, grammars or catalogs changed since languages were loaded.
     reload: bool,
     pub analyses: HashMap<String, Analysis>,
+    /// Every workspace grammar, indexed on demand and dropped when languages
+    /// or grammar buffers change.
+    grammars: Option<GrammarIndex>,
 }
 
 pub fn run(
@@ -99,6 +102,7 @@ impl<W: Write> Server<W> {
             registry: Registry::default(),
             reload: false,
             analyses: HashMap::new(),
+            grammars: None,
         }
     }
 
@@ -165,6 +169,7 @@ impl<W: Write> Server<W> {
                 "referencesProvider": true,
                 "documentHighlightProvider": true,
                 "renameProvider": {"prepareProvider": true},
+                "workspaceSymbolProvider": true,
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -229,6 +234,32 @@ impl<W: Write> Server<W> {
                     }
                     _ => navigation::definition(analysis, &uri, offset, at),
                 })
+            }
+            "workspace/symbol" => {
+                let query = params["query"].as_str().unwrap_or_default().to_owned();
+                if std::mem::take(&mut self.reload) {
+                    self.reload_languages()
+                        .map_err(|e| (INVALID_REQUEST, e.to_string()))?;
+                }
+                for uri in std::mem::take(&mut self.pending) {
+                    self.analyze(&uri)
+                        .map_err(|e| (INVALID_REQUEST, e.to_string()))?;
+                }
+                if self.grammars.is_none() {
+                    let mut paths: Vec<PathBuf> = Vec::new();
+                    for language in self.registry.languages() {
+                        for grammar in &language.entry.grammars {
+                            if !paths.iter().any(|p| crate::registry::same_file(p, grammar)) {
+                                paths.push(grammar.clone());
+                            }
+                        }
+                    }
+                    let buffers = self.buffers();
+                    self.grammars = Some(grammar_index::build(&paths, &|p: &Path| buffers.get(p)));
+                }
+                let grammars = self.grammars.as_ref().expect("just built");
+                let open = self.analyses.iter().map(|(u, a)| (u.as_str(), a));
+                Ok(navigation::workspace_symbols(grammars, open, &query))
             }
             _ => Err((METHOD_NOT_FOUND, "method not found".into())),
         }
@@ -395,6 +426,7 @@ impl<W: Write> Server<W> {
     }
 
     fn reload_languages(&mut self) -> io::Result<()> {
+        self.grammars = None;
         let buffers = self.buffers();
         self.registry
             .reload(&self.folders, &|path: &Path| buffers.get(path));

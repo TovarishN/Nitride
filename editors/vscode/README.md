@@ -22,8 +22,13 @@ are skipped with a warning.
 
 ## Features
 
-Diagnostics, semantic coloring, outline, folding and expand-selection for
-grammars and programs. Grammar edits apply without restarting the server.
+- Diagnostics, semantic coloring, outline, folding and expand-selection.
+- Hover with types (typed languages), go to definition, find references,
+  highlights and rename, for program names and grammar rules. Rule renames
+  update every grammar file of the language.
+- Workspace symbol search over grammar rules and open documents.
+
+Grammar edits apply without restarting the server.
 
 ## Settings
 

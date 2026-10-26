@@ -334,3 +334,57 @@ pub fn rename(
     }
     Ok(json!({ "changes": changes }))
 }
+
+/// Whether `query`'s characters appear in `name` in order, ignoring case.
+fn matches(name: &str, query: &str) -> bool {
+    let mut name = name.chars().flat_map(char::to_lowercase);
+    query
+        .chars()
+        .flat_map(char::to_lowercase)
+        .all(|q| name.any(|n| n == q))
+}
+
+const MAX_WORKSPACE_SYMBOLS: usize = 500;
+
+/// Grammar rules of every workspace language, then the definitions of open
+/// documents, whose names match `query`.
+pub fn workspace_symbols<'a>(
+    grammars: &GrammarIndex,
+    open: impl Iterator<Item = (&'a str, &'a Analysis)>,
+    query: &str,
+) -> Value {
+    let mut found = Vec::new();
+    for rule in grammars
+        .definitions()
+        .iter()
+        .filter(|r| matches(&r.item.name, query))
+    {
+        let kind = match rule.item.kind {
+            "token" => 14,
+            "function" | "helper" => 12,
+            _ => 5,
+        };
+        found.push(json!({
+            "name": rule.item.name,
+            "kind": kind,
+            "location": grammar_location(grammars, rule.file, rule.item.name_span.map(|b| b as u32)),
+            "containerName": rule.module,
+        }));
+    }
+    for (uri, analysis) in open {
+        for definition in analysis
+            .index
+            .definitions
+            .iter()
+            .filter(|d| matches(&d.name, query))
+        {
+            found.push(json!({
+                "name": definition.name,
+                "kind": if definition.kind == "function" { 12 } else { 13 },
+                "location": {"uri": uri, "range": range(&analysis.lines, definition.name_span)},
+            }));
+        }
+    }
+    found.truncate(MAX_WORKSPACE_SYMBOLS);
+    Value::Array(found)
+}
