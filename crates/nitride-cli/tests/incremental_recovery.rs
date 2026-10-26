@@ -9,7 +9,7 @@ fn snapshot(source: &str) -> ParseSnapshot {
     .unwrap()
 }
 type NormalizedNode = (u16, [u32; 2], Vec<(&'static str, u32)>);
-fn normalized(tree: &SyntaxTree) -> Vec<NormalizedNode> {
+fn normalized(tree: &SyntaxTree<'static>) -> Vec<NormalizedNode> {
     tree.nodes
         .iter()
         .enumerate()

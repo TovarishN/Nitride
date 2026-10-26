@@ -4,15 +4,15 @@ use super::shared::Occurrences;
 use crate::*;
 use std::{borrow::Cow, sync::OnceLock};
 
-pub(crate) trait SyntaxAccess {
-    fn language(&self) -> &'static Language;
+pub(crate) trait SyntaxAccess<'g> {
+    fn language(&self) -> &'g Language<'g>;
     fn root(&self) -> u32;
     fn nodes(&self) -> &[Node];
     fn edges(&self) -> &[Edge];
-    fn label(&self, edge: &Edge) -> &'static str;
+    fn label(&self, edge: &Edge) -> &'g str;
     fn text(&self, id: u32) -> Option<&str>;
     fn valid_span(&self, span: [u32; 2]) -> bool;
-    fn recovery(&self) -> Option<&RecoveryData>;
+    fn recovery(&self) -> Option<&RecoveryData<'g>>;
     fn children(&self, id: u32) -> &[Edge] {
         let Some(node) = self.nodes().get(id as usize) else {
             return &[];
@@ -31,8 +31,8 @@ pub(crate) trait SyntaxAccess {
             .map(|e| e.node)
     }
 }
-impl SyntaxAccess for SyntaxTree {
-    fn language(&self) -> &'static Language {
+impl<'g> SyntaxAccess<'g> for SyntaxTree<'g> {
+    fn language(&self) -> &'g Language<'g> {
         self.language
     }
     fn root(&self) -> u32 {
@@ -44,7 +44,7 @@ impl SyntaxAccess for SyntaxTree {
     fn edges(&self) -> &[Edge] {
         &self.edges
     }
-    fn label(&self, edge: &Edge) -> &'static str {
+    fn label(&self, edge: &Edge) -> &'g str {
         SyntaxTree::label(self, edge)
     }
     fn text(&self, id: u32) -> Option<&str> {
@@ -55,7 +55,7 @@ impl SyntaxAccess for SyntaxTree {
             .get(span[0] as usize..span[1] as usize)
             .is_some()
     }
-    fn recovery(&self) -> Option<&RecoveryData> {
+    fn recovery(&self) -> Option<&RecoveryData<'g>> {
         SyntaxTree::recovery(self)
     }
 }
@@ -63,7 +63,7 @@ struct SnapshotOccurrences<'a> {
     snapshot: &'a ParseSnapshot,
     indexed: Occurrences,
     text: Vec<OnceLock<Box<str>>>,
-    recovery: Option<Box<RecoveryData>>,
+    recovery: Option<Box<RecoveryData<'static>>>,
 }
 impl<'a> SnapshotOccurrences<'a> {
     fn new(snapshot: &'a ParseSnapshot, limits: Limits) -> Result<Self, Diagnostic> {
@@ -85,8 +85,8 @@ impl<'a> SnapshotOccurrences<'a> {
         })
     }
 }
-impl SyntaxAccess for SnapshotOccurrences<'_> {
-    fn language(&self) -> &'static Language {
+impl SyntaxAccess<'static> for SnapshotOccurrences<'_> {
+    fn language(&self) -> &'static Language<'static> {
         self.snapshot.language
     }
     fn root(&self) -> u32 {
@@ -120,7 +120,7 @@ impl SyntaxAccess for SnapshotOccurrences<'_> {
     fn valid_span(&self, span: [u32; 2]) -> bool {
         self.snapshot.source.valid_span(span)
     }
-    fn recovery(&self) -> Option<&RecoveryData> {
+    fn recovery(&self) -> Option<&RecoveryData<'static>> {
         self.recovery.as_deref()
     }
 }
@@ -132,10 +132,10 @@ fn language_error() -> Diagnostic {
     )
 }
 pub fn compile_snapshot(
-    language: &'static Language,
+    language: &'static Language<'static>,
     snapshot: &ParseSnapshot,
     limits: Limits,
-) -> Result<Program, Vec<Diagnostic>> {
+) -> Result<Program<'static>, Vec<Diagnostic>> {
     if !std::ptr::eq(language, snapshot.language) {
         return Err(vec![language_error()]);
     }
@@ -153,10 +153,10 @@ pub fn compile_snapshot(
     crate::semantic::compile_mode(language, &indexed, limits, false).map_err(|e| vec![e])
 }
 pub fn compile_snapshot_recovering(
-    language: &'static Language,
+    language: &'static Language<'static>,
     snapshot: &ParseSnapshot,
     limits: Limits,
-) -> RecoveredAnalysis {
+) -> RecoveredAnalysis<'static> {
     let mut diagnostics = snapshot.diagnostics().to_vec();
     if !std::ptr::eq(language, snapshot.language) {
         diagnostics.push(language_error());

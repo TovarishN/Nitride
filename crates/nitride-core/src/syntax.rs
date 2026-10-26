@@ -15,19 +15,19 @@ pub struct Edge {
 }
 
 #[derive(Debug)]
-pub struct SyntaxTree {
-    pub(crate) language: &'static crate::Language,
+pub struct SyntaxTree<'g> {
+    pub(crate) language: &'g crate::Language<'g>,
     pub source: String,
     pub nodes: Vec<Node>,
     pub edges: Vec<Edge>,
     pub root: u32,
     /// The distinct labels of this tree's edges; entry 0 is "".
-    pub(crate) labels: Vec<&'static str>,
-    pub(crate) recovery: Option<Box<crate::RecoveryData>>,
+    pub(crate) labels: Vec<&'g str>,
+    pub(crate) recovery: Option<Box<crate::RecoveryData<'g>>>,
 }
 
-impl SyntaxTree {
-    pub fn recovery(&self) -> Option<&crate::RecoveryData> {
+impl<'g> SyntaxTree<'g> {
+    pub fn recovery(&self) -> Option<&crate::RecoveryData<'g>> {
         self.recovery.as_deref()
     }
     pub fn node(&self, id: u32) -> Option<&Node> {
@@ -45,7 +45,7 @@ impl SyntaxTree {
             .unwrap_or(&[])
     }
     /// The field label of an edge of this tree.
-    pub fn label(&self, edge: &Edge) -> &'static str {
+    pub fn label(&self, edge: &Edge) -> &'g str {
         self.labels.get(edge.label as usize).copied().unwrap_or("")
     }
     pub fn field(&self, id: u32, label: &str) -> Option<u32> {

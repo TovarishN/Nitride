@@ -172,7 +172,7 @@ impl<'p, 's> SyntaxContext<'p, 's> {
     #[inline]
     pub fn interpret(
         &mut self,
-        expr: &'static Expr,
+        expr: &'static Expr<'static>,
         owner: Option<u16>,
         minimum: u32,
         depth: u32,

@@ -1,108 +1,108 @@
 #[derive(Debug)]
-pub enum Expr {
-    Literal(&'static str),
-    Class(&'static [(char, char)]),
-    NotClass(&'static [(char, char)]),
+pub enum Expr<'g> {
+    Literal(&'g str),
+    Class(&'g [(char, char)]),
+    NotClass(&'g [(char, char)]),
     Any,
     Predicate {
         positive: bool,
-        inner: &'static Expr,
+        inner: &'g Expr<'g>,
     },
     Ref(u16),
-    Sequence(&'static [Expr]),
-    Choice(&'static [Expr]),
-    Label(&'static str, &'static Expr),
+    Sequence(&'g [Expr<'g>]),
+    Choice(&'g [Expr<'g>]),
+    Label(&'g str, &'g Expr<'g>),
     Repeat {
-        inner: &'static Expr,
+        inner: &'g Expr<'g>,
         min: u32,
         max: u32,
     },
     Pratt {
-        prefixes: &'static [u16],
-        infixes: &'static [u16],
+        prefixes: &'g [u16],
+        infixes: &'g [u16],
         /// Alternatives can begin alike, so results are memoized by position.
         memoize: bool,
     },
 }
 
 #[derive(Debug)]
-pub enum Action {
+pub enum Action<'g> {
     None,
     Literal {
-        ty: &'static str,
-        field: &'static str,
+        ty: &'g str,
+        field: &'g str,
     },
     Reference {
-        kinds: &'static [&'static str],
-        field: &'static str,
-        values: &'static [BuiltinValue],
+        kinds: &'g [&'g str],
+        field: &'g str,
+        values: &'g [BuiltinValue<'g>],
     },
     Operation {
         id: u16,
-        fields: &'static [&'static str],
+        fields: &'g [&'g str],
         /// Positions passing their field's exact source spelling as `Core.Text`.
-        texts: &'static [bool],
+        texts: &'g [bool],
     },
     Overload {
-        candidates: &'static [u16],
-        fields: &'static [&'static str],
+        candidates: &'g [u16],
+        fields: &'g [&'g str],
     },
     Call {
-        kinds: &'static [&'static str],
-        field: &'static str,
-        fields: &'static [&'static str],
-        builtins: &'static [Builtin],
+        kinds: &'g [&'g str],
+        field: &'g str,
+        fields: &'g [&'g str],
+        builtins: &'g [Builtin<'g>],
     },
     Template {
-        kind: &'static str,
-        field: &'static str,
-        body: &'static str,
-        parameters: &'static str,
+        kind: &'g str,
+        field: &'g str,
+        body: &'g str,
+        parameters: &'g str,
     },
     Parameter {
-        kind: &'static str,
-        field: &'static str,
-        annotation: &'static str,
+        kind: &'g str,
+        field: &'g str,
+        annotation: &'g str,
     },
     Alias {
-        kind: &'static str,
-        field: &'static str,
+        kind: &'g str,
+        field: &'g str,
     },
     Expand {
-        kinds: &'static [&'static str],
-        field: &'static str,
-        arguments: &'static str,
+        kinds: &'g [&'g str],
+        field: &'g str,
+        arguments: &'g str,
     },
     Declare {
-        kind: &'static str,
-        field: &'static str,
-        annotation: Option<&'static str>,
-        value: &'static str,
+        kind: &'g str,
+        field: &'g str,
+        annotation: Option<&'g str>,
+        value: &'g str,
     },
     Show {
-        field: &'static str,
+        field: &'g str,
     },
     /// Replaces the use with its helper's template, holes filled by `fields`.
     Rewrite {
         helper: u16,
-        fields: &'static [&'static str],
-        name: &'static str,
+        fields: &'g [&'g str],
+        name: &'g str,
     },
 }
 
 #[derive(Debug)]
-pub struct Builtin {
-    pub kind: &'static str,
-    pub name: &'static str,
-    pub candidates: &'static [u16],
+pub struct Builtin<'g> {
+    pub kind: &'g str,
+    pub name: &'g str,
+    pub candidates: &'g [u16],
 }
 
 /// A host-supplied built-in value, typed by the catalog.
 #[derive(Debug, PartialEq, Eq)]
-pub struct BuiltinValue {
-    pub kind: &'static str,
-    pub name: &'static str,
-    pub ty: &'static str,
+pub struct BuiltinValue<'g> {
+    pub kind: &'g str,
+    pub name: &'g str,
+    pub ty: &'g str,
 }
 
 /// A fixed engine predicate over a field's source spelling; never translated C#.
@@ -112,47 +112,47 @@ pub enum Predicate {
 }
 
 #[derive(Debug)]
-pub struct Check {
+pub struct Check<'g> {
     pub rule: u16,
-    pub field: &'static str,
+    pub field: &'g str,
     pub predicate: Predicate,
-    pub code: &'static str,
-    pub message: &'static str,
+    pub code: &'g str,
+    pub message: &'g str,
 }
 
 /// A `$Name` template hole and the syntax category it stands for.
 #[derive(Debug)]
-pub struct Hole {
-    pub name: &'static str,
+pub struct Hole<'g> {
+    pub name: &'g str,
     pub category: u16,
 }
 
 /// An ordered match arm: captures, the pattern quote and the result quote.
 #[derive(Debug)]
-pub struct Arm {
-    pub captures: &'static [Hole],
-    pub pattern: &'static str,
-    pub result: &'static str,
+pub struct Arm<'g> {
+    pub captures: &'g [Hole<'g>],
+    pub pattern: &'g str,
+    pub result: &'g str,
 }
 
 /// A typed quote helper; inline rewrites are synthesized helpers whose
 /// parameters are the use's syntax fields. A match helper's body is its fallback.
 #[derive(Debug)]
-pub struct Helper {
-    pub name: &'static str,
-    pub parameters: &'static [Hole],
+pub struct Helper<'g> {
+    pub name: &'g str,
+    pub parameters: &'g [Hole<'g>],
     pub result: u16,
-    pub body: &'static str,
+    pub body: &'g str,
     pub selector: Option<u8>,
-    pub arms: &'static [Arm],
+    pub arms: &'g [Arm<'g>],
 }
 
 #[derive(Debug)]
-pub struct Rule {
-    pub name: &'static str,
+pub struct Rule<'g> {
+    pub name: &'g str,
     pub lexical: bool,
-    pub expr: Expr,
-    pub except: &'static [&'static str],
+    pub expr: Expr<'g>,
+    pub except: &'g [&'g str],
     pub precedence: u32,
     pub right_associative: bool,
     /// A prefix alternative with no node of its own: its one element stands in.
@@ -161,14 +161,14 @@ pub struct Rule {
     /// (Nitrogen's alias): its one child, if any, stands in for it.
     pub alias: bool,
     pub owner: Option<u16>,
-    pub action: Action,
+    pub action: Action<'g>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct Signature {
-    pub id: &'static str,
-    pub inputs: &'static [&'static str],
-    pub result: &'static str,
+pub struct Signature<'g> {
+    pub id: &'g str,
+    pub inputs: &'g [&'g str],
+    pub result: &'g str,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -178,14 +178,14 @@ pub enum Profile {
 }
 
 #[derive(Debug)]
-pub struct Language {
+pub struct Language<'g> {
     pub profile: Profile,
-    pub rules: &'static [Rule],
+    pub rules: &'g [Rule<'g>],
     pub start: u16,
-    pub types: &'static [&'static str],
-    pub operations: &'static [Signature],
-    pub handlers: &'static [&'static str],
-    pub checks: &'static [Check],
-    pub helpers: &'static [Helper],
-    pub source_hash: &'static str,
+    pub types: &'g [&'g str],
+    pub operations: &'g [Signature<'g>],
+    pub handlers: &'g [&'g str],
+    pub checks: &'g [Check<'g>],
+    pub helpers: &'g [Helper<'g>],
+    pub source_hash: &'g str,
 }

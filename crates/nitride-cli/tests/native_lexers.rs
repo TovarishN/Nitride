@@ -162,7 +162,7 @@ fn native_depth_facts_do_not_reject_lower_budget_interpreted_edits() {
         }
         Some(false)
     }
-    fn rule(name: &'static str, expr: Expr, lexical: bool) -> Rule {
+    fn rule(name: &'static str, expr: Expr<'static>, lexical: bool) -> Rule<'static> {
         Rule {
             name,
             expr,

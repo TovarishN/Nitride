@@ -3,12 +3,12 @@ use crate::*;
 use std::collections::HashMap;
 
 #[derive(Debug)]
-pub enum HirKind {
+pub enum HirKind<'g> {
     /// A damaged or invalid value. Never admitted to execution.
     Error,
     Constant(f64),
     Reference(u32),
-    Builtin(&'static BuiltinValue),
+    Builtin(&'g BuiltinValue<'g>),
     /// An exact source spelling, `Program::text[start..end]`, feeding a text operation.
     Text {
         start: u32,
@@ -20,9 +20,9 @@ pub enum HirKind {
     },
 }
 #[derive(Debug)]
-pub struct HirNode {
-    pub kind: HirKind,
-    pub ty: &'static str,
+pub struct HirNode<'g> {
+    pub kind: HirKind<'g>,
+    pub ty: &'g str,
     pub span: [u32; 2],
 }
 #[derive(Debug)]
@@ -31,25 +31,25 @@ pub struct Statement {
     pub symbol: Option<u32>,
 }
 #[derive(Debug)]
-pub struct Binding {
-    pub kind: &'static str,
+pub struct Binding<'g> {
+    pub kind: &'g str,
     pub span: [u32; 2],
     pub symbol: u32,
 }
 #[derive(Debug)]
-pub struct BuiltinBinding {
-    pub kind: &'static str,
-    pub name: &'static str,
+pub struct BuiltinBinding<'g> {
+    pub kind: &'g str,
+    pub name: &'g str,
     pub span: [u32; 2],
 }
 #[derive(Debug)]
-pub struct Program {
-    pub language: &'static Language,
-    pub nodes: Vec<HirNode>,
+pub struct Program<'g> {
+    pub language: &'g Language<'g>,
+    pub nodes: Vec<HirNode<'g>>,
     pub args: Vec<u32>,
     pub statements: Vec<Statement>,
-    pub bindings: Vec<Binding>,
-    pub builtin_bindings: Vec<BuiltinBinding>,
+    pub bindings: Vec<Binding<'g>>,
+    pub builtin_bindings: Vec<BuiltinBinding<'g>>,
     pub origin_spans: Vec<[u32; 2]>,
     pub origin_ranges: Vec<std::ops::Range<u32>>,
     /// Parallel to `origin_spans` in rewrite profiles: true for a span within
@@ -62,11 +62,11 @@ pub struct Program {
 pub const TEXT: &str = "Core.Text";
 pub const ERROR_TYPE: &str = "<error>";
 
-pub fn compile(
-    language: &'static Language,
-    tree: &SyntaxTree,
+pub fn compile<'g>(
+    language: &'g Language<'g>,
+    tree: &SyntaxTree<'g>,
     limits: Limits,
-) -> Result<Program, Vec<Diagnostic>> {
+) -> Result<Program<'g>, Vec<Diagnostic>> {
     if let Some(recovery) = tree.recovery() {
         return Err(recovery.diagnostics.clone());
     }
@@ -82,22 +82,22 @@ pub fn compile(
 
 /// Name resolution facts for one syntax tree.
 #[derive(Default)]
-struct Bound {
+struct Bound<'g> {
     references: HashMap<u32, (u32, u32)>,
-    values: HashMap<u32, &'static BuiltinValue>,
-    calls: HashMap<u32, &'static [u16]>,
+    values: HashMap<u32, &'g BuiltinValue<'g>>,
+    calls: HashMap<u32, &'g [u16]>,
 }
 
 /// One parsed quote template and its holes.
-struct Template {
-    tree: SyntaxTree,
-    holes: Vec<(u32, &'static Hole)>,
-    bound: Bound,
+struct Template<'g> {
+    tree: SyntaxTree<'g>,
+    holes: Vec<(u32, &'g Hole<'g>)>,
+    bound: Bound<'g>,
 }
 
-struct HelperTemplates {
-    body: Template,
-    arms: Vec<(Template, Template)>,
+struct HelperTemplates<'g> {
+    body: Template<'g>,
+    arms: Vec<(Template<'g>, Template<'g>)>,
 }
 
 /// The rewrite use a template tree is lowered for.
@@ -109,7 +109,10 @@ struct Expansion<'a> {
 
 type Origin = (bool, [u32; 2]);
 
-fn check_storage(language: &'static Language, tree: &dyn SyntaxAccess) -> Result<(), Diagnostic> {
+fn check_storage<'g>(
+    language: &'g Language<'g>,
+    tree: &dyn SyntaxAccess<'g>,
+) -> Result<(), Diagnostic> {
     if !std::ptr::eq(language, tree.language()) {
         return Err(Diagnostic::new(
             "grammar",
@@ -143,20 +146,20 @@ fn check_storage(language: &'static Language, tree: &dyn SyntaxAccess) -> Result
     Ok(())
 }
 
-fn compile_checked(
-    language: &'static Language,
-    tree: &dyn SyntaxAccess,
+fn compile_checked<'g>(
+    language: &'g Language<'g>,
+    tree: &dyn SyntaxAccess<'g>,
     limits: Limits,
-) -> Result<Program, Diagnostic> {
+) -> Result<Program<'g>, Diagnostic> {
     compile_mode(language, tree, limits, false)
 }
 
-pub(crate) fn compile_mode(
-    language: &'static Language,
-    tree: &dyn SyntaxAccess,
+pub(crate) fn compile_mode<'g>(
+    language: &'g Language<'g>,
+    tree: &dyn SyntaxAccess<'g>,
     limits: Limits,
     recovering: bool,
-) -> Result<Program, Diagnostic> {
+) -> Result<Program<'g>, Diagnostic> {
     check_storage(language, tree)?;
     if language.rules.iter().any(|r| {
         matches!(
@@ -244,14 +247,14 @@ pub(crate) fn compile_mode(
 
 /// Binds a document (`program` given: locals, observations) or a template
 /// (no locals: names resolve only against built-ins, as in Nitrogen).
-fn bind(
-    language: &'static Language,
-    tree: &dyn SyntaxAccess,
-    mut program: Option<&mut Program>,
+fn bind<'g>(
+    language: &'g Language<'g>,
+    tree: &dyn SyntaxAccess<'g>,
+    mut program: Option<&mut Program<'g>>,
     type_errors: &mut Vec<Diagnostic>,
     recovering: bool,
-) -> Result<(Bound, Vec<Diagnostic>), Diagnostic> {
-    let mut environment = HashMap::<(&'static str, &str), (u32, u32)>::new();
+) -> Result<(Bound<'g>, Vec<Diagnostic>), Diagnostic> {
+    let mut environment = HashMap::<(&'g str, &str), (u32, u32)>::new();
     let mut bound = Bound::default();
     let mut binding_errors = Vec::new();
     let field = |id, label| {
@@ -411,16 +414,16 @@ fn bind(
     Ok((bound, binding_errors))
 }
 
-fn parse_templates(
-    language: &'static Language,
+fn parse_templates<'g>(
+    language: &'g Language<'g>,
     limits: Limits,
-) -> Result<Vec<HelperTemplates>, Diagnostic> {
-    let template = |helper: &Helper,
+) -> Result<Vec<HelperTemplates<'g>>, Diagnostic> {
+    let template = |helper: &'g Helper<'g>,
                     text: &str,
                     category: u16,
-                    holes: &[&'static Hole],
+                    holes: &[&'g Hole<'g>],
                     bind_names: bool|
-     -> Result<Template, Diagnostic> {
+     -> Result<Template<'g>, Diagnostic> {
         let invalid = |message: &str| {
             Diagnostic::new(
                 "grammar",
@@ -481,9 +484,9 @@ fn parse_templates(
 /// Structural syntax equality: rules, labels and children; token text for lexical nodes.
 fn same_syntax(
     language: &Language,
-    a: &dyn SyntaxAccess,
+    a: &dyn SyntaxAccess<'_>,
     x: u32,
-    b: &dyn SyntaxAccess,
+    b: &dyn SyntaxAccess<'_>,
     y: u32,
 ) -> bool {
     let (p, q) = (a.nodes()[x as usize], b.nodes()[y as usize]);
@@ -502,13 +505,13 @@ fn same_syntax(
 }
 
 /// Matches original caller syntax against a pattern, binding captures.
-fn match_pattern(
+fn match_pattern<'g>(
     language: &Language,
-    pattern: &Template,
+    pattern: &Template<'g>,
     node: u32,
-    tree: &dyn SyntaxAccess,
+    tree: &dyn SyntaxAccess<'g>,
     target: u32,
-    captures: &mut HashMap<&'static str, u32>,
+    captures: &mut HashMap<&'g str, u32>,
 ) -> bool {
     if let Some((_, hole)) = pattern.holes.iter().find(|(n, _)| *n == node) {
         let rule = &language.rules[tree.nodes()[target as usize].rule as usize];
@@ -542,22 +545,22 @@ fn match_pattern(
         })
 }
 
-struct Lowerer<'p> {
+struct Lowerer<'g, 'p> {
     recovering: bool,
-    language: &'static Language,
+    language: &'g Language<'g>,
     limits: Limits,
-    program: &'p mut Program,
+    program: &'p mut Program<'g>,
     type_errors: Vec<Diagnostic>,
     depths: Vec<u32>,
-    templates: Option<&'p [HelperTemplates]>,
+    templates: Option<&'p [HelperTemplates<'g>]>,
     // Provisional origins per HIR node, rewrite profiles only.
     origins: Option<Vec<Vec<Origin>>>,
     active: Vec<u16>,
     work: u64,
 }
 
-impl Lowerer<'_> {
-    fn push(&mut self, node: HirNode, depth: u32, origin: Origin) -> u32 {
+impl<'g> Lowerer<'g, '_> {
+    fn push(&mut self, node: HirNode<'g>, depth: u32, origin: Origin) -> u32 {
         let id = self.program.nodes.len() as u32;
         self.program.nodes.push(node);
         self.depths.push(depth);
@@ -581,8 +584,8 @@ impl Lowerer<'_> {
 
     fn lower_tree(
         &mut self,
-        tree: &dyn SyntaxAccess,
-        bound: &Bound,
+        tree: &dyn SyntaxAccess<'g>,
+        bound: &Bound<'g>,
         expansion: Option<&Expansion>,
     ) -> Result<Vec<Option<u32>>, Diagnostic> {
         let language = self.language;
@@ -652,7 +655,7 @@ impl Lowerer<'_> {
                 });
                 if !holds {
                     let mut diagnostic = Diagnostic::new("check", node.span, check.message);
-                    diagnostic.code = Some(check.code);
+                    diagnostic.code = Some(check.code.into());
                     self.error(expansion, diagnostic);
                 }
             }
@@ -993,12 +996,12 @@ impl Lowerer<'_> {
     #[allow(clippy::too_many_arguments)]
     fn expand(
         &mut self,
-        tree: &dyn SyntaxAccess,
+        tree: &dyn SyntaxAccess<'g>,
         id: u32,
         lowered: &[Option<u32>],
         helper_index: u16,
-        fields: &'static [&'static str],
-        name: &'static str,
+        fields: &'g [&'g str],
+        name: &'g str,
         outer: Option<&Expansion>,
     ) -> Result<u32, Diagnostic> {
         let language = self.language;
@@ -1162,19 +1165,19 @@ impl Lowerer<'_> {
 /// Emits only HIR reachable from statements, in evaluation order. A node
 /// reached twice is emitted twice, so repeated holes repeat their effects and
 /// discarded caller syntax never runs, as Nitrogen evaluates HIR trees.
-fn reemit(
-    program: &mut Program,
+fn reemit<'g>(
+    program: &mut Program<'g>,
     origins: Vec<Vec<Origin>>,
     limits: Limits,
 ) -> Result<(), Diagnostic> {
     let nodes = std::mem::take(&mut program.nodes);
     let args = std::mem::take(&mut program.args);
-    fn emit(
+    fn emit<'g>(
         id: u32,
-        nodes: &[HirNode],
+        nodes: &[HirNode<'g>],
         args: &[u32],
         origins: &[Vec<Origin>],
-        program: &mut Program,
+        program: &mut Program<'g>,
         limits: Limits,
     ) -> Result<u32, Diagnostic> {
         let node = &nodes[id as usize];
@@ -1233,7 +1236,7 @@ fn reemit(
     Ok(())
 }
 
-impl Program {
+impl<'g> Program<'g> {
     pub fn diagnostics(&self) -> &[Diagnostic] {
         &self.diagnostics
     }

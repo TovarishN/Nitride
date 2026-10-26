@@ -1,5 +1,5 @@
 use nitride_core::*;
-fn rule(name: &'static str, expr: Expr) -> Rule {
+fn rule(name: &'static str, expr: Expr<'static>) -> Rule<'static> {
     Rule {
         name,
         expr,
@@ -13,7 +13,7 @@ fn rule(name: &'static str, expr: Expr) -> Rule {
         action: Action::None,
     }
 }
-fn language(lookahead: bool) -> &'static Language {
+fn language(lookahead: bool) -> &'static Language<'static> {
     let a = if lookahead {
         Expr::Sequence(&[
             Expr::Literal("1234567890123456"),

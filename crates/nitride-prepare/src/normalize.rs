@@ -11,20 +11,24 @@ pub fn prepare(
     catalog: &str,
     start: &str,
     mode: &str,
-) -> Result<Value, PrepareError> {
+    tolerant: bool,
+) -> Result<crate::Prepared, PrepareError> {
     let fallback = Source {
         path: "<project>".into(),
         text: String::new(),
     };
     let first = sources.first().unwrap_or(&fallback);
     if sources.is_empty() || !matches!(mode, "typed" | "syntax") {
-        return Err(first.error([0, 0], "empty input or unknown admission mode"));
+        return Err(first.project_error("empty input or unknown admission mode"));
     }
     let catalog_value: Value = serde_json::from_str(catalog)
-        .map_err(|e| first.error([0, 0], format!("invalid catalog JSON: {e}")))?;
+        .map_err(|e| first.project_error(format!("invalid catalog JSON: {e}")))?;
     let mut modules = Vec::new();
+    let mut warnings = Vec::new();
     for (index, source) in sources.iter().enumerate() {
-        modules.extend(parser::parse(source, index)?);
+        let (parsed, skipped) = parser::parse(source, index, tolerant)?;
+        modules.extend(parsed);
+        warnings.extend(skipped);
     }
     // Grammar functions expand before validation, as in Nitrogen's compiler.
     crate::functions::expand(&mut modules, sources)?;
@@ -214,6 +218,8 @@ pub fn prepare(
     };
     let mut rules = Vec::new();
     let mut omitted = Vec::new();
+    let mut declarations = Vec::new();
+    let mut references = Vec::new();
     let mut add = |module: &Module,
                    rule: &Rule,
                    owner: Option<&str>,
@@ -222,6 +228,28 @@ pub fn prepare(
      -> Result<Value, PrepareError> {
         let source = &sources[module.source];
         let name = format!("{}.{}", module.name, rule.name);
+        for clause in &rule.clauses {
+            let field: String = clause["field"].as_str().unwrap_or_default().into();
+            let kinds: Vec<String> = clause["symbol_kinds"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|k| k.as_str().map(Into::into))
+                .collect();
+            if clause["kind"] == "Declares" {
+                declarations.push(crate::Declaration {
+                    rule: name.clone(),
+                    field,
+                    kinds,
+                });
+            } else if clause["kind"] == "References" {
+                references.push(crate::ReferenceClause {
+                    rule: name.clone(),
+                    field,
+                    kinds,
+                });
+            }
+        }
         if mode == "typed" && rule.block {
             return Err(source.error(
                 rule.span,
@@ -343,10 +371,10 @@ pub fn prepare(
         }
     }
     let Some((mi, ri)) = symbols.get(start) else {
-        return Err(first.error([0, 0], format!("unknown syntax start rule {start}")));
+        return Err(first.project_error(format!("unknown syntax start rule {start}")));
     };
     if modules[*mi].rules[*ri].lexical {
-        return Err(first.error([0, 0], "start rule must be syntax"));
+        return Err(first.project_error("start rule must be syntax"));
     }
     let identity = if sources.len() == 1 {
         sources[0].text.clone()
@@ -376,8 +404,13 @@ pub fn prepare(
         output["helpers"] = json!(helpers);
     }
     nitride_codegen::generate(&output.to_string())
-        .map_err(|e| first.error([0, 0], format!("profile validation: {e}")))?;
-    Ok(output)
+        .map_err(|e| first.project_error(format!("profile validation: {e}")))?;
+    Ok(crate::Prepared {
+        data: output,
+        warnings,
+        declarations,
+        references,
+    })
 }
 fn expr_span(expr: &Value) -> [usize; 2] {
     [

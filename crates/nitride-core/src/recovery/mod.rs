@@ -7,12 +7,12 @@ mod tree;
 pub use semantic::*;
 pub use tree::*;
 
-pub fn parse_recovering(
-    language: &'static Language,
+pub fn parse_recovering<'g>(
+    language: &'g Language<'g>,
     source: &str,
     limits: Limits,
     options: RecoveryOptions,
-) -> RecoveredParse {
+) -> RecoveredParse<'g> {
     match parse_with_options(
         language,
         source,
@@ -35,13 +35,13 @@ pub(crate) mod incremental;
 pub use incremental::SnapshotRecovery;
 
 /// Continue recovery after an equivalent strict recognizer has already failed.
-pub(crate) fn recover_after_strict(
-    language: &'static Language,
+pub(crate) fn recover_after_strict<'g>(
+    language: &'g Language<'g>,
     source: &str,
     limits: Limits,
     options: RecoveryOptions,
     error: Diagnostic,
-) -> RecoveredParse {
+) -> RecoveredParse<'g> {
     let error = if options.max_states == 0 && error.category == "syntax" {
         Diagnostic::new("limit", error.span, "recovery search state limit exceeded")
     } else {

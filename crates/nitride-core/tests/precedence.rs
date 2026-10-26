@@ -1,6 +1,6 @@
 use nitride_core::*;
 
-fn language() -> Language {
+fn language() -> Language<'static> {
     let rule = |name, expr, precedence, owner| Rule {
         name,
         expr,
@@ -93,7 +93,7 @@ fn prefix_excludes_equal_precedence_infix_from_its_final_operand() {
     assert_eq!(tree.nodes[tree.root as usize].rule, 4);
 }
 
-fn call_language() -> &'static Language {
+fn call_language() -> &'static Language<'static> {
     let rule = |name, expr, precedence, owner| Rule {
         name,
         expr,
@@ -197,7 +197,7 @@ fn shared_operator_alternatives_take_longest_match() {
         alias: false,
         action: Action::None,
     };
-    let language: &'static Language = Box::leak(Box::new(Language {
+    let language: &'static Language<'static> = Box::leak(Box::new(Language {
         profile: Profile::SyntaxOnly,
         start: 0,
         rules: Box::leak(

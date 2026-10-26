@@ -531,7 +531,7 @@ mod tests {
     }
     #[test]
     fn deep_trivia_entry_analysis_disables_filtering() {
-        let mut expression: &'static Expr = &Expr::Ref(0);
+        let mut expression: &'static Expr<'static> = &Expr::Ref(0);
         for _ in 0..129 {
             expression = Box::leak(Box::new(Expr::Label("nested", expression)));
         }

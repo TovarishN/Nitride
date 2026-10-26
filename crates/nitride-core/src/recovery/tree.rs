@@ -26,15 +26,15 @@ pub struct RecoveryStats {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
-pub enum Expected {
-    Literal(&'static str),
+pub enum Expected<'g> {
+    Literal(&'g str),
     Rule(u16),
     Character,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub enum Repair {
-    Missing { expected: Expected, at: u32 },
+pub enum Repair<'g> {
+    Missing { expected: Expected<'g>, at: u32 },
     Skipped { span: [u32; 2] },
 }
 
@@ -52,15 +52,15 @@ pub struct Coverage {
 }
 
 #[derive(Debug)]
-pub struct RecoveryData {
-    pub repairs: Vec<Repair>,
+pub struct RecoveryData<'g> {
+    pub repairs: Vec<Repair<'g>>,
     pub coverage: Vec<Coverage>,
     pub(crate) diagnostics: Vec<Diagnostic>,
     /// Missing/otherwise invalid syntax nodes, in postorder identity space.
     pub damaged_nodes: Vec<u32>,
 }
 
-impl RecoveryData {
+impl<'g> RecoveryData<'g> {
     pub(crate) fn retained_bytes(&self) -> usize {
         std::mem::size_of::<Self>()
             + self.repairs.capacity() * std::mem::size_of::<Repair>()
@@ -76,17 +76,17 @@ impl RecoveryData {
 }
 
 #[derive(Debug)]
-pub struct RecoveredParse {
-    pub tree: SyntaxTree,
+pub struct RecoveredParse<'g> {
+    pub tree: SyntaxTree<'g>,
     pub diagnostics: Vec<Diagnostic>,
     pub stats: RecoveryStats,
 }
 
-pub(super) fn fallback(
-    language: &'static Language,
+pub(super) fn fallback<'g>(
+    language: &'g Language<'g>,
     source: &str,
     diagnostic: Diagnostic,
-) -> RecoveredParse {
+) -> RecoveredParse<'g> {
     let span = [0, source.len() as u32];
     let diagnostics = vec![diagnostic];
     let repairs = if source.is_empty() {

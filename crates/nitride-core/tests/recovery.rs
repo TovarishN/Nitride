@@ -368,7 +368,7 @@ fn exhausted_local_search_resynchronizes_to_a_healthy_later_item() {
     assert_coverage(&parsed, source);
 }
 
-fn with_root(expr: Expr) -> &'static Language {
+fn with_root(expr: Expr<'static>) -> &'static Language<'static> {
     let rules = Box::leak(Box::new([Rule {
         expr,
         action: Action::None,

@@ -13,7 +13,7 @@ fn compare(language: &'static Language, source: &str) {
     assert_eq!(old.nodes.len(), exported.nodes.len());
     for (id, (a, b)) in old.nodes.iter().zip(&exported.nodes).enumerate() {
         assert_eq!((a.rule, a.span), (b.rule, b.span), "node {id}");
-        let children = |tree: &SyntaxTree| {
+        let children = |tree: &SyntaxTree<'static>| {
             tree.children(id as u32)
                 .iter()
                 .map(|e| (tree.label(e), e.node))

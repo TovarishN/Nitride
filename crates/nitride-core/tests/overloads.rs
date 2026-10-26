@@ -1,6 +1,6 @@
 use nitride_core::*;
 
-fn language(candidates: &'static [u16]) -> &'static Language {
+fn language(candidates: &'static [u16]) -> &'static Language<'static> {
     let rule = |name, expr, lexical, action| Rule {
         name,
         expr,

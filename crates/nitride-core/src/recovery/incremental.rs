@@ -13,7 +13,7 @@ use std::{
 };
 #[derive(Clone, PartialEq, Eq)]
 enum RepairValue {
-    Missing(Expected),
+    Missing(Expected<'static>),
     Skipped,
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -28,7 +28,7 @@ impl Measured for CoveragePiece {
 }
 pub struct SnapshotRecovery {
     repairs: Records<RepairValue>,
-    flat_repairs: OnceLock<Box<[Repair]>>,
+    flat_repairs: OnceLock<Box<[Repair<'static>]>>,
     coverage: Sequence<CoveragePiece>,
     damaged: Records<u16>,
     pub(crate) structures: Arc<[(u16, u32, SubtreeId)]>,
@@ -55,11 +55,11 @@ impl SnapshotRecovery {
     pub(crate) fn damage_count(&self) -> usize {
         self.damaged.len()
     }
-    pub fn repairs(&self) -> &[Repair] {
+    pub fn repairs(&self) -> &[Repair<'static>] {
         self.flat_repairs
             .get_or_init(|| self.iter_repairs().collect())
     }
-    pub(crate) fn iter_repairs(&self) -> impl Iterator<Item = Repair> {
+    pub(crate) fn iter_repairs(&self) -> impl Iterator<Item = Repair<'static>> {
         self.repairs.iter().map(|(span, value)| match value {
             RepairValue::Missing(expected) => Repair::Missing {
                 expected: *expected,
@@ -73,7 +73,7 @@ impl SnapshotRecovery {
     }
     pub(crate) fn set_records(
         &mut self,
-        repairs: Vec<Repair>,
+        repairs: Vec<Repair<'static>>,
         damaged: Vec<(u16, [u32; 2])>,
         old: Option<&Self>,
     ) {
@@ -170,7 +170,7 @@ impl SnapshotRecovery {
             coverage: self.coverage.replace(first..last, merged),
         }
     }
-    fn from_flat(tree: &SyntaxTree, previous: Option<&Self>) -> Self {
+    fn from_flat(tree: &SyntaxTree<'static>, previous: Option<&Self>) -> Self {
         let data = tree.recovery().expect("recovered metadata");
         Self::from_parts(
             data.repairs.clone(),
@@ -183,7 +183,7 @@ impl SnapshotRecovery {
         )
     }
     pub(crate) fn from_parts(
-        repairs: Vec<Repair>,
+        repairs: Vec<Repair<'static>>,
         coverage: Vec<Coverage>,
         damaged: Vec<(u16, [u32; 2])>,
         previous: Option<&Self>,
@@ -272,7 +272,7 @@ fn same_shape(old: NodeView<'_>, tree: &SyntaxTree, id: u32) -> bool {
     true
 }
 pub(crate) fn recover_snapshot(
-    language: &'static Language,
+    language: &'static Language<'static>,
     text: &SourceText,
     limits: Limits,
     options: RecoveryOptions,

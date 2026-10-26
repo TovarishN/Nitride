@@ -1,6 +1,8 @@
 mod lexical;
 mod syntax;
 use serde_json::Value;
+mod runtime;
+pub use runtime::LoadedLanguage;
 use std::collections::{HashMap, HashSet};
 
 fn text(v: &Value) -> Result<&str, String> {

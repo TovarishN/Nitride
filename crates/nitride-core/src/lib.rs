@@ -22,7 +22,7 @@ pub struct Diagnostic {
     pub span: [u32; 2],
     pub message: String,
     /// The catalog code of a failed source check.
-    pub code: Option<&'static str>,
+    pub code: Option<Box<str>>,
 }
 
 impl Diagnostic {

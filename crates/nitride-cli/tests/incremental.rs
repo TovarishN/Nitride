@@ -19,7 +19,7 @@ fn find<'a>(snapshot: &'a ParseSnapshot, text: &str) -> NodeView<'a> {
     panic!("missing node {text}")
 }
 type NormalizedNode = (u16, [u32; 2], Vec<(&'static str, u32)>);
-fn normalized(tree: &SyntaxTree) -> Vec<NormalizedNode> {
+fn normalized(tree: &SyntaxTree<'static>) -> Vec<NormalizedNode> {
     tree.nodes
         .iter()
         .enumerate()

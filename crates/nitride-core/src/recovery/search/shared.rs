@@ -4,14 +4,14 @@ use super::*;
 use crate::incremental::dependencies::Index;
 use crate::parser::shared::{Children, Handle, SharedProbe};
 use std::sync::Arc;
-impl Probe for SharedProbe<'_> {
+impl Probe<'static> for SharedProbe<'_> {
     fn selected(&mut self, root: u32) {
         self.selected(root)
     }
     fn rule(&mut self, id: u16, at: usize, power: u32) -> Result<Option<ProbeHit>, Diagnostic> {
         self.rule(id, at, power)
     }
-    fn predicate(&mut self, expr: &'static Expr, at: usize) -> Result<bool, Diagnostic> {
+    fn predicate(&mut self, expr: &'static Expr<'static>, at: usize) -> Result<bool, Diagnostic> {
         self.predicate(expr, at)
     }
     fn commit(&mut self, roots: &mut [u32], keep_from: usize) {
@@ -25,7 +25,7 @@ impl Probe for SharedProbe<'_> {
     }
 }
 pub(crate) fn recover(
-    language: &'static Language,
+    language: &'static Language<'static>,
     text: &SourceText,
     limits: Limits,
     options: RecoveryOptions,
@@ -63,7 +63,7 @@ pub(crate) fn recover(
     }
 }
 fn recover_once(
-    language: &'static Language,
+    language: &'static Language<'static>,
     text: &SourceText,
     limits: Limits,
     options: RecoveryOptions,
@@ -131,7 +131,7 @@ fn close(
     probe.recovery_push(&mut frames.last_mut().unwrap().children, frame.label, node);
     Ok(())
 }
-impl Engine<'_, SharedProbe<'_>> {
+impl Engine<'static, '_, SharedProbe<'_>> {
     fn finish_shared(
         mut self,
         text: &SourceText,

@@ -87,7 +87,7 @@ struct Parser<'a> {
     lexers: Option<&'static crate::lexical::CompiledLexers>,
     choice_cache: HashMap<usize, Option<std::sync::Arc<dispatch::ChoicePlan>>>,
     choice_cache_bytes: usize,
-    language: &'static Language,
+    language: &'static Language<'static>,
     minimum_sensitive: Vec<bool>,
     dispatch: std::sync::Arc<dispatch::Dispatch>,
     labels: Vec<&'static str>,
@@ -131,7 +131,7 @@ struct Input<'a> {
     contiguous: Option<&'a str>,
 }
 pub fn parse_snapshot(
-    language: &'static Language,
+    language: &'static Language<'static>,
     source: &str,
     limits: Limits,
     mode: SnapshotMode,
@@ -313,7 +313,7 @@ impl ParseSnapshot {
     }
 }
 fn parse_with_spill(
-    language: &'static Language,
+    language: &'static Language<'static>,
     text: Input<'_>,
     limits: Limits,
     options: ParseOptions,
@@ -351,7 +351,7 @@ fn parse_with_spill(
     }
 }
 fn parse_source(
-    language: &'static Language,
+    language: &'static Language<'static>,
     text: Input<'_>,
     limits: Limits,
     options: ParseOptions,
@@ -479,7 +479,7 @@ fn publish(
 }
 impl<'a> Parser<'a> {
     fn new(
-        language: &'static Language,
+        language: &'static Language<'static>,
         input: Input<'a>,
         limits: Limits,
         options: ParseOptions,
@@ -1459,7 +1459,7 @@ impl Parser<'_> {
     }
     fn choice_plan(
         &mut self,
-        expr: &'static Expr,
+        expr: &'static Expr<'static>,
         parts: &'static [Expr],
     ) -> Option<std::sync::Arc<dispatch::ChoicePlan>> {
         if !self.optimize_recognition || !(4..=256).contains(&parts.len()) {
@@ -1753,7 +1753,7 @@ impl Parser<'_> {
     }
     fn expression(
         &mut self,
-        expr: &'static Expr,
+        expr: &'static Expr<'static>,
         lexical: bool,
         owner: Option<u16>,
         power: u32,
@@ -1932,7 +1932,7 @@ pub(crate) struct SharedProbe<'a> {
 }
 impl<'a> SharedProbe<'a> {
     pub(crate) fn new(
-        language: &'static Language,
+        language: &'static Language<'static>,
         text: &'a SourceText,
         limits: Limits,
         base: Option<&ParseSnapshot>,
@@ -2129,7 +2129,11 @@ impl<'a> SharedProbe<'a> {
         }
         self.rule(id, at, 0)
     }
-    pub(crate) fn predicate(&mut self, expr: &'static Expr, at: usize) -> Result<bool, Diagnostic> {
+    pub(crate) fn predicate(
+        &mut self,
+        expr: &'static Expr<'static>,
+        at: usize,
+    ) -> Result<bool, Diagnostic> {
         self.retire_borrowed();
         self.enforce_budget();
         self.parser.position = at;
@@ -2924,7 +2928,7 @@ mod tests {
             snapshot.stats().work
         );
     }
-    fn prefix_fact_fixture(sensitive: bool) -> &'static Language {
+    fn prefix_fact_fixture(sensitive: bool) -> &'static Language<'static> {
         let make = |name, expr, owner, precedence| Rule {
             name,
             expr,
@@ -2994,7 +2998,7 @@ mod tests {
             rules: Box::leak(rules.into_boxed_slice()),
         }))
     }
-    fn prefix_snapshot(language: &'static Language, text: &SourceText) -> ParseSnapshot {
+    fn prefix_snapshot(language: &'static Language<'static>, text: &SourceText) -> ParseSnapshot {
         let mut parser = Parser::new(
             language,
             Input {

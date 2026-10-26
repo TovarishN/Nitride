@@ -1,10 +1,10 @@
 use crate::*;
 
-pub fn parse(
-    language: &'static Language,
+pub fn parse<'g>(
+    language: &'g Language<'g>,
     source: &str,
     limits: Limits,
-) -> Result<SyntaxTree, Diagnostic> {
+) -> Result<SyntaxTree<'g>, Diagnostic> {
     parse_with_options(language, source, limits, ParseOptions::default())
 }
 
@@ -24,28 +24,28 @@ pub struct ParseOptions {
 /// A rule matched inside a token: it consumed input but left no node.
 const NO_NODE: u32 = u32::MAX;
 
-pub fn parse_with_options(
-    language: &'static Language,
+pub fn parse_with_options<'g>(
+    language: &'g Language<'g>,
     source: &str,
     limits: Limits,
     options: ParseOptions,
-) -> Result<SyntaxTree, Diagnostic> {
+) -> Result<SyntaxTree<'g>, Diagnostic> {
     parse_from(language, source, limits, options, language.start, &[])
 }
 
 /// Template hole nodes and the holes they stand for.
-pub type TemplateHoles = Vec<(u32, &'static Hole)>;
+pub type TemplateHoles<'g> = Vec<(u32, &'g Hole<'g>)>;
 
 /// A quote template parsed as `category`, with `$Name` holes for `holes`.
 /// The text is trimmed first, so spans are relative to the trimmed template.
 /// Each returned hole is a childless node of the hole's category.
-pub fn parse_template(
-    language: &'static Language,
+pub fn parse_template<'g>(
+    language: &'g Language<'g>,
     text: &str,
     category: u16,
-    holes: &[&'static Hole],
+    holes: &[&'g Hole<'g>],
     limits: Limits,
-) -> Result<(SyntaxTree, TemplateHoles), Diagnostic> {
+) -> Result<(SyntaxTree<'g>, TemplateHoles<'g>), Diagnostic> {
     let tree = parse_from(
         language,
         text.trim(),
@@ -83,14 +83,14 @@ fn stack_position() -> usize {
 /// Parses within a measured stack budget on the caller's thread. Deep input
 /// reruns once on a dedicated thread with a large stack, as Roslyn moves deep
 /// work off small stacks; beyond that it is a structured `limit` diagnostic.
-fn parse_from(
-    language: &'static Language,
+fn parse_from<'g>(
+    language: &'g Language<'g>,
     source: &str,
     limits: Limits,
     options: ParseOptions,
     start: u16,
-    holes: &[&'static Hole],
-) -> Result<SyntaxTree, Diagnostic> {
+    holes: &[&'g Hole<'g>],
+) -> Result<SyntaxTree<'g>, Diagnostic> {
     match parse_on_stack(
         language,
         source,
@@ -124,15 +124,15 @@ fn parse_from(
     }
 }
 
-fn parse_on_stack(
-    language: &'static Language,
+fn parse_on_stack<'g>(
+    language: &'g Language<'g>,
     source: &str,
     limits: Limits,
     options: ParseOptions,
     start: u16,
-    holes: &[&'static Hole],
+    holes: &[&'g Hole<'g>],
     stack_budget: usize,
-) -> Result<SyntaxTree, Diagnostic> {
+) -> Result<SyntaxTree<'g>, Diagnostic> {
     if source.len() > u32::MAX as usize {
         return Err(Diagnostic::new(
             "limit",
@@ -180,9 +180,9 @@ struct Winner {
     edges: Vec<Edge>,
     tied: bool,
 }
-struct Parser<'a> {
-    language: &'static Language,
-    labels: Vec<&'static str>,
+struct Parser<'g, 'a> {
+    language: &'g Language<'g>,
+    labels: Vec<&'g str>,
     label_ids: std::collections::HashMap<(usize, usize), u16>,
     source: &'a str,
     options: ParseOptions,
@@ -196,7 +196,7 @@ struct Parser<'a> {
     edge_buffers: Vec<Vec<Edge>>,
     node_buffers: Vec<Vec<Node>>,
     // Template mode only: `$Name` stands for one node of the hole's category.
-    holes: &'a [&'static Hole],
+    holes: &'a [&'g Hole<'g>],
     in_token: u32,
     work_budget: u64,
     // Extension-point results by (point, position, minimum precedence).
@@ -236,13 +236,13 @@ enum Memo {
     },
 }
 
-impl<'a> Parser<'a> {
+impl<'g, 'a> Parser<'g, 'a> {
     fn new(
-        language: &'static Language,
+        language: &'g Language<'g>,
         source: &'a str,
         limits: Limits,
         options: ParseOptions,
-        holes: &'a [&'static Hole],
+        holes: &'a [&'g Hole<'g>],
         stack_budget: usize,
     ) -> Self {
         Self {
@@ -283,14 +283,14 @@ pub(crate) struct ProbeHit {
 
 /// Strict prefix recognizer and its immutable successful subtree arena. Recovery
 /// uses original-source offsets; probes never edit or synthesize token text.
-pub(crate) struct StrictProbe<'a> {
-    parser: Parser<'a>,
+pub(crate) struct StrictProbe<'g, 'a> {
+    parser: Parser<'g, 'a>,
     cache: std::collections::HashMap<(u16, usize, u32), Option<ProbeHit>>,
     committed_nodes: usize,
     committed_edges: usize,
 }
-impl<'a> StrictProbe<'a> {
-    pub fn new(language: &'static Language, source: &'a str, limits: Limits) -> Self {
+impl<'g, 'a> StrictProbe<'g, 'a> {
+    pub fn new(language: &'g Language<'g>, source: &'a str, limits: Limits) -> Self {
         Self {
             parser: Parser::new(
                 language,
@@ -323,7 +323,7 @@ impl<'a> StrictProbe<'a> {
         self.cache.insert((id, at, power), hit);
         Ok(hit)
     }
-    pub fn predicate(&mut self, expr: &'static Expr, at: usize) -> Result<bool, Diagnostic> {
+    pub fn predicate(&mut self, expr: &'g Expr<'g>, at: usize) -> Result<bool, Diagnostic> {
         self.parser.position = at;
         let mark = self.parser.mark();
         let mut out = Vec::new();
@@ -403,10 +403,10 @@ impl<'a> StrictProbe<'a> {
     pub fn edges(&self) -> &[Edge] {
         &self.parser.edges
     }
-    pub fn labels(&self) -> &[&'static str] {
+    pub fn labels(&self) -> &[&'g str] {
         &self.parser.labels
     }
-    pub fn label(&self, edge: &Edge) -> &'static str {
+    pub fn label(&self, edge: &Edge) -> &'g str {
         self.parser.labels[edge.label as usize]
     }
     pub fn work(&self) -> u64 {
@@ -414,7 +414,7 @@ impl<'a> StrictProbe<'a> {
     }
 }
 
-impl Parser<'_> {
+impl<'g> Parser<'g, '_> {
     fn recycle<T>(pool: &mut Vec<Vec<T>>, mut buffer: Vec<T>) {
         if buffer.capacity() != 0 {
             buffer.clear();
@@ -471,7 +471,7 @@ impl Parser<'_> {
     }
     /// This tree's index for a label; labels are static grammar strings, so
     /// they are keyed by address (a repeated spelling only costs a slot).
-    fn intern(&mut self, label: &'static str) -> Result<u16, Diagnostic> {
+    fn intern(&mut self, label: &'g str) -> Result<u16, Diagnostic> {
         if label.is_empty() {
             return Ok(0);
         }
@@ -706,8 +706,8 @@ impl Parser<'_> {
     fn pratt(
         &mut self,
         point: u16,
-        prefixes: &'static [u16],
-        infixes: &'static [u16],
+        prefixes: &'g [u16],
+        infixes: &'g [u16],
         minimum: u32,
         depth: u32,
     ) -> Result<Option<u32>, Diagnostic> {
@@ -802,8 +802,8 @@ impl Parser<'_> {
     fn pratt_uncached(
         &mut self,
         point: u16,
-        prefixes: &'static [u16],
-        infixes: &'static [u16],
+        prefixes: &'g [u16],
+        infixes: &'g [u16],
         minimum: u32,
         depth: u32,
     ) -> Result<Option<u32>, Diagnostic> {
@@ -915,7 +915,7 @@ impl Parser<'_> {
     }
     fn expression(
         &mut self,
-        expr: &'static Expr,
+        expr: &'g Expr<'g>,
         lexical: bool,
         owner: Option<u16>,
         power: u32,

@@ -28,7 +28,7 @@ unsafe impl GlobalAlloc for Allocator {
 }
 #[global_allocator]
 static ALLOCATOR: Allocator = Allocator;
-fn rule(name: &'static str, expr: Expr, lexical: bool) -> Rule {
+fn rule(name: &'static str, expr: Expr<'static>, lexical: bool) -> Rule<'static> {
     Rule {
         name,
         expr,

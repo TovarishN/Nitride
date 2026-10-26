@@ -80,7 +80,7 @@ impl<T: Clone + Eq> Records<T> {
 #[derive(Clone, PartialEq, Eq)]
 struct DiagnosticValue {
     category: &'static str,
-    code: Option<&'static str>,
+    code: Option<Box<str>>,
     message: Arc<str>,
 }
 pub(crate) struct DiagnosticStore {
@@ -124,7 +124,7 @@ impl DiagnosticStore {
                 .map(|(span, d)| Diagnostic {
                     span,
                     category: d.category,
-                    code: d.code,
+                    code: d.code.clone(),
                     message: d.message.to_string(),
                 })
                 .collect()
@@ -135,6 +135,11 @@ impl DiagnosticStore {
         for (_, d) in self.records.iter() {
             let (id, size) = memory::arc(&d.message);
             visit(Class::Sidecar, id, size);
+            if let Some(code) = &d.code {
+                if !code.is_empty() {
+                    visit(Class::Sidecar, code.as_ptr() as usize, code.len());
+                }
+            }
         }
         if let Some(flat) = self.flat.get() {
             if !flat.is_empty() {
@@ -145,6 +150,11 @@ impl DiagnosticStore {
                 );
             }
             for diagnostic in flat {
+                if let Some(code) = &diagnostic.code {
+                    if !code.is_empty() {
+                        visit(Class::Sidecar, code.as_ptr() as usize, code.len());
+                    }
+                }
                 if diagnostic.message.capacity() > 0 {
                     visit(
                         Class::Sidecar,
@@ -159,6 +169,27 @@ impl DiagnosticStore {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn owned_diagnostic_codes_are_retained_exported_and_counted() {
+        let mut diagnostic = crate::Diagnostic::new("syntax", [0, 1], "invalid");
+        diagnostic.code = Some(String::from("E123").into_boxed_str());
+        let store = DiagnosticStore::new(vec![diagnostic], None);
+        let records: Vec<_> = store
+            .records
+            .iter()
+            .filter_map(|(_, d)| d.code.as_ref().map(|s| (s.as_ptr() as usize, s.len())))
+            .collect();
+        let flat = store.as_slice();
+        assert_eq!(flat[0].code.as_deref(), Some("E123"));
+        let code = flat[0].code.as_ref().unwrap();
+        let mut allocations = Vec::new();
+        store.visit(&mut |_, id, size| {
+            allocations.push((id, size));
+            true
+        });
+        assert!(records.iter().all(|code| allocations.contains(code)));
+        assert!(allocations.contains(&(code.as_ptr() as usize, code.len())));
+    }
     #[test]
     fn shifted_metadata_shares_blocks_and_resolves_absolute_positions() {
         let old = Records::new((0..100_000).map(|n| ([n * 2, n * 2 + 1], 7_u16)), None);

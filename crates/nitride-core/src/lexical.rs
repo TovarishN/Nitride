@@ -26,12 +26,12 @@ impl AsciiDecision {
 pub type LexicalScanner = fn(&mut LexicalContext<'_>, u32) -> Option<bool>;
 /// A generated table bound to its unmodified static grammar.
 pub struct CompiledLexers {
-    pub(crate) language: &'static Language,
+    pub(crate) language: &'static Language<'static>,
     pub(crate) scanners: &'static [Option<LexicalScanner>],
 }
 impl CompiledLexers {
     pub const fn new(
-        language: &'static Language,
+        language: &'static Language<'static>,
         scanners: &'static [Option<LexicalScanner>],
     ) -> Self {
         Self { language, scanners }

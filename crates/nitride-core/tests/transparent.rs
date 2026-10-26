@@ -1,6 +1,6 @@
 use nitride_core::*;
 
-fn language() -> &'static Language {
+fn language() -> &'static Language<'static> {
     let rule = |name, expr, lexical, owner| Rule {
         name,
         expr,

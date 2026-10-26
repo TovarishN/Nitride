@@ -389,6 +389,38 @@ search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.
 
 
+## Editor support
+
+`nitride lsp` is a Language Server Protocol server over stdio, and
+`editors/vscode` is a VS Code extension that bundles it. Build and install the
+extension for this host (on macOS with Apple silicon, for example):
+
+```sh
+scripts/package-vscode.sh darwin-arm64
+code --install-extension editors/vscode/nitride-darwin-arm64-0.1.0.vsix
+```
+
+Use `darwin-x64`, `linux-x64` or `win32-x64` on those hosts. The server reads
+`nitride.json` at each workspace folder root, else `nitrogen.json`. Both list
+languages by `name`, `extensions`, `grammars` and `start`; `nitride.json` may
+also give a `catalog` and a `mode` (`typed` or `syntax`, default `typed` when a
+catalog is given). Paths are relative to the manifest. This repository's
+`nitride.json` lists its own languages. Languages are prepared from their
+grammars at runtime and reloaded as grammars change; in syntax mode, Nitrogen's
+C# semantic members are skipped with a warning.
+
+The server provides diagnostics, semantic coloring, outline, folding and
+selection ranges, plus hover (types in typed languages), go to definition,
+references, highlights, rename and workspace symbols, for `.ngr` grammars and
+workspace programs. Editing help: completion of names, built-ins, rules and
+keywords; signature help for built-in calls; document, range and on-type
+formatting (whitespace only); inlay hints with each statement's computed value;
+and quick fixes from the parser's repairs, plus removing Nitrogen C# semantic
+members from grammars. Grammar rules navigate and rename across every grammar file
+of a language. Syntax-only languages bind names by spelling through their
+`declares` and `references` clauses. While the Nitride extension is installed,
+Nitrogen's VS Code extensions stay inactive.
+
 ## Validate
 
 ```sh

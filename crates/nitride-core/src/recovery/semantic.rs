@@ -1,16 +1,16 @@
 use crate::*;
 
 #[derive(Debug)]
-pub struct RecoveredAnalysis {
-    pub program: Option<Program>,
+pub struct RecoveredAnalysis<'g> {
+    pub program: Option<Program<'g>>,
     pub diagnostics: Vec<Diagnostic>,
 }
 
-pub fn compile_recovering(
-    language: &'static Language,
-    parsed: &RecoveredParse,
+pub fn compile_recovering<'g>(
+    language: &'g Language<'g>,
+    parsed: &RecoveredParse<'g>,
     limits: Limits,
-) -> RecoveredAnalysis {
+) -> RecoveredAnalysis<'g> {
     if language.profile == Profile::SyntaxOnly {
         return RecoveredAnalysis {
             program: None,

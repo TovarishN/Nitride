@@ -2,33 +2,33 @@ use crate::*;
 use std::collections::HashMap;
 
 pub(super) type Code = u32;
-pub(super) enum Instruction {
-    Terminal(Expected, &'static Expr),
-    Predicate(&'static Expr),
+pub(super) enum Instruction<'g> {
+    Terminal(Expected<'g>, &'g Expr<'g>),
+    Predicate(&'g Expr<'g>),
     Ref(u16),
     Sequence(Vec<Code>),
     Choice(Vec<Code>),
-    Label(&'static str, Code),
+    Label(&'g str, Code),
     Repeat {
         inner: Code,
         min: u32,
         max: u32,
     },
     Pratt {
-        prefixes: &'static [u16],
-        infixes: &'static [u16],
+        prefixes: &'g [u16],
+        infixes: &'g [u16],
     },
 }
 
-pub(super) struct Grammar {
-    pub code: Vec<Instruction>,
+pub(super) struct Grammar<'g> {
+    pub code: Vec<Instruction<'g>>,
     pub rules: Vec<Code>,
-    pub expressions: Vec<&'static Expr>,
+    pub expressions: Vec<&'g Expr<'g>>,
     pub nullable: Vec<bool>,
 }
 
-impl Grammar {
-    pub fn new(language: &'static Language) -> Self {
+impl<'g> Grammar<'g> {
+    pub fn new(language: &'g Language<'g>) -> Self {
         let mut graph = Self {
             code: vec![],
             rules: vec![],
@@ -57,7 +57,7 @@ impl Grammar {
                     }
                     continue;
                 }
-                let get = |e: &'static Expr| known[&(std::ptr::from_ref(e) as usize)];
+                let get = |e: &'g Expr<'g>| known[&(std::ptr::from_ref(e) as usize)];
                 let instruction = match expr {
                     Expr::Ref(id) => Instruction::Ref(*id),
                     Expr::Sequence(parts) => Instruction::Sequence(parts.iter().map(get).collect()),

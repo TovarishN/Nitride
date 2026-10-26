@@ -69,7 +69,7 @@ pub struct StorageStats {
 #[derive(Clone)]
 pub struct ParseSnapshot {
     pub(crate) dispatch: Option<Arc<crate::parser::shared::dispatch::Dispatch>>,
-    pub(crate) language: &'static Language,
+    pub(crate) language: &'static Language<'static>,
     pub(crate) source: SourceText,
     pub(crate) arena: PublishedArena,
     pub(crate) root: SubtreeId,
@@ -96,7 +96,7 @@ pub struct NodeView<'a> {
 }
 impl ParseSnapshot {
     pub(crate) fn from_parts(
-        language: &'static Language,
+        language: &'static Language<'static>,
         source: SourceText,
         arena: PublishedArena,
         root: SubtreeId,
@@ -237,7 +237,7 @@ impl ParseSnapshot {
             damaged_nodes,
         })
     }
-    pub fn materialize(&self) -> Result<SyntaxTree, Diagnostic> {
+    pub fn materialize(&self) -> Result<SyntaxTree<'static>, Diagnostic> {
         let indexed = self.indexed(u64::MAX)?;
         Ok(SyntaxTree {
             language: self.language,
@@ -318,7 +318,7 @@ mod tests {
     use super::*;
     use crate::syntax::arena::{ArenaBuilder, Child};
     use crate::{Action, Expr, Profile, Rule};
-    fn language() -> &'static Language {
+    fn language() -> &'static Language<'static> {
         Box::leak(Box::new(Language {
             profile: Profile::SyntaxOnly,
             start: 0,
