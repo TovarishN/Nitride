@@ -112,13 +112,10 @@ impl SymbolIndex {
                 name: b.name.to_owned(),
             })
             .collect();
-        let length = program.text.len() as u32;
         index.types = program
             .nodes
             .iter()
-            .filter(|n| {
-                n.ty != nitride_core::ERROR_TYPE && n.span[1] <= length && n.span[0] < n.span[1]
-            })
+            .filter(|n| n.ty != nitride_core::ERROR_TYPE && n.span[0] < n.span[1])
             .map(|n| (n.span, n.ty.to_owned()))
             .collect();
         index.references.sort_by_key(|u| u.span[0]);

@@ -1,6 +1,8 @@
 //! The message loop: document sync, debounced analysis and request dispatch.
 use crate::analysis::{self, Analysis};
+use crate::grammar_index::{self, GrammarIndex};
 use crate::lines::LineIndex;
+use crate::navigation::{self, GrammarAt};
 use crate::registry::Registry;
 use crate::{ServeOptions, manifest, rpc, structure, tokens, uri};
 use serde_json::{Value, json};
@@ -156,6 +158,7 @@ impl<W: Write> Server<W> {
                 "documentSymbolProvider": true,
                 "foldingRangeProvider": true,
                 "selectionRangeProvider": true,
+                "hoverProvider": true,
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -183,7 +186,46 @@ impl<W: Write> Server<W> {
                     .current(&uri)
                     .map_or(json!([]), |a| structure::selections(a, &positions)))
             }
+            "textDocument/hover" => {
+                let Some((offset, grammar)) = self.located(&uri, params) else {
+                    return Ok(Value::Null);
+                };
+                let analysis = &self.analyses[&uri];
+                let at = grammar
+                    .as_ref()
+                    .map(|(index, file)| GrammarAt { index, file: *file });
+                Ok(navigation::hover(analysis, offset, at))
+            }
             _ => Err((METHOD_NOT_FOUND, "method not found".into())),
+        }
+    }
+
+    /// The byte offset of the request's position in an up-to-date analysis,
+    /// with the grammar index when the document is a grammar.
+    fn located(
+        &mut self,
+        uri: &str,
+        params: &Value,
+    ) -> Option<(u32, Option<(GrammarIndex, usize)>)> {
+        let line = params["position"]["line"].as_u64()? as u32;
+        let character = params["position"]["character"].as_u64()? as u32;
+        let analysis = self.current(uri)?;
+        if line >= analysis.lines.line_count() {
+            return None;
+        }
+        let offset = analysis.lines.offset(line, character);
+        let path = uri::to_path(uri)?;
+        let grammar = path.extension().is_some_and(|e| e == "ngr").then(|| {
+            let buffers = self.buffers();
+            let set = self.registry.grammar_set(&path);
+            let index = grammar_index::build(&set, &|p: &Path| buffers.get(p));
+            let file = index.file(&path)?;
+            Some((index, file))
+        });
+        match grammar {
+            Some(None) => None,
+            Some(Some(grammar)) => Some((offset, Some(grammar))),
+            None => Some((offset, None)),
         }
     }
 

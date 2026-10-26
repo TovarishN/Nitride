@@ -7,6 +7,7 @@ pub mod grammar_index;
 pub mod index;
 pub mod lines;
 pub mod manifest;
+pub mod navigation;
 pub mod registry;
 mod rpc;
 mod server;
