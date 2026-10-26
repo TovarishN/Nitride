@@ -14,12 +14,30 @@ pub fn to_path(uri: &str) -> Option<PathBuf> {
 }
 
 pub fn from_path(path: &Path) -> String {
-    let text = path.to_string_lossy().replace('\\', "/");
+    let text = path.to_string_lossy();
+    // Windows verbatim paths (`canonicalize`): `\\?\C:\x` is `C:\x`, and
+    // `\\?\UNC\server\share` is `\\server\share`.
+    let text = if let Some(share) = text.strip_prefix(r"\\?\UNC\") {
+        format!(r"\\{share}")
+    } else {
+        text.strip_prefix(r"\\?\").unwrap_or(&text).to_owned()
+    };
+    let text = text.replace('\\', "/");
     let mut uri = String::from("file://");
+    if let Some(share) = text.strip_prefix("//") {
+        uri.push_str(share.split('/').next().unwrap_or_default());
+        let rest = &share[share.find('/').unwrap_or(share.len())..];
+        return encode(uri, rest);
+    }
     if !text.starts_with('/') {
         uri.push('/');
     }
-    for b in text.bytes() {
+    encode(uri, &text)
+}
+
+/// Appends `path` to `uri`, percent-encoding all but unreserved characters.
+fn encode(mut uri: String, path: &str) -> String {
+    for b in path.bytes() {
         if b.is_ascii_alphanumeric() || b"/-_.~:".contains(&b) {
             uri.push(b as char);
         } else {
@@ -44,4 +62,23 @@ fn decode(text: &str) -> Option<String> {
         }
     }
     String::from_utf8(out).ok()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Windows `canonicalize` returns verbatim paths; URIs never carry the prefix.
+    #[test]
+    fn verbatim_paths_drop_their_prefix() {
+        assert_eq!(
+            from_path(Path::new(r"\\?\D:\a\x.ngr")),
+            "file:///D:/a/x.ngr"
+        );
+        assert_eq!(
+            from_path(Path::new(r"\\?\UNC\server\share\x.ngr")),
+            "file://server/share/x.ngr"
+        );
+        assert_eq!(from_path(Path::new("/a b/x.ngr")), "file:///a%20b/x.ngr");
+    }
 }
