@@ -198,3 +198,15 @@ fn grammar_buffer_found_by_equivalent_path() {
     let errors = diagnostics(&messages, &power);
     assert_eq!(errors[0]["severity"], 1, "{errors}");
 }
+
+/// Opening a grammar whose text matches the disk changes no language, so
+/// open programs are not analysed again.
+#[test]
+fn unchanged_grammar_does_not_reanalyse() {
+    let dir = power_workspace("unchanged-grammar");
+    let program = dir.join("x.powercalc");
+    let grammar = lang("power/Power.ngr");
+    let text = std::fs::read_to_string(&grammar).unwrap();
+    let messages = Session::run(&dir, vec![open(&program, "1;"), open(&grammar, &text)]);
+    assert_eq!(all_diagnostics(&messages, &program).len(), 1);
+}

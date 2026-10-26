@@ -173,6 +173,9 @@ impl<W: Write> Server<W> {
                 "inlayHintProvider": true,
                 "completionProvider": {"triggerCharacters": ["."]},
                 "signatureHelpProvider": {"triggerCharacters": ["(", ","]},
+                "documentFormattingProvider": true,
+                "documentRangeFormattingProvider": true,
+                "documentOnTypeFormattingProvider": {"firstTriggerCharacter": "}"},
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -269,6 +272,38 @@ impl<W: Write> Server<W> {
                     tree.grammar.language(),
                     &leaves,
                 ))
+            }
+            "textDocument/formatting"
+            | "textDocument/rangeFormatting"
+            | "textDocument/onTypeFormatting" => {
+                let Some(analysis) = self.current(&uri) else {
+                    return Ok(json!([]));
+                };
+                let line =
+                    |p: &Value| u32::try_from(p["line"].as_u64().unwrap_or(0)).unwrap_or(u32::MAX);
+                let (first, last) = match method {
+                    "textDocument/rangeFormatting" => (
+                        line(&params["range"]["start"]),
+                        line(&params["range"]["end"]),
+                    ),
+                    "textDocument/onTypeFormatting" => {
+                        (line(&params["position"]), line(&params["position"]))
+                    }
+                    _ => (0, u32::MAX),
+                };
+                let tab_size =
+                    u32::try_from(params["options"]["tabSize"].as_u64().unwrap_or(2)).unwrap_or(2);
+                let spaces = params["options"]["insertSpaces"].as_bool().unwrap_or(true);
+                // Typing `}` reindents its line only; the file end is left alone.
+                let end_of_file = method != "textDocument/onTypeFormatting";
+                Ok(Value::Array(crate::format::edits(
+                    analysis,
+                    first,
+                    last,
+                    tab_size,
+                    spaces,
+                    end_of_file,
+                )))
             }
             "textDocument/inlayHint" => {
                 let Some(analysis) = self.current(&uri) else {
@@ -507,7 +542,8 @@ impl<W: Write> Server<W> {
     fn reload_languages(&mut self) -> io::Result<()> {
         self.grammars = None;
         let buffers = self.buffers();
-        self.registry
+        let changed = self
+            .registry
             .reload(&self.folders, &|path: &Path| buffers.get(path));
         let mut published = Vec::new();
         for manifest in self.registry.manifests() {
@@ -527,7 +563,9 @@ impl<W: Write> Server<W> {
             self.publish(&uri, diagnostics)?;
         }
         // Every open document may now belong to a different language.
-        self.pending.extend(self.documents.keys().cloned());
+        if changed {
+            self.pending.extend(self.documents.keys().cloned());
+        }
         Ok(())
     }
 
