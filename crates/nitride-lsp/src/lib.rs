@@ -12,6 +12,7 @@ pub mod lines;
 pub mod manifest;
 pub mod navigation;
 pub mod registry;
+pub mod roles;
 mod rpc;
 mod server;
 mod signatures;
