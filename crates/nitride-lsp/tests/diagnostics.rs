@@ -175,3 +175,26 @@ fn close_clears_diagnostics() {
     assert!(!published[0].as_array().unwrap().is_empty());
     assert_eq!(published.last().unwrap(), &json!([]));
 }
+
+/// An open grammar buffer is found even when the manifest spells its path
+/// differently (`sub/../`, or `C:\` against a `file:///c%3A/` URI on Windows).
+#[test]
+fn grammar_buffer_found_by_equivalent_path() {
+    let dir = scratch("equivalent-path");
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    let power = dir.join("Power.ngr");
+    let original = std::fs::read_to_string(lang("power/Power.ngr")).unwrap();
+    std::fs::write(&power, &original).unwrap();
+    manifest(
+        &dir,
+        "nitride.json",
+        "PortablePower",
+        ".powercalc",
+        &[lang("portable/Portable.ngr"), dir.join("sub/../Power.ngr")],
+        "Portable.Program",
+        Some(&lang("power/catalog.json")),
+    );
+    let messages = Session::run(&dir, vec![open(&power, "syntax module Portable.Power {")]);
+    let errors = diagnostics(&messages, &power);
+    assert_eq!(errors[0]["severity"], 1, "{errors}");
+}

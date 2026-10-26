@@ -285,7 +285,7 @@ impl<W: Write> Server<W> {
         };
         let buffers = self.buffers();
         let analysis = analysis::analyze(&self.registry, &path, &document.text, &|p: &Path| {
-            buffers.get(p).cloned()
+            buffers.get(p)
         });
         match analysis {
             Some(analysis) => {
@@ -309,22 +309,23 @@ impl<W: Write> Server<W> {
     }
 
     /// Open buffers by path.
-    fn buffers(&self) -> HashMap<PathBuf, String> {
-        self.documents
-            .iter()
-            .filter_map(|(u, d)| Some((uri::to_path(u)?, d.text.clone())))
-            .collect()
+    fn buffers(&self) -> Buffers {
+        Buffers(
+            self.documents
+                .iter()
+                .filter_map(|(u, d)| Some((canonical(&uri::to_path(u)?), d.text.clone())))
+                .collect(),
+        )
     }
 
     fn reload_languages(&mut self) -> io::Result<()> {
         let buffers = self.buffers();
         self.registry
-            .reload(&self.folders, &|path: &Path| buffers.get(path).cloned());
+            .reload(&self.folders, &|path: &Path| buffers.get(path));
         let mut published = Vec::new();
         for manifest in self.registry.manifests() {
             let text = buffers
                 .get(&manifest.path)
-                .cloned()
                 .or_else(|| std::fs::read_to_string(&manifest.path).ok())
                 .unwrap_or_default();
             let lines = LineIndex::new(&text);
@@ -349,6 +350,20 @@ impl<W: Write> Server<W> {
             "params":{"uri":uri,"diagnostics":diagnostics}}),
         )
     }
+}
+
+/// Open editor buffers, keyed so that every spelling of a file finds it: a
+/// manifest's `sub/../x.ngr`, or `C:\\x` against a `file:///c%3A/x` URI.
+struct Buffers(HashMap<PathBuf, String>);
+
+impl Buffers {
+    fn get(&self, path: &Path) -> Option<String> {
+        self.0.get(&canonical(path)).cloned()
+    }
+}
+
+fn canonical(path: &Path) -> PathBuf {
+    path.canonicalize().unwrap_or_else(|_| path.to_owned())
 }
 
 /// Whether a document is an input of workspace languages.

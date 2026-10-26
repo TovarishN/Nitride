@@ -28,8 +28,14 @@ pub fn unframe(mut bytes: &[u8]) -> Vec<Value> {
     messages
 }
 
+/// A `file:` URI as VS Code sends it: `file:///C:/x` on Windows, never the
+/// `\\?\` verbatim form `canonicalize` returns there.
 pub fn uri(path: &Path) -> String {
-    let path = path.to_string_lossy().replace('\\', "/");
+    let text = path.to_string_lossy();
+    let path = text
+        .strip_prefix(r"\\?\")
+        .unwrap_or(&text)
+        .replace('\\', "/");
     let path = if path.starts_with('/') {
         path
     } else {
