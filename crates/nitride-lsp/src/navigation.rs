@@ -225,3 +225,112 @@ pub fn highlights(
     });
     Value::Array(found)
 }
+
+/// Why a rename cannot happen, as an LSP error (invalid params).
+pub type Refusal = (i64, String);
+
+fn refuse(message: &str) -> Refusal {
+    (crate::server::INVALID_PARAMS, message.to_owned())
+}
+
+/// The name range under the cursor and its current text, or `null`.
+pub fn prepare_rename(
+    analysis: &Analysis,
+    offset: u32,
+    grammar: Option<GrammarAt<'_>>,
+) -> Result<Value, Refusal> {
+    if !on_text(analysis, offset) {
+        return Ok(Value::Null);
+    }
+    if let Some(GrammarAt { index, file }) = grammar {
+        return Ok(match rule_at(index, file, offset) {
+            Some((rule, span)) => {
+                // Only the last segment of a qualified use is the rule's name.
+                let text = &index.files[file].text[span[0] as usize..span[1] as usize];
+                let start = span[0] + text.rfind('.').map_or(0, |d| d as u32 + 1);
+                json!({"range": range(&analysis.lines, [start, span[1]]), "placeholder": rule.item.name})
+            }
+            None => Value::Null,
+        });
+    }
+    let index = &analysis.index;
+    match index.at(offset) {
+        Some(Target::Builtin(_)) => Err(refuse("built-in names cannot be renamed")),
+        Some(Target::Definition(i)) => {
+            let span = index
+                .occurrences(i)
+                .into_iter()
+                .map(|(s, _)| s)
+                .find(|s| s[0] <= offset && offset <= s[1])
+                .unwrap_or(index.definitions[i].name_span);
+            Ok(
+                json!({"range": range(&analysis.lines, span), "placeholder": index.definitions[i].name}),
+            )
+        }
+        None => Ok(Value::Null),
+    }
+}
+
+fn identifier(name: &str) -> bool {
+    let mut chars = name.chars();
+    chars
+        .next()
+        .is_some_and(|c| c.is_ascii_alphabetic() || c == '_')
+        && chars.all(|c| c.is_ascii_alphanumeric() || c == '_')
+}
+
+/// A `WorkspaceEdit` renaming every occurrence of the symbol at `offset`.
+pub fn rename(
+    analysis: &Analysis,
+    uri: &str,
+    offset: u32,
+    grammar: Option<GrammarAt<'_>>,
+    new_name: &str,
+) -> Result<Value, Refusal> {
+    if !identifier(new_name) {
+        return Err(refuse("not an identifier"));
+    }
+    if prepare_rename(
+        analysis,
+        offset,
+        grammar.as_ref().map(|g| GrammarAt {
+            index: g.index,
+            file: g.file,
+        }),
+    )?
+    .is_null()
+    {
+        return Ok(Value::Null);
+    }
+    let mut changes = serde_json::Map::new();
+    let mut edit = |uri: String, lines: &crate::lines::LineIndex, span: [u32; 2]| {
+        let edits = changes.entry(uri).or_insert_with(|| json!([]));
+        edits
+            .as_array_mut()
+            .expect("edits are an array")
+            .push(json!({"range": range(lines, span), "newText": new_name}));
+    };
+    if let Some(GrammarAt { index, file }) = grammar {
+        let Some((rule, _)) = rule_at(index, file, offset) else {
+            return Ok(Value::Null);
+        };
+        let mut spans = vec![(rule.file, rule.item.name_span.map(|b| b as u32))];
+        spans.extend(index.uses(&rule));
+        for (file, span) in spans {
+            let grammar = &index.files[file];
+            let text = &grammar.text[span[0] as usize..span[1] as usize];
+            let start = span[0] + text.rfind('.').map_or(0, |d| d as u32 + 1);
+            let lines = crate::lines::LineIndex::new(&grammar.text);
+            edit(
+                crate::uri::from_path(&grammar.path),
+                &lines,
+                [start, span[1]],
+            );
+        }
+    } else if let Some(Target::Definition(i)) = analysis.index.at(offset) {
+        for (span, _) in analysis.index.occurrences(i) {
+            edit(uri.to_owned(), &analysis.lines, span);
+        }
+    }
+    Ok(json!({ "changes": changes }))
+}

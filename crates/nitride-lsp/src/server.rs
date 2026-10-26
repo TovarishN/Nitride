@@ -14,6 +14,7 @@ use std::sync::mpsc::{self, RecvTimeoutError};
 pub const PARSE_ERROR: i64 = -32700;
 pub const INVALID_REQUEST: i64 = -32600;
 pub const METHOD_NOT_FOUND: i64 = -32601;
+pub const INVALID_PARAMS: i64 = -32602;
 
 enum Incoming {
     Message(Value),
@@ -163,6 +164,7 @@ impl<W: Write> Server<W> {
                 "declarationProvider": true,
                 "referencesProvider": true,
                 "documentHighlightProvider": true,
+                "renameProvider": {"prepareProvider": true},
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -194,7 +196,9 @@ impl<W: Write> Server<W> {
             | "textDocument/definition"
             | "textDocument/declaration"
             | "textDocument/references"
-            | "textDocument/documentHighlight" => {
+            | "textDocument/documentHighlight"
+            | "textDocument/prepareRename"
+            | "textDocument/rename" => {
                 let Some((offset, grammar)) = self.located(&uri, params) else {
                     return Ok(match method {
                         "textDocument/references" | "textDocument/documentHighlight" => json!([]),
@@ -215,6 +219,13 @@ impl<W: Write> Server<W> {
                     }
                     "textDocument/documentHighlight" => {
                         navigation::highlights(analysis, &uri, offset, at)
+                    }
+                    "textDocument/prepareRename" => {
+                        navigation::prepare_rename(analysis, offset, at)?
+                    }
+                    "textDocument/rename" => {
+                        let name = params["newName"].as_str().unwrap_or_default();
+                        navigation::rename(analysis, &uri, offset, at, name)?
                     }
                     _ => navigation::definition(analysis, &uri, offset, at),
                 })
