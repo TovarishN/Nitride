@@ -8,6 +8,7 @@ pub mod manifest;
 pub mod registry;
 mod rpc;
 mod server;
+mod tokens;
 mod uri;
 
 use std::time::Duration;

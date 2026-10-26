@@ -2,7 +2,7 @@
 use crate::lines::LineIndex;
 use crate::registry::{EMPTY_CATALOG, LanguageState, Loaded, Registry, same_file};
 use nitride_core::*;
-use nitride_prepare::{PrepareError, Source};
+use nitride_prepare::{GrammarItem, PrepareError, Source};
 use std::path::Path;
 use std::sync::Arc;
 
@@ -77,6 +77,8 @@ pub struct Analysis {
     pub tree: Option<Tree>,
     pub problems: Vec<Problem>,
     pub declarations: Vec<DeclaredName>,
+    /// A grammar file's modules and members; empty for programs.
+    pub outline: Vec<GrammarItem>,
 }
 
 /// Analyses one document; `None` when no language serves it.
@@ -110,6 +112,7 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
                 code: None,
             }],
             declarations: vec![],
+            outline: vec![],
         };
     };
     let language = loaded.language.language();
@@ -140,6 +143,7 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
         tree: Some(tree),
         problems,
         declarations,
+        outline: vec![],
     }
 }
 
@@ -223,11 +227,17 @@ fn grammar(
             problems.push(problem);
         }
     }
+    let outline = nitride_prepare::grammar_outline(&Source {
+        path: path.to_string_lossy().into_owned(),
+        text: text.to_owned(),
+    })
+    .unwrap_or_default();
     Analysis {
         lines,
         tree: Some(Tree::new(Grammar::Frontend, &parsed.tree)),
         problems,
         declarations: vec![],
+        outline,
     }
 }
 

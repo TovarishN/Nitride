@@ -2,7 +2,7 @@
 use crate::analysis::{self, Analysis};
 use crate::lines::LineIndex;
 use crate::registry::Registry;
-use crate::{ServeOptions, manifest, rpc, uri};
+use crate::{ServeOptions, manifest, rpc, tokens, uri};
 use serde_json::{Value, json};
 use std::collections::{BTreeSet, HashMap};
 use std::io::{self, BufRead, Write};
@@ -149,13 +149,36 @@ impl<W: Write> Server<W> {
                 "positionEncoding": "utf-16",
                 "textDocumentSync": 1,
                 "workspace": {"workspaceFolders": {"supported": true, "changeNotifications": true}},
+                "semanticTokensProvider": {
+                    "legend": {"tokenTypes": tokens::TYPES, "tokenModifiers": tokens::MODIFIERS},
+                    "full": true,
+                },
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
     }
 
-    fn request(&mut self, _method: &str, _params: &Value) -> Result<Value, (i64, String)> {
-        Err((METHOD_NOT_FOUND, "method not found".into()))
+    fn request(&mut self, method: &str, params: &Value) -> Result<Value, (i64, String)> {
+        let uri = params["textDocument"]["uri"]
+            .as_str()
+            .unwrap_or_default()
+            .to_owned();
+        match method {
+            "textDocument/semanticTokens/full" => {
+                let data = self.current(&uri).map(tokens::encode).unwrap_or_default();
+                Ok(json!({ "data": data }))
+            }
+            _ => Err((METHOD_NOT_FOUND, "method not found".into())),
+        }
+    }
+
+    /// The document's analysis, brought up to date first if an edit is pending.
+    fn current(&mut self, uri: &str) -> Option<&Analysis> {
+        if self.pending.remove(uri) {
+            // Diagnostics are published as part of this analysis.
+            self.analyze(uri).ok()?;
+        }
+        self.analyses.get(uri)
     }
 
     fn notification(&mut self, method: &str, params: Value) -> io::Result<bool> {
