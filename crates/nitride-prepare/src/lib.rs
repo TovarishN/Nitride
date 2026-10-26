@@ -96,6 +96,11 @@ pub fn prepare_sources_tolerant(
     normalize::prepare(sources, catalog, start, "syntax", true)
 }
 
+/// The compiled grammar frontend, a syntax-only language for `.ngr` files.
+pub fn grammar_language() -> &'static nitride_core::Language<'static> {
+    &grammar_seed::LANGUAGE
+}
+
 /// A declaration in a grammar file's outline.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GrammarItem {

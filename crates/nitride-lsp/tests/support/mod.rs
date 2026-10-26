@@ -135,3 +135,41 @@ pub fn diagnostics(messages: &[Value], path: &Path) -> Value {
         .map(|m| m["params"]["diagnostics"].clone())
         .unwrap_or_else(|| panic!("no diagnostics for {uri}"))
 }
+
+/// Writes a workspace manifest listing one language from absolute paths.
+pub fn manifest(
+    dir: &Path,
+    file: &str,
+    name: &str,
+    extension: &str,
+    grammars: &[PathBuf],
+    start: &str,
+    catalog: Option<&Path>,
+) {
+    let mut language = json!({"name":name,"extensions":[extension],
+        "grammars":grammars.iter().map(|g| g.to_string_lossy()).collect::<Vec<_>>(),"start":start});
+    if let Some(catalog) = catalog {
+        language["catalog"] = json!(catalog.to_string_lossy());
+    }
+    std::fs::write(dir.join(file), json!({"languages":[language]}).to_string()).unwrap();
+}
+
+/// Every diagnostics list published for `path`, in order.
+pub fn all_diagnostics(messages: &[Value], path: &Path) -> Vec<Value> {
+    let uri = uri(path);
+    messages
+        .iter()
+        .filter(|m| m["method"] == "textDocument/publishDiagnostics" && m["params"]["uri"] == uri)
+        .map(|m| m["params"]["diagnostics"].clone())
+        .collect()
+}
+
+/// Messages after the response to marker request `id`.
+pub fn after(messages: &[Value], id: u64) -> &[Value] {
+    let at = messages.iter().position(|m| m["id"] == id).unwrap();
+    &messages[at + 1..]
+}
+
+pub fn marker(id: u64) -> Value {
+    request(id, "nitride/marker", json!({}))
+}

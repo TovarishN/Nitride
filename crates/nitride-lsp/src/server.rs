@@ -1,4 +1,5 @@
 //! The message loop: document sync, debounced analysis and request dispatch.
+use crate::analysis::{self, Analysis};
 use crate::lines::LineIndex;
 use crate::registry::Registry;
 use crate::{ServeOptions, manifest, rpc, uri};
@@ -32,6 +33,7 @@ pub struct Server<W: Write> {
     pub registry: Registry,
     /// Manifests, grammars or catalogs changed since languages were loaded.
     reload: bool,
+    pub analyses: HashMap<String, Analysis>,
 }
 
 pub fn run(
@@ -93,6 +95,7 @@ impl<W: Write> Server<W> {
             folders: Vec::new(),
             registry: Registry::default(),
             reload: false,
+            analyses: HashMap::new(),
         }
     }
 
@@ -211,6 +214,9 @@ impl<W: Write> Server<W> {
                     .to_owned();
                 self.documents.remove(&uri);
                 self.pending.remove(&uri);
+                if self.analyses.remove(&uri).is_some() {
+                    self.publish(&uri, vec![])?;
+                }
                 // The file on disk replaces the closed buffer.
                 self.reload |= language_input(&uri);
             }
@@ -224,8 +230,40 @@ impl<W: Write> Server<W> {
         if std::mem::take(&mut self.reload) {
             self.reload_languages()?;
         }
-        self.pending.clear();
+        for uri in std::mem::take(&mut self.pending) {
+            self.analyze(&uri)?;
+        }
         Ok(())
+    }
+
+    /// Re-analyses one open document and publishes its diagnostics.
+    fn analyze(&mut self, uri: &str) -> io::Result<()> {
+        let (Some(document), Some(path)) = (self.documents.get(uri), uri::to_path(uri)) else {
+            return Ok(());
+        };
+        let buffers = self.buffers();
+        let analysis = analysis::analyze(&self.registry, &path, &document.text, &|p: &Path| {
+            buffers.get(p).cloned()
+        });
+        match analysis {
+            Some(analysis) => {
+                let diagnostics = analysis
+                    .problems
+                    .iter()
+                    .map(|p| {
+                        let mut d = diagnostic(&analysis.lines, p.span, p.severity, &p.message);
+                        if let Some(code) = &p.code {
+                            d["code"] = json!(code);
+                        }
+                        d
+                    })
+                    .collect();
+                self.analyses.insert(uri.to_owned(), analysis);
+                self.publish(uri, diagnostics)
+            }
+            None if self.analyses.remove(uri).is_some() => self.publish(uri, vec![]),
+            None => Ok(()),
+        }
     }
 
     /// Open buffers by path.
