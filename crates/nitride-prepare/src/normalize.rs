@@ -219,6 +219,7 @@ pub fn prepare(
     let mut rules = Vec::new();
     let mut omitted = Vec::new();
     let mut declarations = Vec::new();
+    let mut references = Vec::new();
     let mut add = |module: &Module,
                    rule: &Rule,
                    owner: Option<&str>,
@@ -227,17 +228,27 @@ pub fn prepare(
      -> Result<Value, PrepareError> {
         let source = &sources[module.source];
         let name = format!("{}.{}", module.name, rule.name);
-        for clause in rule.clauses.iter().filter(|c| c["kind"] == "Declares") {
-            declarations.push(crate::Declaration {
-                rule: name.clone(),
-                field: clause["field"].as_str().unwrap_or_default().into(),
-                kinds: clause["symbol_kinds"]
-                    .as_array()
-                    .into_iter()
-                    .flatten()
-                    .filter_map(|k| k.as_str().map(Into::into))
-                    .collect(),
-            });
+        for clause in &rule.clauses {
+            let field: String = clause["field"].as_str().unwrap_or_default().into();
+            let kinds: Vec<String> = clause["symbol_kinds"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|k| k.as_str().map(Into::into))
+                .collect();
+            if clause["kind"] == "Declares" {
+                declarations.push(crate::Declaration {
+                    rule: name.clone(),
+                    field,
+                    kinds,
+                });
+            } else if clause["kind"] == "References" {
+                references.push(crate::ReferenceClause {
+                    rule: name.clone(),
+                    field,
+                    kinds,
+                });
+            }
         }
         if mode == "typed" && rule.block {
             return Err(source.error(
@@ -398,6 +409,7 @@ pub fn prepare(
         data: output,
         warnings,
         declarations,
+        references,
     })
 }
 fn expr_span(expr: &Value) -> [usize; 2] {

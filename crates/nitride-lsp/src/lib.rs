@@ -3,14 +3,17 @@
 //! JSON-RPC over stdio with std threads only. Positions are UTF-16 on the
 //! wire and UTF-8 byte offsets inside; `lines` converts at the boundary.
 pub mod analysis;
+pub mod grammar_index;
+pub mod index;
 pub mod lines;
 pub mod manifest;
+pub mod navigation;
 pub mod registry;
 mod rpc;
 mod server;
 mod structure;
 mod tokens;
-mod uri;
+pub(crate) mod uri;
 
 use std::time::Duration;
 

@@ -121,6 +121,23 @@ impl Registry {
         })
     }
 
+    /// The grammar files navigation from `path` spans: every grammar of the
+    /// languages that use it, else the file alone.
+    pub fn grammar_set(&self, path: &Path) -> Vec<PathBuf> {
+        let mut set: Vec<PathBuf> = Vec::new();
+        for language in self.using_grammar(path) {
+            for grammar in &language.entry.grammars {
+                if !set.iter().any(|g| same_file(g, grammar)) {
+                    set.push(grammar.clone());
+                }
+            }
+        }
+        if set.is_empty() {
+            set.push(path.to_owned());
+        }
+        set
+    }
+
     /// Languages whose grammars include `path`.
     pub fn using_grammar<'a>(&'a self, path: &'a Path) -> impl Iterator<Item = &'a LanguageState> {
         self.languages

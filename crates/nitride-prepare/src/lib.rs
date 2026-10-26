@@ -78,6 +78,7 @@ pub struct Prepared {
     pub data: Value,
     pub warnings: Vec<PrepareError>,
     pub declarations: Vec<Declaration>,
+    pub references: Vec<ReferenceClause>,
 }
 
 /// One `declares` clause: the qualified rule, its name field and symbol kinds.
@@ -98,6 +99,33 @@ pub fn prepare_sources_detailed(
     normalize::prepare(sources, catalog, start, mode, false)
 }
 
+/// One `references` clause: the qualified rule, its name field and symbol kinds.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ReferenceClause {
+    pub rule: String,
+    pub field: String,
+    pub kinds: Vec<String>,
+}
+
+/// A rule name used in a grammar file, and the module it is used in.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GrammarReference {
+    pub name: String,
+    pub span: [usize; 2],
+    pub module: String,
+}
+
+/// Whether a grammar file parses as written. The outline and references of a
+/// file that does not are taken from its undamaged lines.
+pub fn grammar_parses(source: &Source) -> bool {
+    parser::parses(source)
+}
+
+/// Every rule name a grammar file uses: element references and `extend` targets.
+pub fn grammar_references(source: &Source) -> Result<Vec<GrammarReference>, PrepareError> {
+    parser::references(source)
+}
+
 /// Syntax-mode preparation for editors: Nitrogen's C# semantic members are
 /// skipped, each reported as a warning, and the parser is still built.
 pub fn prepare_sources_tolerant(
@@ -116,7 +144,8 @@ pub fn grammar_language() -> &'static nitride_core::Language<'static> {
 /// A declaration in a grammar file's outline.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GrammarItem {
-    /// "module", "syntax", "token", "extensible", "extend", "function" or "helper".
+    /// "module", "syntax", "token", "extensible", "extend", "alternative",
+    /// "function" or "helper".
     pub kind: &'static str,
     pub name: String,
     pub span: [usize; 2],

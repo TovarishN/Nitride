@@ -1,6 +1,8 @@
 //! The message loop: document sync, debounced analysis and request dispatch.
 use crate::analysis::{self, Analysis};
+use crate::grammar_index::{self, GrammarIndex};
 use crate::lines::LineIndex;
+use crate::navigation::{self, GrammarAt};
 use crate::registry::Registry;
 use crate::{ServeOptions, manifest, rpc, structure, tokens, uri};
 use serde_json::{Value, json};
@@ -12,6 +14,7 @@ use std::sync::mpsc::{self, RecvTimeoutError};
 pub const PARSE_ERROR: i64 = -32700;
 pub const INVALID_REQUEST: i64 = -32600;
 pub const METHOD_NOT_FOUND: i64 = -32601;
+pub const INVALID_PARAMS: i64 = -32602;
 
 enum Incoming {
     Message(Value),
@@ -34,6 +37,9 @@ pub struct Server<W: Write> {
     /// Manifests, grammars or catalogs changed since languages were loaded.
     reload: bool,
     pub analyses: HashMap<String, Analysis>,
+    /// Every workspace grammar, indexed on demand and dropped when languages
+    /// or grammar buffers change.
+    grammars: Option<GrammarIndex>,
 }
 
 pub fn run(
@@ -96,6 +102,7 @@ impl<W: Write> Server<W> {
             registry: Registry::default(),
             reload: false,
             analyses: HashMap::new(),
+            grammars: None,
         }
     }
 
@@ -156,6 +163,13 @@ impl<W: Write> Server<W> {
                 "documentSymbolProvider": true,
                 "foldingRangeProvider": true,
                 "selectionRangeProvider": true,
+                "hoverProvider": true,
+                "definitionProvider": true,
+                "declarationProvider": true,
+                "referencesProvider": true,
+                "documentHighlightProvider": true,
+                "renameProvider": {"prepareProvider": true},
+                "workspaceSymbolProvider": true,
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -183,7 +197,106 @@ impl<W: Write> Server<W> {
                     .current(&uri)
                     .map_or(json!([]), |a| structure::selections(a, &positions)))
             }
+            "textDocument/hover"
+            | "textDocument/definition"
+            | "textDocument/declaration"
+            | "textDocument/references"
+            | "textDocument/documentHighlight"
+            | "textDocument/prepareRename"
+            | "textDocument/rename" => {
+                let Some((offset, grammar)) = self.located(&uri, params) else {
+                    return Ok(match method {
+                        "textDocument/references" | "textDocument/documentHighlight" => json!([]),
+                        _ => Value::Null,
+                    });
+                };
+                let analysis = &self.analyses[&uri];
+                let at = grammar
+                    .as_ref()
+                    .map(|(index, file)| GrammarAt { index, file: *file });
+                Ok(match method {
+                    "textDocument/hover" => navigation::hover(analysis, offset, at),
+                    "textDocument/references" => {
+                        let include = params["context"]["includeDeclaration"]
+                            .as_bool()
+                            .unwrap_or(false);
+                        navigation::references(analysis, &uri, offset, at, include)
+                    }
+                    "textDocument/documentHighlight" => {
+                        navigation::highlights(analysis, &uri, offset, at)
+                    }
+                    "textDocument/prepareRename" => {
+                        navigation::prepare_rename(analysis, offset, at)?
+                    }
+                    "textDocument/rename" => {
+                        let name = params["newName"].as_str().unwrap_or_default();
+                        navigation::rename(analysis, &uri, offset, at, name)?
+                    }
+                    _ => navigation::definition(analysis, &uri, offset, at),
+                })
+            }
+            "workspace/symbol" => {
+                let query = params["query"].as_str().unwrap_or_default().to_owned();
+                if std::mem::take(&mut self.reload) {
+                    self.reload_languages()
+                        .map_err(|e| (INVALID_REQUEST, e.to_string()))?;
+                }
+                for uri in std::mem::take(&mut self.pending) {
+                    self.analyze(&uri)
+                        .map_err(|e| (INVALID_REQUEST, e.to_string()))?;
+                }
+                if self.grammars.is_none() {
+                    let mut paths: Vec<PathBuf> = Vec::new();
+                    for language in self.registry.languages() {
+                        for grammar in &language.entry.grammars {
+                            if !paths.iter().any(|p| crate::registry::same_file(p, grammar)) {
+                                paths.push(grammar.clone());
+                            }
+                        }
+                    }
+                    let buffers = self.buffers();
+                    let uri_of = self.uri_of();
+                    self.grammars = Some(grammar_index::build(
+                        &paths,
+                        &|p: &Path| buffers.get(p),
+                        &uri_of,
+                    ));
+                }
+                let grammars = self.grammars.as_ref().expect("just built");
+                let open = self.analyses.iter().map(|(u, a)| (u.as_str(), a));
+                Ok(navigation::workspace_symbols(grammars, open, &query))
+            }
             _ => Err((METHOD_NOT_FOUND, "method not found".into())),
+        }
+    }
+
+    /// The byte offset of the request's position in an up-to-date analysis,
+    /// with the grammar index when the document is a grammar.
+    fn located(
+        &mut self,
+        uri: &str,
+        params: &Value,
+    ) -> Option<(u32, Option<(GrammarIndex, usize)>)> {
+        let line = params["position"]["line"].as_u64()? as u32;
+        let character = params["position"]["character"].as_u64()? as u32;
+        let analysis = self.current(uri)?;
+        if line >= analysis.lines.line_count() {
+            return None;
+        }
+        let offset = analysis.lines.offset(line, character);
+        let path = uri::to_path(uri)?;
+        let grammar = path.extension().is_some_and(|e| e == "ngr").then(|| {
+            let buffers = self.buffers();
+            let set = self.registry.grammar_set(&path);
+            let uri_of = self.uri_of();
+            let index = grammar_index::build(&set, &|p: &Path| buffers.get(p), &uri_of);
+            let file = index.file(&path)?;
+            Some((index, file))
+        });
+        match grammar {
+            Some(None) => None,
+            Some(Some(grammar)) => Some((offset, Some(grammar))),
+            None => Some((offset, None)),
         }
     }
 
@@ -308,6 +421,21 @@ impl<W: Write> Server<W> {
         }
     }
 
+    /// Names a file for the client: the URI it opened the file under, else
+    /// the normalized path's.
+    fn uri_of(&self) -> Box<dyn Fn(&Path) -> String> {
+        let open: Vec<(PathBuf, String)> = self
+            .documents
+            .keys()
+            .filter_map(|u| Some((uri::to_path(u)?, u.clone())))
+            .collect();
+        Box::new(move |path: &Path| {
+            open.iter()
+                .find(|(p, _)| crate::registry::same_file(p, path))
+                .map_or_else(|| grammar_index::default_uri(path), |(_, u)| u.clone())
+        })
+    }
+
     /// Open buffers by path.
     fn buffers(&self) -> Buffers {
         Buffers(
@@ -319,6 +447,7 @@ impl<W: Write> Server<W> {
     }
 
     fn reload_languages(&mut self) -> io::Result<()> {
+        self.grammars = None;
         let buffers = self.buffers();
         self.registry
             .reload(&self.folders, &|path: &Path| buffers.get(path));
