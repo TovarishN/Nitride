@@ -453,12 +453,324 @@
         "id": "ngrVariableParameter",
         "description": "variable.parameter"
       }
+    ],
+    "semanticTokenScopes": [
+      {
+        "scopes": {
+          "operationWord": [
+            "entity.name.function"
+          ],
+          "declarationKeyword": [
+            "storage.type"
+          ],
+          "sectionKeyword": [
+            "keyword.other"
+          ],
+          "modifierWord": [
+            "keyword.operator.word"
+          ],
+          "constantWord": [
+            "constant.language"
+          ],
+          "blockBracket": [
+            "punctuation.section.block"
+          ],
+          "parenthesis": [
+            "punctuation.section.parens"
+          ],
+          "squareBracket": [
+            "punctuation.section.brackets"
+          ],
+          "terminator": [
+            "punctuation.terminator"
+          ],
+          "separator": [
+            "punctuation.separator"
+          ],
+          "operator": [
+            "keyword.operator"
+          ],
+          "ngrCommentBlock": [
+            "comment.block"
+          ],
+          "ngrCommentLineDoubleSlash": [
+            "comment.line.double-slash"
+          ],
+          "ngrConstantCharacterAny": [
+            "constant.character.any"
+          ],
+          "ngrConstantCharacterEscape": [
+            "constant.character.escape"
+          ],
+          "ngrConstantNumericInteger": [
+            "constant.numeric.integer"
+          ],
+          "ngrConstantOtherDiagnosticCode": [
+            "constant.other.diagnostic-code"
+          ],
+          "ngrEntityNameFunction": [
+            "entity.name.function"
+          ],
+          "ngrEntityNameFunctionAlternative": [
+            "entity.name.function.alternative"
+          ],
+          "ngrEntityNameFunctionCall": [
+            "entity.name.function.call"
+          ],
+          "ngrEntityNameFunctionRule": [
+            "entity.name.function.rule"
+          ],
+          "ngrEntityNameNamespace": [
+            "entity.name.namespace"
+          ],
+          "ngrEntityNameType": [
+            "entity.name.type"
+          ],
+          "ngrEntityNameTypeLanguage": [
+            "entity.name.type.language"
+          ],
+          "ngrEntityNameTypeQualified": [
+            "entity.name.type.qualified"
+          ],
+          "ngrEntityNameTypeToken": [
+            "entity.name.type.token"
+          ],
+          "ngrKeywordControlConditional": [
+            "keyword.control.conditional"
+          ],
+          "ngrKeywordControlLoop": [
+            "keyword.control.loop"
+          ],
+          "ngrKeywordControlMatch": [
+            "keyword.control.match"
+          ],
+          "ngrKeywordControlWhere": [
+            "keyword.control.where"
+          ],
+          "ngrKeywordOperatorAlternative": [
+            "keyword.operator.alternative"
+          ],
+          "ngrKeywordOperatorArrow": [
+            "keyword.operator.arrow"
+          ],
+          "ngrKeywordOperatorAssignment": [
+            "keyword.operator.assignment"
+          ],
+          "ngrKeywordOperatorComparison": [
+            "keyword.operator.comparison"
+          ],
+          "ngrKeywordOperatorList": [
+            "keyword.operator.list"
+          ],
+          "ngrKeywordOperatorNegation": [
+            "keyword.operator.negation"
+          ],
+          "ngrKeywordOperatorOptional": [
+            "keyword.operator.optional"
+          ],
+          "ngrKeywordOperatorPeg": [
+            "keyword.operator.peg"
+          ],
+          "ngrKeywordOperatorRange": [
+            "keyword.operator.range"
+          ],
+          "ngrKeywordOperatorWord": [
+            "keyword.operator.word"
+          ],
+          "ngrKeywordOtherAssociativity": [
+            "keyword.other.associativity"
+          ],
+          "ngrKeywordOtherAt": [
+            "keyword.other.at"
+          ],
+          "ngrKeywordOtherBuiltin": [
+            "keyword.other.builtin"
+          ],
+          "ngrKeywordOtherCheck": [
+            "keyword.other.check"
+          ],
+          "ngrKeywordOtherClause": [
+            "keyword.other.clause"
+          ],
+          "ngrKeywordOtherDeclares": [
+            "keyword.other.declares"
+          ],
+          "ngrKeywordOtherDirective": [
+            "keyword.other.directive"
+          ],
+          "ngrKeywordOtherFor": [
+            "keyword.other.for"
+          ],
+          "ngrKeywordOtherIn": [
+            "keyword.other.in"
+          ],
+          "ngrKeywordOtherLet": [
+            "keyword.other.let"
+          ],
+          "ngrKeywordOtherLowering": [
+            "keyword.other.lowering"
+          ],
+          "ngrKeywordOtherPrecedence": [
+            "keyword.other.precedence"
+          ],
+          "ngrKeywordOtherReferences": [
+            "keyword.other.references"
+          ],
+          "ngrKeywordOtherSetting": [
+            "keyword.other.setting"
+          ],
+          "ngrKeywordOtherSymbols": [
+            "keyword.other.symbols"
+          ],
+          "ngrKeywordOtherUsing": [
+            "keyword.other.using"
+          ],
+          "ngrPunctuationDefinitionCharacterClassBegin": [
+            "punctuation.definition.character-class.begin"
+          ],
+          "ngrPunctuationDefinitionCharacterClassEnd": [
+            "punctuation.definition.character-class.end"
+          ],
+          "ngrPunctuationDefinitionDirective": [
+            "punctuation.definition.directive"
+          ],
+          "ngrPunctuationDefinitionStringBegin": [
+            "punctuation.definition.string.begin"
+          ],
+          "ngrPunctuationDefinitionStringEnd": [
+            "punctuation.definition.string.end"
+          ],
+          "ngrPunctuationSectionArgumentsBegin": [
+            "punctuation.section.arguments.begin"
+          ],
+          "ngrPunctuationSectionArgumentsEnd": [
+            "punctuation.section.arguments.end"
+          ],
+          "ngrPunctuationSectionBlockBegin": [
+            "punctuation.section.block.begin"
+          ],
+          "ngrPunctuationSectionBlockEnd": [
+            "punctuation.section.block.end"
+          ],
+          "ngrPunctuationSectionGroupBegin": [
+            "punctuation.section.group.begin"
+          ],
+          "ngrPunctuationSectionGroupEnd": [
+            "punctuation.section.group.end"
+          ],
+          "ngrPunctuationSectionModuleBegin": [
+            "punctuation.section.module.begin"
+          ],
+          "ngrPunctuationSectionModuleEnd": [
+            "punctuation.section.module.end"
+          ],
+          "ngrPunctuationSectionParametersBegin": [
+            "punctuation.section.parameters.begin"
+          ],
+          "ngrPunctuationSectionParametersEnd": [
+            "punctuation.section.parameters.end"
+          ],
+          "ngrPunctuationSectionSemanticsBegin": [
+            "punctuation.section.semantics.begin"
+          ],
+          "ngrPunctuationSectionSemanticsEnd": [
+            "punctuation.section.semantics.end"
+          ],
+          "ngrPunctuationSeparatorComma": [
+            "punctuation.separator.comma"
+          ],
+          "ngrPunctuationSeparatorLabel": [
+            "punctuation.separator.label"
+          ],
+          "ngrPunctuationSeparatorList": [
+            "punctuation.separator.list"
+          ],
+          "ngrPunctuationSeparatorMessage": [
+            "punctuation.separator.message"
+          ],
+          "ngrPunctuationSeparatorType": [
+            "punctuation.separator.type"
+          ],
+          "ngrPunctuationTerminator": [
+            "punctuation.terminator"
+          ],
+          "ngrStorageModifierDirection": [
+            "storage.modifier.direction"
+          ],
+          "ngrStorageModifierExtend": [
+            "storage.modifier.extend"
+          ],
+          "ngrStorageModifierExtensible": [
+            "storage.modifier.extensible"
+          ],
+          "ngrStorageModifierFlag": [
+            "storage.modifier.flag"
+          ],
+          "ngrStorageTypeFunction": [
+            "storage.type.function"
+          ],
+          "ngrStorageTypeLanguage": [
+            "storage.type.language"
+          ],
+          "ngrStorageTypeModule": [
+            "storage.type.module"
+          ],
+          "ngrStorageTypeProperty": [
+            "storage.type.property"
+          ],
+          "ngrStorageTypeSymbol": [
+            "storage.type.symbol"
+          ],
+          "ngrStorageTypeSyntax": [
+            "storage.type.syntax"
+          ],
+          "ngrStorageTypeToken": [
+            "storage.type.token"
+          ],
+          "ngrStringQuotedDouble": [
+            "string.quoted.double"
+          ],
+          "ngrStringQuotedOtherTemplate": [
+            "string.quoted.other.template"
+          ],
+          "ngrStringQuotedSingle": [
+            "string.quoted.single"
+          ],
+          "ngrSupportFunctionBuiltin": [
+            "support.function.builtin"
+          ],
+          "ngrSupportTypeSymbolKind": [
+            "support.type.symbol-kind"
+          ],
+          "ngrVariableLanguageWildcard": [
+            "variable.language.wildcard"
+          ],
+          "ngrVariableOtherDefinition": [
+            "variable.other.definition"
+          ],
+          "ngrVariableOtherMember": [
+            "variable.other.member"
+          ],
+          "ngrVariableOtherMemberLabel": [
+            "variable.other.member.label"
+          ],
+          "ngrVariableOtherProperty": [
+            "variable.other.property"
+          ],
+          "ngrVariableOtherSplice": [
+            "variable.other.splice"
+          ],
+          "ngrVariableParameter": [
+            "variable.parameter"
+          ]
+        }
+      }
     ]
   },
   "scripts": {
     "compile": "tsc -p ./ --noEmit && esbuild src/extension.ts --bundle --platform=node --target=node20 --format=cjs --external:vscode --sourcemap --outfile=out/extension.js",
     "package": "vsce package --no-dependencies --allow-missing-repository",
-    "test": "esbuild src/server.test.ts src/manifest.test.ts --external:vscode --bundle --platform=node --target=node20 --format=cjs --outdir=out/test && node --test out/test/server.test.js out/test/manifest.test.js"
+    "test": "esbuild src/server.test.ts src/manifest.test.ts src/palette.test.ts --external:vscode --bundle --platform=node --target=node20 --format=cjs --outdir=out/test && node --test out/test/server.test.js out/test/manifest.test.js out/test/palette.test.js"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
