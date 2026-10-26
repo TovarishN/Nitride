@@ -1,0 +1,473 @@
+{
+  "name": "nitride",
+  "displayName": "Nitride DSL",
+  "description": ".ngr grammars and nitride.json/nitrogen.json workspace languages through nitride lsp.",
+  "version": "0.1.0",
+  "publisher": "nitride",
+  "license": "MIT",
+  "engines": {
+    "vscode": "^1.90.0"
+  },
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onLanguage:ngr",
+    "workspaceContains:nitride.json",
+    "workspaceContains:nitrogen.json"
+  ],
+  "contributes": {
+    "languages": [
+      {
+        "id": "ngr",
+        "aliases": [
+          "Nitrogen grammar"
+        ],
+        "extensions": [
+          ".ngr"
+        ],
+        "configuration": "./language-configuration.json"
+      }
+    ],
+    "grammars": [
+      {
+        "language": "ngr",
+        "scopeName": "source.ngr",
+        "path": "./syntaxes/ngr.tmLanguage.json"
+      }
+    ],
+    "configuration": {
+      "title": "Nitride",
+      "properties": {
+        "nitride.server.path": {
+          "type": "string",
+          "default": "",
+          "description": "The nitride executable (runs `nitride lsp`); empty runs the server bundled with the extension, else nitride from PATH."
+        }
+      }
+    },
+    "semanticTokenTypes": [
+      {
+        "id": "operationWord",
+        "description": "entity.name.function"
+      },
+      {
+        "id": "declarationKeyword",
+        "description": "storage.type"
+      },
+      {
+        "id": "sectionKeyword",
+        "description": "keyword.other"
+      },
+      {
+        "id": "modifierWord",
+        "description": "keyword.operator.word"
+      },
+      {
+        "id": "constantWord",
+        "description": "constant.language"
+      },
+      {
+        "id": "blockBracket",
+        "description": "punctuation.section.block"
+      },
+      {
+        "id": "parenthesis",
+        "description": "punctuation.section.parens"
+      },
+      {
+        "id": "squareBracket",
+        "description": "punctuation.section.brackets"
+      },
+      {
+        "id": "terminator",
+        "description": "punctuation.terminator"
+      },
+      {
+        "id": "separator",
+        "description": "punctuation.separator"
+      },
+      {
+        "id": "operator",
+        "description": "keyword.operator"
+      },
+      {
+        "id": "ngrCommentBlock",
+        "description": "comment.block"
+      },
+      {
+        "id": "ngrCommentLineDoubleSlash",
+        "description": "comment.line.double-slash"
+      },
+      {
+        "id": "ngrConstantCharacterAny",
+        "description": "constant.character.any"
+      },
+      {
+        "id": "ngrConstantCharacterEscape",
+        "description": "constant.character.escape"
+      },
+      {
+        "id": "ngrConstantNumericInteger",
+        "description": "constant.numeric.integer"
+      },
+      {
+        "id": "ngrConstantOtherDiagnosticCode",
+        "description": "constant.other.diagnostic-code"
+      },
+      {
+        "id": "ngrEntityNameFunction",
+        "description": "entity.name.function"
+      },
+      {
+        "id": "ngrEntityNameFunctionAlternative",
+        "description": "entity.name.function.alternative"
+      },
+      {
+        "id": "ngrEntityNameFunctionCall",
+        "description": "entity.name.function.call"
+      },
+      {
+        "id": "ngrEntityNameFunctionRule",
+        "description": "entity.name.function.rule"
+      },
+      {
+        "id": "ngrEntityNameNamespace",
+        "description": "entity.name.namespace"
+      },
+      {
+        "id": "ngrEntityNameType",
+        "description": "entity.name.type"
+      },
+      {
+        "id": "ngrEntityNameTypeLanguage",
+        "description": "entity.name.type.language"
+      },
+      {
+        "id": "ngrEntityNameTypeQualified",
+        "description": "entity.name.type.qualified"
+      },
+      {
+        "id": "ngrEntityNameTypeToken",
+        "description": "entity.name.type.token"
+      },
+      {
+        "id": "ngrKeywordControlConditional",
+        "description": "keyword.control.conditional"
+      },
+      {
+        "id": "ngrKeywordControlLoop",
+        "description": "keyword.control.loop"
+      },
+      {
+        "id": "ngrKeywordControlMatch",
+        "description": "keyword.control.match"
+      },
+      {
+        "id": "ngrKeywordControlWhere",
+        "description": "keyword.control.where"
+      },
+      {
+        "id": "ngrKeywordOperatorAlternative",
+        "description": "keyword.operator.alternative"
+      },
+      {
+        "id": "ngrKeywordOperatorArrow",
+        "description": "keyword.operator.arrow"
+      },
+      {
+        "id": "ngrKeywordOperatorAssignment",
+        "description": "keyword.operator.assignment"
+      },
+      {
+        "id": "ngrKeywordOperatorComparison",
+        "description": "keyword.operator.comparison"
+      },
+      {
+        "id": "ngrKeywordOperatorList",
+        "description": "keyword.operator.list"
+      },
+      {
+        "id": "ngrKeywordOperatorNegation",
+        "description": "keyword.operator.negation"
+      },
+      {
+        "id": "ngrKeywordOperatorOptional",
+        "description": "keyword.operator.optional"
+      },
+      {
+        "id": "ngrKeywordOperatorPeg",
+        "description": "keyword.operator.peg"
+      },
+      {
+        "id": "ngrKeywordOperatorRange",
+        "description": "keyword.operator.range"
+      },
+      {
+        "id": "ngrKeywordOperatorWord",
+        "description": "keyword.operator.word"
+      },
+      {
+        "id": "ngrKeywordOtherAssociativity",
+        "description": "keyword.other.associativity"
+      },
+      {
+        "id": "ngrKeywordOtherAt",
+        "description": "keyword.other.at"
+      },
+      {
+        "id": "ngrKeywordOtherBuiltin",
+        "description": "keyword.other.builtin"
+      },
+      {
+        "id": "ngrKeywordOtherCheck",
+        "description": "keyword.other.check"
+      },
+      {
+        "id": "ngrKeywordOtherClause",
+        "description": "keyword.other.clause"
+      },
+      {
+        "id": "ngrKeywordOtherDeclares",
+        "description": "keyword.other.declares"
+      },
+      {
+        "id": "ngrKeywordOtherDirective",
+        "description": "keyword.other.directive"
+      },
+      {
+        "id": "ngrKeywordOtherFor",
+        "description": "keyword.other.for"
+      },
+      {
+        "id": "ngrKeywordOtherIn",
+        "description": "keyword.other.in"
+      },
+      {
+        "id": "ngrKeywordOtherLet",
+        "description": "keyword.other.let"
+      },
+      {
+        "id": "ngrKeywordOtherLowering",
+        "description": "keyword.other.lowering"
+      },
+      {
+        "id": "ngrKeywordOtherPrecedence",
+        "description": "keyword.other.precedence"
+      },
+      {
+        "id": "ngrKeywordOtherReferences",
+        "description": "keyword.other.references"
+      },
+      {
+        "id": "ngrKeywordOtherSetting",
+        "description": "keyword.other.setting"
+      },
+      {
+        "id": "ngrKeywordOtherSymbols",
+        "description": "keyword.other.symbols"
+      },
+      {
+        "id": "ngrKeywordOtherUsing",
+        "description": "keyword.other.using"
+      },
+      {
+        "id": "ngrPunctuationDefinitionCharacterClassBegin",
+        "description": "punctuation.definition.character-class.begin"
+      },
+      {
+        "id": "ngrPunctuationDefinitionCharacterClassEnd",
+        "description": "punctuation.definition.character-class.end"
+      },
+      {
+        "id": "ngrPunctuationDefinitionDirective",
+        "description": "punctuation.definition.directive"
+      },
+      {
+        "id": "ngrPunctuationDefinitionStringBegin",
+        "description": "punctuation.definition.string.begin"
+      },
+      {
+        "id": "ngrPunctuationDefinitionStringEnd",
+        "description": "punctuation.definition.string.end"
+      },
+      {
+        "id": "ngrPunctuationSectionArgumentsBegin",
+        "description": "punctuation.section.arguments.begin"
+      },
+      {
+        "id": "ngrPunctuationSectionArgumentsEnd",
+        "description": "punctuation.section.arguments.end"
+      },
+      {
+        "id": "ngrPunctuationSectionBlockBegin",
+        "description": "punctuation.section.block.begin"
+      },
+      {
+        "id": "ngrPunctuationSectionBlockEnd",
+        "description": "punctuation.section.block.end"
+      },
+      {
+        "id": "ngrPunctuationSectionGroupBegin",
+        "description": "punctuation.section.group.begin"
+      },
+      {
+        "id": "ngrPunctuationSectionGroupEnd",
+        "description": "punctuation.section.group.end"
+      },
+      {
+        "id": "ngrPunctuationSectionModuleBegin",
+        "description": "punctuation.section.module.begin"
+      },
+      {
+        "id": "ngrPunctuationSectionModuleEnd",
+        "description": "punctuation.section.module.end"
+      },
+      {
+        "id": "ngrPunctuationSectionParametersBegin",
+        "description": "punctuation.section.parameters.begin"
+      },
+      {
+        "id": "ngrPunctuationSectionParametersEnd",
+        "description": "punctuation.section.parameters.end"
+      },
+      {
+        "id": "ngrPunctuationSectionSemanticsBegin",
+        "description": "punctuation.section.semantics.begin"
+      },
+      {
+        "id": "ngrPunctuationSectionSemanticsEnd",
+        "description": "punctuation.section.semantics.end"
+      },
+      {
+        "id": "ngrPunctuationSeparatorComma",
+        "description": "punctuation.separator.comma"
+      },
+      {
+        "id": "ngrPunctuationSeparatorLabel",
+        "description": "punctuation.separator.label"
+      },
+      {
+        "id": "ngrPunctuationSeparatorList",
+        "description": "punctuation.separator.list"
+      },
+      {
+        "id": "ngrPunctuationSeparatorMessage",
+        "description": "punctuation.separator.message"
+      },
+      {
+        "id": "ngrPunctuationSeparatorType",
+        "description": "punctuation.separator.type"
+      },
+      {
+        "id": "ngrPunctuationTerminator",
+        "description": "punctuation.terminator"
+      },
+      {
+        "id": "ngrStorageModifierDirection",
+        "description": "storage.modifier.direction"
+      },
+      {
+        "id": "ngrStorageModifierExtend",
+        "description": "storage.modifier.extend"
+      },
+      {
+        "id": "ngrStorageModifierExtensible",
+        "description": "storage.modifier.extensible"
+      },
+      {
+        "id": "ngrStorageModifierFlag",
+        "description": "storage.modifier.flag"
+      },
+      {
+        "id": "ngrStorageTypeFunction",
+        "description": "storage.type.function"
+      },
+      {
+        "id": "ngrStorageTypeLanguage",
+        "description": "storage.type.language"
+      },
+      {
+        "id": "ngrStorageTypeModule",
+        "description": "storage.type.module"
+      },
+      {
+        "id": "ngrStorageTypeProperty",
+        "description": "storage.type.property"
+      },
+      {
+        "id": "ngrStorageTypeSymbol",
+        "description": "storage.type.symbol"
+      },
+      {
+        "id": "ngrStorageTypeSyntax",
+        "description": "storage.type.syntax"
+      },
+      {
+        "id": "ngrStorageTypeToken",
+        "description": "storage.type.token"
+      },
+      {
+        "id": "ngrStringQuotedDouble",
+        "description": "string.quoted.double"
+      },
+      {
+        "id": "ngrStringQuotedOtherTemplate",
+        "description": "string.quoted.other.template"
+      },
+      {
+        "id": "ngrStringQuotedSingle",
+        "description": "string.quoted.single"
+      },
+      {
+        "id": "ngrSupportFunctionBuiltin",
+        "description": "support.function.builtin"
+      },
+      {
+        "id": "ngrSupportTypeSymbolKind",
+        "description": "support.type.symbol-kind"
+      },
+      {
+        "id": "ngrVariableLanguageWildcard",
+        "description": "variable.language.wildcard"
+      },
+      {
+        "id": "ngrVariableOtherDefinition",
+        "description": "variable.other.definition"
+      },
+      {
+        "id": "ngrVariableOtherMember",
+        "description": "variable.other.member"
+      },
+      {
+        "id": "ngrVariableOtherMemberLabel",
+        "description": "variable.other.member.label"
+      },
+      {
+        "id": "ngrVariableOtherProperty",
+        "description": "variable.other.property"
+      },
+      {
+        "id": "ngrVariableOtherSplice",
+        "description": "variable.other.splice"
+      },
+      {
+        "id": "ngrVariableParameter",
+        "description": "variable.parameter"
+      }
+    ]
+  },
+  "scripts": {
+    "compile": "tsc -p ./ --noEmit && esbuild src/extension.ts --bundle --platform=node --target=node20 --format=cjs --external:vscode --sourcemap --outfile=out/extension.js",
+    "package": "vsce package --no-dependencies --allow-missing-repository",
+    "test": "esbuild src/server.test.ts src/manifest.test.ts --external:vscode --bundle --platform=node --target=node20 --format=cjs --outdir=out/test && node --test out/test/server.test.js out/test/manifest.test.js"
+  },
+  "dependencies": {
+    "vscode-languageclient": "^9.0.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "@types/vscode": "^1.90.0",
+    "@vscode/vsce": "^3.0.0",
+    "esbuild": "^0.28.2",
+    "typescript": "^5.4.0"
+  }
+}

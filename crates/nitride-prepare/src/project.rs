@@ -13,7 +13,7 @@ fn error(path: &Path, message: impl Into<String>) -> PrepareError {
         path: path.display().to_string(),
         text: String::new(),
     }
-    .error([0, 0], message)
+    .project_error(message)
 }
 fn read(path: &Path) -> Result<String, PrepareError> {
     std::fs::read_to_string(path).map_err(|e| error(path, e.to_string()))

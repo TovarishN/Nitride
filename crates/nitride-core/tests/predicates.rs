@@ -1,6 +1,6 @@
 use nitride_core::*;
 
-fn language(expr: Expr) -> &'static Language {
+fn language(expr: Expr<'static>) -> &'static Language<'static> {
     Box::leak(Box::new(Language {
         profile: Profile::SyntaxOnly,
         start: 0,
@@ -78,7 +78,7 @@ fn negative_lookahead_does_not_leak_speculative_failure_span() {
     );
 }
 
-fn prefix_language(prefixes: &'static [u16], second: Expr) -> &'static Language {
+fn prefix_language(prefixes: &'static [u16], second: Expr<'static>) -> &'static Language<'static> {
     let rule = |name, expr| Rule {
         name,
         lexical: false,

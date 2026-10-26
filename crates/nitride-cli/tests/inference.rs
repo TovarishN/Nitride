@@ -30,7 +30,7 @@ fn inferred_types_overloads_origins_and_effects_match_real_nitrogen() {
         );
     }
 }
-fn compile_source(source: &str) -> Program {
+fn compile_source(source: &str) -> Program<'static> {
     let language = &nitride_cli::inference::LANGUAGE;
     let tree = parse(language, source, Limits::default()).unwrap();
     compile(language, &tree, Limits::default()).unwrap()

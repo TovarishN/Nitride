@@ -8,13 +8,13 @@ pub enum HostHandler {
     /// Receives the exact source spelling of the operation's single `Core.Text` input.
     Text(Box<TextHandler>),
 }
-pub struct HostBinding {
-    pub signature: Signature,
+pub struct HostBinding<'g> {
+    pub signature: Signature<'g>,
     pub handler: HostHandler,
 }
-impl HostBinding {
+impl<'g> HostBinding<'g> {
     pub fn new(
-        signature: Signature,
+        signature: Signature<'g>,
         handler: impl Fn(&[f64]) -> Result<f64, String> + Send + Sync + 'static,
     ) -> Self {
         Self {
@@ -23,7 +23,7 @@ impl HostBinding {
         }
     }
     pub fn text(
-        signature: Signature,
+        signature: Signature<'g>,
         handler: impl Fn(&str) -> Result<f64, String> + Send + Sync + 'static,
     ) -> Self {
         Self {
@@ -55,14 +55,14 @@ impl HostValue {
     }
 }
 #[derive(Debug)]
-pub struct ExecutionReport {
+pub struct ExecutionReport<'g> {
     pub values: Vec<f64>,
-    pub trace: Vec<&'static str>,
+    pub trace: Vec<&'g str>,
 }
 #[derive(Debug)]
-pub struct ExecutionFailure {
+pub struct ExecutionFailure<'g> {
     pub diagnostic: Diagnostic,
-    pub trace: Vec<&'static str>,
+    pub trace: Vec<&'g str>,
 }
 pub fn preflight(program: &Program, bindings: &[HostBinding]) -> Result<(), Vec<Diagnostic>> {
     preflight_with_values(program, bindings, &[])
@@ -227,21 +227,21 @@ pub fn preflight_with_values(
     }
 }
 
-pub fn execute(
-    program: &Program,
+pub fn execute<'g>(
+    program: &Program<'g>,
     bindings: &[HostBinding],
     limits: Limits,
-) -> Result<ExecutionReport, ExecutionFailure> {
+) -> Result<ExecutionReport<'g>, ExecutionFailure<'g>> {
     execute_with_values(program, bindings, &[], limits)
 }
 
 /// Executes after complete preflight. Each built-in value is read at most once.
-pub fn execute_with_values(
-    program: &Program,
+pub fn execute_with_values<'g>(
+    program: &Program<'g>,
     bindings: &[HostBinding],
     host_values: &[HostValue],
     limits: Limits,
-) -> Result<ExecutionReport, ExecutionFailure> {
+) -> Result<ExecutionReport<'g>, ExecutionFailure<'g>> {
     if let Err(errors) = preflight_with_values(program, bindings, host_values) {
         return Err(ExecutionFailure {
             diagnostic: errors.into_iter().next().unwrap(),

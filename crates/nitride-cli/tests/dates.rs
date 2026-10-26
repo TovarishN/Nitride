@@ -38,7 +38,7 @@ fn builtin_values_text_literals_and_checks_match_real_nitrogen() {
     }
 }
 
-fn compile_source(source: &str) -> Result<Program, Diagnostic> {
+fn compile_source(source: &str) -> Result<Program<'static>, Diagnostic> {
     let language = &nitride_cli::dates::LANGUAGE;
     let tree = parse(language, source, Limits::default()).unwrap();
     compile(language, &tree, Limits::default()).map_err(|mut e| e.remove(0))
@@ -77,7 +77,7 @@ fn each_builtin_value_is_read_once_per_execution() {
 fn checks_are_diagnostics_with_codes_before_any_host_effect() {
     let error = compile_source("let a = today; a + 1 days; 2026-04-31;").unwrap_err();
     assert_eq!(error.category, "check");
-    assert_eq!(error.code, Some("DATE0001"));
+    assert_eq!(error.code.as_deref(), Some("DATE0001"));
     assert_eq!(error.span, [27, 37]);
     // An ordinary type diagnostic keeps no code.
     assert_eq!(compile_source("today + today;").unwrap_err().code, None);
@@ -154,7 +154,7 @@ fn iso_dates_follow_the_proleptic_gregorian_calendar() {
 
 #[test]
 fn handcrafted_text_hir_cannot_escape_text_operations() {
-    let bindings = |program: &Program| nitride_cli::fixture_bindings_for(program.language);
+    let bindings = |program: &Program<'static>| nitride_cli::fixture_bindings_for(program.language);
     // A text input fed by a non-text node.
     let mut program = compile_source("2026-10-05;").unwrap();
     program.nodes[0].kind = HirKind::Constant(1.0);

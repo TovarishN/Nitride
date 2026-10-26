@@ -30,7 +30,7 @@ fn builtin_calls_bindings_hir_and_effects_match_real_nitrogen() {
         );
     }
 }
-fn compile_source(source: &str) -> Program {
+fn compile_source(source: &str) -> Program<'static> {
     let language = &nitride_cli::calls::LANGUAGE;
     let tree = parse(language, source, Limits::default()).unwrap();
     compile(language, &tree, Limits::default()).unwrap()

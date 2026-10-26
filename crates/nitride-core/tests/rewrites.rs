@@ -5,7 +5,7 @@ static INNER: Hole = Hole {
     category: 1,
 };
 
-fn language(extra: &'static [Helper]) -> &'static Language {
+fn language(extra: &'static [Helper<'static>]) -> &'static Language<'static> {
     let rule = |name, expr, action, precedence, owner| Rule {
         name,
         expr,
@@ -127,7 +127,10 @@ fn language(extra: &'static [Helper]) -> &'static Language {
     }))
 }
 
-fn compile_source(language: &'static Language, source: &str) -> Result<Program, Diagnostic> {
+fn compile_source(
+    language: &'static Language<'static>,
+    source: &str,
+) -> Result<Program<'static>, Diagnostic> {
     let tree = parse(language, source, Limits::default()).unwrap();
     compile(language, &tree, Limits::default()).map_err(|mut e| e.remove(0))
 }

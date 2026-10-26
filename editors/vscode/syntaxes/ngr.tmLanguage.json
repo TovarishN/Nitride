@@ -1,0 +1,1284 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Nitrogen Grammar",
+  "scopeName": "source.ngr",
+  "fileTypes": [
+    "ngr"
+  ],
+  "patterns": [
+    {
+      "include": "#signature"
+    },
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#language"
+    },
+    {
+      "include": "#module"
+    },
+    {
+      "include": "#members"
+    },
+    {
+      "include": "#property-decl"
+    },
+    {
+      "include": "#alternative-head"
+    },
+    {
+      "include": "#semantics"
+    },
+    {
+      "include": "#expression"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.ngr",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.ngr",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "escape": {
+      "name": "constant.character.escape.ngr",
+      "match": "\\\\(?:[nrt0\\\\\\\"']|u[0-9A-Fa-f]{4})"
+    },
+    "string": {
+      "name": "string.quoted.double.ngr",
+      "begin": "\"",
+      "end": "\\\"|$",
+      "patterns": [
+        {
+          "include": "#escape"
+        }
+      ]
+    },
+    "char": {
+      "name": "string.quoted.single.ngr",
+      "match": "'(?:\\\\(?:[nrt0\\\\\\\"']|u[0-9A-Fa-f]{4})|[^'\\\\])'",
+      "captures": {}
+    },
+    "template": {
+      "name": "string.quoted.other.template.ngr",
+      "begin": "<\\[",
+      "end": "\\]>",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.begin.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.string.end.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "name": "variable.other.splice.ngr",
+          "match": "\\$[A-Za-z_][A-Za-z0-9_]*"
+        }
+      ]
+    },
+    "char-class": {
+      "name": "meta.character-class.ngr",
+      "begin": "\\[(\\^)?",
+      "end": "\\]",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.definition.character-class.begin.ngr"
+        },
+        "1": {
+          "name": "keyword.operator.negation.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.definition.character-class.end.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#char"
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "include": "#call"
+        },
+        {
+          "name": "keyword.operator.range.ngr",
+          "match": "\\.\\."
+        },
+        {
+          "include": "#value-atoms"
+        }
+      ]
+    },
+    "number": {
+      "name": "constant.numeric.integer.ngr",
+      "match": "\\b[0-9]+\\b"
+    },
+    "check-code": {
+      "name": "constant.other.diagnostic-code.ngr",
+      "match": "\\b[A-Z]{2,}[0-9]{4}\\b"
+    },
+    "call": {
+      "begin": "([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)(\\()",
+      "end": "\\)",
+      "beginCaptures": {
+        "1": {
+          "name": "entity.name.function.call.ngr"
+        },
+        "2": {
+          "name": "punctuation.section.arguments.begin.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.arguments.end.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "group": {
+      "begin": "\\(",
+      "end": "\\)",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.group.begin.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.group.end.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "name": "punctuation.separator.list.ngr",
+          "match": ";"
+        },
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "let": {
+      "begin": "\\b(let)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*(=)",
+      "end": ";",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.let.ngr"
+        },
+        "2": {
+          "name": "variable.other.definition.ngr"
+        },
+        "3": {
+          "name": "keyword.operator.assignment.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.terminator.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "block": {
+      "begin": "\\{",
+      "end": "\\}",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.block.begin.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.block.end.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#let"
+        },
+        {
+          "match": "\\b(where)\\b",
+          "captures": {
+            "1": {
+              "name": "keyword.control.where.ngr"
+            }
+          }
+        },
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "value-atoms": {
+      "patterns": [
+        {
+          "name": "keyword.operator.word.ngr",
+          "match": "\\b(?:and|or|not)\\b"
+        },
+        {
+          "name": "keyword.control.conditional.ngr",
+          "match": "\\b(?:if|then|else)\\b"
+        },
+        {
+          "name": "keyword.operator.comparison.ngr",
+          "match": "==|!=|<=|>="
+        },
+        {
+          "include": "#number"
+        }
+      ]
+    },
+    "clauses": {
+      "patterns": [
+        {
+          "match": "\\b(declares)\\s+([A-Za-z_][A-Za-z0-9_]*)\\b",
+          "captures": {
+            "1": {
+              "name": "keyword.other.declares.ngr"
+            },
+            "2": {
+              "name": "support.type.symbol-kind.ngr"
+            }
+          }
+        },
+        {
+          "match": "\\b(references)(\\?)?\\s+([A-Za-z_][A-Za-z0-9_]*)\\b(?!\\s*\\()",
+          "captures": {
+            "1": {
+              "name": "keyword.other.references.ngr"
+            },
+            "2": {
+              "name": "keyword.operator.optional.ngr"
+            },
+            "3": {
+              "name": "support.type.symbol-kind.ngr"
+            }
+          }
+        },
+        {
+          "match": "\\b(references)(\\?)?",
+          "captures": {
+            "1": {
+              "name": "keyword.other.references.ngr"
+            },
+            "2": {
+              "name": "keyword.operator.optional.ngr"
+            }
+          }
+        },
+        {
+          "match": "\\b(operation)(\\?)?",
+          "captures": {
+            "1": {
+              "name": "keyword.other.lowering.ngr"
+            },
+            "2": {
+              "name": "keyword.operator.optional.ngr"
+            }
+          }
+        },
+        {
+          "match": "\\b(precedence)\\s+([0-9]+)(?:\\s+(left|right)\\b)?",
+          "captures": {
+            "1": {
+              "name": "keyword.other.precedence.ngr"
+            },
+            "2": {
+              "name": "constant.numeric.integer.ngr"
+            },
+            "3": {
+              "name": "keyword.other.associativity.ngr"
+            }
+          }
+        },
+        {
+          "name": "keyword.other.clause.ngr",
+          "match": "\\b(?:lowers|rewrites|scope|dynamic|sequential|export|except|precedence)\\b"
+        },
+        {
+          "name": "keyword.other.lowering.ngr",
+          "match": "\\b(?:literal|text|sequence|value|reference|type|initializer|repeat|template|expand|optional)\\b(?=\\s+[A-Za-z_(])"
+        },
+        {
+          "match": "\\b(in)\\s+(file)\\b",
+          "captures": {
+            "1": {
+              "name": "keyword.other.clause.ngr"
+            },
+            "2": {
+              "name": "keyword.other.clause.ngr"
+            }
+          }
+        }
+      ]
+    },
+    "expression": {
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#template"
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "include": "#char"
+        },
+        {
+          "include": "#char-class"
+        },
+        {
+          "include": "#call"
+        },
+        {
+          "include": "#group"
+        },
+        {
+          "include": "#block"
+        },
+        {
+          "begin": "\\b(choice|seq)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+(in)\\b",
+          "end": "(?<=\\})",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.control.loop.ngr"
+            },
+            "2": {
+              "name": "variable.other.definition.ngr"
+            },
+            "3": {
+              "name": "keyword.control.loop.ngr"
+            }
+          },
+          "patterns": [
+            {
+              "name": "keyword.operator.range.ngr",
+              "match": "\\.\\."
+            },
+            {
+              "include": "#expression"
+            }
+          ]
+        },
+        {
+          "include": "#clauses"
+        },
+        {
+          "include": "#value-atoms"
+        },
+        {
+          "include": "#check-code"
+        },
+        {
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(:)(?!:)",
+          "captures": {
+            "1": {
+              "name": "variable.other.member.label.ngr"
+            },
+            "2": {
+              "name": "punctuation.separator.label.ngr"
+            }
+          }
+        },
+        {
+          "name": "entity.name.type.qualified.ngr",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)+\\b"
+        },
+        {
+          "name": "keyword.operator.arrow.ngr",
+          "match": "=>"
+        },
+        {
+          "name": "keyword.operator.range.ngr",
+          "match": "\\.\\."
+        },
+        {
+          "name": "keyword.operator.peg.ngr",
+          "match": "[/?*+!&|^%<>~-]"
+        },
+        {
+          "name": "keyword.operator.assignment.ngr",
+          "match": "="
+        },
+        {
+          "name": "constant.character.any.ngr",
+          "match": "\\."
+        },
+        {
+          "name": "punctuation.separator.comma.ngr",
+          "match": ","
+        }
+      ]
+    },
+    "csharp": {
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "name": "string.quoted.double.interpolated.cs",
+          "begin": "\\$@?\\\"|@\\$\\\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "name": "constant.character.escape.cs",
+              "match": "\\\\.|\\{\\{|\\}\\}"
+            },
+            {
+              "name": "meta.interpolation.cs",
+              "begin": "\\{",
+              "end": "\\}",
+              "beginCaptures": {
+                "0": {
+                  "name": "punctuation.definition.interpolation.begin.cs"
+                }
+              },
+              "endCaptures": {
+                "0": {
+                  "name": "punctuation.definition.interpolation.end.cs"
+                }
+              },
+              "patterns": [
+                {
+                  "include": "#csharp"
+                }
+              ]
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.double.verbatim.cs",
+          "begin": "@\"",
+          "end": "\"(?!\")"
+        },
+        {
+          "name": "string.quoted.double.cs",
+          "begin": "\"",
+          "end": "\\\"|$",
+          "patterns": [
+            {
+              "name": "constant.character.escape.cs",
+              "match": "\\\\."
+            }
+          ]
+        },
+        {
+          "name": "string.quoted.single.cs",
+          "match": "'(?:\\\\.|[^'\\\\])+'"
+        },
+        {
+          "name": "constant.numeric.cs",
+          "match": "\\b[0-9][0-9_]*(?:\\.[0-9]+)?[mMdDfFuUlL]*\\b"
+        },
+        {
+          "name": "constant.language.cs",
+          "match": "\\b(?:null|true|false)\\b"
+        },
+        {
+          "name": "keyword.operator.expression.cs",
+          "match": "\\b(?:is|as|not|and|or|new|typeof|nameof|default|switch|when|with)\\b"
+        },
+        {
+          "name": "variable.language.cs",
+          "match": "\\b(?:this|base)\\b"
+        },
+        {
+          "name": "keyword.type.cs",
+          "match": "\\b(?:bool|byte|char|decimal|double|float|int|long|object|sbyte|short|string|uint|ulong|ushort|var|void)\\b"
+        },
+        {
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(?=\\()",
+          "captures": {
+            "1": {
+              "name": "entity.name.function.cs"
+            }
+          }
+        },
+        {
+          "begin": "\\(",
+          "end": "\\)",
+          "patterns": [
+            {
+              "include": "#csharp"
+            }
+          ]
+        },
+        {
+          "begin": "\\[",
+          "end": "\\]",
+          "patterns": [
+            {
+              "include": "#csharp"
+            }
+          ]
+        },
+        {
+          "begin": "\\{",
+          "end": "\\}",
+          "patterns": [
+            {
+              "include": "#csharp"
+            }
+          ]
+        },
+        {
+          "name": "keyword.operator.cs",
+          "match": "[=!<>]=|=>|&&|\\|\\||\\?\\?=?|\\?\\.|[-+*/%<>!?~^&|=]"
+        }
+      ]
+    },
+    "csharp-type": {
+      "patterns": [
+        {
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\b(\\?)?",
+          "captures": {
+            "1": {
+              "name": "entity.name.type.cs"
+            },
+            "2": {
+              "name": "keyword.operator.nullable.cs"
+            }
+          }
+        },
+        {
+          "include": "#csharp"
+        }
+      ]
+    },
+    "check": {
+      "begin": "\\b(check)\\b(?:\\s+([A-Z]{2,}[0-9]{4})\\b)?",
+      "end": ";",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.check.ngr"
+        },
+        "2": {
+          "name": "constant.other.diagnostic-code.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.terminator.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "match": "\\s(at)\\s+([A-Za-z_][A-Za-z0-9_]*)(?=\\s*;)",
+          "captures": {
+            "1": {
+              "name": "keyword.other.at.ngr"
+            },
+            "2": {
+              "name": "variable.other.member.ngr"
+            }
+          }
+        },
+        {
+          "name": "punctuation.separator.message.ngr",
+          "match": ":(?!:)"
+        },
+        {
+          "include": "#csharp"
+        }
+      ]
+    },
+    "property-decl": {
+      "begin": "\\b(out|in)\\b((?:\\s+(?:hover|expected)\\b)*)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*(:)",
+      "end": ";",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.modifier.direction.ngr"
+        },
+        "2": {
+          "name": "storage.modifier.flag.ngr"
+        },
+        "3": {
+          "name": "variable.other.property.ngr"
+        },
+        "4": {
+          "name": "punctuation.separator.type.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.terminator.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "begin": "=",
+          "end": "(?=;)",
+          "beginCaptures": {
+            "0": {
+              "name": "keyword.operator.assignment.ngr"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#csharp"
+            }
+          ]
+        },
+        {
+          "include": "#csharp-type"
+        }
+      ]
+    },
+    "semantics": {
+      "name": "meta.block.semantics.ngr",
+      "begin": "\\{",
+      "end": "\\}",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.semantics.begin.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.semantics.end.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#check"
+        },
+        {
+          "include": "#property-decl"
+        },
+        {
+          "begin": "([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*(=)(?!=)",
+          "end": ";",
+          "beginCaptures": {
+            "1": {
+              "name": "variable.other.property.ngr"
+            },
+            "2": {
+              "name": "keyword.operator.assignment.ngr"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.terminator.ngr"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#csharp"
+            }
+          ]
+        }
+      ]
+    },
+    "using": {
+      "match": "\\b(using)\\s+([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*(;)",
+      "captures": {
+        "1": {
+          "name": "keyword.other.using.ngr"
+        },
+        "2": {
+          "name": "entity.name.namespace.ngr"
+        },
+        "3": {
+          "name": "punctuation.terminator.ngr"
+        }
+      }
+    },
+    "symbols": {
+      "begin": "\\b(symbols)\\s*(\\{)",
+      "end": "\\}",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.symbols.ngr"
+        },
+        "2": {
+          "name": "punctuation.section.block.begin.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.block.end.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "name": "support.type.symbol-kind.ngr",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+        }
+      ]
+    },
+    "symbol-property": {
+      "begin": "\\b(symbol)\\s+(property)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s+(for)\\b",
+      "end": ";",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.symbol.ngr"
+        },
+        "2": {
+          "name": "storage.type.property.ngr"
+        },
+        "3": {
+          "name": "variable.other.property.ngr"
+        },
+        "4": {
+          "name": "keyword.other.for.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.terminator.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "begin": ":",
+          "end": "(?=;)",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.separator.type.ngr"
+            }
+          },
+          "patterns": [
+            {
+              "begin": "=",
+              "end": "(?=;)",
+              "beginCaptures": {
+                "0": {
+                  "name": "keyword.operator.assignment.ngr"
+                }
+              },
+              "patterns": [
+                {
+                  "include": "#csharp"
+                }
+              ]
+            },
+            {
+              "include": "#csharp-type"
+            }
+          ]
+        },
+        {
+          "name": "support.type.symbol-kind.ngr",
+          "match": "\\b[A-Za-z_][A-Za-z0-9_]*\\b"
+        },
+        {
+          "name": "keyword.operator.peg.ngr",
+          "match": "\\|"
+        }
+      ]
+    },
+    "builtin": {
+      "begin": "\\b(builtin)\\s+([A-Za-z_][A-Za-z0-9_]*)(?:\\s+(in)\\s+([A-Za-z_][A-Za-z0-9_]*))?",
+      "end": "\\}",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.builtin.ngr"
+        },
+        "2": {
+          "name": "support.type.symbol-kind.ngr"
+        },
+        "3": {
+          "name": "keyword.other.in.ngr"
+        },
+        "4": {
+          "name": "support.type.symbol-kind.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.block.end.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "name": "punctuation.section.block.begin.ngr",
+          "match": "\\{"
+        },
+        {
+          "name": "support.function.builtin.ngr",
+          "match": "[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*"
+        }
+      ]
+    },
+    "token": {
+      "name": "meta.rule.token.ngr",
+      "begin": "\\b(token)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*(=)",
+      "end": ";|^(?=\\s*(?:(?:extensible|extend)\\s+syntax|syntax|token|using|symbols|symbol\\s+property|builtin|function|language)\\b|\\s*\\})",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.token.ngr"
+        },
+        "2": {
+          "name": "entity.name.type.token.ngr"
+        },
+        "3": {
+          "name": "keyword.operator.assignment.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.terminator.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "parameters": {
+      "begin": "\\(",
+      "end": "\\)",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.parameters.begin.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.parameters.end.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*(\\*)?",
+          "captures": {
+            "1": {
+              "name": "variable.parameter.ngr"
+            },
+            "2": {
+              "name": "punctuation.separator.type.ngr"
+            },
+            "3": {
+              "name": "entity.name.type.ngr"
+            },
+            "4": {
+              "name": "keyword.operator.list.ngr"
+            }
+          }
+        },
+        {
+          "name": "punctuation.separator.comma.ngr",
+          "match": ","
+        }
+      ]
+    },
+    "match": {
+      "begin": "\\b(match)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*",
+      "end": "(?<=\\})",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.control.match.ngr"
+        },
+        "2": {
+          "name": "variable.parameter.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "begin": "\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.block.begin.ngr"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.block.end.ngr"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#template"
+            },
+            {
+              "include": "#parameters"
+            },
+            {
+              "name": "keyword.operator.arrow.ngr",
+              "match": "=>"
+            },
+            {
+              "name": "keyword.operator.peg.ngr",
+              "match": "\\|"
+            },
+            {
+              "name": "variable.language.wildcard.ngr",
+              "match": "\\b_\\b"
+            },
+            {
+              "name": "punctuation.terminator.ngr",
+              "match": ";"
+            }
+          ]
+        }
+      ]
+    },
+    "function": {
+      "name": "meta.function.ngr",
+      "begin": "\\b(?:(syntax)\\s+)?(function)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "end": ";",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.syntax.ngr"
+        },
+        "2": {
+          "name": "storage.type.function.ngr"
+        },
+        "3": {
+          "name": "entity.name.function.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.terminator.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#parameters"
+        },
+        {
+          "begin": ":",
+          "end": "=",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.separator.type.ngr"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "keyword.operator.assignment.ngr"
+            }
+          },
+          "patterns": [
+            {
+              "name": "entity.name.type.ngr",
+              "match": "[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*"
+            }
+          ]
+        },
+        {
+          "include": "#match"
+        },
+        {
+          "include": "#let"
+        },
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "syntax-rule": {
+      "name": "meta.rule.syntax.ngr",
+      "begin": "\\b(syntax)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*(=)",
+      "end": ";|^(?=\\s*(?:(?:extensible|extend)\\s+syntax|syntax|token|using|symbols|symbol\\s+property|builtin|function|language)\\b|\\s*\\})",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.syntax.ngr"
+        },
+        "2": {
+          "name": "entity.name.function.rule.ngr"
+        },
+        "3": {
+          "name": "keyword.operator.assignment.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.terminator.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#semantics"
+        },
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "alternative-head": {
+      "match": "(\\|)\\s*(?:([A-Za-z_][A-Za-z0-9_]*)\\s*(=)(?![=>]))?",
+      "captures": {
+        "1": {
+          "name": "keyword.operator.alternative.ngr"
+        },
+        "2": {
+          "name": "entity.name.function.alternative.ngr"
+        },
+        "3": {
+          "name": "keyword.operator.assignment.ngr"
+        }
+      }
+    },
+    "signature": {
+      "name": "meta.preprocessor.signature.ngr",
+      "match": "^\\s*(#!)(nitrogen)\\b.*$",
+      "captures": {
+        "1": {
+          "name": "punctuation.definition.directive.ngr"
+        },
+        "2": {
+          "name": "keyword.other.directive.ngr"
+        }
+      }
+    },
+    "alternatives": {
+      "begin": "\\{",
+      "end": "\\}",
+      "beginCaptures": {
+        "0": {
+          "name": "punctuation.section.block.begin.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.section.block.end.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#property-decl"
+        },
+        {
+          "include": "#alternative-head"
+        },
+        {
+          "include": "#semantics"
+        },
+        {
+          "include": "#expression"
+        }
+      ]
+    },
+    "extensible": {
+      "name": "meta.rule.extensible.ngr",
+      "begin": "\\b(extensible)\\s+(syntax)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "end": "(?<=\\})",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.modifier.extensible.ngr"
+        },
+        "2": {
+          "name": "storage.type.syntax.ngr"
+        },
+        "3": {
+          "name": "entity.name.function.rule.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#alternatives"
+        }
+      ]
+    },
+    "extend": {
+      "name": "meta.rule.extend.ngr",
+      "begin": "\\b(extend)\\s+(syntax)\\s+([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)",
+      "end": "(?<=\\})",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.modifier.extend.ngr"
+        },
+        "2": {
+          "name": "storage.type.syntax.ngr"
+        },
+        "3": {
+          "name": "entity.name.function.rule.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#alternatives"
+        }
+      ]
+    },
+    "members": {
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#using"
+        },
+        {
+          "include": "#symbols"
+        },
+        {
+          "include": "#symbol-property"
+        },
+        {
+          "include": "#builtin"
+        },
+        {
+          "include": "#token"
+        },
+        {
+          "include": "#extensible"
+        },
+        {
+          "include": "#extend"
+        },
+        {
+          "include": "#function"
+        },
+        {
+          "include": "#syntax-rule"
+        }
+      ]
+    },
+    "module": {
+      "name": "meta.module.ngr",
+      "begin": "\\b(syntax)\\s+(module)\\s+([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)",
+      "end": "(?<=\\})",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.syntax.ngr"
+        },
+        "2": {
+          "name": "storage.type.module.ngr"
+        },
+        "3": {
+          "name": "entity.name.namespace.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "begin": "\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.module.begin.ngr"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.module.end.ngr"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#members"
+            }
+          ]
+        }
+      ]
+    },
+    "language": {
+      "name": "meta.language.ngr",
+      "begin": "\\b(language)\\s+([A-Za-z_][A-Za-z0-9_]*)",
+      "end": "(?<=\\})",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.language.ngr"
+        },
+        "2": {
+          "name": "entity.name.type.language.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "begin": "\\{",
+          "end": "\\}",
+          "beginCaptures": {
+            "0": {
+              "name": "punctuation.section.block.begin.ngr"
+            }
+          },
+          "endCaptures": {
+            "0": {
+              "name": "punctuation.section.block.end.ngr"
+            }
+          },
+          "patterns": [
+            {
+              "include": "#comments"
+            },
+            {
+              "include": "#string"
+            },
+            {
+              "name": "keyword.other.setting.ngr",
+              "match": "\\b(?:start|namespace|grammars|sources|extensions|usings|tokens|types)\\b"
+            },
+            {
+              "name": "entity.name.type.ngr",
+              "match": "[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*"
+            },
+            {
+              "name": "punctuation.separator.comma.ngr",
+              "match": ","
+            },
+            {
+              "name": "punctuation.terminator.ngr",
+              "match": ";"
+            }
+          ]
+        }
+      ]
+    }
+  }
+}

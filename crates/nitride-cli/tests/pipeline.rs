@@ -5,7 +5,7 @@ use std::sync::{
     atomic::{AtomicUsize, Ordering},
 };
 
-fn program(source: &str) -> Result<Program, Vec<Diagnostic>> {
+fn program(source: &str) -> Result<Program<'static>, Vec<Diagnostic>> {
     let tree = parse(&LANGUAGE, source, Limits::default()).map_err(|e| vec![e])?;
     compile(&LANGUAGE, &tree, Limits::default())
 }
@@ -132,7 +132,7 @@ fn work_limits_prevent_execution_effects() {
     assert!(failure.trace.is_empty());
 }
 
-fn fixture_bindings() -> Vec<HostBinding> {
+fn fixture_bindings() -> Vec<HostBinding<'static>> {
     LANGUAGE
         .operations
         .iter()
