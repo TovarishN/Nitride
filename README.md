@@ -360,7 +360,17 @@ members from grammars. A client that sends `initializationOptions.paletteTokens:
 true` gets Nitrogen's TextMate palette token types: literals colour by their role
 in their rule (declaration keyword, section keyword, modifier, constant,
 operation word, brackets, terminators, separators), and `.ngr` files by the
-scopes of their TextMate grammar. Grammar rules navigate and rename across every grammar file
+scopes of their TextMate grammar.
+
+A file can also choose its language with a Nitrogen signature in its leading
+comments or lines: `#!nitrogen language "./Calc.syntax"` (a path) or
+`#!nitrogen language Calc` (a name declared in the workspace). A signed grammar
+starts with `#!nitrogen grammar` and declares its language before its modules:
+`language Calc { start Calc.Program; grammars "../Calc.ngr"; extensions ".calc"; }`.
+Its `extensions` claim files after manifest extensions. Nitride ignores the
+C#-side settings (`namespace`, `sources`, `usings`, `tokens`, `types`); a
+`Calc.catalog.json` beside `Calc.syntax` makes the language typed. See
+`languages/signed/`. Augmentation signatures and regions are not supported. Grammar rules navigate and rename across every grammar file
 of a language. Syntax-only languages bind names by spelling through their
 `declares` and `references` clauses. While the Nitride extension is installed,
 Nitrogen's VS Code extensions stay inactive.

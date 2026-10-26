@@ -35,6 +35,9 @@ fn binary_session() {
     let uri = format!("file://{}", sample.display());
     let text = std::fs::read_to_string(&sample).unwrap();
     let document = json!({"textDocument":{"uri":uri}});
+    let signed = root.join("languages/signed/sample.txt");
+    let signed_uri = format!("file://{}", signed.display());
+    let signed_text = std::fs::read_to_string(&signed).unwrap();
     let mut input = Vec::new();
     for message in [
         json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{"processId":null,"rootUri":root_uri,"capabilities":{},"initializationOptions":{"paletteTokens":true},"workspaceFolders":[{"uri":root_uri,"name":"nitride"}]}}),
@@ -47,6 +50,8 @@ fn binary_session() {
         json!({"jsonrpc":"2.0","id":7,"method":"textDocument/completion","params":{"textDocument":{"uri":uri},"position":{"line":1,"character":0}}}),
         json!({"jsonrpc":"2.0","id":8,"method":"textDocument/inlayHint","params":{"textDocument":{"uri":uri},"range":{"start":{"line":0,"character":0},"end":{"line":9,"character":0}}}}),
         json!({"jsonrpc":"2.0","id":9,"method":"textDocument/formatting","params":{"textDocument":{"uri":uri},"options":{"tabSize":2,"insertSpaces":true}}}),
+        json!({"jsonrpc":"2.0","method":"textDocument/didOpen","params":{"textDocument":{"uri":signed_uri,"languageId":"","version":1,"text":signed_text}}}),
+        json!({"jsonrpc":"2.0","id":10,"method":"textDocument/inlayHint","params":{"textDocument":{"uri":signed_uri},"range":{"start":{"line":0,"character":0},"end":{"line":9,"character":0}}}}),
         json!({"jsonrpc":"2.0","id":4,"method":"shutdown"}),
         json!({"jsonrpc":"2.0","method":"exit"}),
     ] {
@@ -110,4 +115,14 @@ fn binary_session() {
     assert_eq!(hints["result"][0]["label"], "= 512");
     let formatting = messages.iter().find(|m| m["id"] == 9).unwrap();
     assert!(formatting["result"].is_array());
+    // A program that chooses its language with a signature.
+    let signed_diagnostics = messages
+        .iter()
+        .rfind(|m| {
+            m["method"] == "textDocument/publishDiagnostics" && m["params"]["uri"] == signed_uri
+        })
+        .expect("diagnostics for the signed sample");
+    assert_eq!(signed_diagnostics["params"]["diagnostics"], json!([]));
+    let signed_hints = messages.iter().find(|m| m["id"] == 10).unwrap();
+    assert_eq!(signed_hints["result"][0]["label"], "= 42");
 }

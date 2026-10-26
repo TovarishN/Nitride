@@ -1,9 +1,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ExtensionContext, workspace } from 'vscode';
+import { ExtensionContext, languages, TextDocument, workspace } from 'vscode';
 import { DocumentSelector, LanguageClient, LanguageClientOptions } from 'vscode-languageclient/node';
 import { manifestExtensions } from './manifest';
 import { serverCommand } from './server';
+import { signatureMode } from './signatures';
 
 let client: LanguageClient | undefined;
 
@@ -30,8 +31,11 @@ export async function activate(context: ExtensionContext): Promise<void> {
     { scheme: 'file', language: 'ngr' },
     { scheme: 'file', pattern: '**/{nitride,nitrogen}.json' },
     ...workspaceExtensions().map(extension => ({ scheme: 'file', pattern: `**/*${extension}` })),
+    // Any file may choose its language with a #!nitrogen signature; the server ignores the rest.
+    { scheme: 'file', pattern: '**/*' },
   ];
-  const watcher = workspace.createFileSystemWatcher('**/{nitride.json,nitrogen.json,*.ngr,*.json}');
+  // Signed grammars can have any name, so every file is watched.
+  const watcher = workspace.createFileSystemWatcher('**/*');
   context.subscriptions.push(watcher);
   const options: LanguageClientOptions = {
     documentSelector: selector,
@@ -41,6 +45,16 @@ export async function activate(context: ExtensionContext): Promise<void> {
   };
   client = new LanguageClient('nitride', 'Nitride', server, options);
   await client.start();
+  // A signed grammar (`#!nitrogen grammar`) is a grammar whatever its name: give it the grammar's colours.
+  const route = (document: TextDocument): void => {
+    if (document.uri.scheme === 'file' && document.languageId !== 'ngr' && signatureMode(document.getText()) === 'grammar')
+      void languages.setTextDocumentLanguage(document, 'ngr');
+  };
+  context.subscriptions.push(
+    workspace.onDidOpenTextDocument(route),
+    workspace.onDidChangeTextDocument(event => route(event.document)),
+  );
+  workspace.textDocuments.forEach(route);
 }
 
 export function deactivate(): Thenable<void> | undefined {

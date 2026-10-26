@@ -770,7 +770,7 @@
   "scripts": {
     "compile": "tsc -p ./ --noEmit && esbuild src/extension.ts --bundle --platform=node --target=node20 --format=cjs --external:vscode --sourcemap --outfile=out/extension.js",
     "package": "vsce package --no-dependencies --allow-missing-repository",
-    "test": "esbuild src/server.test.ts src/manifest.test.ts src/palette.test.ts --external:vscode --bundle --platform=node --target=node20 --format=cjs --outdir=out/test && node --test out/test/server.test.js out/test/manifest.test.js out/test/palette.test.js"
+    "test": "esbuild src/server.test.ts src/manifest.test.ts src/palette.test.ts src/signatures.test.ts --external:vscode --bundle --platform=node --target=node20 --format=cjs --outdir=out/test && node --test out/test/server.test.js out/test/manifest.test.js out/test/palette.test.js out/test/signatures.test.js"
   },
   "dependencies": {
     "vscode-languageclient": "^9.0.1"
