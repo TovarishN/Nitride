@@ -151,3 +151,24 @@ fn selection_climbs() {
     sorted.dedup();
     assert_eq!(sorted.len(), chain.len());
 }
+
+#[test]
+fn deep_selection_is_fast() {
+    let dir = calls_workspace("selection-deep");
+    let depth = 3000;
+    let text = format!("let a={}1{};", "(".repeat(depth), ")".repeat(depth));
+    let started = std::time::Instant::now();
+    let ranges = ask(
+        &dir,
+        &dir.join("x.calls"),
+        &text,
+        "textDocument/selectionRange",
+        json!({"positions":[{"line":0,"character":6 + depth}]}),
+    );
+    assert!(!ranges[0].is_null());
+    assert!(
+        started.elapsed() < std::time::Duration::from_secs(2),
+        "{:?}",
+        started.elapsed()
+    );
+}

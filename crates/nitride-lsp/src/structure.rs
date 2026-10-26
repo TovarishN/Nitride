@@ -122,6 +122,9 @@ pub fn folds(analysis: &Analysis) -> Value {
     Value::Array(folds)
 }
 
+/// Ranges in one selection chain at most.
+const MAX_SELECTION_DEPTH: usize = 64;
+
 /// For each position, the chain of enclosing node ranges, innermost first,
 /// ending with the whole document.
 pub fn selections(analysis: &Analysis, positions: &[Value]) -> Value {
@@ -139,17 +142,22 @@ pub fn selections(analysis: &Analysis, positions: &[Value]) -> Value {
             .flat_map(|t| t.nodes.iter().map(|n| n.span))
             .filter(|s| s[0] <= offset && offset <= s[1] && s[0] < s[1])
             .collect();
-        spans.push(whole);
         spans.sort_by_key(|s| (s[1] - s[0], std::cmp::Reverse(s[0])));
         spans.dedup();
+        // Deep nesting would make a deeply nested JSON value (slow to build,
+        // recursive to write and drop): keep the innermost levels, then the document.
+        spans.truncate(MAX_SELECTION_DEPTH - 1);
+        if spans.last() != Some(&whole) {
+            spans.push(whole);
+        }
         // Innermost last, so each range nests in the one built before it.
         let mut selection = Value::Null;
         for span in spans.iter().rev() {
-            selection = if selection.is_null() {
-                json!({"range": range(lines, *span)})
-            } else {
-                json!({"range": range(lines, *span), "parent": selection})
-            };
+            let mut range_value = json!({ "range": range(lines, *span) });
+            if !selection.is_null() {
+                range_value["parent"] = selection; // a move: no deep copy per level
+            }
+            selection = range_value;
         }
         results.push(selection);
     }

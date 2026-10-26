@@ -24,6 +24,10 @@ pub struct PrepareError {
     pub line: usize,
     pub column: usize,
     pub message: String,
+    /// The error concerns the project inputs (start rule, catalog, mode or
+    /// profile) rather than a place in a grammar; `path` is then only the
+    /// first grammar, or the manifest that failed to read.
+    pub project: bool,
 }
 
 impl Source {
@@ -35,6 +39,14 @@ impl Source {
             line: prefix.bytes().filter(|b| *b == b'\n').count() + 1,
             column: prefix.rsplit('\n').next().unwrap_or("").chars().count() + 1,
             message: message.into(),
+            project: false,
+        }
+    }
+    /// An error about the project inputs, reported against this source.
+    fn project_error(&self, message: impl Into<String>) -> PrepareError {
+        PrepareError {
+            project: true,
+            ..self.error([0, 0], message)
         }
     }
 }

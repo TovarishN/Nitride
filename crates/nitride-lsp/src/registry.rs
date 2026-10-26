@@ -70,27 +70,37 @@ impl Registry {
     fn load(
         &mut self,
         path: &Path,
-        entries: Result<Vec<Entry>, ManifestError>,
+        parsed: manifest::Parsed,
         previous: &mut Vec<LanguageState>,
         open: &dyn Fn(&Path) -> Option<String>,
     ) {
-        let mut errors = Vec::new();
-        for entry in entries.unwrap_or_else(|e| {
-            errors.push(e);
-            vec![]
-        }) {
+        let (entries, mut errors) = match parsed {
+            Ok(parsed) => parsed,
+            Err(error) => {
+                // An unreadable manifest (often mid-edit) keeps its languages.
+                let (kept, rest) = std::mem::take(previous)
+                    .into_iter()
+                    .partition(|l: &LanguageState| l.manifest == path);
+                *previous = rest;
+                self.languages.extend(kept);
+                self.manifests.push(ManifestState {
+                    path: path.to_owned(),
+                    errors: vec![error],
+                });
+                return;
+            }
+        };
+        for entry in entries {
             let old = previous
                 .iter()
                 .position(|l| l.manifest == path && l.entry.name == entry.name)
                 .map(|i| previous.swap_remove(i));
             let state = prepare(entry, path, old, open);
-            for error in &state.errors {
-                if error.path == path.to_string_lossy() {
-                    errors.push(ManifestError {
-                        span: [0, 0],
-                        message: error.message.clone(),
-                    });
-                }
+            for error in state.errors.iter().filter(|e| e.project) {
+                errors.push(ManifestError {
+                    span: [0, 0],
+                    message: format!("{}: {}", state.entry.name, error.message),
+                });
             }
             self.languages.push(state);
         }
@@ -154,6 +164,7 @@ fn prepare(
         line: 1,
         column: 1,
         message,
+        project: true,
     };
     let mut sources = Vec::new();
     for grammar in &state.entry.grammars {

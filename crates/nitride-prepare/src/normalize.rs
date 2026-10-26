@@ -19,10 +19,10 @@ pub fn prepare(
     };
     let first = sources.first().unwrap_or(&fallback);
     if sources.is_empty() || !matches!(mode, "typed" | "syntax") {
-        return Err(first.error([0, 0], "empty input or unknown admission mode"));
+        return Err(first.project_error("empty input or unknown admission mode"));
     }
     let catalog_value: Value = serde_json::from_str(catalog)
-        .map_err(|e| first.error([0, 0], format!("invalid catalog JSON: {e}")))?;
+        .map_err(|e| first.project_error(format!("invalid catalog JSON: {e}")))?;
     let mut modules = Vec::new();
     let mut warnings = Vec::new();
     for (index, source) in sources.iter().enumerate() {
@@ -360,10 +360,10 @@ pub fn prepare(
         }
     }
     let Some((mi, ri)) = symbols.get(start) else {
-        return Err(first.error([0, 0], format!("unknown syntax start rule {start}")));
+        return Err(first.project_error(format!("unknown syntax start rule {start}")));
     };
     if modules[*mi].rules[*ri].lexical {
-        return Err(first.error([0, 0], "start rule must be syntax"));
+        return Err(first.project_error("start rule must be syntax"));
     }
     let identity = if sources.len() == 1 {
         sources[0].text.clone()
@@ -393,7 +393,7 @@ pub fn prepare(
         output["helpers"] = json!(helpers);
     }
     nitride_codegen::generate(&output.to_string())
-        .map_err(|e| first.error([0, 0], format!("profile validation: {e}")))?;
+        .map_err(|e| first.project_error(format!("profile validation: {e}")))?;
     Ok(crate::Prepared {
         data: output,
         warnings,

@@ -273,11 +273,19 @@ impl Builder {
     where
         Box<T>: Send + Sync,
     {
-        let pointer: *const T = &*value;
+        // Store first; the reference is then taken through the stored box,
+        // whose heap contents are never moved again.
         self.storage.push(Box::new(value));
-        // SAFETY: the box was just moved into `storage`, which keeps it alive
-        // and never moves or mutates its contents until the `LoadedLanguage`
-        // is dropped. The `'static` lifetime never escapes:
+        let pointer: *const T = self
+            .storage
+            .last()
+            .and_then(|b| b.downcast_ref::<Box<T>>())
+            .map(|inner| &**inner as *const T)
+            .expect("the box just stored");
+        // SAFETY: `pointer` addresses the heap contents of a `Box<T>` owned by
+        // `storage`. That inner box is never moved, mutated or dropped until
+        // the `LoadedLanguage` is dropped (growing `storage` moves only the
+        // outer boxes). The `'static` lifetime never escapes:
         // `LoadedLanguage::language` shortens it to the borrow of `self`
         // (sound because `Language` is covariant), and `language` is dropped
         // before `storage`.

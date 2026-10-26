@@ -214,7 +214,8 @@ fn grammar(
     }
     let mut problems = Vec::new();
     for (error, severity) in reported {
-        if !same_file(Path::new(&error.path), path) {
+        // Project errors (start rule, catalog) belong to the manifest.
+        if error.project || !same_file(Path::new(&error.path), path) {
             continue;
         }
         let problem = Problem {

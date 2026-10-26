@@ -29,7 +29,7 @@ fn prefers_nitride_json() {
     );
     let (path, entries) = manifest::read(&dir);
     assert_eq!(path.unwrap(), dir.join("nitride.json"));
-    assert_eq!(entries.unwrap()[0].name, "A");
+    assert_eq!(entries.unwrap().0[0].name, "A");
 }
 
 #[test]
@@ -42,7 +42,7 @@ fn falls_back_to_nitrogen_json() {
     );
     let (path, entries) = manifest::read(&dir);
     assert_eq!(path.unwrap(), dir.join("nitrogen.json"));
-    let entry = &entries.unwrap()[0];
+    let entry = &entries.unwrap().0[0];
     assert_eq!(entry.mode, Mode::Syntax);
     assert_eq!(entry.catalog, None);
     assert_eq!(entry.grammars, [dir.join("m.ngr")]);
@@ -59,7 +59,7 @@ fn mode_defaults_from_catalog() {
         {"name":"S","extensions":[".s"],"grammars":["m.ngr"],"start":"M.Program"},
         {"name":"E","extensions":[".e"],"grammars":["m.ngr"],"start":"M.Program","catalog":"c.json","mode":"syntax"}]}"#,
     );
-    let entries = manifest::read(&dir).1.unwrap();
+    let entries = manifest::read(&dir).1.unwrap().0;
     let modes: Vec<_> = entries.iter().map(|e| e.mode).collect();
     assert_eq!(modes, [Mode::Typed, Mode::Syntax, Mode::Syntax]);
     assert_eq!(entries[0].catalog, Some(dir.join("c.json")));
@@ -137,4 +137,82 @@ fn repo_manifest_loads() {
         );
         assert!(language.errors.is_empty(), "{}", language.entry.name);
     }
+}
+
+const XML: &str =
+    r#"{"name":"Xml","extensions":[".xml"],"grammars":["Xml.ngr"],"start":"Xml.Document"}"#;
+
+fn xml_folder(name: &str, second: &str) -> std::path::PathBuf {
+    let dir = scratch(name);
+    std::fs::copy(repo().join("languages/xml/Xml.ngr"), dir.join("Xml.ngr")).unwrap();
+    write(
+        &dir,
+        "nitride.json",
+        &format!(r#"{{"languages":[{XML},{second}]}}"#),
+    );
+    dir
+}
+
+#[test]
+fn one_bad_entry_keeps_others() {
+    let dir = xml_folder(
+        "bad-entry",
+        r#"{"name":"A","extensions":[".a"],"grammars":["Xml.ngr"]}"#,
+    );
+    let mut registry = Registry::default();
+    registry.reload(std::slice::from_ref(&dir), &|_| None);
+    assert!(
+        registry
+            .for_path(&dir.join("t.xml"))
+            .unwrap()
+            .current
+            .is_some()
+    );
+    let errors = &registry.manifests()[0].errors;
+    assert!(
+        errors.iter().any(|e| e.message.contains("\"start\"")),
+        "{errors:?}"
+    );
+}
+
+#[test]
+fn invalid_manifest_buffer_keeps_languages() {
+    let dir = xml_folder(
+        "transient",
+        r#"{"name":"B","extensions":[".b"],"grammars":["Xml.ngr"],"start":"Xml.Document"}"#,
+    );
+    let mut registry = Registry::default();
+    registry.reload(std::slice::from_ref(&dir), &|_| None);
+    let manifest = dir.join("nitride.json");
+    let typing = r#"{"languages":[, {"#.to_owned();
+    registry.reload(std::slice::from_ref(&dir), &|p| {
+        (p == manifest).then(|| typing.clone())
+    });
+    assert!(
+        registry
+            .for_path(&dir.join("t.xml"))
+            .unwrap()
+            .current
+            .is_some()
+    );
+    assert_eq!(registry.manifests()[0].errors.len(), 1);
+}
+
+#[test]
+fn unknown_start_rule_is_manifest_diagnostic() {
+    let dir = xml_folder(
+        "bad-start",
+        r#"{"name":"A","extensions":[".a"],"grammars":["Xml.ngr"],"start":"Xml.Nope"}"#,
+    );
+    let grammar = dir.join("Xml.ngr");
+    let text = std::fs::read_to_string(&grammar).unwrap();
+    let messages = Session::run(&dir, vec![open(&grammar, &text)]);
+    let on_manifest = diagnostics(&messages, &dir.join("nitride.json"));
+    assert!(
+        on_manifest
+            .to_string()
+            .contains("unknown syntax start rule Xml.Nope"),
+        "{on_manifest}"
+    );
+    assert_eq!(diagnostics(&messages, &grammar), json!([]));
 }
