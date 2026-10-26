@@ -1,6 +1,35 @@
 use super::grammar::{Code, Grammar, Instruction};
 use super::*;
-use crate::parser::StrictProbe;
+use crate::parser::{ProbeHit, StrictProbe};
+pub(super) mod shared;
+mod source;
+use source::Source;
+
+trait Probe {
+    fn rule(&mut self, id: u16, at: usize, power: u32) -> Result<Option<ProbeHit>, Diagnostic>;
+    fn predicate(&mut self, expr: &'static Expr, at: usize) -> Result<bool, Diagnostic>;
+    fn commit(&mut self, roots: &mut [u32], keep_from: usize);
+    fn work(&self) -> u64;
+    fn selected(&mut self, _root: u32) {}
+    fn reusable_rule(&mut self, _id: u16, _at: usize) -> Result<Option<ProbeHit>, Diagnostic> {
+        Ok(None)
+    }
+}
+impl Probe for StrictProbe<'_> {
+    fn rule(&mut self, id: u16, at: usize, power: u32) -> Result<Option<ProbeHit>, Diagnostic> {
+        self.rule(id, at, power)
+    }
+    fn predicate(&mut self, expr: &'static Expr, at: usize) -> Result<bool, Diagnostic> {
+        self.predicate(expr, at)
+    }
+    fn commit(&mut self, roots: &mut [u32], keep_from: usize) {
+        self.commit(roots, keep_from)
+    }
+    fn work(&self) -> u64 {
+        self.work()
+    }
+}
+
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -133,13 +162,13 @@ type Rank = (
 );
 type StateKey = (u32, usize, usize, Option<usize>);
 type RepairRank = (u32, usize, u32);
-struct Engine<'a> {
+struct Engine<'a, P> {
     language: &'static Language,
-    source: &'a str,
+    source: Source<'a>,
     limits: Limits,
     options: RecoveryOptions,
     graph: Grammar,
-    probe: StrictProbe<'a>,
+    probe: P,
     tasks: Tasks,
     history: Vec<(u32, Event)>,
     committed_history: u32,
@@ -154,6 +183,7 @@ struct Engine<'a> {
     character_tokens: Vec<&'static Expr>,
     lexical: Vec<u16>,
     prefixes: Vec<Prefix>,
+    reused_batches: u64,
 }
 
 pub(super) fn recover(
@@ -162,6 +192,32 @@ pub(super) fn recover(
     limits: Limits,
     options: RecoveryOptions,
 ) -> RecoveredParse {
+    let mut engine = engine(
+        language,
+        Source::Flat(source),
+        limits,
+        options,
+        StrictProbe::new(language, source, limits),
+    );
+    match engine.run() {
+        Ok(state) => engine.finish(state, None),
+        Err(error) => {
+            if let Some(state) = engine.best.clone() {
+                engine.finish(state, Some(error))
+            } else {
+                tree::fallback(language, source, error)
+            }
+        }
+    }
+}
+
+fn engine<'a, P: Probe>(
+    language: &'static Language,
+    source: Source<'a>,
+    limits: Limits,
+    options: RecoveryOptions,
+    probe: P,
+) -> Engine<'a, P> {
     let graph = Grammar::new(language);
     let mut literal_tokens = Vec::new();
     let mut character_tokens = Vec::new();
@@ -190,7 +246,7 @@ pub(super) fn recover(
         limits,
         options,
         graph,
-        probe: StrictProbe::new(language, source, limits),
+        probe,
         tasks: Tasks::new(),
         history: vec![(0, Event::Close { end: 0 })],
         committed_history: 0,
@@ -205,6 +261,7 @@ pub(super) fn recover(
         character_tokens,
         lexical,
         prefixes: Vec::new(),
+        reused_batches: 0,
     };
     let end = engine.tasks.push(Task::End, 0);
     let stack = engine.tasks.push(
@@ -230,19 +287,10 @@ pub(super) fn recover(
         prefix: None,
         reopen_through: None,
     });
-    match engine.run() {
-        Ok(state) => engine.finish(state, None),
-        Err(error) => {
-            if let Some(state) = engine.best.clone() {
-                engine.finish(state, Some(error))
-            } else {
-                tree::fallback(language, source, error)
-            }
-        }
-    }
+    engine
 }
 
-impl Engine<'_> {
+impl<P: Probe> Engine<'_, P> {
     fn enqueue(&mut self, state: State) {
         if state.cost > self.options.max_local_cost
             || (state.cost > 0
@@ -278,6 +326,9 @@ impl Engine<'_> {
         self.queue.push((priority, id));
     }
     fn event(&mut self, state: &mut State, event: Event) {
+        if let Event::Strict { root, .. } = event {
+            self.probe.selected(root);
+        }
         let id = self.history.len() as u32;
         self.history.push((state.history, event));
         state.history = id;
@@ -332,14 +383,14 @@ impl Engine<'_> {
     }
     fn trivia(&mut self, state: &mut State) {
         loop {
-            let rest = &self.source[state.position..];
-            if let Some(c) = rest.chars().next().filter(|c| c.is_whitespace()) {
+            let at = state.position;
+            if let Some(c) = self.source.character(at).filter(|c| c.is_whitespace()) {
                 state.position += c.len_utf8();
-            } else if rest.starts_with("//") {
-                state.position += rest.find('\n').unwrap_or(rest.len());
-            } else if let Some(after_open) = rest.strip_prefix("/*") {
-                if let Some(end) = after_open.find("*/") {
-                    state.position += end + 4;
+            } else if self.source.matches(at, "//") {
+                state.position += self.source.find(at, "\n").unwrap_or(self.source.len()) - at;
+            } else if self.source.matches(at, "/*") {
+                if let Some(end) = self.source.find(at + 2, "*/") {
+                    state.position = end + 2;
                 } else {
                     break;
                 }
@@ -350,12 +401,17 @@ impl Engine<'_> {
     }
     fn literal_end(&self, text: &str, at: usize) -> Option<usize> {
         let end = at.checked_add(text.len())?;
-        if !self.source.get(at..)?.starts_with(text) {
+        if !self.source.matches(at, text) {
             return None;
         }
         let keyword = text.starts_with(|c: char| c.is_alphabetic() || c == '_')
             && text.chars().all(|c| c.is_alphanumeric() || c == '_');
-        if keyword && self.source[end..].starts_with(|c: char| c.is_alphanumeric() || c == '_') {
+        if keyword
+            && self
+                .source
+                .character(end)
+                .is_some_and(|c| c.is_alphanumeric() || c == '_')
+        {
             return None;
         }
         Some(end)
@@ -424,7 +480,7 @@ impl Engine<'_> {
         }
         for expr in &self.character_tokens {
             if self.probe.predicate(expr, at)? {
-                end = end.max(at + self.source[at..].chars().next().map_or(0, char::len_utf8));
+                end = end.max(at + self.source.character(at).map_or(0, char::len_utf8));
             }
         }
         Ok(end)
@@ -434,7 +490,7 @@ impl Engine<'_> {
         Ok(if end > at {
             end
         } else {
-            at + self.source[at..].chars().next().map_or(0, char::len_utf8)
+            at + self.source.character(at).map_or(0, char::len_utf8)
         })
     }
     fn repair_base(&self, state: &mut State) {
@@ -505,11 +561,7 @@ impl Engine<'_> {
         let end = if recognized > start {
             recognized
         } else {
-            start
-                + self.source[start..]
-                    .chars()
-                    .next()
-                    .map_or(0, char::len_utf8)
+            start + self.source.character(start).map_or(0, char::len_utf8)
         };
         if end == start {
             return Ok(());
@@ -659,10 +711,9 @@ impl Engine<'_> {
                 Task::Close { id, start, .. } => {
                     let end = state.position;
                     self.event(&mut state, Event::Close { end });
-                    if self.language.rules[id as usize]
-                        .except
-                        .contains(&&self.source[start..state.position])
-                    {
+                    if self.language.rules[id as usize].except.iter().any(|text| {
+                        text.len() == state.position - start && self.source.matches(start, text)
+                    }) {
                         continue;
                     }
                 }
@@ -749,7 +800,7 @@ impl Engine<'_> {
                             let end = match expected {
                                 Expected::Literal(text) => self.literal_end(text, at),
                                 _ => self.probe.predicate(expr, at)?.then(|| {
-                                    at + self.source[at..].chars().next().map_or(0, char::len_utf8)
+                                    at + self.source.character(at).map_or(0, char::len_utf8)
                                 }),
                             };
                             if let Some(end) = end {
@@ -769,6 +820,97 @@ impl Engine<'_> {
                     max,
                     label,
                 } => {
+                    // A stable, clean list can replay already validated strict
+                    // items without queueing intermediate VM tasks. Cold parsing
+                    // and every repair hypothesis retain the original path.
+                    if max > 1
+                        && count >= min
+                        && state.cost == 0
+                        && self.queue.peek().is_none_or(|((cost, ..), _)| cost.0 > 0)
+                    {
+                        let mut inner = code;
+                        let mut item_label = label;
+                        while let Instruction::Label(name, next) = self.graph.code[inner as usize] {
+                            item_label = name;
+                            inner = next;
+                        }
+                        if let Instruction::Ref(id) = self.graph.code[inner as usize] {
+                            let mut accepted = 0;
+                            while accepted < 128 && count + accepted < max {
+                                let before = state.position;
+                                self.trivia(&mut state);
+                                let Some(hit) = self.probe.reusable_rule(id, state.position)?
+                                else {
+                                    state.position = before;
+                                    break;
+                                };
+                                if state.reopen_through.is_some_and(|target| {
+                                    hit.end < target && hit.furthest >= target
+                                }) {
+                                    state.position = before;
+                                    break;
+                                }
+                                if !self.language.rules[id as usize].lexical
+                                    && hit.furthest > hit.end
+                                {
+                                    let mut checkpoint = state.clone();
+                                    checkpoint.stack = self.tasks.push(
+                                        Task::AfterRepeat {
+                                            code,
+                                            count: count + accepted,
+                                            min,
+                                            max,
+                                            label,
+                                            start: state.position,
+                                            history: state.history,
+                                        },
+                                        state.stack,
+                                    );
+                                    state.prefix = Some(self.prefixes.len());
+                                    self.prefixes.push(Prefix {
+                                        state: checkpoint,
+                                        id,
+                                        power: 0,
+                                        label: item_label,
+                                        furthest: hit.furthest,
+                                    });
+                                }
+                                state.position = hit.end;
+                                state.clean += 1;
+                                self.event(
+                                    &mut state,
+                                    Event::Strict {
+                                        root: hit.root,
+                                        label: item_label,
+                                    },
+                                );
+                                accepted += 1;
+                            }
+                            if accepted > 0 {
+                                if state.prefix.is_none() && self.queue.is_empty() {
+                                    self.commit(&mut state);
+                                    state.skipped = 0;
+                                    state.mandatory_skipped = 0;
+                                    state.missing = 0;
+                                    state.origin = state.position;
+                                }
+                                self.best = Some(state.clone());
+                                self.reused_batches += 1;
+                                self.push(
+                                    &mut state,
+                                    Task::Repeat {
+                                        code,
+                                        count: count + accepted,
+                                        min,
+                                        max,
+                                        label,
+                                    },
+                                );
+                                self.enqueue(state);
+                                continue;
+                            }
+                        }
+                    }
                     let before_trivia = state.position;
                     self.trivia(&mut state);
                     let starts = count < max && self.starts(code, state.position)?;
@@ -1060,7 +1202,7 @@ impl Engine<'_> {
                 if max > 1 {
                     let mut at = best.position.max(start);
                     if at == start {
-                        at += self.source[at..].chars().next().map_or(0, char::len_utf8);
+                        at += self.source.character(at).map_or(0, char::len_utf8);
                     }
                     let bound = self
                         .source
@@ -1139,6 +1281,8 @@ impl Engine<'_> {
             .predicate(self.graph.expressions[code as usize], at)
             .map(|yes| yes.then_some(()))
     }
+}
+impl Engine<'_, StrictProbe<'_>> {
     fn finish(mut self, state: State, failure: Option<Diagnostic>) -> RecoveredParse {
         let mut events = Vec::new();
         let mut history = state.history;
@@ -1167,7 +1311,7 @@ impl Engine<'_> {
                 let Ok(id) = u16::try_from(labels.len()) else {
                     return super::tree::fallback(
                         self.language,
-                        self.source,
+                        self.source.flat(),
                         Diagnostic::new("limit", [0, 0], "too many syntax edge labels"),
                     );
                 };
@@ -1249,7 +1393,7 @@ impl Engine<'_> {
             id
         };
         builder.nodes[root as usize].span = [0, self.source.len() as u32];
-        let mut diagnostics = repair_diagnostics(&repairs, self.source);
+        let mut diagnostics = repair_diagnostics(&repairs, self.source.flat());
         diagnostics.extend(exhausted);
         if let Some(error) = failure {
             diagnostics.push(error);
@@ -1278,7 +1422,7 @@ impl Engine<'_> {
             .filter(|(_, n)| n.span[0] == n.span[1] && missing.contains(&(n.rule, n.span[0])))
             .map(|(id, _)| id as u32)
             .collect();
-        let coverage = coverage(self.source, &repairs, &builder.nodes, self.language);
+        let coverage = coverage(self.source.flat(), &repairs, &builder.nodes, self.language);
         self.stats.repair_count = repairs.len() as u64;
         self.stats.work += self.probe.work();
         builder.nodes.shrink_to_fit();
@@ -1287,7 +1431,7 @@ impl Engine<'_> {
         RecoveredParse {
             tree: SyntaxTree {
                 language: self.language,
-                source: self.source.into(),
+                source: self.source.flat().into(),
                 nodes: builder.nodes,
                 edges: builder.edges,
                 labels: builder.labels,

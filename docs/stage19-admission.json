@@ -1,0 +1,22 @@
+{
+  "source_sha256": "d0183ca2dab581ae3f5ee5e468f9094bfcfec20fde05f74f8e2d425b576bbe49",
+  "profiler_sha256": "32da560f46f478fca7b930c9507133204bb5ec360eea7955fab915dbf249de60",
+  "prototype_functionally_validated": true,
+  "roslyn_parity_met": false,
+  "workspace_test_executions": 305,
+  "core_tests": 60,
+  "standard_traces": 4334,
+  "adversarial_traces": 1286,
+  "cold_samples": 9,
+  "paired_samples": 18,
+  "generated_bodies": 255,
+  "generated_tails": 33,
+  "first_edit_equivalent": true,
+  "first_edit_ms": 100.490833,
+  "first_edit_copied_bytes": 1537,
+  "damaged_cold_single_seconds": 72.09099175,
+  "stage18_damaged_cold_single_seconds": 74.1630705,
+  "logical_work_equal_to_stage18": true,
+  "recovery_probe_optimizations_enabled": false,
+  "edited_rope_native_execution_enabled": false
+}

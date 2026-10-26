@@ -1064,3 +1064,9 @@ impl Parser<'_> {
         Ok(result)
     }
 }
+
+pub(crate) mod shared;
+pub use shared::{
+    CompiledParser, SyntaxContext, SyntaxMark, parse_snapshot, parse_snapshot_compiled,
+    parse_snapshot_generated,
+};

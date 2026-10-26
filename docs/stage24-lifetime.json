@@ -1,0 +1,24 @@
+{
+  "source_sha256": "85d77a50cfdd69ce83f5051cf510d91bde49a37461aa9bd076282326fc15d11f",
+  "scope": "Existing interpreted edit path,100000 edits each with zero/eight retained readers; compiled initial read boundaries checked separately.",
+  "windows": [
+    {
+      "bound_bytes": 8549536,
+      "edits": 100000,
+      "fresh_bytes": 19904,
+      "latest_bytes": 129096,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 129096,
+      "window": 0
+    },
+    {
+      "bound_bytes": 8549536,
+      "edits": 100000,
+      "fresh_bytes": 19904,
+      "latest_bytes": 129096,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 137704,
+      "window": 8
+    }
+  ]
+}

@@ -1,0 +1,194 @@
+{
+  "source_sha256": "85d77a50cfdd69ce83f5051cf510d91bde49a37461aa9bd076282326fc15d11f",
+  "profiler_sha256": "1d6d561f727b3bdc6446841f7b415ad43207240268c1b9a30c55657ff60be41c",
+  "source_overlay_restores_stage22_sha256": "805c559269dcefc14ae704b1b6df6f1efdd4a8fe317fb7c432a3b7ac0f9f2aff",
+  "owned_source_files": [
+    "crates/nitride-core/src/lexical.rs",
+    "crates/nitride-codegen/src/lexical.rs",
+    "crates/nitride-codegen/tests/generation.rs",
+    "crates/nitride-cli/tests/native_lexers.rs",
+    "crates/nitride-prepare/src/grammar_seed.rs",
+    "crates/nitride-codegen/src/lexical/fused.rs"
+  ],
+  "workspace_test_executions": 321,
+  "standard_traces": 4334,
+  "adversarial_traces": 1286,
+  "logical_work_and_memo_counters_equal": true,
+  "csharp_ascii_table_rules": [
+    2,
+    3,
+    5,
+    6,
+    15,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    292,
+    293
+  ],
+  "csharp_ascii_table_count": 18,
+  "logical_table_bytes": 18432,
+  "generated_csharp_bytes": 1464559,
+  "stage22_generated_csharp_bytes": 1320522,
+  "executable_bytes": 3171600,
+  "stage22_executable_bytes": 3155088,
+  "first_edit_equivalent": true,
+  "first_edit_ms": 116.080083,
+  "first_edit_copied_bytes": 1537,
+  "first_edit_fallbacks": 0,
+  "first_edit_maintenance": 0,
+  "damaged_cold_single_seconds": 74.478820667,
+  "nitrogen_incremental_target_met_at_16mib": false,
+  "validation": {
+    "source_sha256": "85d77a50cfdd69ce83f5051cf510d91bde49a37461aa9bd076282326fc15d11f",
+    "profiler_sha256": "1d6d561f727b3bdc6446841f7b415ad43207240268c1b9a30c55657ff60be41c",
+    "checks": [
+      {
+        "name": "suite",
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--check"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "bootstrap",
+        "command": [
+          "cargo",
+          "run",
+          "--locked",
+          "-p",
+          "nitride-prepare",
+          "--example",
+          "bootstrap",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "python",
+        "command": [
+          "python3",
+          "scripts/test_shared_subtrees.py"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "differential",
+        "command": [
+          "python3",
+          "scripts/shared_subtrees.py",
+          "--differential",
+          "--native-syntax",
+          "--profiler",
+          "/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/.superpowers/sdd/2026-10-26-fused-lexical/profile-fused-ascii",
+          "--report",
+          "docs/stage24-differential.json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "adversarial",
+        "command": [
+          "python3",
+          "scripts/shared_subtrees.py",
+          "--differential",
+          "--native-syntax",
+          "--profiler",
+          "/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/.superpowers/sdd/2026-10-26-fused-lexical/profile-fused-ascii",
+          "--manifest",
+          "fixtures/recovery/adversarial.json",
+          "--limit",
+          "1286",
+          "--report",
+          "docs/stage24-adversarial.json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "lifetime",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "--locked",
+          "-p",
+          "nitride-cli",
+          "--test",
+          "incremental",
+          "bounded_reader_window_does_not_retain_edit_history",
+          "--",
+          "--ignored",
+          "--nocapture"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "first-edit",
+        "command": [
+          "python3",
+          "/tmp/nitride-fused-first-edit.py"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "complete": true
+  },
+  "review": {
+    "reviewer": "fused_lexical_final_review",
+    "verdict": "retain Stage24; no blocking findings",
+    "critical": [],
+    "important": [],
+    "minor": [],
+    "independently_verified": [
+      "active/frozen/repeated source and binary hashes",
+      "owned-source overlay reconstructs exact Stage22",
+      "grammar seed differs only by eight tables/replay wrappers and fixed point passes",
+      "321 workspace executions and full4334/1286 traces",
+      "all paired medians and only reclaimed-byte counter variation",
+      "reader bounds and116.080083ms equivalent first edit"
+    ],
+    "declined_to_judge": [
+      "Previously reviewed Stage15\u201323 implementation outside this delta; integration points checked.",
+      "Universal performance or current Nitrogen superiority; captures cover stated workload/host and prior references.",
+      "Roslyn/compiler conformance or new recovery behavior; this milestone preserves existing semantics, no new such capability."
+    ],
+    "scope": "Read-only independent code/evidence review, no edits/builds/heavy tests or additional agents."
+  }
+}

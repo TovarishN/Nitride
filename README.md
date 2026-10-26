@@ -326,8 +326,68 @@ all execution paths. Strict APIs keep their prior behavior.
 
 Recovery is grammar-derived and bounded. The frozen corpus passes the approved
 Roslyn aggregate gates; case-level regressions, fallback and large-file costs
-are explicit in [recovery evidence](docs/stage14-evidence.md). Incremental parsing
-and editor recovery integration remain future work.
+are explicit in [recovery evidence](docs/stage14-evidence.md). Editor recovery integration remains future work.
+
+## Shared syntax snapshots
+
+`parse_snapshot` opts into immutable chunked syntax and UTF-8 source storage.
+Pratt memos, alternative winners and selected recovery probes retain structural
+handles. An edit shares compatible subtrees with the previous snapshot:
+
+```rust
+use nitride_core::{parse_snapshot, Limits, ParseOptions, SnapshotMode, TextEdit};
+fn example(language: &'static nitride_core::Language) -> Result<(), nitride_core::Diagnostic> {
+let before = parse_snapshot(language, "1 + 2;", Limits::default(),
+    SnapshotMode::Strict(ParseOptions::default()))?;
+let after = before.edit(&TextEdit { range: [4, 5], replacement: "3".into() },
+    Limits::default())?;
+let root = after.root();
+assert_eq!(root.text(), "1 + 3;");
+Ok(())
+}
+```
+
+Spans belong to snapshot occurrences; `SubtreeId` identifies shared structure.
+Old snapshots remain readable. Explicit maintenance can relocate structure in
+the newest snapshot while preserving every older reader. `materialize()` is the
+explicit dense flat-tree/source export. Diagnostic and repair slices resolve
+relative positions lazily on request; `diagnostic_count()` avoids that export.
+Existing `parse`/`SyntaxTree` APIs retain
+their compatibility backend.
+
+Use `SnapshotMode::Recovering` for damaged input. The recovery VM can reuse
+strict recognition and coverage blocks; uncertain or exhausted paths retain an
+explicit full-parser fallback. `stats()` distinguishes that fallback, copying,
+reused subtrees and maintenance. `compile_snapshot` and
+`compile_snapshot_recovering` consume occurrence views and recompute semantics;
+shared syntax alone does not reuse bindings. Diagnosed programs remain blocked
+from execution.
+
+The measured costs and admission failures are in
+[shared-subtree evidence](docs/stage15-evidence.md). The follow-up
+[predictive recognition prototype](docs/stage16-evidence.md) measures prepared
+start filtering and bounded lexical reuse for cold parsing. The subsequent
+[ordinary-choice dispatch checkpoint](docs/stage17-evidence.md) adds bounded
+ordered eligibility routes and reports the remaining Roslyn gap. The opt-in
+[generated lexical execution checkpoint](docs/stage18-evidence.md) specializes
+acyclic lexical rules through `parse_snapshot_compiled`; edited ropes remain
+interpreted. The following [generated syntax checkpoint](docs/stage19-evidence.md)
+adds `parse_snapshot_generated` for structural bodies/infix tails and an equivalent
+native trivia fast path. A subsequent [trivia-cache experiment](docs/stage20-evidence.md)
+was rejected after benchmarks showed no reliable speed gain. The subsequent
+[memo key hashing checkpoint](docs/stage21-evidence.md) reports a modest measured
+gain from contiguous key hashing with unchanged cache-entry size. The next
+[arena lookup checkpoint](docs/stage22-evidence.md) avoids directory hashing for
+the current chunk after slot recycling. A later
+[label-cache experiment](docs/stage23-evidence.md) was rejected after its small
+large-file timing gain came with increased memo-budget eviction churn. The
+[fused ASCII lexical checkpoint](docs/stage24-evidence.md) replaces first-byte-
+determined scanner decisions with immutable tables and exact work/depth/read
+accounting. Recovery probes
+retain their original recognition work accounting. Cold construction, recovery
+search, explicit export and semantic indexing are separate costs; this API
+does not promise constant-time edits.
+
 
 ## Validate
 

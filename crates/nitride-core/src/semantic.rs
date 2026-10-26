@@ -1,3 +1,4 @@
+use crate::syntax::access::SyntaxAccess;
 use crate::*;
 use std::collections::HashMap;
 
@@ -108,30 +109,27 @@ struct Expansion<'a> {
 
 type Origin = (bool, [u32; 2]);
 
-fn check_storage(language: &'static Language, tree: &SyntaxTree) -> Result<(), Diagnostic> {
-    if !std::ptr::eq(language, tree.language) {
+fn check_storage(language: &'static Language, tree: &dyn SyntaxAccess) -> Result<(), Diagnostic> {
+    if !std::ptr::eq(language, tree.language()) {
         return Err(Diagnostic::new(
             "grammar",
             [0, 0],
             "syntax belongs to a different language snapshot",
         ));
     }
-    if tree.root as usize >= tree.nodes.len() {
+    if tree.root() as usize >= tree.nodes().len() {
         return Err(Diagnostic::new("grammar", [0, 0], "invalid syntax root"));
     }
-    for (index, node) in tree.nodes.iter().enumerate() {
+    for (index, node) in tree.nodes().iter().enumerate() {
         let end = node
             .first_child
             .checked_add(node.child_count)
             .ok_or_else(|| Diagnostic::new("grammar", node.span, "invalid child range"))?;
         if node.rule as usize >= language.rules.len()
             || node.span[0] > node.span[1]
-            || tree
-                .source
-                .get(node.span[0] as usize..node.span[1] as usize)
-                .is_none()
-            || end as usize > tree.edges.len()
-            || tree.edges[node.first_child as usize..end as usize]
+            || !tree.valid_span(node.span)
+            || end as usize > tree.edges().len()
+            || tree.edges()[node.first_child as usize..end as usize]
                 .iter()
                 .any(|e| e.node as usize >= index)
         {
@@ -147,7 +145,7 @@ fn check_storage(language: &'static Language, tree: &SyntaxTree) -> Result<(), D
 
 fn compile_checked(
     language: &'static Language,
-    tree: &SyntaxTree,
+    tree: &dyn SyntaxAccess,
     limits: Limits,
 ) -> Result<Program, Diagnostic> {
     compile_mode(language, tree, limits, false)
@@ -155,7 +153,7 @@ fn compile_checked(
 
 pub(crate) fn compile_mode(
     language: &'static Language,
-    tree: &SyntaxTree,
+    tree: &dyn SyntaxAccess,
     limits: Limits,
     recovering: bool,
 ) -> Result<Program, Diagnostic> {
@@ -192,7 +190,7 @@ pub(crate) fn compile_mode(
             .recovery()
             .map_or_else(Vec::new, |r| r.diagnostics.clone()),
     };
-    if tree.nodes.len() as u64 > limits.work {
+    if tree.nodes().len() as u64 > limits.work {
         return Err(Diagnostic::new(
             "limit",
             [0, 0],
@@ -224,7 +222,7 @@ pub(crate) fn compile_mode(
         templates: templates.as_deref(),
         origins: templates.as_ref().map(|_| Vec::new()),
         active: Vec::new(),
-        work: tree.nodes.len() as u64,
+        work: tree.nodes().len() as u64,
     };
     lowerer.lower_tree(tree, &bound, None)?;
     let Lowerer {
@@ -248,7 +246,7 @@ pub(crate) fn compile_mode(
 /// (no locals: names resolve only against built-ins, as in Nitrogen).
 fn bind(
     language: &'static Language,
-    tree: &SyntaxTree,
+    tree: &dyn SyntaxAccess,
     mut program: Option<&mut Program>,
     type_errors: &mut Vec<Diagnostic>,
     recovering: bool,
@@ -261,7 +259,7 @@ fn bind(
             .ok_or_else(|| Diagnostic::new("grammar", [0, 0], format!("missing field {label}")))
     };
     // Bind the complete document before reporting type errors, matching Nitrogen's stage order.
-    for (id, node) in tree.nodes.iter().enumerate() {
+    for (id, node) in tree.nodes().iter().enumerate() {
         let rule = language
             .rules
             .get(node.rule as usize)
@@ -293,7 +291,7 @@ fn bind(
                     if let Some(program) = program.as_deref_mut() {
                         program.bindings.push(Binding {
                             kind,
-                            span: tree.nodes[name as usize].span,
+                            span: tree.nodes()[name as usize].span,
                             symbol: binding.0,
                         });
                     }
@@ -321,13 +319,13 @@ fn bind(
                             program.builtin_bindings.push(BuiltinBinding {
                                 kind: builtin.kind,
                                 name: builtin.name,
-                                span: tree.nodes[name as usize].span,
+                                span: tree.nodes()[name as usize].span,
                             });
                         }
                     } else {
                         binding_errors.push(Diagnostic::new(
                             "binding",
-                            tree.nodes[name as usize].span,
+                            tree.nodes()[name as usize].span,
                             format!("unresolved name {text}"),
                         ));
                     }
@@ -343,13 +341,13 @@ fn bind(
                         program.builtin_bindings.push(BuiltinBinding {
                             kind: value.kind,
                             name: value.name,
-                            span: tree.nodes[name as usize].span,
+                            span: tree.nodes()[name as usize].span,
                         });
                     }
                 } else {
                     binding_errors.push(Diagnostic::new(
                         "binding",
-                        tree.nodes[name as usize].span,
+                        tree.nodes()[name as usize].span,
                         format!("unresolved name {text}"),
                     ));
                 }
@@ -385,7 +383,7 @@ fn bind(
                     if matches.len() != 1 && !(recovering && spelling.is_empty()) {
                         type_errors.push(Diagnostic::new(
                             "type",
-                            tree.nodes[annotation as usize].span,
+                            tree.nodes()[annotation as usize].span,
                             "unknown or ambiguous declared type",
                         ));
                     }
@@ -397,7 +395,7 @@ fn bind(
                             Diagnostic::new("grammar", node.span, "invalid name span")
                         })?,
                     ),
-                    (tree.nodes[name as usize].span[0], id as u32),
+                    (tree.nodes()[name as usize].span[0], id as u32),
                 );
             }
             Action::Show { .. } if program.is_none() => {
@@ -481,8 +479,14 @@ fn parse_templates(
 }
 
 /// Structural syntax equality: rules, labels and children; token text for lexical nodes.
-fn same_syntax(language: &Language, a: &SyntaxTree, x: u32, b: &SyntaxTree, y: u32) -> bool {
-    let (p, q) = (a.nodes[x as usize], b.nodes[y as usize]);
+fn same_syntax(
+    language: &Language,
+    a: &dyn SyntaxAccess,
+    x: u32,
+    b: &dyn SyntaxAccess,
+    y: u32,
+) -> bool {
+    let (p, q) = (a.nodes()[x as usize], b.nodes()[y as usize]);
     if p.rule != q.rule {
         return false;
     }
@@ -502,13 +506,14 @@ fn match_pattern(
     language: &Language,
     pattern: &Template,
     node: u32,
-    tree: &SyntaxTree,
+    tree: &dyn SyntaxAccess,
     target: u32,
     captures: &mut HashMap<&'static str, u32>,
 ) -> bool {
     if let Some((_, hole)) = pattern.holes.iter().find(|(n, _)| *n == node) {
-        let rule = &language.rules[tree.nodes[target as usize].rule as usize];
-        if tree.nodes[target as usize].rule != hole.category && rule.owner != Some(hole.category) {
+        let rule = &language.rules[tree.nodes()[target as usize].rule as usize];
+        if tree.nodes()[target as usize].rule != hole.category && rule.owner != Some(hole.category)
+        {
             return false;
         }
         return match captures.get(hole.name) {
@@ -520,8 +525,8 @@ fn match_pattern(
         };
     }
     let (p, q) = (
-        pattern.tree.nodes[node as usize],
-        tree.nodes[target as usize],
+        pattern.tree.nodes()[node as usize],
+        tree.nodes()[target as usize],
     );
     if p.rule != q.rule {
         return false;
@@ -576,7 +581,7 @@ impl Lowerer<'_> {
 
     fn lower_tree(
         &mut self,
-        tree: &SyntaxTree,
+        tree: &dyn SyntaxAccess,
         bound: &Bound,
         expansion: Option<&Expansion>,
     ) -> Result<Vec<Option<u32>>, Diagnostic> {
@@ -589,8 +594,8 @@ impl Lowerer<'_> {
             tree.recovery().map_or_else(Default::default, |r| {
                 r.damaged_nodes.iter().copied().collect()
             });
-        let mut lowered = vec![None; tree.nodes.len()];
-        for (id, node) in tree.nodes.iter().enumerate() {
+        let mut lowered = vec![None; tree.nodes().len()];
+        for (id, node) in tree.nodes().iter().enumerate() {
             if let Some(hir) = expansion.and_then(|e| e.holes.get(&(id as u32))) {
                 lowered[id] = Some(*hir);
                 continue;
@@ -703,7 +708,7 @@ impl Lowerer<'_> {
                             "reference declaration has no validated initializer",
                         )
                     })?;
-                    let declaration_node = tree.nodes[declaration as usize];
+                    let declaration_node = tree.nodes()[declaration as usize];
                     let ty = if self.recovering
                         && self.program.nodes[initializer as usize].ty == ERROR_TYPE
                     {
@@ -746,7 +751,7 @@ impl Lowerer<'_> {
                             let start = self.program.text.len() as u32;
                             self.program.text.push_str(spelling);
                             let end = self.program.text.len() as u32;
-                            let child_span = tree.nodes[child as usize].span;
+                            let child_span = tree.nodes()[child as usize].span;
                             args.push(self.push(
                                 HirNode {
                                     kind: HirKind::Text { start, end },
@@ -919,7 +924,7 @@ impl Lowerer<'_> {
                     let symbol = if self.recovering && tree.text(name).is_none_or(str::is_empty) {
                         None
                     } else {
-                        Some(tree.nodes[name as usize].span[0])
+                        Some(tree.nodes()[name as usize].span[0])
                     };
                     self.program.statements.push(Statement {
                         value: root,
@@ -988,7 +993,7 @@ impl Lowerer<'_> {
     #[allow(clippy::too_many_arguments)]
     fn expand(
         &mut self,
-        tree: &SyntaxTree,
+        tree: &dyn SyntaxAccess,
         id: u32,
         lowered: &[Option<u32>],
         helper_index: u16,
@@ -997,7 +1002,7 @@ impl Lowerer<'_> {
         outer: Option<&Expansion>,
     ) -> Result<u32, Diagnostic> {
         let language = self.language;
-        let node = tree.nodes[id as usize];
+        let node = tree.nodes()[id as usize];
         let use_span = outer.map_or(node.span, |e| e.use_span);
         let display = outer.map_or_else(
             || name.to_owned(),
@@ -1059,7 +1064,7 @@ impl Lowerer<'_> {
                 if match_pattern(
                     language,
                     pattern,
-                    pattern.tree.root,
+                    pattern.tree.root(),
                     tree,
                     subject,
                     &mut captures,
@@ -1089,7 +1094,7 @@ impl Lowerer<'_> {
                 None => return Ok(placeholder(self, "untyped rewrite argument")),
             }
         }
-        self.work += selected.tree.nodes.len() as u64;
+        self.work += selected.tree.nodes().len() as u64;
         if self.work > self.limits.work {
             return Err(Diagnostic::new(
                 "limit",
@@ -1107,7 +1112,7 @@ impl Lowerer<'_> {
         let result = self.lower_tree(&selected.tree, &selected.bound, Some(&expansion));
         self.active.pop();
         let result = result?;
-        let root = selected.tree.root;
+        let root = selected.tree.root();
         let Some(hir) = result[root as usize] else {
             return Ok(placeholder(self, "untyped rewrite result"));
         };

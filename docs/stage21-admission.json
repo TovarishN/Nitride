@@ -1,0 +1,168 @@
+{
+  "source_sha256": "08435f8f044175c2019ded3be80a5e37593f4207afe179692b0c63542de401f8",
+  "profiler_sha256": "2862ba4296dd38033e0c5779a2e0aa97840383c327e6db830c09c6ad892aa21b",
+  "source_overlay_restores_stage19_sha256": "d0183ca2dab581ae3f5ee5e468f9094bfcfec20fde05f74f8e2d425b576bbe49",
+  "owned_source_files": [
+    "crates/nitride-core/src/parser/shared.rs",
+    "crates/nitride-core/src/parser/shared/memo.rs"
+  ],
+  "workspace_test_executions": 307,
+  "standard_traces": 4334,
+  "adversarial_traces": 1286,
+  "first_edit_ms": 113.413042,
+  "first_edit_equivalent": true,
+  "first_edit_copied_bytes": 1537,
+  "first_edit_fallbacks": 0,
+  "first_edit_maintenance": 0,
+  "damaged_cold_single_seconds": 79.467627625,
+  "logical_work_and_cache_hits_equal_to_stage19": true,
+  "roslyn_parity_met": false,
+  "validation": {
+    "source_sha256": "08435f8f044175c2019ded3be80a5e37593f4207afe179692b0c63542de401f8",
+    "profiler_sha256": "2862ba4296dd38033e0c5779a2e0aa97840383c327e6db830c09c6ad892aa21b",
+    "checks": [
+      {
+        "name": "suite",
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--check"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "bootstrap",
+        "command": [
+          "cargo",
+          "run",
+          "--locked",
+          "-p",
+          "nitride-prepare",
+          "--example",
+          "bootstrap",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "python",
+        "command": [
+          "python3",
+          "scripts/test_shared_subtrees.py"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "differential",
+        "command": [
+          "python3",
+          "scripts/shared_subtrees.py",
+          "--differential",
+          "--native-syntax",
+          "--profiler",
+          "/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/.superpowers/sdd/2026-10-26-memo-lookup/profile-contiguous",
+          "--report",
+          "docs/stage21-differential.json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "adversarial",
+        "command": [
+          "python3",
+          "scripts/shared_subtrees.py",
+          "--differential",
+          "--native-syntax",
+          "--profiler",
+          "/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/.superpowers/sdd/2026-10-26-memo-lookup/profile-contiguous",
+          "--manifest",
+          "fixtures/recovery/adversarial.json",
+          "--limit",
+          "1286",
+          "--report",
+          "docs/stage21-adversarial.json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "lifetime",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "--locked",
+          "-p",
+          "nitride-cli",
+          "--test",
+          "incremental",
+          "bounded_reader_window_does_not_retain_edit_history",
+          "--",
+          "--ignored",
+          "--nocapture"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "first-edit",
+        "command": [
+          "python3",
+          "/tmp/nitride-memo-first-edit.py"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "complete": true
+  },
+  "review": {
+    "verdict": "ready to retain Stage21",
+    "critical": [],
+    "important": [],
+    "minor": [],
+    "reviewer": "memo_lookup_final_review",
+    "scope": "Read-only independent source and supplied execution-evidence audit; no heavy builds/tests rerun.",
+    "declined_to_judge": [
+      "Cross-platform performance and universal workload gains; evidence covers this host and generated corpus.",
+      "Fresh Roslyn parity; comparison remains historical.",
+      "Comprehensive re-review of prior Stage15\u201319 implementation."
+    ],
+    "independently_verified": [
+      "full-field key identity and encoding",
+      "same key and entry size",
+      "unchanged generation ownership and eviction",
+      "paired raw medians",
+      "307 test executions and all validation logs",
+      "4334 standard and1286 adversarial cases",
+      "bounded reader windows",
+      "recovered edit equivalence",
+      "source overlay restores exact Stage19",
+      "live source and Release executable hashes"
+    ]
+  }
+}

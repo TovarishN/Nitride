@@ -1,0 +1,25 @@
+{
+  "source_sha256": "2142c1f63e2d1094ef676c6096b20a545e515c6a9fc83c61f3759869838314ea",
+  "scope": "Existing interpreted edit/reader-window path; generated scanners do not run on edited ropes. A separate compiled-initial snapshot edit regression validates boundary and old-reader equivalence.",
+  "windows": [
+    {
+      "bound_bytes": 8549536,
+      "edits": 100000,
+      "fresh_bytes": 19904,
+      "latest_bytes": 129096,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 129096,
+      "window": 0
+    },
+    {
+      "bound_bytes": 8549536,
+      "edits": 100000,
+      "fresh_bytes": 19904,
+      "latest_bytes": 129096,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 137704,
+      "window": 8
+    }
+  ],
+  "command": "cargo test --release --locked -p nitride-cli --test incremental bounded_reader_window_does_not_retain_edit_history -- --ignored --nocapture"
+}

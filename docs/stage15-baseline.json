@@ -1,0 +1,2227 @@
+{
+  "host": "macOS-27.0.1-arm64-arm-64bit",
+  "machine": "arm64",
+  "source_revision": "88cbc93cad0b5b87b105d5f9176fadcdc3b7a5e0",
+  "profiler_sha256": "bd16ce5826e81e7b4a385d9b03c95402121b9e6a17e7a4aa5ad1ac967275ba6e",
+  "runs_per_case": 3,
+  "measurements": [
+    {
+      "profile": "csharp4",
+      "size_target": 262144,
+      "pattern": "strict",
+      "source_sha256": "fb24d3b7883f34ab3c7774bbdb289f6d6e609ee81e386469e8cf3d5e6cb743f6",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 262212,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 201,
+              "baseline_live_bytes": 262997,
+              "elapsed_ns": 420046584,
+              "peak_bytes": 6726048,
+              "retained_bytes": 3427312
+            },
+            "semantic_validation": false,
+            "source_bytes": 262212,
+            "storage": {
+              "engine_retained_bytes": 3427312,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 3427312,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 3427312,
+            "syntax_nodes": 113003,
+            "values": null
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 262212,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 201,
+              "baseline_live_bytes": 262997,
+              "elapsed_ns": 423131083,
+              "peak_bytes": 6726048,
+              "retained_bytes": 3427312
+            },
+            "semantic_validation": false,
+            "source_bytes": 262212,
+            "storage": {
+              "engine_retained_bytes": 3427312,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 3427312,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 3427312,
+            "syntax_nodes": 113003,
+            "values": null
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 262212,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 201,
+              "baseline_live_bytes": 262997,
+              "elapsed_ns": 426883833,
+              "peak_bytes": 6726048,
+              "retained_bytes": 3427312
+            },
+            "semantic_validation": false,
+            "source_bytes": 262212,
+            "storage": {
+              "engine_retained_bytes": 3427312,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 3427312,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 3427312,
+            "syntax_nodes": 113003,
+            "values": null
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 262144,
+      "pattern": "one",
+      "source_sha256": "4f184bb80dee1831ffbe33b1abb79d708dd94adb3d80627c09b35d43b36b1e94",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 25103,
+              "baseline_live_bytes": 263005,
+              "elapsed_ns": 662457541,
+              "peak_bytes": 17335738,
+              "retained_bytes": 6573171
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 1,
+              "search_states": 22,
+              "work": 54818621
+            },
+            "source_bytes": 262211,
+            "storage": {
+              "engine_retained_bytes": 6572883,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 6573171,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 6572883,
+            "syntax_nodes": 113003
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 25103,
+              "baseline_live_bytes": 263005,
+              "elapsed_ns": 665570583,
+              "peak_bytes": 17335738,
+              "retained_bytes": 6573171
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 1,
+              "search_states": 22,
+              "work": 54818621
+            },
+            "source_bytes": 262211,
+            "storage": {
+              "engine_retained_bytes": 6572883,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 6573171,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 6572883,
+            "syntax_nodes": 113003
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 25103,
+              "baseline_live_bytes": 263005,
+              "elapsed_ns": 660726375,
+              "peak_bytes": 17335738,
+              "retained_bytes": 6573171
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 1,
+              "search_states": 22,
+              "work": 54818621
+            },
+            "source_bytes": 262211,
+            "storage": {
+              "engine_retained_bytes": 6572883,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 6573171,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 6572883,
+            "syntax_nodes": 113003
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 262144,
+      "pattern": "dense",
+      "source_sha256": "eba66199d7d7f67000726fad4834117e8ae0bf0ad8f006d8581dc42636724e88",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 729,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 767398,
+              "baseline_live_bytes": 262277,
+              "elapsed_ns": 3269153000,
+              "peak_bytes": 20594234,
+              "retained_bytes": 6754811
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 729,
+              "search_states": 53217,
+              "work": 122170454
+            },
+            "source_bytes": 261483,
+            "storage": {
+              "engine_retained_bytes": 6665947,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 6754811,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 6665947,
+            "syntax_nodes": 113003
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 729,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 767398,
+              "baseline_live_bytes": 262277,
+              "elapsed_ns": 3293707042,
+              "peak_bytes": 20594234,
+              "retained_bytes": 6754811
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 729,
+              "search_states": 53217,
+              "work": 122170454
+            },
+            "source_bytes": 261483,
+            "storage": {
+              "engine_retained_bytes": 6665947,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 6754811,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 6665947,
+            "syntax_nodes": 113003
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 729,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 767398,
+              "baseline_live_bytes": 262277,
+              "elapsed_ns": 3294208459,
+              "peak_bytes": 20594234,
+              "retained_bytes": 6754811
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 729,
+              "search_states": 53217,
+              "work": 122170454
+            },
+            "source_bytes": 261483,
+            "storage": {
+              "engine_retained_bytes": 6665947,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 6754811,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 6665947,
+            "syntax_nodes": 113003
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 262144,
+      "pattern": "junk",
+      "source_sha256": "f5c364ff50a497e6f402753f6ddb8ef8c91f4364bc364541427e51cd436ff121",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 4,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 26201,
+              "baseline_live_bytes": 263134,
+              "elapsed_ns": 663255292,
+              "peak_bytes": 17537073,
+              "retained_bytes": 6573746
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 5,
+              "search_states": 4873,
+              "work": 54995640
+            },
+            "source_bytes": 262340,
+            "storage": {
+              "engine_retained_bytes": 6573343,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 6573746,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 6573343,
+            "syntax_nodes": 112999
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 4,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 26201,
+              "baseline_live_bytes": 263134,
+              "elapsed_ns": 666987666,
+              "peak_bytes": 17537073,
+              "retained_bytes": 6573746
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 5,
+              "search_states": 4873,
+              "work": 54995640
+            },
+            "source_bytes": 262340,
+            "storage": {
+              "engine_retained_bytes": 6573343,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 6573746,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 6573343,
+            "syntax_nodes": 112999
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 4,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 26201,
+              "baseline_live_bytes": 263134,
+              "elapsed_ns": 669709500,
+              "peak_bytes": 17537073,
+              "retained_bytes": 6573746
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 5,
+              "search_states": 4873,
+              "work": 54995640
+            },
+            "source_bytes": 262340,
+            "storage": {
+              "engine_retained_bytes": 6573343,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 6573746,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 6573343,
+            "syntax_nodes": 112999
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 262144,
+      "pattern": "truncated",
+      "source_sha256": "5fd90a827e24f8b1d942ec110abe00e54d834650959869a8c87fff61c4328ce9",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 19550,
+              "baseline_live_bytes": 197453,
+              "elapsed_ns": 653983958,
+              "peak_bytes": 17383934,
+              "retained_bytes": 4146335
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 0,
+              "search_states": 4097,
+              "work": 41191193
+            },
+            "source_bytes": 196659,
+            "storage": {
+              "engine_retained_bytes": 4146043,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 4146335,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 4146043,
+            "syntax_nodes": 84849
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 19550,
+              "baseline_live_bytes": 197453,
+              "elapsed_ns": 658668000,
+              "peak_bytes": 17383934,
+              "retained_bytes": 4146335
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 0,
+              "search_states": 4097,
+              "work": 41191193
+            },
+            "source_bytes": 196659,
+            "storage": {
+              "engine_retained_bytes": 4146043,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 4146335,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 4146043,
+            "syntax_nodes": 84849
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 19550,
+              "baseline_live_bytes": 197453,
+              "elapsed_ns": 652354958,
+              "peak_bytes": 17383934,
+              "retained_bytes": 4146335
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 0,
+              "search_states": 4097,
+              "work": 41191193
+            },
+            "source_bytes": 196659,
+            "storage": {
+              "engine_retained_bytes": 4146043,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 4146335,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 4146043,
+            "syntax_nodes": 84849
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 4194304,
+      "pattern": "strict",
+      "source_sha256": "bfa28dd3a2fa6c86836d2706d48026317228b2209d169ee355a7274f5ee2f919",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 4194492,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 234,
+              "baseline_live_bytes": 4195277,
+              "elapsed_ns": 6669255542,
+              "peak_bytes": 105005472,
+              "retained_bytes": 53372272
+            },
+            "semantic_validation": false,
+            "source_bytes": 4194492,
+            "storage": {
+              "engine_retained_bytes": 53372272,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 53372272,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 53372272,
+            "syntax_nodes": 1756313,
+            "values": null
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 4194492,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 234,
+              "baseline_live_bytes": 4195277,
+              "elapsed_ns": 6701041417,
+              "peak_bytes": 105005472,
+              "retained_bytes": 53372272
+            },
+            "semantic_validation": false,
+            "source_bytes": 4194492,
+            "storage": {
+              "engine_retained_bytes": 53372272,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 53372272,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 53372272,
+            "syntax_nodes": 1756313,
+            "values": null
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 4194492,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 234,
+              "baseline_live_bytes": 4195277,
+              "elapsed_ns": 6654850958,
+              "peak_bytes": 105005472,
+              "retained_bytes": 53372272
+            },
+            "semantic_validation": false,
+            "source_bytes": 4194492,
+            "storage": {
+              "engine_retained_bytes": 53372272,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 53372272,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 53372272,
+            "syntax_nodes": 1756313,
+            "values": null
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 4194304,
+      "pattern": "one",
+      "source_sha256": "d73208f5ec37051de89b68773a099dd4e50d9c10cee5c0bf5f62690efe4fd84c",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 289112,
+              "baseline_live_bytes": 4195285,
+              "elapsed_ns": 10261753000,
+              "peak_bytes": 234559202,
+              "retained_bytes": 103704051
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 1,
+              "search_states": 30,
+              "work": 852025178
+            },
+            "source_bytes": 4194491,
+            "storage": {
+              "engine_retained_bytes": 103703763,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 103704051,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 103703763,
+            "syntax_nodes": 1756313
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 289112,
+              "baseline_live_bytes": 4195285,
+              "elapsed_ns": 10255249542,
+              "peak_bytes": 234559202,
+              "retained_bytes": 103704051
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 1,
+              "search_states": 30,
+              "work": 852025178
+            },
+            "source_bytes": 4194491,
+            "storage": {
+              "engine_retained_bytes": 103703763,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 103704051,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 103703763,
+            "syntax_nodes": 1756313
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 289112,
+              "baseline_live_bytes": 4195285,
+              "elapsed_ns": 10402192334,
+              "peak_bytes": 234559202,
+              "retained_bytes": 103704051
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 1,
+              "search_states": 30,
+              "work": 852025178
+            },
+            "source_bytes": 4194491,
+            "storage": {
+              "engine_retained_bytes": 103703763,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 103704051,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 103703763,
+            "syntax_nodes": 1756313
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 4194304,
+      "pattern": "dense",
+      "source_sha256": "79d6e2ab32a29e9f78026ab8d24a789cb3d9549065154aeafbcff2ba11616250",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 11331,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 11867760,
+              "baseline_live_bytes": 4183955,
+              "elapsed_ns": 49298258542,
+              "peak_bytes": 298150778,
+              "retained_bytes": 106579481
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 11331,
+              "search_states": 827163,
+              "work": 1901340806
+            },
+            "source_bytes": 4183161,
+            "storage": {
+              "engine_retained_bytes": 105168313,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 106579481,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 105168313,
+            "syntax_nodes": 1756313
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 11331,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 11867760,
+              "baseline_live_bytes": 4183955,
+              "elapsed_ns": 50909211875,
+              "peak_bytes": 298150778,
+              "retained_bytes": 106579481
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 11331,
+              "search_states": 827163,
+              "work": 1901340806
+            },
+            "source_bytes": 4183161,
+            "storage": {
+              "engine_retained_bytes": 105168313,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 106579481,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 105168313,
+            "syntax_nodes": 1756313
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 11331,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 11867760,
+              "baseline_live_bytes": 4183955,
+              "elapsed_ns": 50535895750,
+              "peak_bytes": 298150778,
+              "retained_bytes": 106579481
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 11331,
+              "search_states": 827163,
+              "work": 1901340806
+            },
+            "source_bytes": 4183161,
+            "storage": {
+              "engine_retained_bytes": 105168313,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 106579481,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 105168313,
+            "syntax_nodes": 1756313
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 4194304,
+      "pattern": "junk",
+      "source_sha256": "68d483fa9b1ebd0c7af007549e174c016bf131429255a9bfb21a1cf2d3f74f72",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 4,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 291497,
+              "baseline_live_bytes": 4195414,
+              "elapsed_ns": 10239349625,
+              "peak_bytes": 236189745,
+              "retained_bytes": 103704626
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 5,
+              "search_states": 4873,
+              "work": 852234312
+            },
+            "source_bytes": 4194620,
+            "storage": {
+              "engine_retained_bytes": 103704223,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 103704626,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 103704223,
+            "syntax_nodes": 1756309
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 4,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 291497,
+              "baseline_live_bytes": 4195414,
+              "elapsed_ns": 10233331500,
+              "peak_bytes": 236189745,
+              "retained_bytes": 103704626
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 5,
+              "search_states": 4873,
+              "work": 852234312
+            },
+            "source_bytes": 4194620,
+            "storage": {
+              "engine_retained_bytes": 103704223,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 103704626,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 103704223,
+            "syntax_nodes": 1756309
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 4,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 291497,
+              "baseline_live_bytes": 4195414,
+              "elapsed_ns": 10149426833,
+              "peak_bytes": 236189745,
+              "retained_bytes": 103704626
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 5,
+              "search_states": 4873,
+              "work": 852234312
+            },
+            "source_bytes": 4194620,
+            "storage": {
+              "engine_retained_bytes": 103704223,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 103704626,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 103704223,
+            "syntax_nodes": 1756309
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 4194304,
+      "pattern": "truncated",
+      "source_sha256": "aeb1cca0c4eb179e41be1f6a37bf18501c6ed52562165e8688f386d9764fbffc",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 3,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 236566,
+              "baseline_live_bytes": 3146663,
+              "elapsed_ns": 10122778125,
+              "peak_bytes": 208867723,
+              "retained_bytes": 65329967
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 5,
+              "search_states": 1692,
+              "work": 641251200
+            },
+            "source_bytes": 3145869,
+            "storage": {
+              "engine_retained_bytes": 65329630,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 65329967,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 65329630,
+            "syntax_nodes": 1322028
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 3,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 236566,
+              "baseline_live_bytes": 3146663,
+              "elapsed_ns": 10363293500,
+              "peak_bytes": 208867723,
+              "retained_bytes": 65329967
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 5,
+              "search_states": 1692,
+              "work": 641251200
+            },
+            "source_bytes": 3145869,
+            "storage": {
+              "engine_retained_bytes": 65329630,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 65329967,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 65329630,
+            "syntax_nodes": 1322028
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 3,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 236566,
+              "baseline_live_bytes": 3146663,
+              "elapsed_ns": 10287835708,
+              "peak_bytes": 208867723,
+              "retained_bytes": 65329967
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 5,
+              "search_states": 1692,
+              "work": 641251200
+            },
+            "source_bytes": 3145869,
+            "storage": {
+              "engine_retained_bytes": 65329630,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 65329967,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 65329630,
+            "syntax_nodes": 1322028
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 16777216,
+      "pattern": "strict",
+      "source_sha256": "92d0168144c734efaf090d7a82048a4149ff45481caacffd10a834e1c2fad508",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 16777292,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 248,
+              "baseline_live_bytes": 16778077,
+              "elapsed_ns": 26491375209,
+              "peak_bytes": 327172512,
+              "retained_bytes": 210043072
+            },
+            "semantic_validation": false,
+            "source_bytes": 16777292,
+            "storage": {
+              "engine_retained_bytes": 210043072,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 210043072,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 210043072,
+            "syntax_nodes": 6902313,
+            "values": null
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 16777292,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 248,
+              "baseline_live_bytes": 16778077,
+              "elapsed_ns": 26383620208,
+              "peak_bytes": 327172512,
+              "retained_bytes": 210043072
+            },
+            "semantic_validation": false,
+            "source_bytes": 16777292,
+            "storage": {
+              "engine_retained_bytes": 210043072,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 210043072,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 210043072,
+            "syntax_nodes": 6902313,
+            "values": null
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 16777292,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 248,
+              "baseline_live_bytes": 16778077,
+              "elapsed_ns": 26485033875,
+              "peak_bytes": 327172512,
+              "retained_bytes": 210043072
+            },
+            "semantic_validation": false,
+            "source_bytes": 16777292,
+            "storage": {
+              "engine_retained_bytes": 210043072,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 210043072,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 210043072,
+            "syntax_nodes": 6902313,
+            "values": null
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 16777216,
+      "pattern": "one",
+      "source_sha256": "93874ec247b904a4388f164d3eef0f1a91d847c369d6b3a92d5c9350ee233b16",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 1120813,
+              "baseline_live_bytes": 16778085,
+              "elapsed_ns": 41038015958,
+              "peak_bytes": 844020778,
+              "retained_bytes": 411369795
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 1,
+              "search_states": 155,
+              "work": 3352487276
+            },
+            "source_bytes": 16777291,
+            "storage": {
+              "engine_retained_bytes": 411369507,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 411369795,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 411369507,
+            "syntax_nodes": 6902313
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 1120813,
+              "baseline_live_bytes": 16778085,
+              "elapsed_ns": 41256361292,
+              "peak_bytes": 844020778,
+              "retained_bytes": 411369795
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 1,
+              "search_states": 155,
+              "work": 3352487276
+            },
+            "source_bytes": 16777291,
+            "storage": {
+              "engine_retained_bytes": 411369507,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 411369795,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 411369507,
+            "syntax_nodes": 6902313
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 1,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 1120813,
+              "baseline_live_bytes": 16778085,
+              "elapsed_ns": 40799687750,
+              "peak_bytes": 844020778,
+              "retained_bytes": 411369795
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 1,
+              "search_states": 155,
+              "work": 3352487276
+            },
+            "source_bytes": 16777291,
+            "storage": {
+              "engine_retained_bytes": 411369507,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 411369795,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 411369507,
+            "syntax_nodes": 6902313
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 16777216,
+      "pattern": "dense",
+      "source_sha256": "a2d9cb63045c2a7d7cc3245e6830048dd2175ccb5c6b559b7ffa6e6a2caa3400",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 44531,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 46628187,
+              "baseline_live_bytes": 16733555,
+              "elapsed_ns": 203349695334,
+              "peak_bytes": 1070702970,
+              "retained_bytes": 422781817
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 44531,
+              "search_states": 3250763,
+              "work": 7478343206
+            },
+            "source_bytes": 16732761,
+            "storage": {
+              "engine_retained_bytes": 417162521,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 422781817,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 417162521,
+            "syntax_nodes": 6902313
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 44531,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 46628187,
+              "baseline_live_bytes": 16733555,
+              "elapsed_ns": 191415399375,
+              "peak_bytes": 1070702970,
+              "retained_bytes": 422781817
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 44531,
+              "search_states": 3250763,
+              "work": 7478343206
+            },
+            "source_bytes": 16732761,
+            "storage": {
+              "engine_retained_bytes": 417162521,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 422781817,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 417162521,
+            "syntax_nodes": 6902313
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 44531,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 46628187,
+              "baseline_live_bytes": 16733555,
+              "elapsed_ns": 200054849917,
+              "peak_bytes": 1070702970,
+              "retained_bytes": 422781817
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 44531,
+              "search_states": 3250763,
+              "work": 7478343206
+            },
+            "source_bytes": 16732761,
+            "storage": {
+              "engine_retained_bytes": 417162521,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 422781817,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 417162521,
+            "syntax_nodes": 6902313
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 16777216,
+      "pattern": "junk",
+      "source_sha256": "a7308abb81337d41d0c73066cf64e71f662deb01d532ebf8e3cc537e93f1d8b7",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 3,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 1122250,
+              "baseline_live_bytes": 16778214,
+              "elapsed_ns": 40972491167,
+              "peak_bytes": 844019118,
+              "retained_bytes": 411370032
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 3,
+              "search_states": 4163,
+              "work": 3352587142
+            },
+            "source_bytes": 16777420,
+            "storage": {
+              "engine_retained_bytes": 411369676,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 411370032,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 411369676,
+            "syntax_nodes": 6902307
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 3,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 1122250,
+              "baseline_live_bytes": 16778214,
+              "elapsed_ns": 40686576375,
+              "peak_bytes": 844019118,
+              "retained_bytes": 411370032
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 3,
+              "search_states": 4163,
+              "work": 3352587142
+            },
+            "source_bytes": 16777420,
+            "storage": {
+              "engine_retained_bytes": 411369676,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 411370032,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 411369676,
+            "syntax_nodes": 6902307
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 3,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 1122250,
+              "baseline_live_bytes": 16778214,
+              "elapsed_ns": 40567390417,
+              "peak_bytes": 844019118,
+              "retained_bytes": 411370032
+            },
+            "recovery": {
+              "fallback_count": 1,
+              "repair_count": 3,
+              "search_states": 4163,
+              "work": 3352587142
+            },
+            "source_bytes": 16777420,
+            "storage": {
+              "engine_retained_bytes": 411369676,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 411370032,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 411369676,
+            "syntax_nodes": 6902307
+          }
+        }
+      ]
+    },
+    {
+      "profile": "csharp4",
+      "size_target": 16777216,
+      "pattern": "truncated",
+      "source_sha256": "4f2f09b9c2f76c282e03b5d569ddbc6d2749d26dc378633e17386c569f623441",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 2,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 909794,
+              "baseline_live_bytes": 12583763,
+              "elapsed_ns": 40830343458,
+              "peak_bytes": 769773786,
+              "retained_bytes": 258482101
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 3,
+              "search_states": 1991,
+              "work": 2518989962
+            },
+            "source_bytes": 12582969,
+            "storage": {
+              "engine_retained_bytes": 258481781,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 258482101,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 258481781,
+            "syntax_nodes": 5186949
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 2,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 909794,
+              "baseline_live_bytes": 12583763,
+              "elapsed_ns": 40526586750,
+              "peak_bytes": 769773786,
+              "retained_bytes": 258482101
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 3,
+              "search_states": 1991,
+              "work": 2518989962
+            },
+            "source_bytes": 12582969,
+            "storage": {
+              "engine_retained_bytes": 258481781,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 258482101,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 258481781,
+            "syntax_nodes": 5186949
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "diagnostics": 2,
+            "execution": null,
+            "language": "csharp4",
+            "metric": "requested bytes through System; excludes allocator overhead, static tables and thread stack/OS mappings",
+            "parse": {
+              "allocation_count": 909794,
+              "baseline_live_bytes": 12583763,
+              "elapsed_ns": 40812265625,
+              "peak_bytes": 769773786,
+              "retained_bytes": 258482101
+            },
+            "recovery": {
+              "fallback_count": 0,
+              "repair_count": 3,
+              "search_states": 1991,
+              "work": 2518989962
+            },
+            "source_bytes": 12582969,
+            "storage": {
+              "engine_retained_bytes": 258481781,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 258482101,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 258481781,
+            "syntax_nodes": 5186949
+          }
+        }
+      ]
+    },
+    {
+      "profile": "portable",
+      "size_target": 0,
+      "pattern": "strict",
+      "source_sha256": "dce20eef9950cc438461743bad4da16cdd220b031ca6ebc9836bf0521fe9816a",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 1100,
+            "execution": {
+              "allocation_count": 215,
+              "baseline_live_bytes": 55678,
+              "elapsed_ns": 29291,
+              "peak_bytes": 9152,
+              "retained_bytes": 5120
+            },
+            "hir": {
+              "allocation_count": 337,
+              "baseline_live_bytes": 31614,
+              "elapsed_ns": 66208,
+              "peak_bytes": 34632,
+              "retained_bytes": 24064
+            },
+            "hir_nodes": 500,
+            "language": "portable",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 45,
+              "baseline_live_bytes": 2366,
+              "elapsed_ns": 161500,
+              "peak_bytes": 30844,
+              "retained_bytes": 29248
+            },
+            "semantic_validation": true,
+            "source_bytes": 1100,
+            "storage": {
+              "engine_retained_bytes": 29248,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 29248,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 29248,
+            "syntax_nodes": 1001,
+            "values": [
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0
+            ]
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 1100,
+            "execution": {
+              "allocation_count": 215,
+              "baseline_live_bytes": 55678,
+              "elapsed_ns": 18917,
+              "peak_bytes": 9152,
+              "retained_bytes": 5120
+            },
+            "hir": {
+              "allocation_count": 337,
+              "baseline_live_bytes": 31614,
+              "elapsed_ns": 34334,
+              "peak_bytes": 34632,
+              "retained_bytes": 24064
+            },
+            "hir_nodes": 500,
+            "language": "portable",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 45,
+              "baseline_live_bytes": 2366,
+              "elapsed_ns": 154750,
+              "peak_bytes": 30844,
+              "retained_bytes": 29248
+            },
+            "semantic_validation": true,
+            "source_bytes": 1100,
+            "storage": {
+              "engine_retained_bytes": 29248,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 29248,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 29248,
+            "syntax_nodes": 1001,
+            "values": [
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0
+            ]
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 1100,
+            "execution": {
+              "allocation_count": 215,
+              "baseline_live_bytes": 55678,
+              "elapsed_ns": 18792,
+              "peak_bytes": 9152,
+              "retained_bytes": 5120
+            },
+            "hir": {
+              "allocation_count": 337,
+              "baseline_live_bytes": 31614,
+              "elapsed_ns": 36459,
+              "peak_bytes": 34632,
+              "retained_bytes": 24064
+            },
+            "hir_nodes": 500,
+            "language": "portable",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 45,
+              "baseline_live_bytes": 2366,
+              "elapsed_ns": 160750,
+              "peak_bytes": 30844,
+              "retained_bytes": 29248
+            },
+            "semantic_validation": true,
+            "source_bytes": 1100,
+            "storage": {
+              "engine_retained_bytes": 29248,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 29248,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 29248,
+            "syntax_nodes": 1001,
+            "values": [
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0,
+              7.0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "profile": "power",
+      "size_target": 0,
+      "pattern": "strict",
+      "source_sha256": "f2d83a0ebdc7b5d20b5d15be8eaac243131eb1acf3951334e5b89aac5afb7eb3",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 26,
+            "execution": {
+              "allocation_count": 7,
+              "baseline_live_bytes": 2259,
+              "elapsed_ns": 3292,
+              "peak_bytes": 236,
+              "retained_bytes": 96
+            },
+            "hir": {
+              "allocation_count": 13,
+              "baseline_live_bytes": 1907,
+              "elapsed_ns": 18916,
+              "peak_bytes": 556,
+              "retained_bytes": 352
+            },
+            "hir_nodes": 4,
+            "language": "power",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 23,
+              "baseline_live_bytes": 1369,
+              "elapsed_ns": 18417,
+              "peak_bytes": 1312,
+              "retained_bytes": 538
+            },
+            "semantic_validation": true,
+            "source_bytes": 26,
+            "storage": {
+              "engine_retained_bytes": 538,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 538,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 538,
+            "syntax_nodes": 14,
+            "values": [
+              8.0
+            ]
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 26,
+            "execution": {
+              "allocation_count": 7,
+              "baseline_live_bytes": 2259,
+              "elapsed_ns": 2208,
+              "peak_bytes": 236,
+              "retained_bytes": 96
+            },
+            "hir": {
+              "allocation_count": 13,
+              "baseline_live_bytes": 1907,
+              "elapsed_ns": 7625,
+              "peak_bytes": 556,
+              "retained_bytes": 352
+            },
+            "hir_nodes": 4,
+            "language": "power",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 23,
+              "baseline_live_bytes": 1369,
+              "elapsed_ns": 14292,
+              "peak_bytes": 1312,
+              "retained_bytes": 538
+            },
+            "semantic_validation": true,
+            "source_bytes": 26,
+            "storage": {
+              "engine_retained_bytes": 538,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 538,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 538,
+            "syntax_nodes": 14,
+            "values": [
+              8.0
+            ]
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 26,
+            "execution": {
+              "allocation_count": 7,
+              "baseline_live_bytes": 2259,
+              "elapsed_ns": 2208,
+              "peak_bytes": 236,
+              "retained_bytes": 96
+            },
+            "hir": {
+              "allocation_count": 13,
+              "baseline_live_bytes": 1907,
+              "elapsed_ns": 7250,
+              "peak_bytes": 556,
+              "retained_bytes": 352
+            },
+            "hir_nodes": 4,
+            "language": "power",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 23,
+              "baseline_live_bytes": 1369,
+              "elapsed_ns": 15875,
+              "peak_bytes": 1312,
+              "retained_bytes": 538
+            },
+            "semantic_validation": true,
+            "source_bytes": 26,
+            "storage": {
+              "engine_retained_bytes": 538,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 538,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 538,
+            "syntax_nodes": 14,
+            "values": [
+              8.0
+            ]
+          }
+        }
+      ]
+    },
+    {
+      "profile": "xml",
+      "size_target": 0,
+      "pattern": "strict",
+      "source_sha256": "5afbc13141c3166d3f96cd7acbffee31efbcaf156b4385ff1d5b96fb99808a6a",
+      "samples": [
+        {
+          "run": 0,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 20,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "xml",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 20,
+              "baseline_live_bytes": 801,
+              "elapsed_ns": 14083,
+              "peak_bytes": 944,
+              "retained_bytes": 308
+            },
+            "semantic_validation": false,
+            "source_bytes": 20,
+            "storage": {
+              "engine_retained_bytes": 308,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 308,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 308,
+            "syntax_nodes": 6,
+            "values": null
+          }
+        },
+        {
+          "run": 1,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 20,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "xml",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 20,
+              "baseline_live_bytes": 801,
+              "elapsed_ns": 13250,
+              "peak_bytes": 944,
+              "retained_bytes": 308
+            },
+            "semantic_validation": false,
+            "source_bytes": 20,
+            "storage": {
+              "engine_retained_bytes": 308,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 308,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 308,
+            "syntax_nodes": 6,
+            "values": null
+          }
+        },
+        {
+          "run": 2,
+          "returncode": 0,
+          "result": {
+            "caller_source_capacity_bytes": 20,
+            "execution": null,
+            "hir": null,
+            "hir_nodes": null,
+            "language": "xml",
+            "metric": "requested bytes through System; excludes allocator overhead, static language data and OS mappings",
+            "parse": {
+              "allocation_count": 20,
+              "baseline_live_bytes": 801,
+              "elapsed_ns": 12833,
+              "peak_bytes": 944,
+              "retained_bytes": 308
+            },
+            "semantic_validation": false,
+            "source_bytes": 20,
+            "storage": {
+              "engine_retained_bytes": 308,
+              "export_retained_bytes": null,
+              "physical_retained_bytes": 308,
+              "representation": "legacy-flat"
+            },
+            "syntax_capacity_bytes": 308,
+            "syntax_nodes": 6,
+            "values": null
+          }
+        }
+      ]
+    }
+  ],
+  "scope": "Release process-cold runs, parse phase only; requested allocator bytes exclude caller input, allocator overhead and OS/thread mappings; independent peaks are not summed"
+}

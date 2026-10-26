@@ -1,4 +1,5 @@
 //! Bounded document-local declarative templates. No host handler runs here.
+use crate::syntax::access::SyntaxAccess;
 use crate::*;
 use std::{collections::HashMap, rc::Rc};
 
@@ -18,7 +19,7 @@ struct Compiler<'a> {
     recovering: bool,
     missing: std::collections::HashSet<Id>,
     language: &'static Language,
-    tree: &'a SyntaxTree,
+    tree: &'a dyn SyntaxAccess,
     limits: Limits,
     work: u64,
     owner: Vec<Option<Id>>,
@@ -32,10 +33,10 @@ struct Compiler<'a> {
 }
 impl<'a> Compiler<'a> {
     fn action(&self, id: Id) -> &Action {
-        &self.language.rules[self.tree.nodes[id as usize].rule as usize].action
+        &self.language.rules[self.tree.nodes()[id as usize].rule as usize].action
     }
     fn span(&self, id: Id) -> [u32; 2] {
-        self.tree.nodes[id as usize].span
+        self.tree.nodes()[id as usize].span
     }
     fn field(&self, id: Id, label: &str) -> Result<Id, Diagnostic> {
         self.tree.field(id, label).ok_or_else(|| {
@@ -80,8 +81,8 @@ impl<'a> Compiler<'a> {
         self.field(id, label)
     }
     fn bind(&mut self) -> Result<(), Diagnostic> {
-        let mut stack = vec![(self.tree.root, None)];
-        let mut visited = vec![false; self.tree.nodes.len()];
+        let mut stack = vec![(self.tree.root(), None)];
+        let mut visited = vec![false; self.tree.nodes().len()];
         while let Some((id, owner)) = stack.pop() {
             self.guard(id, 0)?;
             if std::mem::replace(&mut visited[id as usize], true) {
@@ -115,7 +116,7 @@ impl<'a> Compiler<'a> {
         }
         let mut globals = HashMap::<(&str, &str), Vec<Id>>::new();
         let mut locals = HashMap::<(Id, &str, &str), Vec<Id>>::new();
-        for id in 0..self.tree.nodes.len() as Id {
+        for id in 0..self.tree.nodes().len() as Id {
             match *self.action(id) {
                 Action::Template {
                     kind, parameters, ..
@@ -204,7 +205,7 @@ impl<'a> Compiler<'a> {
         }
         let mut bound = HashMap::new();
         let mut observations = Vec::new();
-        for id in 0..self.tree.nodes.len() as Id {
+        for id in 0..self.tree.nodes().len() as Id {
             if let Action::Reference { kinds, field, .. } | Action::Expand { kinds, field, .. } =
                 *self.action(id)
             {
@@ -590,18 +591,18 @@ fn prepend(span: [u32; 2], origins: &[[u32; 2]]) -> Vec<[u32; 2]> {
 
 pub(crate) fn compile_mode(
     language: &'static Language,
-    tree: &SyntaxTree,
+    tree: &dyn SyntaxAccess,
     limits: Limits,
     recovering: bool,
 ) -> Result<Program, Diagnostic> {
-    if tree.nodes.len() as u64 > limits.work {
+    if tree.nodes().len() as u64 > limits.work {
         return Err(Diagnostic::new(
             "limit",
             [0, 0],
             "compiler work limit exceeded",
         ));
     }
-    let count = tree.nodes.len();
+    let count = tree.nodes().len();
     let mut c = Compiler {
         recovering,
         missing: tree.recovery().map_or_else(Default::default, |r| {

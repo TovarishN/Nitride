@@ -1,0 +1,114 @@
+{
+  "cold": {
+    "phase": {
+      "allocation_count": null,
+      "allocation_instrumented": false,
+      "baseline_live_bytes": null,
+      "elapsed_ns": 67164137041,
+      "net_retained_bytes": null,
+      "peak_bytes": null,
+      "retained_bytes": null
+    },
+    "snapshot": {
+      "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+      "diagnostics": 1,
+      "stats": {
+        "cache_evictions": 66032,
+        "choice_plan_builds": 0,
+        "choice_skips": 0,
+        "export_nodes_copied": 0,
+        "full_parse_fallbacks": 0,
+        "lexical_cache_hits": 0,
+        "maintenance_passes": 0,
+        "memo_descendants_copied": 0,
+        "memo_hits": 4027574,
+        "probe_descendants_copied": 0,
+        "reclaimed_syntax_bytes": 3375152,
+        "recovery_batches": 0,
+        "recovery_child_bytes": 713040,
+        "recovery_coverage_bytes": 0,
+        "recovery_metadata_work": 129485529,
+        "reparsed_bytes": 16777291,
+        "reused_subtrees": 0,
+        "source_bytes_copied": 16777291,
+        "syntax_bytes_copied": 0,
+        "winner_descendants_copied": 0,
+        "work": 4334743301
+      },
+      "storage": {
+        "chunks": 3375,
+        "index_bytes": 39448488,
+        "physical_retained_bytes": 380013360,
+        "representation": "shared",
+        "sidecar_bytes": 102421912,
+        "source_buffer_bytes": 16777291,
+        "source_bytes": 16788528,
+        "syntax_bytes": 221354432,
+        "syntax_payload_bytes": 220874000,
+        "unique_allocations": 1113218
+      }
+    }
+  },
+  "edits": [
+    {
+      "equivalent": true,
+      "logical_reader_bytes": 760033856,
+      "phase": {
+        "allocation_count": null,
+        "allocation_instrumented": false,
+        "baseline_live_bytes": null,
+        "elapsed_ns": 101189584,
+        "net_retained_bytes": null,
+        "peak_bytes": null,
+        "retained_bytes": null
+      },
+      "readers": 2,
+      "shared_reader_bytes": 380028152,
+      "snapshot": {
+        "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+        "diagnostics": 1,
+        "stats": {
+          "cache_evictions": 2,
+          "choice_plan_builds": 0,
+          "choice_skips": 0,
+          "export_nodes_copied": 0,
+          "full_parse_fallbacks": 0,
+          "lexical_cache_hits": 0,
+          "maintenance_passes": 0,
+          "memo_descendants_copied": 0,
+          "memo_hits": 101,
+          "probe_descendants_copied": 0,
+          "reclaimed_syntax_bytes": 0,
+          "recovery_batches": 352,
+          "recovery_child_bytes": 544,
+          "recovery_coverage_bytes": 63,
+          "recovery_metadata_work": 357179,
+          "reparsed_bytes": 44710,
+          "reused_subtrees": 44623,
+          "source_bytes_copied": 1,
+          "syntax_bytes_copied": 1536,
+          "winner_descendants_copied": 0,
+          "work": 512259
+        },
+        "storage": {
+          "chunks": 3376,
+          "index_bytes": 39448608,
+          "physical_retained_bytes": 380020496,
+          "representation": "shared",
+          "sidecar_bytes": 102422136,
+          "source_buffer_bytes": 16777292,
+          "source_bytes": 16788712,
+          "syntax_bytes": 221361040,
+          "syntax_payload_bytes": 221589760,
+          "unique_allocations": 1113280
+        }
+      }
+    }
+  ],
+  "language": "csharp4",
+  "metric": "edit phase includes old-reader window eviction; requested System bytes exclude caller input, reader container, JSON and OS/thread mappings; net retained bytes may be negative; independent peaks are not summed",
+  "recover": true,
+  "source_bytes": 16777291,
+  "source_sha256": "262a1a44382d73cefdd95b7b3ce5bbd019a54da85fc60af64d6e00b955125131",
+  "profiler_sha256": "32bdb92fb898f095832228c122298f79732b5ef4b976671edc0a98c6e375631e"
+}

@@ -1,0 +1,15 @@
+{
+  "source_sha256": "262a1a44382d73cefdd95b7b3ce5bbd019a54da85fc60af64d6e00b955125131",
+  "profiler_sha256": "32bdb92fb898f095832228c122298f79732b5ef4b976671edc0a98c6e375631e",
+  "prototype_functionally_validated": true,
+  "roslyn_parity_met": false,
+  "workspace_test_executions": 285,
+  "core_tests": 54,
+  "standard_traces": 4334,
+  "adversarial_traces": 1286,
+  "cold_samples": 9,
+  "first_edit_equivalent": true,
+  "first_edit_ms": 101.189584,
+  "first_edit_copied_bytes": 1537,
+  "recovery_probe_optimizations_enabled": false
+}
