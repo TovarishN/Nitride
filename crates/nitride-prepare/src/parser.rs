@@ -146,6 +146,43 @@ fn syntax(source: &Source) -> Result<SyntaxTree<'static>, PrepareError> {
     })
 }
 
+/// Rule names used in a grammar: element references and `extend` targets,
+/// with the module each is used in.
+pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, PrepareError> {
+    let tree = syntax(source)?;
+    let decoder = Decoder {
+        source,
+        tree: &tree,
+        tolerant: true,
+        skipped: Default::default(),
+    };
+    let modules: Vec<_> = decoder
+        .fields(tree.root, "Modules")
+        .into_iter()
+        .map(|m| (decoder.span(m), decoder.named(m, "Name")))
+        .collect();
+    let mut found = Vec::new();
+    for id in 0..tree.nodes.len() as u32 {
+        if !matches!(decoder.kind(id), "Reference" | "Extend") {
+            continue;
+        }
+        let name = decoder.field(id, "Name");
+        let span = decoder.span(name);
+        let module = modules
+            .iter()
+            .find(|(m, _)| m[0] <= span[0] && span[1] <= m[1])
+            .map(|(_, name)| name.clone())
+            .unwrap_or_default();
+        found.push(crate::GrammarReference {
+            name: decoder.text(name).into(),
+            span,
+            module,
+        });
+    }
+    found.sort_by_key(|r| r.span[0]);
+    Ok(found)
+}
+
 /// Outline items: modules and the rules, tokens and functions they declare.
 pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError> {
     let tree = syntax(source)?;
@@ -183,7 +220,14 @@ pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError>
                         "Helper" => "helper",
                         _ => return None,
                     };
-                    Some(item(kind, m, vec![]))
+                    // Named alternatives are rules too.
+                    let alternatives = decoder
+                        .fields(m, "Alternatives")
+                        .into_iter()
+                        .filter_map(|a| decoder.tree.field(a, "Named"))
+                        .map(|named| item("alternative", named, vec![]))
+                        .collect();
+                    Some(item(kind, m, alternatives))
                 })
                 .collect();
             item("module", module, members)

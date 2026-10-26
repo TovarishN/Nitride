@@ -78,3 +78,47 @@ fn grammar_outline_nests_rules() {
     assert_eq!(&grammar.text[expr.name_span[0]..expr.name_span[1]], "Expr");
     assert!(expr.span[0] < expr.name_span[0] && expr.name_span[1] < expr.span[1]);
 }
+
+#[test]
+fn references_clauses_recorded() {
+    let grammar = source("languages/calls/Calls.Reference.ngr");
+    let prepared = prepare_sources_tolerant(&[grammar], EMPTY_CATALOG, "Calls.Program").unwrap();
+    assert!(prepared.references.contains(&ReferenceClause {
+        rule: "Calls.Ref".into(),
+        field: "Name".into(),
+        kinds: vec!["value".into()],
+    }));
+}
+
+#[test]
+fn outline_lists_alternatives() {
+    let outline = grammar_outline(&source("languages/calls/Calls.ngr")).unwrap();
+    let expr = outline[0]
+        .children
+        .iter()
+        .find(|c| c.name == "Expr")
+        .unwrap();
+    let num = expr.children.iter().find(|c| c.name == "Num").unwrap();
+    assert_eq!(num.kind, "alternative");
+}
+
+#[test]
+fn grammar_references_found() {
+    let grammar = source("languages/power/Power.ngr");
+    let references = grammar_references(&grammar).unwrap();
+    let names: Vec<_> = references
+        .iter()
+        .map(|r| (r.name.as_str(), r.module.as_str()))
+        .collect();
+    assert!(
+        names.contains(&("Portable.Expr", "Portable.Power")),
+        "{names:?}"
+    );
+    assert_eq!(
+        names.iter().filter(|(n, _)| *n == "Expr").count(),
+        2,
+        "{names:?}"
+    );
+    let first = &references[0];
+    assert_eq!(&grammar.text[first.span[0]..first.span[1]], first.name);
+}
