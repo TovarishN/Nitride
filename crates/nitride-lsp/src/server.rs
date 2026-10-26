@@ -40,6 +40,8 @@ pub struct Server<W: Write> {
     /// Every workspace grammar, indexed on demand and dropped when languages
     /// or grammar buffers change.
     grammars: Option<GrammarIndex>,
+    /// The client colours palette token types (`initializationOptions.paletteTokens`).
+    palette: bool,
 }
 
 pub fn run(
@@ -103,6 +105,7 @@ impl<W: Write> Server<W> {
             reload: false,
             analyses: HashMap::new(),
             grammars: None,
+            palette: false,
         }
     }
 
@@ -151,13 +154,14 @@ impl<W: Write> Server<W> {
             .unwrap_or_else(|| params["rootUri"].as_str().into_iter().collect::<Vec<_>>());
         self.folders = folders.into_iter().filter_map(uri::to_path).collect();
         self.reload = true;
+        self.palette = params["initializationOptions"]["paletteTokens"].as_bool() == Some(true);
         json!({
             "capabilities": {
                 "positionEncoding": "utf-16",
                 "textDocumentSync": 1,
                 "workspace": {"workspaceFolders": {"supported": true, "changeNotifications": true}},
                 "semanticTokensProvider": {
-                    "legend": {"tokenTypes": tokens::TYPES, "tokenModifiers": tokens::MODIFIERS},
+                    "legend": {"tokenTypes": tokens::legend(self.palette), "tokenModifiers": tokens::MODIFIERS},
                     "full": true,
                 },
                 "documentSymbolProvider": true,
@@ -189,7 +193,11 @@ impl<W: Write> Server<W> {
             .to_owned();
         match method {
             "textDocument/semanticTokens/full" => {
-                let data = self.current(&uri).map(tokens::encode).unwrap_or_default();
+                let palette = self.palette;
+                let data = self
+                    .current(&uri)
+                    .map(|a| tokens::encode(a, palette))
+                    .unwrap_or_default();
                 Ok(json!({ "data": data }))
             }
             "textDocument/documentSymbol" => {

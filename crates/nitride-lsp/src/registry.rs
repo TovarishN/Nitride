@@ -1,8 +1,10 @@
 //! Workspace languages, prepared at runtime from their grammars and reloaded
 //! when a grammar, catalog or manifest changes.
 use crate::manifest::{self, Entry, ManifestError, Mode};
+use crate::roles::Role;
 use nitride_codegen::LoadedLanguage;
 use nitride_prepare::{PrepareError, Prepared, Source};
+use std::collections::HashMap;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
@@ -14,6 +16,8 @@ pub const EMPTY_CATALOG: &str = r#"{"types":[],"operations":[],"statements":{}}"
 pub struct Loaded {
     pub language: LoadedLanguage,
     pub prepared: Prepared,
+    /// Each (rule, literal)'s palette role.
+    pub roles: Arc<HashMap<(u16, String), Role>>,
 }
 
 pub struct LanguageState {
@@ -261,7 +265,13 @@ fn prepare(
         Ok(prepared) => match LoadedLanguage::load(&prepared.data.to_string()) {
             Ok(language) => {
                 state.warnings = prepared.warnings.clone();
-                state.current = Some(Arc::new(Loaded { language, prepared }));
+                let declares = |rule: &str| prepared.declarations.iter().any(|d| d.rule == rule);
+                let roles = Arc::new(crate::roles::roles(language.language(), &declares));
+                state.current = Some(Arc::new(Loaded {
+                    language,
+                    prepared,
+                    roles,
+                }));
             }
             Err(message) => state.errors.push(manifest_error(message)),
         },

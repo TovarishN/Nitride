@@ -11,6 +11,7 @@ pub mod index;
 pub mod lines;
 pub mod manifest;
 pub mod navigation;
+mod palette;
 pub mod registry;
 pub mod roles;
 mod rpc;
