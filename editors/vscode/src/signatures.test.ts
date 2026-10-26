@@ -1,6 +1,6 @@
 import * as assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { signatureMode } from './signatures';
+import { routedLanguage, signatureMode } from './signatures';
 
 test('grammar header routes to ngr', () => {
   assert.equal(signatureMode('#!nitrogen grammar\nlanguage Calc { start Calc.Program; }\n'), 'grammar');
@@ -18,4 +18,11 @@ test('prose in a block comment before the header', () => {
 test('no header', () => {
   assert.equal(signatureMode('let a=1;\n#!nitrogen grammar\n'), undefined);
   assert.equal(signatureMode('// #!nitrogen augment "./Checks.syntax" document\nclass X {}'), undefined);
+});
+
+test('routing: grammars to ngr, signed programs to nitride-signed', () => {
+  assert.equal(routedLanguage('grammar', 'plaintext'), 'ngr');
+  assert.equal(routedLanguage('language', 'plaintext'), 'nitride-signed');
+  assert.equal(routedLanguage(undefined, 'plaintext'), undefined);
+  assert.equal(routedLanguage('language', 'nitride-signed'), undefined);
 });

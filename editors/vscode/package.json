@@ -25,6 +25,13 @@
           ".ngr"
         ],
         "configuration": "./language-configuration.json"
+      },
+      {
+        "id": "nitride-signed",
+        "aliases": [
+          "Nitride signed program"
+        ],
+        "configuration": "./language-configuration.json"
       }
     ],
     "grammars": [

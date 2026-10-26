@@ -72,7 +72,7 @@ pub fn build(
         };
         let source = Source {
             path: path.to_string_lossy().into_owned(),
-            text,
+            text: crate::signed::grammar_source(&text),
         };
         let (Ok(outline), Ok(references)) = (
             nitride_prepare::grammar_outline(&source),

@@ -35,3 +35,9 @@ export function signatureMode(text: string): SignatureMode | undefined {
   }
   return undefined;
 }
+
+/** The language id a document should have for its signature, or undefined to leave it as it is. */
+export function routedLanguage(mode: SignatureMode | undefined, current: string): string | undefined {
+  const wanted = mode === 'grammar' ? 'ngr' : mode === 'language' ? 'nitride-signed' : undefined;
+  return wanted && wanted !== current ? wanted : undefined;
+}

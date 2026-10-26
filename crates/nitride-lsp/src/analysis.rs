@@ -89,7 +89,7 @@ pub struct Analysis {
     pub repairs: Vec<Fix>,
     /// Each (rule, literal)'s palette role in the tree's language.
     pub roles: Arc<HashMap<(u16, String), Role>>,
-    /// Spans of the document's Nitrogen signatures.
+    /// The document's masked header: Nitrogen signatures and the comments holding them.
     pub header: Vec<[u32; 2]>,
 }
 
@@ -167,11 +167,16 @@ pub fn analyze(
                 ..empty(text)
             },
         }
+    } else if let Some(state) = registry.for_path(path) {
+        program(state, text, source)
+    } else if !header.diagnostics.is_empty() {
+        // A broken header selects nothing, but is still reported.
+        empty(text)
     } else {
-        program(registry.for_path(path)?, text, source)
+        return None;
     };
     analysis.problems.splice(0..0, header_problems);
-    analysis.header = header.signatures.iter().map(|s| s.span).collect();
+    analysis.header = header.masked_spans.clone();
     Some(analysis)
 }
 

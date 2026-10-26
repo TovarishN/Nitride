@@ -31,6 +31,8 @@ pub struct Header {
     pub masked: String,
     /// `NGR0401` problems: span and message.
     pub diagnostics: Vec<([u32; 2], String)>,
+    /// The ranges masked: directives and the comments holding them.
+    pub masked_spans: Vec<[u32; 2]>,
 }
 
 impl Header {
@@ -42,9 +44,18 @@ impl Header {
     }
 }
 
-/// Whether `text` might carry a grammar signature, cheaply.
-pub fn may_declare(text: &str) -> bool {
-    text.contains("#!nitrogen grammar")
+/// Whether `text`'s header has a grammar signature (a signed grammar).
+pub fn declares_grammar(text: &str) -> bool {
+    text.contains(MARKER) && read(text).grammar()
+}
+
+/// The text to parse as a grammar: with any signature masked.
+pub fn grammar_source(text: &str) -> String {
+    if text.contains(MARKER) {
+        read(text).masked
+    } else {
+        text.to_owned()
+    }
 }
 
 pub fn read(text: &str) -> Header {
@@ -137,6 +148,7 @@ impl Reader<'_> {
 
     fn mask(&mut self, start: usize, end: usize) {
         self.consumed = true;
+        self.header.masked_spans.push([start as u32, end as u32]);
         for byte in &mut self.masked[start..end] {
             if !matches!(*byte, b'\r' | b'\n') {
                 *byte = b' ';

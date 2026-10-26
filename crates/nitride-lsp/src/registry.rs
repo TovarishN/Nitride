@@ -305,6 +305,8 @@ fn located(path: &Path, text: &str, span: [usize; 2], message: String) -> Prepar
 const SKIPPED: [&str; 6] = ["bin", "obj", "node_modules", "target", "artifacts", "dist"];
 /// Files the scan looks at, at most.
 const MAX_SCANNED: usize = 20_000;
+/// Directories the scan lists, at most.
+const MAX_DIRECTORIES: usize = 5_000;
 /// Larger files are not grammars.
 const MAX_GRAMMAR_BYTES: u64 = 1024 * 1024;
 /// A signature lies in the leading trivia: the start of a file is enough to find one.
@@ -317,12 +319,16 @@ pub fn discover(
     open: &dyn Fn(&Path) -> Option<String>,
     open_paths: &[PathBuf],
 ) -> Vec<PathBuf> {
-    let signed =
-        |text: &str| crate::signed::may_declare(text) && crate::signed::read(text).grammar();
+    let signed = |text: &str| crate::signed::declares_grammar(text);
     let mut found: Vec<PathBuf> = Vec::new();
     let mut scanned = 0;
     let mut pending: Vec<PathBuf> = folders.to_vec();
+    let mut listed = 0;
     while let Some(directory) = pending.pop() {
+        listed += 1;
+        if listed > MAX_DIRECTORIES {
+            break;
+        }
         let Ok(entries) = std::fs::read_dir(&directory) else {
             continue;
         };
@@ -381,6 +387,35 @@ pub fn discover(
     found
 }
 
+/// Whether a watched file event (LSP `FileChangeType`: 1 created, 2 changed,
+/// 3 deleted) can change the workspace's languages: a manifest, grammar or
+/// catalog, a known signed grammar, or a file whose head now declares one.
+pub fn watched_change_matters(registry: &Registry, path: &Path, kind: u64) -> bool {
+    let name = path
+        .file_name()
+        .map(|n| n.to_string_lossy().into_owned())
+        .unwrap_or_default();
+    if manifest::NAMES.contains(&name.as_str()) || name.ends_with(".ngr") || name.ends_with(".json")
+    {
+        return true;
+    }
+    let known = registry.languages.iter().any(|l| {
+        same_file(&l.manifest, path) || l.entry.grammars.iter().any(|g| same_file(g, path))
+    });
+    if known {
+        return true;
+    }
+    if kind == 3 {
+        // Gone: only a signed grammar's usual name says it may have mattered.
+        return name.ends_with(".syntax");
+    }
+    use std::io::Read;
+    let mut head = Vec::with_capacity(HEAD_BYTES);
+    let read =
+        std::fs::File::open(path).and_then(|f| f.take(HEAD_BYTES as u64).read_to_end(&mut head));
+    read.is_ok() && crate::signed::declares_grammar(&String::from_utf8_lossy(&head))
+}
+
 fn read(path: &Path, open: &dyn Fn(&Path) -> Option<String>) -> Result<String, String> {
     open(path)
         .map(Ok)
@@ -417,11 +452,7 @@ fn prepare(
             Ok(text) => sources.push(Source {
                 path: grammar.to_string_lossy().into_owned(),
                 // A signed grammar's signature is trivia to preparation.
-                text: if text.contains("#!nitrogen") {
-                    crate::signed::read(&text).masked
-                } else {
-                    text
-                },
+                text: crate::signed::grammar_source(&text),
             }),
             Err(message) => {
                 state.errors.push(manifest_error(message));

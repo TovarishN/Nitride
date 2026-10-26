@@ -140,3 +140,48 @@ fn open_buffers_are_discovered() {
     );
     assert_eq!(found, [unsaved]);
 }
+
+#[test]
+fn watched_changes_that_matter() {
+    use nitride_lsp::registry::watched_change_matters;
+    let dir = scratch("signed-watched");
+    write(&dir, "Calc.syntax", CALC);
+    write(
+        &dir,
+        "notes.md",
+        "This mentions #!nitrogen grammar in prose.\n",
+    );
+    write(&dir, "code.rs", "fn main() {}\n");
+    let mut registry = Registry::default();
+    registry.reload(std::slice::from_ref(&dir), &|_| None);
+    // 1 created, 2 changed, 3 deleted (LSP FileChangeType).
+    assert!(!watched_change_matters(&registry, &dir.join("code.rs"), 2));
+    assert!(!watched_change_matters(&registry, &dir.join("notes.md"), 2));
+    assert!(watched_change_matters(
+        &registry,
+        &dir.join("Calc.syntax"),
+        2
+    ));
+    assert!(watched_change_matters(
+        &registry,
+        &dir.join("nitride.json"),
+        1
+    ));
+    assert!(watched_change_matters(&registry, &dir.join("Other.ngr"), 2));
+    assert!(watched_change_matters(
+        &registry,
+        &dir.join("gone.syntax"),
+        3
+    ));
+    assert!(!watched_change_matters(&registry, &dir.join("gone.rs"), 3));
+}
+
+#[test]
+fn may_declare_tolerates_spacing() {
+    assert!(nitride_lsp::signed::declares_grammar(
+        "#!nitrogen\tgrammar\nlanguage A { start A.P; }"
+    ));
+    assert!(!nitride_lsp::signed::declares_grammar(
+        "prose about #!nitrogen grammar\n"
+    ));
+}
