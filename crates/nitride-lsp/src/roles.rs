@@ -32,7 +32,7 @@ pub fn is_word(text: &str) -> bool {
 
 /// Punctuation by its spelling; `None` for a word.
 pub fn punctuation(text: &str) -> Option<Role> {
-    (!is_word(text)).then(|| match text {
+    (!is_word(text)).then_some(match text {
         "{" | "}" => Role::BlockBracket,
         "(" | ")" => Role::Parenthesis,
         "[" | "]" => Role::SquareBracket,
