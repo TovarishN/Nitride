@@ -7,12 +7,12 @@ mod tree;
 pub use semantic::*;
 pub use tree::*;
 
-pub fn parse_recovering(
-    language: &'static Language,
+pub fn parse_recovering<'g>(
+    language: &'g Language<'g>,
     source: &str,
     limits: Limits,
     options: RecoveryOptions,
-) -> RecoveredParse {
+) -> RecoveredParse<'g> {
     match parse_with_options(
         language,
         source,

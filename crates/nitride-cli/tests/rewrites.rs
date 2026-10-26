@@ -34,7 +34,7 @@ fn quote_rewrites_origins_and_effects_match_real_nitrogen() {
     }
 }
 
-fn compile_source(source: &str) -> Result<Program, Diagnostic> {
+fn compile_source(source: &str) -> Result<Program<'static>, Diagnostic> {
     let language = &nitride_cli::rewrites::LANGUAGE;
     let tree = parse(language, source, Limits::default()).unwrap();
     compile(language, &tree, Limits::default()).map_err(|mut e| e.remove(0))

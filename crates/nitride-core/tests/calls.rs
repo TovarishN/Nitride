@@ -1,6 +1,6 @@
 use nitride_core::*;
 
-fn language(builtins: &'static [Builtin]) -> &'static Language {
+fn language(builtins: &'static [Builtin<'static>]) -> &'static Language<'static> {
     Box::leak(Box::new(Language {
         profile: Profile::Typed,
         source_hash: "test",

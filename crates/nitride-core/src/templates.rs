@@ -4,34 +4,34 @@ use std::{collections::HashMap, rc::Rc};
 
 type Id = u32;
 #[derive(Clone)]
-enum RawKind {
+enum RawKind<'g> {
     Error,
     Constant(f64),
-    Operation(u16, Vec<Rc<Raw>>),
+    Operation(u16, Vec<Rc<Raw<'g>>>),
 }
-struct Raw {
-    kind: RawKind,
-    ty: &'static str,
+struct Raw<'g> {
+    kind: RawKind<'g>,
+    ty: &'g str,
     origins: Vec<[u32; 2]>,
 }
-struct Compiler<'a> {
+struct Compiler<'g, 'a> {
     recovering: bool,
     missing: std::collections::HashSet<Id>,
-    language: &'static Language,
-    tree: &'a SyntaxTree,
+    language: &'g Language<'g>,
+    tree: &'a SyntaxTree<'g>,
     limits: Limits,
     work: u64,
     owner: Vec<Option<Id>>,
     parameters: Vec<Vec<Id>>,
     bound: HashMap<Id, Id>,
-    parameter_types: Vec<Option<&'static str>>,
+    parameter_types: Vec<Option<&'g str>>,
     states: Vec<u8>,
-    types: Vec<Option<&'static str>>,
+    types: Vec<Option<&'g str>>,
     errors: Vec<Diagnostic>,
-    program: Program,
+    program: Program<'g>,
 }
-impl<'a> Compiler<'a> {
-    fn action(&self, id: Id) -> &Action {
+impl<'g, 'a> Compiler<'g, 'a> {
+    fn action(&self, id: Id) -> &'g Action<'g> {
         &self.language.rules[self.tree.nodes[id as usize].rule as usize].action
     }
     fn span(&self, id: Id) -> [u32; 2] {
@@ -250,7 +250,7 @@ impl<'a> Compiler<'a> {
         }
         Ok(())
     }
-    fn ty(&mut self, id: Id, depth: u32) -> Result<Option<&'static str>, Diagnostic> {
+    fn ty(&mut self, id: Id, depth: u32) -> Result<Option<&'g str>, Diagnostic> {
         self.guard(id, depth)?;
         if self.states[id as usize] != 0 {
             return Ok(self.types[id as usize]);
@@ -422,10 +422,10 @@ impl<'a> Compiler<'a> {
     fn lower(
         &mut self,
         id: Id,
-        env: &HashMap<Id, Rc<Raw>>,
+        env: &HashMap<Id, Rc<Raw<'g>>>,
         active: &mut Vec<Id>,
         depth: u32,
-    ) -> Result<Rc<Raw>, Diagnostic> {
+    ) -> Result<Rc<Raw<'g>>, Diagnostic> {
         self.guard(id, depth)?;
         let own = self.span(id);
         if self.recovering && self.types[id as usize] == Some(ERROR_TYPE) {
@@ -534,7 +534,7 @@ impl<'a> Compiler<'a> {
         };
         Ok(Rc::new(raw))
     }
-    fn flatten(&mut self, raw: &Raw, depth: u32) -> Result<Id, Diagnostic> {
+    fn flatten(&mut self, raw: &Raw<'g>, depth: u32) -> Result<Id, Diagnostic> {
         // Origin zero remains the primary diagnostic location.
         let site = raw.origins[0];
         self.work += 1;
@@ -588,12 +588,12 @@ fn prepend(span: [u32; 2], origins: &[[u32; 2]]) -> Vec<[u32; 2]> {
     result
 }
 
-pub(crate) fn compile_mode(
-    language: &'static Language,
-    tree: &SyntaxTree,
+pub(crate) fn compile_mode<'g>(
+    language: &'g Language<'g>,
+    tree: &SyntaxTree<'g>,
     limits: Limits,
     recovering: bool,
-) -> Result<Program, Diagnostic> {
+) -> Result<Program<'g>, Diagnostic> {
     if tree.nodes.len() as u64 > limits.work {
         return Err(Diagnostic::new(
             "limit",

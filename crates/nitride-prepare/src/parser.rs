@@ -134,7 +134,7 @@ pub fn parse(source: &Source, index: usize) -> Result<Vec<Module>, PrepareError>
 
 struct Decoder<'a> {
     source: &'a Source,
-    tree: &'a SyntaxTree,
+    tree: &'a SyntaxTree<'static>,
 }
 impl Decoder<'_> {
     fn kind(&self, id: u32) -> &str {

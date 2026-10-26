@@ -2,7 +2,7 @@
 use nitride_core::*;
 use serde_json::{Value, json};
 
-pub fn recovery_language(profile: &str) -> Option<&'static Language> {
+pub fn recovery_language(profile: &str) -> Option<&'static Language<'static>> {
     Some(match profile {
         "portable" => &crate::LANGUAGE,
         "power" => &crate::power::LANGUAGE,
@@ -20,7 +20,7 @@ pub fn recovery_language(profile: &str) -> Option<&'static Language> {
     })
 }
 
-pub fn recovery_observe(language: &'static Language, source: &str) -> Value {
+pub fn recovery_observe(language: &'static Language<'static>, source: &str) -> Value {
     let start = std::time::Instant::now();
     let parsed = parse_recovering(
         language,

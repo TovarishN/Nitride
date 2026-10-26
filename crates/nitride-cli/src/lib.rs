@@ -38,7 +38,7 @@ pub mod grammar_fixture {
     include!(concat!(env!("OUT_DIR"), "/grammar.rs"));
 }
 
-pub fn syntax_observe(language: &'static Language, source: &str) -> Value {
+pub fn syntax_observe(language: &'static Language<'static>, source: &str) -> Value {
     let tree = match parse(language, source, Limits::default()) {
         Ok(tree) => tree,
         Err(error) => {
@@ -96,11 +96,11 @@ pub fn observe_power(source: &str) -> Value {
     observe_language(&power::LANGUAGE, source)
 }
 
-pub fn fixture_bindings() -> Vec<HostBinding> {
+pub fn fixture_bindings() -> Vec<HostBinding<'static>> {
     fixture_bindings_for(&LANGUAGE)
 }
 
-pub fn fixture_bindings_for(language: &'static Language) -> Vec<HostBinding> {
+pub fn fixture_bindings_for(language: &'static Language<'static>) -> Vec<HostBinding<'static>> {
     language
         .operations
         .iter()
@@ -174,16 +174,20 @@ pub fn observe_namespaces(source: &str) -> Value {
     observe_with_kinds(&namespaces::LANGUAGE, source, true)
 }
 
-pub fn observe_language(language: &'static Language, source: &str) -> Value {
+pub fn observe_language(language: &'static Language<'static>, source: &str) -> Value {
     observe_with_kinds(language, source, false)
 }
 
-fn observe_with_kinds(language: &'static Language, source: &str, include_kinds: bool) -> Value {
+fn observe_with_kinds(
+    language: &'static Language<'static>,
+    source: &str,
+    include_kinds: bool,
+) -> Value {
     observe_with_values(language, source, include_kinds, &[])
 }
 
 fn observe_with_values(
-    language: &'static Language,
+    language: &'static Language<'static>,
     source: &str,
     include_kinds: bool,
     values: &[HostValue],

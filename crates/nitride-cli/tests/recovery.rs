@@ -1,6 +1,6 @@
 use nitride_core::*;
 
-fn recover(language: &'static Language, source: &str) -> RecoveredParse {
+fn recover(language: &'static Language<'static>, source: &str) -> RecoveredParse<'static> {
     parse_recovering(
         language,
         source,
@@ -9,7 +9,7 @@ fn recover(language: &'static Language, source: &str) -> RecoveredParse {
     )
 }
 
-fn shape(tree: &SyntaxTree, root: u32) -> Vec<(u16, [u32; 2], &'static str)> {
+fn shape(tree: &SyntaxTree<'static>, root: u32) -> Vec<(u16, [u32; 2], &'static str)> {
     let base = tree.nodes[root as usize].span[0];
     let mut pending = vec![(root, "")];
     let mut result = vec![];
@@ -390,7 +390,7 @@ fn failed_source_check_propagates_unknown_and_retains_independent_values() {
     let parsed = recover(language, "let x = 2026-02-30; x + 1 days; today;");
     let analysis = compile_recovering(language, &parsed, Limits::default());
     assert_eq!(analysis.diagnostics.len(), 1, "{:?}", analysis.diagnostics);
-    assert_eq!(analysis.diagnostics[0].code, Some("DATE0001"));
+    assert_eq!(analysis.diagnostics[0].code.as_deref(), Some("DATE0001"));
     let program = analysis.program.unwrap();
     for s in &program.statements[..2] {
         assert_eq!(program.nodes[s.value as usize].ty, ERROR_TYPE);

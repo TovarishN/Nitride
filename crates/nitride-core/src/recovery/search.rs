@@ -4,65 +4,65 @@ use crate::parser::StrictProbe;
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-enum Task {
+enum Task<'g> {
     Rule {
         id: u16,
         power: u32,
-        label: &'static str,
+        label: &'g str,
         expand: bool,
     },
     Expr {
         code: Code,
         owner: Option<u16>,
         power: u32,
-        label: &'static str,
+        label: &'g str,
     },
     Close {
         id: u16,
         start: usize,
-        label: &'static str,
+        label: &'g str,
     },
     Repeat {
         code: Code,
         count: u32,
         min: u32,
         max: u32,
-        label: &'static str,
+        label: &'g str,
     },
     AfterRepeat {
         code: Code,
         count: u32,
         min: u32,
         max: u32,
-        label: &'static str,
+        label: &'g str,
         start: usize,
         history: u32,
     },
     Tail {
         point: u16,
         power: u32,
-        label: &'static str,
+        label: &'g str,
         start: usize,
     },
     End,
 }
 
 #[derive(Clone, Copy, Debug)]
-enum Event {
+enum Event<'g> {
     Open {
         id: u16,
         start: usize,
-        label: &'static str,
+        label: &'g str,
     },
     Close {
         end: usize,
     },
     Strict {
         root: u32,
-        label: &'static str,
+        label: &'g str,
     },
     Missing {
-        expected: Expected,
+        expected: Expected<'g>,
         at: usize,
     },
     Skip {
@@ -75,8 +75,8 @@ enum Event {
     Wrap {
         id: u16,
         start: usize,
-        left_label: &'static str,
-        label: &'static str,
+        left_label: &'g str,
+        label: &'g str,
     },
 }
 
@@ -96,26 +96,26 @@ struct State {
     reopen_through: Option<usize>,
 }
 
-struct Prefix {
+struct Prefix<'g> {
     state: State,
     id: u16,
     power: u32,
-    label: &'static str,
+    label: &'g str,
     furthest: usize,
 }
 
-struct Tasks {
-    nodes: Vec<(Task, u32)>,
-    known: HashMap<(Task, u32), u32>,
+struct Tasks<'g> {
+    nodes: Vec<(Task<'g>, u32)>,
+    known: HashMap<(Task<'g>, u32), u32>,
 }
-impl Tasks {
+impl<'g> Tasks<'g> {
     fn new() -> Self {
         Self {
             nodes: vec![(Task::End, 0)],
             known: HashMap::new(),
         }
     }
-    fn push(&mut self, task: Task, next: u32) -> u32 {
+    fn push(&mut self, task: Task<'g>, next: u32) -> u32 {
         *self.known.entry((task, next)).or_insert_with(|| {
             let id = self.nodes.len() as u32;
             self.nodes.push((task, next));
@@ -133,15 +133,15 @@ type Rank = (
 );
 type StateKey = (u32, usize, usize, Option<usize>);
 type RepairRank = (u32, usize, u32);
-struct Engine<'a> {
-    language: &'static Language,
+struct Engine<'g, 'a> {
+    language: &'g Language<'g>,
     source: &'a str,
     limits: Limits,
     options: RecoveryOptions,
-    graph: Grammar,
-    probe: StrictProbe<'a>,
-    tasks: Tasks,
-    history: Vec<(u32, Event)>,
+    graph: Grammar<'g>,
+    probe: StrictProbe<'g, 'a>,
+    tasks: Tasks<'g>,
+    history: Vec<(u32, Event<'g>)>,
     committed_history: u32,
     states: Vec<State>,
     queue: BinaryHeap<(Rank, usize)>,
@@ -150,18 +150,18 @@ struct Engine<'a> {
     epoch_states: usize,
     serial: u64,
     best: Option<State>,
-    literal_tokens: Vec<&'static str>,
-    character_tokens: Vec<&'static Expr>,
+    literal_tokens: Vec<&'g str>,
+    character_tokens: Vec<&'g Expr<'g>>,
     lexical: Vec<u16>,
-    prefixes: Vec<Prefix>,
+    prefixes: Vec<Prefix<'g>>,
 }
 
-pub(super) fn recover(
-    language: &'static Language,
+pub(super) fn recover<'g>(
+    language: &'g Language<'g>,
     source: &str,
     limits: Limits,
     options: RecoveryOptions,
-) -> RecoveredParse {
+) -> RecoveredParse<'g> {
     let graph = Grammar::new(language);
     let mut literal_tokens = Vec::new();
     let mut character_tokens = Vec::new();
@@ -242,7 +242,7 @@ pub(super) fn recover(
     }
 }
 
-impl Engine<'_> {
+impl<'g> Engine<'g, '_> {
     fn enqueue(&mut self, state: State) {
         if state.cost > self.options.max_local_cost
             || (state.cost > 0
@@ -277,12 +277,12 @@ impl Engine<'_> {
         self.states.push(state);
         self.queue.push((priority, id));
     }
-    fn event(&mut self, state: &mut State, event: Event) {
+    fn event(&mut self, state: &mut State, event: Event<'g>) {
         let id = self.history.len() as u32;
         self.history.push((state.history, event));
         state.history = id;
     }
-    fn push(&mut self, state: &mut State, task: Task) {
+    fn push(&mut self, state: &mut State, task: Task<'g>) {
         state.stack = self.tasks.push(task, state.stack);
     }
     fn expr(
@@ -291,7 +291,7 @@ impl Engine<'_> {
         code: Code,
         owner: Option<u16>,
         power: u32,
-        label: &'static str,
+        label: &'g str,
     ) {
         self.push(
             state,
@@ -467,8 +467,8 @@ impl Engine<'_> {
     fn terminal_failure(
         &mut self,
         state: State,
-        retry: Task,
-        expected: Expected,
+        retry: Task<'g>,
+        expected: Expected<'g>,
     ) -> Result<(), Diagnostic> {
         let recognized = state.position == self.source.len()
             || self.recognized_end(state.position)? > state.position;
@@ -499,7 +499,7 @@ impl Engine<'_> {
         }
         self.delete(state, retry)
     }
-    fn delete(&mut self, mut state: State, retry: Task) -> Result<(), Diagnostic> {
+    fn delete(&mut self, mut state: State, retry: Task<'g>) -> Result<(), Diagnostic> {
         let start = state.position;
         let recognized = self.recognized_end(start)?;
         let end = if recognized > start {
@@ -1139,7 +1139,7 @@ impl Engine<'_> {
             .predicate(self.graph.expressions[code as usize], at)
             .map(|yes| yes.then_some(()))
     }
-    fn finish(mut self, state: State, failure: Option<Diagnostic>) -> RecoveredParse {
+    fn finish(mut self, state: State, failure: Option<Diagnostic>) -> RecoveredParse<'g> {
         let mut events = Vec::new();
         let mut history = state.history;
         while history > 0 {
@@ -1305,25 +1305,25 @@ impl Engine<'_> {
     }
 }
 
-struct Frame {
+struct Frame<'g> {
     id: u16,
     start: usize,
-    label: &'static str,
+    label: &'g str,
     children: Vec<Edge>,
 }
-struct Builder {
-    language: &'static Language,
-    frames: Vec<Frame>,
+struct Builder<'g> {
+    language: &'g Language<'g>,
+    frames: Vec<Frame<'g>>,
     nodes: Vec<Node>,
     edges: Vec<Edge>,
-    labels: Vec<&'static str>,
-    label_ids: HashMap<&'static str, u16>,
+    labels: Vec<&'g str>,
+    label_ids: HashMap<&'g str, u16>,
 }
-impl Builder {
+impl<'g> Builder<'g> {
     fn new(
-        language: &'static Language,
-        labels: Vec<&'static str>,
-        label_ids: HashMap<&'static str, u16>,
+        language: &'g Language<'g>,
+        labels: Vec<&'g str>,
+        label_ids: HashMap<&'g str, u16>,
     ) -> Self {
         Self {
             language,
@@ -1366,7 +1366,7 @@ impl Builder {
             node,
         });
     }
-    fn strict(&mut self, root: u32, label: &'static str, probe: &StrictProbe<'_>) {
+    fn strict(&mut self, root: u32, label: &'g str, probe: &StrictProbe<'g, '_>) {
         if root == u32::MAX {
             return;
         }
