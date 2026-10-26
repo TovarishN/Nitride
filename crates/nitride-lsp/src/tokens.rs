@@ -283,6 +283,7 @@ pub fn encode(analysis: &Analysis, palette: bool) -> Vec<u32> {
         for item in items {
             let (kind, scope) = match item.kind {
                 "module" => (NAMESPACE, "entity.name.namespace"),
+                "language" => (TYPE, "entity.name.type.language"),
                 "function" | "helper" => (FUNCTION, "entity.name.function.rule"),
                 _ => (TYPE, "entity.name.function.rule"),
             };
