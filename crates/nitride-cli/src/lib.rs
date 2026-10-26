@@ -34,6 +34,11 @@ use nitride_core::*;
 use serde_json::{Value, json};
 mod recovery;
 pub use recovery::{recovery_language, recovery_observe};
+
+/// The compiled-in language of a `languages/<profile>` project.
+pub fn static_language(profile: &str) -> Option<&'static Language<'static>> {
+    recovery_language(profile)
+}
 pub mod grammar_fixture {
     include!(concat!(env!("OUT_DIR"), "/grammar.rs"));
 }
