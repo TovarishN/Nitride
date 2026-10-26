@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/nitride-core", "crates/nitride-codegen", "crates/nitride-cli", "crates/nitride-prepare"]
+members = ["crates/nitride-core", "crates/nitride-codegen", "crates/nitride-cli", "crates/nitride-prepare", "crates/nitride-lsp"]
 resolver = "2"
 
 [workspace.package]

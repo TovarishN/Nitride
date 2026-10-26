@@ -80,6 +80,7 @@ version = "0.1.0"
 dependencies = [
  "nitride-codegen",
  "nitride-core",
+ "nitride-lsp",
  "nitride-prepare",
  "serde_json",
 ]
@@ -88,12 +89,25 @@ dependencies = [
 name = "nitride-codegen"
 version = "0.1.0"
 dependencies = [
+ "nitride-cli",
+ "nitride-core",
+ "nitride-prepare",
  "serde_json",
 ]
 
 [[package]]
 name = "nitride-core"
 version = "0.1.0"
+
+[[package]]
+name = "nitride-lsp"
+version = "0.1.0"
+dependencies = [
+ "nitride-codegen",
+ "nitride-core",
+ "nitride-prepare",
+ "serde_json",
+]
 
 [[package]]
 name = "nitride-prepare"
