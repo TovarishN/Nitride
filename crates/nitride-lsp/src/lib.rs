@@ -8,6 +8,7 @@ pub mod manifest;
 pub mod registry;
 mod rpc;
 mod server;
+mod structure;
 mod tokens;
 mod uri;
 

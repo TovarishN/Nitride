@@ -2,7 +2,7 @@
 use crate::analysis::{self, Analysis};
 use crate::lines::LineIndex;
 use crate::registry::Registry;
-use crate::{ServeOptions, manifest, rpc, tokens, uri};
+use crate::{ServeOptions, manifest, rpc, structure, tokens, uri};
 use serde_json::{Value, json};
 use std::collections::{BTreeSet, HashMap};
 use std::io::{self, BufRead, Write};
@@ -153,6 +153,9 @@ impl<W: Write> Server<W> {
                     "legend": {"tokenTypes": tokens::TYPES, "tokenModifiers": tokens::MODIFIERS},
                     "full": true,
                 },
+                "documentSymbolProvider": true,
+                "foldingRangeProvider": true,
+                "selectionRangeProvider": true,
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -167,6 +170,18 @@ impl<W: Write> Server<W> {
             "textDocument/semanticTokens/full" => {
                 let data = self.current(&uri).map(tokens::encode).unwrap_or_default();
                 Ok(json!({ "data": data }))
+            }
+            "textDocument/documentSymbol" => {
+                Ok(self.current(&uri).map_or(json!([]), structure::symbols))
+            }
+            "textDocument/foldingRange" => {
+                Ok(self.current(&uri).map_or(json!([]), structure::folds))
+            }
+            "textDocument/selectionRange" => {
+                let positions = params["positions"].as_array().cloned().unwrap_or_default();
+                Ok(self
+                    .current(&uri)
+                    .map_or(json!([]), |a| structure::selections(a, &positions)))
             }
             _ => Err((METHOD_NOT_FOUND, "method not found".into())),
         }
