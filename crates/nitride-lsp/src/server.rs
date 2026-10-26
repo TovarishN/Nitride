@@ -472,7 +472,8 @@ impl<W: Write> Server<W> {
                         },
                     );
                     self.pending.insert(uri.into());
-                    self.reload |= language_input(uri);
+                    // Grammars and signed grammars are language inputs.
+                    self.reload |= language_input(uri) || crate::signed::may_declare(text);
                 }
             }
             "textDocument/didChange" => {
@@ -486,7 +487,8 @@ impl<W: Write> Server<W> {
                     document.version =
                         params["textDocument"]["version"].as_i64().unwrap_or(0) as i32;
                     self.pending.insert(uri.into());
-                    self.reload |= language_input(uri);
+                    // Grammars and signed grammars are language inputs.
+                    self.reload |= language_input(uri) || crate::signed::may_declare(text);
                 }
             }
             "textDocument/didClose" => {
@@ -494,13 +496,14 @@ impl<W: Write> Server<W> {
                     .as_str()
                     .unwrap_or_default()
                     .to_owned();
-                self.documents.remove(&uri);
+                let closed = self.documents.remove(&uri);
                 self.pending.remove(&uri);
                 if self.analyses.remove(&uri).is_some() {
                     self.publish(&uri, vec![])?;
                 }
                 // The file on disk replaces the closed buffer.
-                self.reload |= language_input(&uri);
+                self.reload |= language_input(&uri)
+                    || closed.is_some_and(|d| crate::signed::may_declare(&d.text));
             }
             _ => {}
         }
@@ -576,9 +579,14 @@ impl<W: Write> Server<W> {
     fn reload_languages(&mut self) -> io::Result<()> {
         self.grammars = None;
         let buffers = self.buffers();
-        let changed = self
-            .registry
-            .reload(&self.folders, &|path: &Path| buffers.get(path));
+        let open_paths: Vec<PathBuf> = self
+            .documents
+            .keys()
+            .filter_map(|u| uri::to_path(u))
+            .collect();
+        let changed =
+            self.registry
+                .reload_with(&self.folders, &|path: &Path| buffers.get(path), &open_paths);
         let mut published = Vec::new();
         for manifest in self.registry.manifests() {
             let text = buffers
