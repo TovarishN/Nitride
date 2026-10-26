@@ -186,8 +186,7 @@ impl SymbolIndex {
             }
             let target = candidates
                 .clone()
-                .filter(|(_, d)| d.name_span[0] < span[0])
-                .last()
+                .rfind(|(_, d)| d.name_span[0] < span[0])
                 .or_else(|| candidates.clone().next())
                 .map(|(i, _)| i);
             if let Some(target) = target {
