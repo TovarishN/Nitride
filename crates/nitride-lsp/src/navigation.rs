@@ -114,7 +114,7 @@ pub fn rule_at(index: &GrammarIndex, file: usize, offset: u32) -> Option<(RuleDe
 fn grammar_location(index: &GrammarIndex, file: usize, span: [u32; 2]) -> Value {
     let grammar = &index.files[file];
     let lines = crate::lines::LineIndex::new(&grammar.text);
-    json!({"uri": crate::uri::from_path(&grammar.path), "range": range(&lines, span)})
+    json!({"uri": grammar.uri, "range": range(&lines, span)})
 }
 
 /// Every occurrence of the symbol at `offset` as (uri, span, is declaration),
@@ -208,9 +208,7 @@ pub fn highlights(
     if !on_text(analysis, offset) {
         return json!([]);
     }
-    let this = grammar
-        .as_ref()
-        .map(|g| crate::uri::from_path(&g.index.files[g.file].path));
+    let this = grammar.as_ref().map(|g| g.index.files[g.file].uri.clone());
     let mut found: Vec<Value> = occurrences(analysis, uri, offset, grammar.as_ref())
         .unwrap_or_default()
         .into_iter()
@@ -314,6 +312,24 @@ pub fn rename(
         let Some((rule, _)) = rule_at(index, file, offset) else {
             return Ok(Value::Null);
         };
+        // Uses in damaged or unreadable files cannot all be found: refuse
+        // rather than rename partially.
+        let blocked = index
+            .files
+            .iter()
+            .filter(|f| f.damaged)
+            .map(|f| &f.path)
+            .chain(&index.unreadable)
+            .next();
+        if let Some(path) = blocked {
+            let name = path.file_name().map_or_else(
+                || path.display().to_string(),
+                |n| n.to_string_lossy().into_owned(),
+            );
+            return Err(refuse(&format!(
+                "fix the syntax errors in {name} before renaming"
+            )));
+        }
         let mut spans = vec![(rule.file, rule.item.name_span.map(|b| b as u32))];
         spans.extend(index.uses(&rule));
         for (file, span) in spans {
@@ -321,11 +337,7 @@ pub fn rename(
             let text = &grammar.text[span[0] as usize..span[1] as usize];
             let start = span[0] + text.rfind('.').map_or(0, |d| d as u32 + 1);
             let lines = crate::lines::LineIndex::new(&grammar.text);
-            edit(
-                crate::uri::from_path(&grammar.path),
-                &lines,
-                [start, span[1]],
-            );
+            edit(grammar.uri.clone(), &lines, [start, span[1]]);
         }
     } else if let Some(Target::Definition(i)) = analysis.index.at(offset) {
         for (span, _) in analysis.index.occurrences(i) {

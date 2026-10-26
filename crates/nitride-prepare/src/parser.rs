@@ -146,9 +146,47 @@ fn syntax(source: &Source) -> Result<SyntaxTree<'static>, PrepareError> {
     })
 }
 
+/// A grammar parsed for editor structure: while it fails to parse, the line
+/// of the error is blanked (braces kept, so blocks stay balanced) and parsing
+/// retried, so the rest of a grammar under edit still yields its structure.
+fn tolerant(source: &Source) -> Result<Source, PrepareError> {
+    let mut text = source.text.clone();
+    let mut first = None;
+    for _ in 0..32 {
+        let attempt = Source {
+            path: source.path.clone(),
+            text: text.clone(),
+        };
+        match syntax(&attempt) {
+            Ok(_) => return Ok(attempt),
+            Err(error) => {
+                let at = error.span[0].min(text.len());
+                let start = text[..at].rfind('\n').map_or(0, |i| i + 1);
+                let end = text[at..].find('\n').map_or(text.len(), |i| at + i);
+                let blanked: String = text[start..end]
+                    .chars()
+                    .map(|c| if matches!(c, '{' | '}') { c } else { ' ' })
+                    .collect();
+                if blanked == text[start..end] {
+                    return Err(first.unwrap_or(error)); // No progress.
+                }
+                first.get_or_insert(error);
+                text.replace_range(start..end, &blanked);
+            }
+        }
+    }
+    Err(first.expect("an error was seen"))
+}
+
+/// Whether a grammar parses as written.
+pub fn parses(source: &Source) -> bool {
+    syntax(source).is_ok()
+}
+
 /// Rule names used in a grammar: element references and `extend` targets,
 /// with the module each is used in.
 pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, PrepareError> {
+    let source = &tolerant(source)?;
     let tree = syntax(source)?;
     let decoder = Decoder {
         source,
@@ -185,6 +223,7 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
 
 /// Outline items: modules and the rules, tokens and functions they declare.
 pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError> {
+    let source = &tolerant(source)?;
     let tree = syntax(source)?;
     let decoder = Decoder {
         source,

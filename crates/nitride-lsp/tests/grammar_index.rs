@@ -6,7 +6,11 @@ use support::*;
 fn power_set() -> (GrammarIndex, PathBuf, PathBuf) {
     let portable = repo().join("languages/portable/Portable.ngr");
     let power = repo().join("languages/power/Power.ngr");
-    let index = grammar_index::build(&[portable.clone(), power.clone()], &|_| None);
+    let index = grammar_index::build(
+        &[portable.clone(), power.clone()],
+        &|_| None,
+        &grammar_index::default_uri,
+    );
     (index, portable, power)
 }
 

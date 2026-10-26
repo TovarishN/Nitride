@@ -172,3 +172,50 @@ fn rename_after_emoji() {
     assert_eq!(edits[0]["range"]["start"]["character"], 13);
     assert_eq!(edits[0]["range"]["end"]["character"], 14);
 }
+
+#[test]
+fn rename_refuses_when_sibling_damaged() {
+    let dir = scratch("rename-damaged");
+    for file in ["portable/Portable.ngr", "power/Power.ngr"] {
+        std::fs::copy(lang(file), dir.join(Path::new(file).file_name().unwrap())).unwrap();
+    }
+    let (portable, power) = (dir.join("Portable.ngr"), dir.join("Power.ngr"));
+    std::fs::write(
+        &power,
+        std::fs::read_to_string(&power)
+            .unwrap()
+            .replace("precedence 25", "precedence ((("),
+    )
+    .unwrap();
+    manifest(
+        &dir,
+        "nitride.json",
+        "PortablePower",
+        ".powercalc",
+        &[portable.clone(), power.clone()],
+        "Portable.Program",
+        Some(&lang("power/catalog.json")),
+    );
+    let text = std::fs::read_to_string(&portable).unwrap();
+    let line = text
+        .lines()
+        .position(|l| l.contains("extensible syntax Expr"))
+        .unwrap() as u32;
+    let result = send(
+        &dir,
+        &portable,
+        &text,
+        "textDocument/rename",
+        line,
+        22,
+        json!({"newName":"Term"}),
+    );
+    assert_eq!(result["error"]["code"], -32602, "{result}");
+    assert!(
+        result["error"]["message"]
+            .as_str()
+            .unwrap()
+            .contains("Power.ngr"),
+        "{result}"
+    );
+}

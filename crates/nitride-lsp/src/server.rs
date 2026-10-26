@@ -255,7 +255,12 @@ impl<W: Write> Server<W> {
                         }
                     }
                     let buffers = self.buffers();
-                    self.grammars = Some(grammar_index::build(&paths, &|p: &Path| buffers.get(p)));
+                    let uri_of = self.uri_of();
+                    self.grammars = Some(grammar_index::build(
+                        &paths,
+                        &|p: &Path| buffers.get(p),
+                        &uri_of,
+                    ));
                 }
                 let grammars = self.grammars.as_ref().expect("just built");
                 let open = self.analyses.iter().map(|(u, a)| (u.as_str(), a));
@@ -283,7 +288,8 @@ impl<W: Write> Server<W> {
         let grammar = path.extension().is_some_and(|e| e == "ngr").then(|| {
             let buffers = self.buffers();
             let set = self.registry.grammar_set(&path);
-            let index = grammar_index::build(&set, &|p: &Path| buffers.get(p));
+            let uri_of = self.uri_of();
+            let index = grammar_index::build(&set, &|p: &Path| buffers.get(p), &uri_of);
             let file = index.file(&path)?;
             Some((index, file))
         });
@@ -413,6 +419,21 @@ impl<W: Write> Server<W> {
             None if self.analyses.remove(uri).is_some() => self.publish(uri, vec![]),
             None => Ok(()),
         }
+    }
+
+    /// Names a file for the client: the URI it opened the file under, else
+    /// the normalized path's.
+    fn uri_of(&self) -> Box<dyn Fn(&Path) -> String> {
+        let open: Vec<(PathBuf, String)> = self
+            .documents
+            .keys()
+            .filter_map(|u| Some((uri::to_path(u)?, u.clone())))
+            .collect();
+        Box::new(move |path: &Path| {
+            open.iter()
+                .find(|(p, _)| crate::registry::same_file(p, path))
+                .map_or_else(|| grammar_index::default_uri(path), |(_, u)| u.clone())
+        })
     }
 
     /// Open buffers by path.

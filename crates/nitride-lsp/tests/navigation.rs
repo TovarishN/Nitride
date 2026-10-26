@@ -298,3 +298,119 @@ fn workspace_symbols_find_open_definitions() {
     assert_eq!(total["location"]["uri"], uri(&path));
     assert_eq!(total["kind"], 13);
 }
+
+#[test]
+fn grammar_with_syntax_error_still_navigates() {
+    let dir = scratch("broken-grammar-nav");
+    std::fs::copy(lang("portable/Portable.ngr"), dir.join("Portable.ngr")).unwrap();
+    let path = dir.join("Portable.ngr");
+    let text = std::fs::read_to_string(&path).unwrap() + "\nsyntax ???\n";
+    let line = text
+        .lines()
+        .position(|l| l.contains("extensible syntax Expr"))
+        .unwrap() as u32;
+    let result = hover(&dir, &path, &text, line, 22);
+    assert!(
+        result["contents"]["value"]
+            .as_str()
+            .unwrap_or_default()
+            .contains("Expr"),
+        "{result}"
+    );
+}
+
+#[test]
+fn locations_use_canonical_paths() {
+    let dir = scratch("canonical-paths");
+    std::fs::create_dir_all(dir.join("sub")).unwrap();
+    std::fs::create_dir_all(dir.join("g")).unwrap();
+    std::fs::copy(lang("portable/Portable.ngr"), dir.join("g/Portable.ngr")).unwrap();
+    manifest(
+        &dir,
+        "nitride.json",
+        "Portable",
+        ".portable",
+        &[dir.join("sub/../g/Portable.ngr")],
+        "Portable.Program",
+        Some(&lang("portable/catalog.json")),
+    );
+    let path = dir.join("g/Portable.ngr");
+    let text = std::fs::read_to_string(&path).unwrap();
+    let line = text.lines().position(|l| l.contains("Value:Expr")).unwrap() as u32;
+    let character = text
+        .lines()
+        .nth(line as usize)
+        .unwrap()
+        .find("Value:Expr")
+        .unwrap() as u32
+        + 7;
+    let result = at(
+        &dir,
+        &path,
+        &text,
+        "textDocument/definition",
+        line,
+        character,
+        json!({}),
+    )["result"]
+        .clone();
+    assert_eq!(result["uri"], uri(&path), "{result}");
+}
+
+#[test]
+fn syntax_only_call_heads_and_kinds() {
+    let dir = scratch("syntax-kinds");
+    manifest(
+        &dir,
+        "nitrogen.json",
+        "Calls",
+        ".calls",
+        &[lang("calls/Calls.ngr")],
+        "Calls.Program",
+        None,
+    );
+    let path = dir.join("x.calls");
+    let text = "function f = 1;\nf(2);\nlet g = 3;\nfunction g = 4;\ng(g);";
+    let definition = at(
+        &dir,
+        &path,
+        text,
+        "textDocument/definition",
+        1,
+        0,
+        json!({}),
+    )["result"]
+        .clone();
+    assert_eq!(
+        definition["range"]["start"],
+        json!({"line":0,"character":9}),
+        "call head f"
+    );
+    let references = at(
+        &dir,
+        &path,
+        text,
+        "textDocument/references",
+        2,
+        4,
+        json!({"context":{"includeDeclaration":true}}),
+    )["result"]
+        .clone();
+    let lines: Vec<_> = references
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|r| r["range"]["start"]["line"].as_u64().unwrap())
+        .collect();
+    assert!(
+        !lines.contains(&3),
+        "value g must not include function g's declaration: {lines:?}"
+    );
+}
+
+#[test]
+fn empty_name_is_not_a_definition() {
+    let dir = calls("empty-name");
+    let result = hover(&dir, &dir.join("x.calls"), "let =1;", 0, 4);
+    assert!(!result.to_string().contains("``"), "{result}");
+}

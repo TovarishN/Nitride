@@ -115,6 +115,12 @@ pub struct GrammarReference {
     pub module: String,
 }
 
+/// Whether a grammar file parses as written. The outline and references of a
+/// file that does not are taken from its undamaged lines.
+pub fn grammar_parses(source: &Source) -> bool {
+    parser::parses(source)
+}
+
 /// Every rule name a grammar file uses: element references and `extend` targets.
 pub fn grammar_references(source: &Source) -> Result<Vec<GrammarReference>, PrepareError> {
     parser::references(source)

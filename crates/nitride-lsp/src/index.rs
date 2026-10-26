@@ -133,7 +133,19 @@ impl SymbolIndex {
         language: &Language<'_>,
     ) -> Self {
         let mut index = Self::definitions(declared);
-        let mut uses: Vec<([u32; 2], &str, &[String])> = Vec::new();
+        // Each name span once: a clause on a real node wins over the alias
+        // approximation; claims of the same standing pool their kinds.
+        let mut uses: std::collections::BTreeMap<[u32; 2], (&str, Vec<String>, bool)> =
+            Default::default();
+        let mut claim = |span: [u32; 2], text, kinds: &[String], alias: bool| {
+            let entry = uses.entry(span).or_insert((text, vec![], alias));
+            if entry.2 && !alias {
+                *entry = (text, vec![], false);
+            }
+            if entry.2 == alias {
+                entry.1.extend(kinds.iter().cloned());
+            }
+        };
         for clause in &prepared.references {
             let Some(rule) = language.rules.iter().position(|r| r.name == clause.rule) else {
                 continue;
@@ -151,7 +163,7 @@ impl SymbolIndex {
                         .source
                         .get(node.span[0] as usize..node.span[1] as usize)
                     {
-                        uses.push((node.span, text, &clause.kinds));
+                        claim(node.span, text, &clause.kinds, true);
                     }
                 }
                 continue;
@@ -166,21 +178,24 @@ impl SymbolIndex {
                     continue;
                 };
                 if let Some(text) = tree.text(field) {
-                    uses.push((tree.nodes[field as usize].span, text, &clause.kinds));
+                    claim(tree.nodes[field as usize].span, text, &clause.kinds, false);
                 }
             }
         }
-        uses.sort_by_key(|(span, _, _)| span[0]);
-        uses.dedup_by_key(|(span, _, _)| *span);
+        // A declared name is never a use, whatever its kind.
+        let declared_at: std::collections::HashSet<[u32; 2]> =
+            index.definitions.iter().map(|d| d.name_span).collect();
+        let uses: Vec<_> = uses
+            .into_iter()
+            .filter(|(span, _)| !declared_at.contains(span))
+            .map(|(span, (text, kinds, _))| (span, text, kinds))
+            .collect();
         for (span, text, kinds) in uses {
             let candidates = index
                 .definitions
                 .iter()
                 .enumerate()
                 .filter(|(_, d)| d.name == text && kinds.contains(&d.kind));
-            if candidates.clone().any(|(_, d)| d.name_span == span) {
-                continue; // The declaration itself.
-            }
             let target = candidates
                 .clone()
                 .rfind(|(_, d)| d.name_span[0] < span[0])

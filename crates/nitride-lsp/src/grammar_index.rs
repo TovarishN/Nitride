@@ -5,6 +5,11 @@ use std::path::{Path, PathBuf};
 
 pub struct GrammarFile {
     pub path: PathBuf,
+    /// The URI to report: the open document's, else the normalized path's.
+    pub uri: String,
+    /// The file does not parse as written; its structure comes from its
+    /// undamaged lines.
+    pub damaged: bool,
     pub text: String,
     pub outline: Vec<GrammarItem>,
     pub references: Vec<GrammarReference>,
@@ -12,6 +17,8 @@ pub struct GrammarFile {
 
 pub struct GrammarIndex {
     pub files: Vec<GrammarFile>,
+    /// Files of the set that could not be read or parsed at all.
+    pub unreadable: Vec<PathBuf>,
     definitions: Vec<RuleDef>,
 }
 
@@ -33,11 +40,34 @@ const DEFINING: [&str; 6] = [
     "alternative",
 ];
 
-/// Indexes `paths`, editor buffers first; unreadable or unparsable files are left out.
-pub fn build(paths: &[PathBuf], open: &dyn Fn(&Path) -> Option<String>) -> GrammarIndex {
+/// A `file:` URI for a path with `.` and `..` resolved lexically.
+pub fn default_uri(path: &Path) -> String {
+    use std::path::Component;
+    let mut normal = PathBuf::new();
+    for component in path.components() {
+        match component {
+            Component::CurDir => {}
+            Component::ParentDir => {
+                normal.pop();
+            }
+            other => normal.push(other),
+        }
+    }
+    crate::uri::from_path(&normal)
+}
+
+/// Indexes `paths`, editor buffers first. `uri_of` names each file for the
+/// client; files that cannot be read or parsed at all are listed in `unreadable`.
+pub fn build(
+    paths: &[PathBuf],
+    open: &dyn Fn(&Path) -> Option<String>,
+    uri_of: &dyn Fn(&Path) -> String,
+) -> GrammarIndex {
     let mut files = Vec::new();
+    let mut unreadable = Vec::new();
     for path in paths {
         let Some(text) = open(path).or_else(|| std::fs::read_to_string(path).ok()) else {
+            unreadable.push(path.clone());
             continue;
         };
         let source = Source {
@@ -48,9 +78,12 @@ pub fn build(paths: &[PathBuf], open: &dyn Fn(&Path) -> Option<String>) -> Gramm
             nitride_prepare::grammar_outline(&source),
             nitride_prepare::grammar_references(&source),
         ) else {
+            unreadable.push(path.clone());
             continue;
         };
         files.push(GrammarFile {
+            uri: uri_of(path),
+            damaged: !nitride_prepare::grammar_parses(&source),
             path: path.clone(),
             text: source.text,
             outline,
@@ -58,7 +91,11 @@ pub fn build(paths: &[PathBuf], open: &dyn Fn(&Path) -> Option<String>) -> Gramm
         });
     }
     let definitions = definitions(&files);
-    GrammarIndex { files, definitions }
+    GrammarIndex {
+        files,
+        unreadable,
+        definitions,
+    }
 }
 
 /// Every rule definition in `files`, with its module.

@@ -167,7 +167,8 @@ fn declared_names(loaded: &Loaded, tree: &SyntaxTree<'_>) -> Vec<DeclaredName> {
             let Some(field) = tree.field(id as u32, &declaration.field) else {
                 continue;
             };
-            let Some(text) = tree.text(field) else {
+            // Recovery can insert an empty name; it declares nothing.
+            let Some(text) = tree.text(field).filter(|t| !t.is_empty()) else {
                 continue;
             };
             names.push(DeclaredName {
