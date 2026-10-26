@@ -168,7 +168,18 @@ fn tolerant(source: &Source) -> Result<Source, PrepareError> {
                     .map(|c| if matches!(c, '{' | '}') { c } else { ' ' })
                     .collect();
                 if blanked == text[start..end] {
-                    return Err(first.unwrap_or(error)); // No progress.
+                    // A file that just ends mid-block (being typed): close its
+                    // blocks once, else give up.
+                    let open = text
+                        .matches('{')
+                        .count()
+                        .saturating_sub(text.matches('}').count());
+                    if open == 0 || text.ends_with('}') {
+                        return Err(first.unwrap_or(error));
+                    }
+                    first.get_or_insert(error);
+                    text.push_str(&"\n}".repeat(open));
+                    continue;
                 }
                 first.get_or_insert(error);
                 text.replace_range(start..end, &blanked);

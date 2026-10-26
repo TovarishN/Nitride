@@ -171,6 +171,7 @@ impl<W: Write> Server<W> {
                 "renameProvider": {"prepareProvider": true},
                 "workspaceSymbolProvider": true,
                 "inlayHintProvider": true,
+                "completionProvider": {"triggerCharacters": ["."]},
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -235,6 +236,16 @@ impl<W: Write> Server<W> {
                     }
                     _ => navigation::definition(analysis, &uri, offset, at),
                 })
+            }
+            "textDocument/completion" => {
+                let Some((offset, grammar)) = self.located(&uri, params) else {
+                    return Ok(json!([]));
+                };
+                let analysis = &self.analyses[&uri];
+                let at = grammar
+                    .as_ref()
+                    .map(|(index, file)| GrammarAt { index, file: *file });
+                Ok(crate::completion::items(analysis, offset, at))
             }
             "textDocument/inlayHint" => {
                 let Some(analysis) = self.current(&uri) else {
