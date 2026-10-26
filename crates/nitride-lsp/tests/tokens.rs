@@ -159,3 +159,27 @@ fn tokens_without_language_are_empty() {
     );
     assert_eq!(response(&messages, 5)["result"], json!({"data": []}));
 }
+
+/// A request that arrives before the debounce elapses still sees the
+/// workspace languages and the latest text.
+#[test]
+fn tokens_before_debounce_elapses() {
+    let dir = calls_workspace("tokens-debounce");
+    let path = dir.join("x.calls");
+    let mut input = frame(&initialize(1, &dir));
+    input.extend(frame(&open(&path, "let x=1;")));
+    input.extend(frame(&request(
+        5,
+        "textDocument/semanticTokens/full",
+        json!({"textDocument":{"uri":uri(&path)}}),
+    )));
+    input.extend(frame(&request(6, "shutdown", Value::Null)));
+    input.extend(frame(&notification("exit", Value::Null)));
+    let messages = Session::raw_with(input, std::time::Duration::from_secs(5));
+    assert!(
+        !response(&messages, 5)["result"]["data"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
+}

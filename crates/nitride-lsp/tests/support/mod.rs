@@ -105,13 +105,15 @@ impl Session {
     }
 
     pub fn raw(input: Vec<u8>) -> Vec<Value> {
+        Self::raw_with(input, std::time::Duration::ZERO)
+    }
+
+    pub fn raw_with(input: Vec<u8>, debounce: std::time::Duration) -> Vec<Value> {
         let mut output = Vec::new();
         nitride_lsp::serve(
             std::io::Cursor::new(input),
             &mut output,
-            nitride_lsp::ServeOptions {
-                debounce: std::time::Duration::ZERO,
-            },
+            nitride_lsp::ServeOptions { debounce },
         )
         .unwrap();
         unframe(&output)

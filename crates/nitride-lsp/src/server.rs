@@ -189,6 +189,10 @@ impl<W: Write> Server<W> {
 
     /// The document's analysis, brought up to date first if an edit is pending.
     fn current(&mut self, uri: &str) -> Option<&Analysis> {
+        // A request can arrive before the debounce elapses: load languages first.
+        if std::mem::take(&mut self.reload) {
+            self.reload_languages().ok()?;
+        }
         if self.pending.remove(uri) {
             // Diagnostics are published as part of this analysis.
             self.analyze(uri).ok()?;
