@@ -170,6 +170,7 @@ impl<W: Write> Server<W> {
                 "documentHighlightProvider": true,
                 "renameProvider": {"prepareProvider": true},
                 "workspaceSymbolProvider": true,
+                "inlayHintProvider": true,
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -234,6 +235,29 @@ impl<W: Write> Server<W> {
                     }
                     _ => navigation::definition(analysis, &uri, offset, at),
                 })
+            }
+            "textDocument/inlayHint" => {
+                let Some(analysis) = self.current(&uri) else {
+                    return Ok(json!([]));
+                };
+                let position = |key: &str| {
+                    let p = &params["range"][key];
+                    let line = u32::try_from(p["line"].as_u64().unwrap_or(0)).unwrap_or(u32::MAX);
+                    let character =
+                        u32::try_from(p["character"].as_u64().unwrap_or(0)).unwrap_or(u32::MAX);
+                    analysis.lines.offset(line, character)
+                };
+                let (start, end) = (position("start"), position("end"));
+                let hints: Vec<Value> = analysis
+                    .values
+                    .iter()
+                    .filter(|(at, _)| start <= *at && *at <= end)
+                    .map(|(at, label)| {
+                        let (line, character) = analysis.lines.position(*at);
+                        json!({"position":{"line":line,"character":character},"label":label,"paddingLeft":true})
+                    })
+                    .collect();
+                Ok(Value::Array(hints))
             }
             "workspace/symbol" => {
                 let query = params["query"].as_str().unwrap_or_default().to_owned();

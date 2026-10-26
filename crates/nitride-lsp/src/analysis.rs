@@ -81,6 +81,8 @@ pub struct Analysis {
     /// A grammar file's modules and members; empty for programs.
     pub outline: Vec<GrammarItem>,
     pub index: SymbolIndex,
+    /// `(end offset, label)` of each show statement's value, when the program runs.
+    pub values: Vec<(u32, String)>,
 }
 
 /// Analyses one document; `None` when no language serves it.
@@ -116,6 +118,7 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
             declarations: vec![],
             outline: vec![],
             index: SymbolIndex::default(),
+            values: vec![],
         };
     };
     let language = loaded.language.language();
@@ -138,6 +141,12 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
     let checked = compile_recovering(language, &parsed, limits);
     checked.diagnostics.iter().for_each(&mut add);
     let declarations = declared_names(&loaded, &parsed.tree);
+    let values = checked
+        .program
+        .as_ref()
+        .filter(|_| problems.is_empty())
+        .map(crate::values::compute)
+        .unwrap_or_default();
     let index = match &checked.program {
         Some(program) => SymbolIndex::typed(&declarations, program),
         None => SymbolIndex::by_name(&declarations, &loaded.prepared, &parsed.tree, language),
@@ -150,6 +159,7 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
         declarations,
         outline: vec![],
         index,
+        values,
     }
 }
 
@@ -247,6 +257,7 @@ fn grammar(
         declarations: vec![],
         outline,
         index: SymbolIndex::default(),
+        values: vec![],
     }
 }
 

@@ -14,6 +14,7 @@ mod server;
 mod structure;
 mod tokens;
 pub(crate) mod uri;
+mod values;
 
 use std::time::Duration;
 
