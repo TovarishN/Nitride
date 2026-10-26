@@ -1,0 +1,34 @@
+# Nitride DSL for VS Code
+
+Language support for `.ngr` grammars and the languages a workspace declares,
+served by `nitride lsp`, Nitride's native language server. No .NET runtime is
+needed.
+
+## Languages
+
+The extension reads `nitride.json` at each workspace folder root, else
+`nitrogen.json`. Both list languages the same way:
+
+```json
+{ "languages": [ { "name": "Calls", "extensions": [".calls"],
+  "grammars": ["languages/calls/Calls.ngr"], "start": "Calls.Program",
+  "catalog": "languages/calls/catalog.json", "mode": "typed" } ] }
+```
+
+`catalog` and `mode` are read from `nitride.json` only. A language with a
+catalog is checked in typed mode; without one (and every `nitrogen.json`
+language) it is syntax-only, and Nitrogen's C# semantic members in its grammar
+are skipped with a warning.
+
+## Features
+
+Diagnostics, semantic coloring, outline, folding and expand-selection for
+grammars and programs. Grammar edits apply without restarting the server.
+
+## Settings
+
+- `nitride.server.path`: the `nitride` executable to run. Empty runs the server
+  bundled with the extension, else `nitride` from PATH.
+
+When the Nitrogen extension is also installed, it stays inactive and Nitride
+serves these files.
