@@ -49,7 +49,9 @@ impl Registry {
 
     /// Re-reads every folder's manifest and re-prepares languages whose
     /// inputs changed. `open` supplies editor buffers, which win over disk.
-    pub fn reload(&mut self, folders: &[PathBuf], open: &dyn Fn(&Path) -> Option<String>) {
+    /// Returns whether any language or manifest result changed.
+    pub fn reload(&mut self, folders: &[PathBuf], open: &dyn Fn(&Path) -> Option<String>) -> bool {
+        let before = self.fingerprint();
         let mut previous = std::mem::take(&mut self.languages);
         self.manifests.clear();
         for folder in folders {
@@ -65,6 +67,28 @@ impl Registry {
             };
             self.load(&path, entries, &mut previous, open);
         }
+        before != self.fingerprint()
+    }
+
+    /// What analyses depend on: each language's identity, extensions, loaded
+    /// tables and problems, and each manifest's problems.
+    fn fingerprint(&self) -> Vec<String> {
+        let languages = self.languages.iter().map(|l| {
+            let loaded = l.current.as_ref().map_or(0, |c| Arc::as_ptr(c) as usize);
+            let errors: Vec<_> = l.errors.iter().map(|e| e.to_string()).collect();
+            let warnings: Vec<_> = l.warnings.iter().map(|w| w.to_string()).collect();
+            format!(
+                "{}|{}|{:?}|{loaded}|{errors:?}|{warnings:?}",
+                l.manifest.display(),
+                l.entry.name,
+                l.entry.extensions
+            )
+        });
+        let manifests = self
+            .manifests
+            .iter()
+            .map(|m| format!("{}|{:?}", m.path.display(), m.errors));
+        languages.chain(manifests).collect()
     }
 
     fn load(

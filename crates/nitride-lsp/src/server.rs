@@ -170,6 +170,13 @@ impl<W: Write> Server<W> {
                 "documentHighlightProvider": true,
                 "renameProvider": {"prepareProvider": true},
                 "workspaceSymbolProvider": true,
+                "inlayHintProvider": true,
+                "codeActionProvider": {"codeActionKinds": ["quickfix", "source.fixAll"]},
+                "completionProvider": {"triggerCharacters": ["."]},
+                "signatureHelpProvider": {"triggerCharacters": ["(", ","]},
+                "documentFormattingProvider": true,
+                "documentRangeFormattingProvider": true,
+                "documentOnTypeFormattingProvider": {"firstTriggerCharacter": "}"},
             },
             "serverInfo": {"name": "nitride", "version": env!("CARGO_PKG_VERSION")},
         })
@@ -234,6 +241,118 @@ impl<W: Write> Server<W> {
                     }
                     _ => navigation::definition(analysis, &uri, offset, at),
                 })
+            }
+            "textDocument/completion" => {
+                let Some((offset, grammar)) = self.located(&uri, params) else {
+                    return Ok(json!([]));
+                };
+                let analysis = &self.analyses[&uri];
+                let at = grammar
+                    .as_ref()
+                    .map(|(index, file)| GrammarAt { index, file: *file });
+                Ok(crate::completion::items(analysis, offset, at))
+            }
+            "textDocument/signatureHelp" => {
+                let Some((offset, _)) = self.located(&uri, params) else {
+                    return Ok(Value::Null);
+                };
+                let analysis = &self.analyses[&uri];
+                let Some(tree) = &analysis.tree else {
+                    return Ok(Value::Null);
+                };
+                let mut leaves: Vec<[u32; 2]> = tree
+                    .nodes
+                    .iter()
+                    .filter(|n| n.child_count == 0 && n.span[0] < n.span[1])
+                    .map(|n| n.span)
+                    .collect();
+                leaves.sort_unstable();
+                Ok(crate::signatures::help(
+                    analysis.lines.text(),
+                    offset,
+                    tree.grammar.language(),
+                    &leaves,
+                ))
+            }
+            "textDocument/formatting"
+            | "textDocument/rangeFormatting"
+            | "textDocument/onTypeFormatting" => {
+                let Some(analysis) = self.current(&uri) else {
+                    return Ok(json!([]));
+                };
+                let line =
+                    |p: &Value| u32::try_from(p["line"].as_u64().unwrap_or(0)).unwrap_or(u32::MAX);
+                let (first, last) = match method {
+                    "textDocument/rangeFormatting" => (
+                        line(&params["range"]["start"]),
+                        line(&params["range"]["end"]),
+                    ),
+                    "textDocument/onTypeFormatting" => {
+                        (line(&params["position"]), line(&params["position"]))
+                    }
+                    _ => (0, u32::MAX),
+                };
+                let tab_size =
+                    u32::try_from(params["options"]["tabSize"].as_u64().unwrap_or(2)).unwrap_or(2);
+                let spaces = params["options"]["insertSpaces"].as_bool().unwrap_or(true);
+                // Typing `}` reindents its line only; the file end is left alone.
+                let end_of_file = method != "textDocument/onTypeFormatting";
+                Ok(Value::Array(crate::format::edits(
+                    analysis,
+                    first,
+                    last,
+                    tab_size,
+                    spaces,
+                    end_of_file,
+                )))
+            }
+            "textDocument/codeAction" => {
+                let Some(analysis) = self.current(&uri) else {
+                    return Ok(json!([]));
+                };
+                let at = |key: &str| {
+                    let p = &params["range"][key];
+                    let line = u32::try_from(p["line"].as_u64().unwrap_or(0)).unwrap_or(u32::MAX);
+                    let character =
+                        u32::try_from(p["character"].as_u64().unwrap_or(0)).unwrap_or(u32::MAX);
+                    analysis.lines.offset(line, character)
+                };
+                let only: Vec<String> = params["context"]["only"]
+                    .as_array()
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|k| k.as_str().map(str::to_owned))
+                    .collect();
+                Ok(crate::actions::actions(
+                    analysis,
+                    &uri,
+                    at("start"),
+                    at("end"),
+                    &only,
+                ))
+            }
+            "textDocument/inlayHint" => {
+                let Some(analysis) = self.current(&uri) else {
+                    return Ok(json!([]));
+                };
+                let position = |key: &str| {
+                    let p = &params["range"][key];
+                    let line = u32::try_from(p["line"].as_u64().unwrap_or(0)).unwrap_or(u32::MAX);
+                    let character =
+                        u32::try_from(p["character"].as_u64().unwrap_or(0)).unwrap_or(u32::MAX);
+                    analysis.lines.offset(line, character)
+                };
+                let (start, end) = (position("start"), position("end"));
+                let hints: Vec<Value> = analysis
+                    .values
+                    .iter()
+                    .filter(|(at, _)| start <= *at && *at <= end)
+                    .map(|(at, label)| {
+                        let (line, character) = analysis.lines.position(*at);
+                        json!({"position":{"line":line,"character":character},"label":label,"paddingLeft":true})
+                    })
+                    .collect();
+                Ok(Value::Array(hints))
             }
             "workspace/symbol" => {
                 let query = params["query"].as_str().unwrap_or_default().to_owned();
@@ -449,7 +568,8 @@ impl<W: Write> Server<W> {
     fn reload_languages(&mut self) -> io::Result<()> {
         self.grammars = None;
         let buffers = self.buffers();
-        self.registry
+        let changed = self
+            .registry
             .reload(&self.folders, &|path: &Path| buffers.get(path));
         let mut published = Vec::new();
         for manifest in self.registry.manifests() {
@@ -469,7 +589,9 @@ impl<W: Write> Server<W> {
             self.publish(&uri, diagnostics)?;
         }
         // Every open document may now belong to a different language.
-        self.pending.extend(self.documents.keys().cloned());
+        if changed {
+            self.pending.extend(self.documents.keys().cloned());
+        }
         Ok(())
     }
 

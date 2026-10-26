@@ -81,6 +81,38 @@ pub struct Analysis {
     /// A grammar file's modules and members; empty for programs.
     pub outline: Vec<GrammarItem>,
     pub index: SymbolIndex,
+    /// `(end offset, label)` of each show statement's value, when the program runs.
+    pub values: Vec<(u32, String)>,
+    /// Recovery's repairs, as candidate quick fixes.
+    pub repairs: Vec<Fix>,
+}
+
+/// A repair recovery made: text it inserted, or source it skipped.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum Fix {
+    Insert { at: u32, text: String },
+    Delete { span: [u32; 2] },
+}
+
+fn fixes(tree: &SyntaxTree<'_>) -> Vec<Fix> {
+    let Some(recovery) = tree.recovery() else {
+        return vec![];
+    };
+    recovery
+        .repairs
+        .iter()
+        .filter_map(|repair| match repair {
+            Repair::Missing {
+                expected: Expected::Literal(text),
+                at,
+            } => Some(Fix::Insert {
+                at: *at,
+                text: (*text).to_owned(),
+            }),
+            Repair::Skipped { span } if span[0] < span[1] => Some(Fix::Delete { span: *span }),
+            _ => None,
+        })
+        .collect()
 }
 
 /// Analyses one document; `None` when no language serves it.
@@ -116,6 +148,8 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
             declarations: vec![],
             outline: vec![],
             index: SymbolIndex::default(),
+            values: vec![],
+            repairs: vec![],
         };
     };
     let language = loaded.language.language();
@@ -138,10 +172,17 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
     let checked = compile_recovering(language, &parsed, limits);
     checked.diagnostics.iter().for_each(&mut add);
     let declarations = declared_names(&loaded, &parsed.tree);
+    let values = checked
+        .program
+        .as_ref()
+        .filter(|_| problems.is_empty())
+        .map(crate::values::compute)
+        .unwrap_or_default();
     let index = match &checked.program {
         Some(program) => SymbolIndex::typed(&declarations, program),
         None => SymbolIndex::by_name(&declarations, &loaded.prepared, &parsed.tree, language),
     };
+    let repairs = fixes(&parsed.tree);
     let tree = Tree::new(Grammar::Workspace(loaded.clone()), &parsed.tree);
     Analysis {
         lines,
@@ -150,6 +191,8 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
         declarations,
         outline: vec![],
         index,
+        values,
+        repairs,
     }
 }
 
@@ -247,6 +290,8 @@ fn grammar(
         declarations: vec![],
         outline,
         index: SymbolIndex::default(),
+        values: vec![],
+        repairs: vec![],
     }
 }
 
