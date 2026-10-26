@@ -1,4 +1,5 @@
 //! Whole-document analysis: syntax tree, diagnostics and declared names.
+use crate::index::SymbolIndex;
 use crate::lines::LineIndex;
 use crate::registry::{EMPTY_CATALOG, LanguageState, Loaded, Registry, same_file};
 use nitride_core::*;
@@ -79,6 +80,7 @@ pub struct Analysis {
     pub declarations: Vec<DeclaredName>,
     /// A grammar file's modules and members; empty for programs.
     pub outline: Vec<GrammarItem>,
+    pub index: SymbolIndex,
 }
 
 /// Analyses one document; `None` when no language serves it.
@@ -113,6 +115,7 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
             }],
             declarations: vec![],
             outline: vec![],
+            index: SymbolIndex::default(),
         };
     };
     let language = loaded.language.language();
@@ -132,11 +135,13 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
     };
     parsed.diagnostics.iter().for_each(&mut add);
     // Syntax-only languages report recovery diagnostics; typed ones also check.
-    compile_recovering(language, &parsed, limits)
-        .diagnostics
-        .iter()
-        .for_each(&mut add);
+    let checked = compile_recovering(language, &parsed, limits);
+    checked.diagnostics.iter().for_each(&mut add);
     let declarations = declared_names(&loaded, &parsed.tree);
+    let index = match &checked.program {
+        Some(program) => SymbolIndex::typed(&declarations, program),
+        None => SymbolIndex::by_name(&declarations, &loaded.prepared, &parsed.tree, language),
+    };
     let tree = Tree::new(Grammar::Workspace(loaded.clone()), &parsed.tree);
     Analysis {
         lines,
@@ -144,6 +149,7 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
         problems,
         declarations,
         outline: vec![],
+        index,
     }
 }
 
@@ -239,6 +245,7 @@ fn grammar(
         problems,
         declarations: vec![],
         outline,
+        index: SymbolIndex::default(),
     }
 }
 
