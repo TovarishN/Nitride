@@ -56,8 +56,8 @@ fn format_all(root: &Path, files: &[(PathBuf, String)], method: &str, extra: Val
         .collect()
 }
 
-fn format_one(text: &str, extra: Value) -> String {
-    let dir = scratch(&format!("format-{}", text.len()));
+fn format_one(name: &str, text: &str, extra: Value) -> String {
+    let dir = scratch(name);
     let path = dir.join("M.ngr");
     let edits = &format_all(
         &dir,
@@ -74,14 +74,14 @@ const FLAT: &str =
 #[test]
 fn indents_blocks() {
     assert_eq!(
-        format_one(FLAT, json!({})),
+        format_one("format-indents", FLAT, json!({})),
         "syntax module M\n{\n  token Number = ['0'..'9']+;\n  syntax Program = Items:Number*;\n}\n"
     );
 }
 
 #[test]
 fn uses_tabs_when_asked() {
-    let formatted = format_one(FLAT, json!({"options": options(4, false)}));
+    let formatted = format_one("format-tabs", FLAT, json!({"options": options(4, false)}));
     assert!(formatted.contains("\n\ttoken Number"), "{formatted:?}");
 }
 
@@ -89,7 +89,7 @@ fn uses_tabs_when_asked() {
 fn trims_and_collapses() {
     let text = "syntax module M\n{\n  token A = \"a\";   \n\n\n\n  syntax P = A*;\n}\n\n\n";
     assert_eq!(
-        format_one(text, json!({})),
+        format_one("format-trims", text, json!({})),
         "syntax module M\n{\n  token A = \"a\";\n\n  syntax P = A*;\n}\n"
     );
 }
@@ -97,7 +97,7 @@ fn trims_and_collapses() {
 #[test]
 fn format_keeps_crlf() {
     let text = FLAT.replace('\n', "\r\n");
-    let formatted = format_one(&text, json!({}));
+    let formatted = format_one("format-crlf", &text, json!({}));
     assert_eq!(
         formatted,
         "syntax module M\r\n{\r\n  token Number = ['0'..'9']+;\r\n  syntax Program = Items:Number*;\r\n}\r\n"
@@ -203,6 +203,6 @@ fn format_only_whitespace() {
 #[test]
 fn token_content_untouched() {
     let text = "syntax module M\n{\n  token A = \"a\";\n  syntax P = A* { var s = 1;   \n    s = 2; }\n}\n";
-    let formatted = format_one(text, json!({}));
+    let formatted = format_one("format-token", text, json!({}));
     assert!(formatted.contains("var s = 1;   \n"), "{formatted:?}");
 }

@@ -22,7 +22,8 @@ are skipped with a warning.
 
 ## Features
 
-- Diagnostics, semantic coloring, outline, folding and expand-selection.
+- Diagnostics, semantic coloring with the theme's TextMate palette (as the
+  Nitrogen extension colours), outline, folding and expand-selection.
 - Hover with types (typed languages), go to definition, find references,
   highlights and rename, for program names and grammar rules. Rule renames
   update every grammar file of the language.

@@ -3,7 +3,7 @@ use serde_json::{Value, json};
 use std::path::{Path, PathBuf};
 use support::*;
 
-const TYPES: [&str; 11] = [
+const TYPES: [&str; 12] = [
     "namespace",
     "type",
     "function",
@@ -15,6 +15,7 @@ const TYPES: [&str; 11] = [
     "number",
     "string",
     "comment",
+    "enumMember",
 ];
 
 /// (line, column, text, type, modifier bits) per token.
@@ -95,14 +96,13 @@ fn calls_sample_tokens() {
         .into_iter()
         .map(|(_, _, text, ty, mods)| (text, ty, mods))
         .collect();
+    // Brackets and terminators have no standard type (the palette's fallback is
+    // none), so a client without palette tokens gets no token for them.
     let expected = [
         ("let", "keyword", 0),
         ("x", "variable", 1),
         ("=", "operator", 0),
-        ("(", "operator", 0),
         ("4", "number", 0),
-        (")", "operator", 0),
-        (";", "operator", 0),
     ];
     let expected: Vec<_> = expected
         .iter()

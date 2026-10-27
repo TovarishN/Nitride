@@ -33,7 +33,12 @@ export async function activate(context: ExtensionContext): Promise<void> {
   ];
   const watcher = workspace.createFileSystemWatcher('**/{nitride.json,nitrogen.json,*.ngr,*.json}');
   context.subscriptions.push(watcher);
-  const options: LanguageClientOptions = { documentSelector: selector, synchronize: { fileEvents: watcher } };
+  const options: LanguageClientOptions = {
+    documentSelector: selector,
+    synchronize: { fileEvents: watcher },
+    // Colour with the theme's TextMate palette (contributes.semanticTokenScopes).
+    initializationOptions: { paletteTokens: true },
+  };
   client = new LanguageClient('nitride', 'Nitride', server, options);
   await client.start();
 }
