@@ -391,7 +391,9 @@ moves cache eviction off the backtrack path. The
 [post-error checkpoint](docs/stage28-evidence.md) lets cold recovery pre-recognize
 missing facts after the first error with the generated parser. The
 [token-lead checkpoint](docs/stage29-evidence.md) rejects alternatives and Pratt
-operators by their first two tokens and precomputes Pratt dispatch. A
+operators by their first two tokens and precomputes Pratt dispatch. The
+[token-cache checkpoint](docs/stage31-evidence.md) reads each token once per position
+and generates every choice. A
 [three-way comparison](docs/stage30-comparison.md) measures Nitride, Roslyn and
 Nitrogen on cold and warm C# parses with and without errors. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery

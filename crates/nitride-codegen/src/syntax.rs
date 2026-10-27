@@ -39,10 +39,7 @@ pub(super) fn generate(rules: &[Value], ids: &HashMap<&str, u16>) -> Result<Stri
         } else {
             Some(lookup(ids, text(&r["owner"])?)?)
         };
-        if !matches!(
-            e["kind"].as_str(),
-            Some("choice" | "predicate" | "class" | "any")
-        ) {
+        if !matches!(e["kind"].as_str(), Some("predicate" | "class" | "any")) {
             let body = if owner.is_some() && e["kind"] == "sequence" {
                 emit_parts(array(&e["items"])?, ids, owner, 0, &mut 0)?
             } else {
@@ -145,6 +142,26 @@ fn emit(
                 .map(|e| emit(e, ids, None, next, serial))
                 .collect::<Result<Vec<_>, _>>()?,
         ),
+        // Alternatives are generated; the parser picks candidates by the
+        // static expression, as for an interpreted choice. Alternatives take
+        // no extensible operand, as in the interpreter.
+        "choice" => {
+            let arms = array(&e["items"])?
+                .iter()
+                .enumerate()
+                .map(|(index, item)| {
+                    Ok(format!(
+                        "{index}=>{}",
+                        as_result(&emit(item, ids, None, next, serial)?)
+                    ))
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            format!(
+                "c.choice(&{},{d},|c,i|->Result<bool,nitride_core::Diagnostic>{{match i{{{},_=>Ok(false)}}}})?",
+                emit_expr(e, ids)?,
+                arms.join(",")
+            )
+        }
         "label" => format!(
             "{{let from=c.children_len();let matched={};c.label({},from,{d})?;matched}}",
             emit(&e["inner"], ids, owner, next, serial)?,

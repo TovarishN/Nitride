@@ -169,6 +169,33 @@ impl<'p, 's> SyntaxContext<'p, 's> {
         }
         Ok(true)
     }
+    /// An ordered choice whose alternatives are generated: `alternative`
+    /// attempts alternative `index` of `expr`, which must be a choice. The
+    /// parser selects candidates as it does for interpreted choices.
+    #[inline]
+    pub fn choice(
+        &mut self,
+        expr: &'static Expr<'static>,
+        depth: u32,
+        mut alternative: impl FnMut(&mut SyntaxContext<'_, '_>, usize) -> Result<bool, Diagnostic>,
+    ) -> Result<bool, Diagnostic> {
+        let Expr::Choice(parts) = expr else {
+            return Err(Diagnostic::new(
+                "grammar",
+                [0, 0],
+                "generated choice is not a choice",
+            ));
+        };
+        let Self { parser, children } = self;
+        parser.choice(
+            expr,
+            parts,
+            false,
+            depth,
+            children,
+            |parser, children, index| alternative(&mut SyntaxContext::new(parser, children), index),
+        )
+    }
     #[inline]
     pub fn interpret(
         &mut self,

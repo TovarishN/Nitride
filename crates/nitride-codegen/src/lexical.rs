@@ -144,9 +144,22 @@ pub(super) fn generate(rules: &[Value], ids: &HashMap<&str, u16>) -> Result<Stri
                 "if let Some(matched)=c.ascii_decision(&{table},d+1){{matched}}else{{{body}}}"
             );
         }
+        let mut except = strings(&r["except"])?;
+        let excluded = if except.iter().all(|text| text.len() < 64) {
+            except.sort_unstable();
+            except.dedup();
+            let lengths = except
+                .iter()
+                .fold(0u64, |mask, text| mask | 1 << text.len());
+            format!(
+                "c.excluded_sorted(start,{lengths},{})",
+                list(except.into_iter().map(quoted))
+            )
+        } else {
+            format!("c.excluded(start,{})", list(except.into_iter().map(quoted)))
+        };
         output += &format!(
-            "#[allow(dead_code)]\nfn nitride_lex_{id}(c: &mut nitride_core::lexical::LexicalContext<'_>, d:u32)->Option<bool>{{c.enter(d)?;let start=c.position();let matched={body};if !matched || c.excluded(start,{}) {{c.restore(start);Some(false)}} else {{Some(true)}}}}\n",
-            list(strings(&r["except"])?.into_iter().map(quoted))
+            "#[allow(dead_code)]\nfn nitride_lex_{id}(c: &mut nitride_core::lexical::LexicalContext<'_>, d:u32)->Option<bool>{{c.enter(d)?;let start=c.position();let matched={body};if !matched || {excluded} {{c.restore(start);Some(false)}} else {{Some(true)}}}}\n"
         );
     }
     output += &format!(

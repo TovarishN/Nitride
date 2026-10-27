@@ -718,6 +718,18 @@ impl<'a> Parser<'a> {
         }
         self.memo_cost[generation] = 0;
     }
+    /// Retire the older generation for a new one. Its buckets are kept: the
+    /// new generation refills to the same bounded size.
+    fn rotate_memo(&mut self) {
+        self.memo.swap(0, 1);
+        self.memo_cost.swap(0, 1);
+        for (_, entry) in self.memo[0].drain() {
+            if let Memo::Hit { root, .. } = entry {
+                self.arena.release_cache(root.node);
+            }
+        }
+        self.memo_cost[0] = 0;
+    }
     #[inline]
     fn memo_storage_bound(&self) -> u64 {
         self.memo
@@ -1258,9 +1270,7 @@ impl<'a> Parser<'a> {
         }
         let cost = weight as usize + 256;
         if self.memo_cost[0] + cost > 2 * 1024 * 1024 || self.memo[0].len() >= self.memo_capacity {
-            self.memo.swap(0, 1);
-            self.memo_cost.swap(0, 1);
-            self.clear_memo(0);
+            self.rotate_memo();
         }
         let relative_depth = local_depth.saturating_sub(depth);
         let entry = match root {
@@ -1364,9 +1374,7 @@ impl<'a> Parser<'a> {
         }
         let cost = weight as usize + 256;
         if self.memo_cost[0] + cost > 2 * 1024 * 1024 || self.memo[0].len() >= self.memo_capacity {
-            self.memo.swap(0, 1);
-            self.memo_cost.swap(0, 1);
-            self.clear_memo(0);
+            self.rotate_memo();
         }
         let observed = self.source.observed();
         let relative_depth = self.max_depth.saturating_sub(depth);
@@ -1689,18 +1697,50 @@ impl<'a> Parser<'a> {
         self.work += extra;
         Ok(())
     }
-    fn choice_with_plan(
+    /// An ordered choice. `attempt` runs alternative `index` at the choice's
+    /// start; the interpreter and generated bodies differ only there.
+    pub(super) fn choice<F>(
         &mut self,
-        plan: &dispatch::ChoicePlan,
+        expr: &'static Expr<'static>,
         parts: &'static [Expr],
         lexical: bool,
         depth: u32,
         out: &mut Children,
-    ) -> Result<bool, Diagnostic> {
-        for part in &parts[..plan.first()] {
+        mut attempt: F,
+    ) -> Result<bool, Diagnostic>
+    where
+        F: FnMut(&mut Self, &mut Children, usize) -> Result<bool, Diagnostic>,
+    {
+        if let Some(plan) = self.choice_plan(expr, parts, lexical) {
+            return self.choice_with_plan(&plan, parts.len(), lexical, depth, out, &mut attempt);
+        }
+        for index in 0..parts.len() {
             let mark = self.mark();
             let len = out.len();
-            if self.expression(part, lexical, None, 0, depth + 1, out)? {
+            if attempt(self, out, index)? {
+                return Ok(true);
+            }
+            self.restore(mark);
+            out.truncate(len);
+        }
+        Ok(false)
+    }
+    fn choice_with_plan<F>(
+        &mut self,
+        plan: &dispatch::ChoicePlan,
+        count: usize,
+        lexical: bool,
+        depth: u32,
+        out: &mut Children,
+        attempt: &mut F,
+    ) -> Result<bool, Diagnostic>
+    where
+        F: FnMut(&mut Self, &mut Children, usize) -> Result<bool, Diagnostic>,
+    {
+        for index in 0..plan.first() {
+            let mark = self.mark();
+            let len = out.len();
+            if attempt(self, out, index)? {
                 return Ok(true);
             }
             self.restore(mark);
@@ -1713,10 +1753,10 @@ impl<'a> Parser<'a> {
         // checks. Keep read observations conservatively; replay real matching
         // when trivia/limits prevented a reliable peek.
         let Ok((at, character)) = peek else {
-            for part in &parts[plan.first()..] {
+            for index in plan.first()..count {
                 let mark = self.mark();
                 let len = out.len();
-                if self.expression(part, lexical, None, 0, depth + 1, out)? {
+                if attempt(self, out, index)? {
                     return Ok(true);
                 }
                 self.restore(mark);
@@ -1741,14 +1781,14 @@ impl<'a> Parser<'a> {
             }
             let mark = self.mark();
             let len = out.len();
-            if self.expression(&parts[index], lexical, None, 0, depth + 1, out)? {
+            if attempt(self, out, index)? {
                 return Ok(true);
             }
             self.restore(mark);
             out.truncate(len);
             cursor = index + 1;
         }
-        let skipped = parts.len() - cursor;
+        let skipped = count - cursor;
         self.tick_steps(skipped, depth + 1)?;
         if skipped != 0 {
             self.furthest = self.furthest.max(at);
@@ -1756,12 +1796,10 @@ impl<'a> Parser<'a> {
         }
         Ok(false)
     }
-    /// Whether the input at `peek` can begin one of `lead`. Tokens are read
-    /// exactly as the alternative's own first steps would read them: literals
-    /// with keyword boundaries, lexical rules memoized and rolled back. Any
-    /// error defers to the alternative, which meets it itself.
     /// `None` when the input can begin one of `lead`; otherwise where every
     /// path would fail: the first token, or the token after a matched one.
+    /// Tokens are read exactly as the alternative's own first steps would
+    /// read them. Any error defers to the alternative, which meets it itself.
     fn lead_rejects(
         &mut self,
         lead: &[dispatch::Step],
@@ -2336,22 +2374,9 @@ impl<'a> Parser<'a> {
                 matched
             }
             Expr::Choice(parts) => {
-                if let Some(plan) = self.choice_plan(expr, parts, lexical) {
-                    self.choice_with_plan(&plan, parts, lexical, depth, out)?
-                } else {
-                    let mut matched = false;
-                    for part in *parts {
-                        let mark = self.mark();
-                        let len = out.len();
-                        if self.expression(part, lexical, None, 0, depth + 1, out)? {
-                            matched = true;
-                            break;
-                        }
-                        self.restore(mark);
-                        out.truncate(len);
-                    }
-                    matched
-                }
+                self.choice(expr, parts, lexical, depth, out, |parser, out, index| {
+                    parser.expression(&parts[index], lexical, None, 0, depth + 1, out)
+                })?
             }
             Expr::Repeat { inner, min, max } => {
                 let mut count = 0;

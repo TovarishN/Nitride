@@ -176,6 +176,20 @@ impl<'a> LexicalContext<'a> {
             false
         }
     }
+    /// `excluded` over spellings sorted for binary search, with bit `n` of
+    /// `lengths` set when some spelling is `n` bytes long (all are below 64).
+    /// Same answer and observations: only an equal-length spelling observes.
+    #[inline]
+    pub fn excluded_sorted(&mut self, start: usize, lengths: u64, sorted: &[&str]) -> bool {
+        let length = self.position.saturating_sub(start);
+        if length >= 64 || lengths & (1 << length) == 0 {
+            return false;
+        }
+        self.observe(start.saturating_add(length));
+        self.source
+            .get(start..self.position)
+            .is_some_and(|text| sorted.binary_search(&text).is_ok())
+    }
     #[inline]
     pub fn excluded(&mut self, start: usize, spellings: &[&str]) -> bool {
         spellings.iter().any(|text| {
