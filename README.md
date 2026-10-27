@@ -398,7 +398,10 @@ removes per-release stack setup and published-node directory lookups. The
 [publication checkpoint](docs/stage33-evidence.md) publishes cold strict graphs in
 place and predicts lexical tokens without building leaves. A
 [three-way comparison](docs/stage30-comparison.md) measures Nitride, Roslyn and
-Nitrogen on cold and warm C# parses with and without errors. Recovery probes otherwise
+Nitrogen on cold and warm C# parses with and without errors. The
+[incremental checkpoint](docs/stage34-evidence.md) compares single-character edits
+with Roslyn and bounds recovery's prefix reopening, which made edits in files
+with an existing error and dense-error parses faster. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.
