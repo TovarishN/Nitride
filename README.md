@@ -407,7 +407,9 @@ with errors by evacuating with dense tables and merging seed facts in one pass. 
 [probe filtering checkpoint](docs/stage36-evidence.md) skips recovery probes of
 lexical rules that cannot consume the next character. The
 [exhausted-search checkpoint](docs/stage37-evidence.md) keeps shared recovery results
-whose only limit is a local search exhaustion instead of rerunning flat recovery. Recovery probes otherwise
+whose only limit is a local search exhaustion instead of rerunning flat recovery. The
+[generated-failure checkpoint](docs/stage38-evidence.md) lets recovery probes take
+failures from the generated parser instead of interpreting them again. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.

@@ -2668,7 +2668,16 @@ impl<'a> SharedProbe<'a> {
             minimum: self.parser.key_minimum(id, power),
             in_token: 0,
         };
-        self.prerecognize(id, at, power, key);
+        if self.prerecognize(id, at, power, key) {
+            // The generated parser decided this probe fails: charge it as the
+            // reuse of a recorded failure, without interpreting it again.
+            let hit = self.parser.tick(0).map(|()| None);
+            if hit.is_ok() {
+                self.cache.insert((id, at, power), None);
+            }
+            self.enforce_budget();
+            return hit;
+        }
         self.parser.position = at;
         self.parser.furthest = at;
         self.parser.checkpoint_next = true;
@@ -2713,20 +2722,21 @@ impl<'a> SharedProbe<'a> {
         self.enforce_budget();
         hit
     }
-    /// Recognize a missing successful fact with the generated parser before
-    /// the interpreted probe runs. The probe then reuses it as it reuses a
-    /// seeded fact, so only that reuse is charged to the recovery budget.
-    /// Failures leave no fact; the interpreted probe decides them as before.
-    fn prerecognize(&mut self, id: u16, at: usize, power: u32, key: Key) {
+    /// Recognize a missing fact with the generated parser before the
+    /// interpreted probe runs. The probe then reuses it as it reuses a seeded
+    /// fact, so only that reuse is charged to the recovery budget. A failure
+    /// is recorded at the probe's own key, as the probe itself records one,
+    /// and reported, since the failure cap may leave it unrecorded.
+    fn prerecognize(&mut self, id: u16, at: usize, power: u32, key: Key) -> bool {
         let Some(generated) = self.generated else {
-            return;
+            return false;
         };
         let parser = &mut self.parser;
         if parser.language.rules[id as usize].lexical
             || parser.reusable.get(at as u32, key).is_some()
             || parser.pending_index.contains_key(&(at as u32, key))
         {
-            return;
+            return false;
         }
         let saved = (parser.work, parser.max_depth, parser.furthest);
         parser.compiled = generated.compiled;
@@ -2735,8 +2745,10 @@ impl<'a> SharedProbe<'a> {
         parser.position = at;
         parser.furthest = at;
         parser.checkpoint_next = true;
+        let failure = parser.failure_checkpoint.replace((at as u32, key));
         let mark = parser.mark();
-        let _ = parser.rule(id, power, 0);
+        let failed = matches!(parser.rule(id, power, 0), Ok(None));
+        parser.failure_checkpoint = failure;
         parser.checkpoint_next = false;
         parser.position = mark.position;
         parser.arena.restore(mark.trail);
@@ -2744,6 +2756,7 @@ impl<'a> SharedProbe<'a> {
         parser.lexers = None;
         parser.optimize_recognition = false;
         (parser.work, parser.max_depth, parser.furthest) = saved;
+        failed
     }
     /// A predicate over a single syntax reference skips trivia, then calls the
     /// rule there. Pre-recognize that call; report whether a fact now exists.
