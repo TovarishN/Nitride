@@ -475,6 +475,10 @@ impl Index {
     }
     pub(crate) fn get(&self, at: u32, key: Key) -> Option<Hit> {
         let mut node = self.root.as_deref()?;
+        // The root's bounds are absolute: most lookups past the facts end here.
+        if !(node.min_at..=node.max_at).contains(&i64::from(at)) {
+            return None;
+        }
         let mut displacement = 0;
         loop {
             displacement += node.lazy;

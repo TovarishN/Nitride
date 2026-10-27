@@ -388,6 +388,37 @@ impl PublishedArena {
             copied,
         })
     }
+    /// Visits the nodes reachable from `root` (which starts at `start`) with
+    /// a stack, last child first, passing each node's id, rule and span.
+    /// `visit` returns whether to descend. Chunks are resolved through one
+    /// dense index for the whole walk.
+    pub(crate) fn walk<E>(
+        &self,
+        root: SubtreeId,
+        start: u32,
+        mut visit: impl FnMut(SubtreeId, u16, [u32; 2]) -> Result<bool, E>,
+    ) -> Result<(), E> {
+        let chunks: Vec<&Chunk> = self.chunks.iter().map(Arc::as_ref).collect();
+        let ids: Vec<u32> = chunks.iter().map(|c| c.id).collect();
+        let index = ChunkIndex::new(&ids);
+        let locate = |id: SubtreeId| {
+            let chunk = chunks[index.get(&ids, id.chunk()).expect("owned subtree chunk")];
+            (chunk, chunk.nodes[id.slot()])
+        };
+        let mut stack = vec![(root, start)];
+        while let Some((id, start)) = stack.pop() {
+            let (chunk, node) = locate(id);
+            if !visit(id, node.rule, [start, start + node.width])? {
+                continue;
+            }
+            let mut position = start;
+            for edge in chunk.children(node) {
+                position += edge.extent;
+                stack.push((edge.node, position - locate(edge.node).1.width));
+            }
+        }
+        Ok(())
+    }
     pub(crate) fn sequence(&self, id: SubtreeId) -> Option<Sequence<Child>> {
         let chunk = self.chunk(id)?;
         let node = chunk.nodes[id.slot()];

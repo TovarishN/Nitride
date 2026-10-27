@@ -330,37 +330,37 @@ impl Engine<'static, '_, SharedProbe<'_>> {
         let mut structures = Vec::new();
         let mut damaged = Vec::new();
         let mut reused = Vec::new();
-        let mut stack = vec![snapshot.root()];
-        while let Some(node) = stack.pop() {
-            metadata.charge(1)?;
-            let span = node.span();
-            if recovery_keys.contains(&(node.rule(), span)) {
-                structures.push((node.rule(), span[0], node.subtree_id()));
-            }
-            if let Some(old) = base.filter(|b| b.recovery().is_some()) {
-                if span[0] < span[1] && old.arena.node(node.subtree_id()).is_some() {
-                    if let (Some(start), Some(end)) = (
-                        snapshot.recognitions.previous_position(span[0]),
-                        snapshot.recognitions.previous_position(span[1]),
-                    ) {
-                        let damage = old_damage.overlaps([start, end], &mut metadata)?;
-                        let skipped = old_skipped.overlaps([start, end], &mut metadata)?
-                            || new_skipped.overlaps(span, &mut metadata)?;
-                        if end - start == span[1] - span[0] && !damage && !skipped {
-                            reused.push(span);
-                            continue;
+        snapshot
+            .arena
+            .walk(snapshot.root, snapshot.start, |id, rule, span| {
+                metadata.charge(1)?;
+                if recovery_keys.contains(&(rule, span)) {
+                    structures.push((rule, span[0], id));
+                }
+                if let Some(old) = base.filter(|b| b.recovery().is_some()) {
+                    if span[0] < span[1] && old.arena.node(id).is_some() {
+                        if let (Some(start), Some(end)) = (
+                            snapshot.recognitions.previous_position(span[0]),
+                            snapshot.recognitions.previous_position(span[1]),
+                        ) {
+                            let damage = old_damage.overlaps([start, end], &mut metadata)?;
+                            let skipped = old_skipped.overlaps([start, end], &mut metadata)?
+                                || new_skipped.overlaps(span, &mut metadata)?;
+                            if end - start == span[1] - span[0] && !damage && !skipped {
+                                reused.push(span);
+                                return Ok(false);
+                            }
                         }
                     }
                 }
-            }
-            if self.language.rules[node.rule() as usize].lexical && span[0] < span[1] {
-                lexical.push(span);
-            }
-            if span[0] == span[1] && missing.contains(&(node.rule(), span[0])) {
-                damaged.push((node.rule(), span));
-            }
-            stack.extend(node.children().map(|(_, n)| n));
-        }
+                if self.language.rules[rule as usize].lexical && span[0] < span[1] {
+                    lexical.push(span);
+                }
+                if span[0] == span[1] && missing.contains(&(rule, span[0])) {
+                    damaged.push((rule, span));
+                }
+                Ok::<bool, Diagnostic>(true)
+            })?;
         let mut recovery = if let Some((old, edit)) = base
             .and_then(|old| old.recovery().map(|r| (r, edit)))
             .and_then(|(old, edit)| edit.map(|e| (old, e)))
