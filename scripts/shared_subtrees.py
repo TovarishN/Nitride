@@ -193,10 +193,11 @@ def differential(args):
                 row["stderr"]=outcome.stderr
             else:
                 result=json.loads(outcome.stdout)
+                row["cold_equivalent"]=result["cold"].get("equivalent")
                 row["equivalent"]=[r["equivalent"] for r in result["edits"]]
                 row["fallbacks"]=[r["snapshot"]["stats"]["full_parse_fallbacks"] for r in result["edits"]]
             report["cases"].append(row)
-            if outcome.returncode or not all(row["equivalent"]):
+            if outcome.returncode or row["cold_equivalent"] is False or not all(row["equivalent"]):
                 report["failures"].append(row)
             if number%100==0 or number+1==min(len(manifest["variants"]),args.limit):
                 args.report.parent.mkdir(parents=True,exist_ok=True)

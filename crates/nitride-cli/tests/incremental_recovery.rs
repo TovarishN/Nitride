@@ -420,3 +420,54 @@ fn deleting_call_opener_after_query_methods_matches_full_recovery() {
             .map(|r| (&r.repairs, &r.coverage, &r.damaged_nodes))
     );
 }
+
+fn healthy_prefix_with_one_error() -> String {
+    let mut source = String::new();
+    for i in 0..40 {
+        source.push_str(&format!(
+            "namespace N{i} {{ class C{i} {{ int F(int x) {{ if (x > {i}) {{ return x * 2; }} return x; }} }} }}\n"
+        ));
+    }
+    source.push_str("namespace Broken { class B { int F() { return 1 } } }\n");
+    for i in 0..4 {
+        source.push_str(&format!("namespace M{i} {{ class D{i} {{ }} }}\n"));
+    }
+    source
+}
+
+#[test]
+fn cold_recovery_reuses_the_strict_attempt_prefix() {
+    let source = healthy_prefix_with_one_error();
+    let cold = snapshot(&source);
+    check(&source, &cold);
+    assert_eq!(cold.stats().full_parse_fallbacks, 0);
+    assert!(cold.stats().reused_subtrees >= 40, "{:?}", cold.stats());
+}
+
+#[test]
+fn generated_cold_recovery_reuses_the_strict_attempt_prefix() {
+    let source = healthy_prefix_with_one_error();
+    let cold = parse_snapshot_generated(
+        &nitride_cli::csharp4::PARSER,
+        &source,
+        Limits::default(),
+        SnapshotMode::Recovering(RecoveryOptions::default()),
+    )
+    .unwrap();
+    check(&source, &cold);
+    assert_eq!(cold.stats().full_parse_fallbacks, 0);
+    assert!(cold.stats().reused_subtrees >= 40, "{:?}", cold.stats());
+    // Seeded facts survive into the published index for later edits.
+    let at = source.find("return 1").unwrap() as u32 + 7;
+    let edited = cold
+        .edit(
+            &TextEdit {
+                range: [at, at + 1],
+                replacement: "2".into(),
+            },
+            Limits::default(),
+        )
+        .unwrap();
+    check(&source.replacen("return 1", "return 2", 1), &edited);
+    assert!(edited.stats().reused_subtrees > 0);
+}

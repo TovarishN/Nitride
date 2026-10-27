@@ -130,6 +130,14 @@ struct Input<'a> {
     text: &'a SourceText,
     contiguous: Option<&'a str>,
 }
+/// Recognition facts from a failed cold strict attempt over the same text.
+/// Recovery probes reuse them as an edit reuses a previous snapshot's facts;
+/// the arena owns only syntax reachable from those facts.
+pub(crate) struct Seed {
+    arena: crate::syntax::arena::PublishedArena,
+    recognitions: Index,
+    dispatch: std::sync::Arc<dispatch::Dispatch>,
+}
 pub fn parse_snapshot(
     language: &'static Language<'static>,
     source: &str,
@@ -150,39 +158,60 @@ pub fn parse_snapshot(
             options,
             None,
             Index::default(),
+            None,
         ),
-        SnapshotMode::Recovering(options) => {
-            match parse_with_spill(
-                language,
-                Input {
-                    compiled: None,
-                    lexers: None,
-                    text: &text,
-                    contiguous: Some(source),
-                },
-                limits,
-                ParseOptions {
-                    strict_comments: true,
-                    ..Default::default()
-                },
-                None,
-                Index::default(),
-            ) {
-                Ok(mut snapshot) => {
-                    snapshot.mode = mode;
-                    Ok(snapshot)
-                }
-                Err(error) => crate::recovery::incremental::recover_snapshot(
-                    language,
-                    &text,
-                    limits,
-                    options,
-                    None,
-                    Some(error),
-                ),
-            }
-        }
+        SnapshotMode::Recovering(_) => recover_cold(
+            language,
+            Input {
+                compiled: None,
+                lexers: None,
+                text: &text,
+                contiguous: Some(source),
+            },
+            limits,
+            mode,
+        ),
     }
+}
+/// Cold recovering parse: a strict attempt first, then recovery seeded with
+/// that attempt's recognition facts instead of recognizing the prefix again.
+fn recover_cold(
+    language: &'static Language<'static>,
+    input: Input<'_>,
+    limits: Limits,
+    mode: SnapshotMode,
+) -> Result<ParseSnapshot, Diagnostic> {
+    let SnapshotMode::Recovering(options) = mode else {
+        unreachable!("cold recovery requires recovering mode")
+    };
+    let mut seed = None;
+    let error = match parse_with_spill(
+        language,
+        input,
+        limits,
+        ParseOptions {
+            strict_comments: true,
+            ..Default::default()
+        },
+        None,
+        Index::default(),
+        Some(&mut seed),
+    ) {
+        Ok(mut snapshot) => {
+            snapshot.mode = mode;
+            return Ok(snapshot);
+        }
+        Err(error) => error,
+    };
+    crate::recovery::incremental::recover_snapshot(
+        language,
+        input.text,
+        limits,
+        options,
+        None,
+        Some(error),
+        seed.as_ref(),
+    )
 }
 /// Use generated lexical scanners for cold contiguous input. Scanner errors
 /// rerun the ordinary parser, retaining its established diagnostics/recovery.
@@ -227,6 +256,7 @@ fn parse_snapshot_specialized(
             ..Default::default()
         },
     };
+    let mut seed = None;
     let result = parse_with_spill(
         language,
         Input {
@@ -239,13 +269,27 @@ fn parse_snapshot_specialized(
         options,
         None,
         Index::default(),
+        matches!(mode, SnapshotMode::Recovering(_)).then_some(&mut seed),
     );
-    match result {
-        Ok(mut snapshot) => {
+    match (result, mode) {
+        (Ok(mut snapshot), _) => {
             snapshot.mode = mode;
             Ok(snapshot)
         }
-        Err(_) => {
+        // A syntax failure is the ordinary recovery trigger. Seed recovery with
+        // the generated attempt's facts instead of a second interpreted attempt.
+        (Err(error), SnapshotMode::Recovering(options)) if error.category == "syntax" => {
+            crate::recovery::incremental::recover_snapshot(
+                language,
+                &text,
+                limits,
+                options,
+                None,
+                Some(error),
+                seed.as_ref(),
+            )
+        }
+        (Err(_), _) => {
             drop(text);
             parse_snapshot(language, source, limits, mode)
         }
@@ -269,6 +313,7 @@ impl ParseSnapshot {
                 options,
                 Some(self),
                 index,
+                None,
             )
             .map(|mut snapshot| {
                 snapshot.stats.source_bytes_copied = edit.replacement.len() as u64;
@@ -291,6 +336,7 @@ impl ParseSnapshot {
                         },
                         Some(self),
                         index,
+                        None,
                     ) {
                         Ok(mut snapshot) => {
                             snapshot.mode = self.mode;
@@ -307,6 +353,7 @@ impl ParseSnapshot {
                     options,
                     Some((self, edit)),
                     failure,
+                    None,
                 )
             }
         }
@@ -319,6 +366,7 @@ fn parse_with_spill(
     options: ParseOptions,
     base: Option<&ParseSnapshot>,
     index: Index,
+    mut seed: Option<&mut Option<Seed>>,
 ) -> Result<ParseSnapshot, Diagnostic> {
     let result = parse_source(
         language,
@@ -328,6 +376,7 @@ fn parse_with_spill(
         limits.parser_stack_bytes,
         base,
         index.clone(),
+        seed.as_deref_mut(),
     );
     if result
         .as_ref()
@@ -340,7 +389,7 @@ fn parse_with_spill(
                 .name("nitride-shared-parse".into())
                 .stack_size(limits.parser_spill_stack_bytes)
                 .spawn_scoped(scope, move || {
-                    parse_source(language, text, limits, options, budget, base, index)
+                    parse_source(language, text, limits, options, budget, base, index, seed)
                 })
                 .map_err(|_| Diagnostic::new("limit", [0, 0], "cannot start a deep-parse thread"))?
                 .join()
@@ -350,6 +399,7 @@ fn parse_with_spill(
         result
     }
 }
+#[allow(clippy::too_many_arguments)]
 fn parse_source(
     language: &'static Language<'static>,
     text: Input<'_>,
@@ -358,6 +408,7 @@ fn parse_source(
     stack_budget: usize,
     base: Option<&ParseSnapshot>,
     index: Index,
+    seed: Option<&mut Option<Seed>>,
 ) -> Result<ParseSnapshot, Diagnostic> {
     let input = text;
     let text = input.text;
@@ -366,6 +417,10 @@ fn parse_source(
     parser.trivia()?;
     if root.is_none() || parser.position != text.len() as usize {
         let at = parser.furthest.max(parser.position) as u32;
+        if let Some(slot) = seed {
+            // Seeding is an optional accelerator; recovery runs either way.
+            *slot = parser.into_seed().ok();
+        }
         return Err(Diagnostic::new("syntax", [at, at], "invalid source"));
     }
     publish(
@@ -402,7 +457,9 @@ fn publish(
         .saturating_add(allocation_charge);
     let mut arena = parser.arena.finish();
     arena.labels = parser.labels.into();
-    if base.is_none() {
+    // A cold seed's facts are already in the index; compaction below keeps
+    // those still reachable from the published root.
+    if base.is_none() && parser.index.is_empty() {
         parser.index = Index::from_entries(
             parser
                 .pending_index
@@ -489,12 +546,7 @@ impl<'a> Parser<'a> {
     ) -> Self {
         let text = input.text;
         let labels = base.map_or_else(|| vec![""], |b| b.arena.labels.to_vec());
-        let label_ids = labels
-            .iter()
-            .enumerate()
-            .skip(1)
-            .map(|(i, s)| ((s.as_ptr() as usize, s.len()), i as u16))
-            .collect();
+        let label_ids = label_ids(&labels);
         let root_hint = base.map(|b| PriorNode {
             node: b.root,
             start: index.current_position(b.start).unwrap_or(b.start),
@@ -557,7 +609,59 @@ impl<'a> Parser<'a> {
         }
     }
 }
+fn label_ids(labels: &[&'static str]) -> HashMap<(usize, usize), u16> {
+    labels
+        .iter()
+        .enumerate()
+        .skip(1)
+        .map(|(i, s)| ((s.as_ptr() as usize, s.len()), i as u16))
+        .collect()
+}
 impl Parser<'_> {
+    /// Convert a failed cold strict attempt into recovery seed facts. Fact
+    /// roots become owners; all other syntax, including the partial root, is
+    /// reclaimed before compaction.
+    fn into_seed(mut self) -> Result<Seed, Diagnostic> {
+        self.clear_memo(0);
+        self.clear_memo(1);
+        let facts: Vec<_> = self.pending_index.drain().collect();
+        for (_, hit) in &facts {
+            if hit.root != SubtreeId::NONE {
+                self.arena.retain(hit.root);
+            }
+            self.arena.release_cache(hit.root);
+        }
+        self.arena.restore(0);
+        let mut arena = self.arena.finish();
+        arena.labels = self.labels.into();
+        let mut roots: Vec<_> = facts
+            .iter()
+            .map(|(_, hit)| hit.root)
+            .filter(|&root| root != SubtreeId::NONE)
+            .collect();
+        let (arena, mapping) = arena.compact(&mut roots)?;
+        let recognitions =
+            Index::from_entries(facts.into_iter().filter_map(|((at, key), mut hit)| {
+                if hit.root != SubtreeId::NONE {
+                    hit.root = mapping.get(hit.root)?;
+                }
+                Some((at, key, hit))
+            }));
+        Ok(Seed {
+            arena,
+            recognitions,
+            dispatch: self.dispatch,
+        })
+    }
+    /// Reuse a cold seed for the same text: its facts need no edit mapping.
+    fn adopt_seed(&mut self, seed: &Seed) {
+        self.labels = seed.arena.labels.to_vec();
+        self.label_ids = label_ids(&self.labels);
+        self.arena = ArenaBuilder::from_published(&seed.arena);
+        self.reusable = seed.recognitions.clone();
+        self.index = seed.recognitions.clone();
+        self.dispatch = seed.dispatch.clone();
+    }
     fn key_minimum(&self, rule: u16, minimum: u32) -> u32 {
         if self
             .minimum_sensitive
@@ -1937,6 +2041,7 @@ impl<'a> SharedProbe<'a> {
         limits: Limits,
         base: Option<&ParseSnapshot>,
         index: Index,
+        seed: Option<&Seed>,
     ) -> Self {
         let mut probe = Self {
             parser: Parser::new(
@@ -1971,6 +2076,9 @@ impl<'a> SharedProbe<'a> {
         // Probe work is part of the existing recovery search budget. Keep its
         // recognizer unchanged until that accounting contract is versioned.
         probe.parser.optimize_recognition = false;
+        if let Some(seed) = seed.filter(|_| base.is_none()) {
+            probe.parser.adopt_seed(seed);
+        }
         probe
     }
     pub(crate) fn rule(
@@ -3028,8 +3136,14 @@ mod tests {
     fn cache_pressure_preserves_facts_for_history_owned_roots() {
         let language = prefix_fact_fixture(false);
         let text = SourceText::new(&"a ".repeat(5000)).unwrap();
-        let mut probe =
-            SharedProbe::new(language, &text, Limits::default(), None, Index::default());
+        let mut probe = SharedProbe::new(
+            language,
+            &text,
+            Limits::default(),
+            None,
+            Index::default(),
+            None,
+        );
         probe.parser.cache_budget = 1024;
         let first = probe.rule(1, 0, 0).unwrap().unwrap();
         let root = probe.handle(first.root).unwrap();
@@ -3063,6 +3177,7 @@ mod tests {
             Limits::default().parser_stack_bytes,
             Some(&base),
             base.recognitions.clone(),
+            None,
         )
         .unwrap();
         assert_eq!(
@@ -3091,6 +3206,7 @@ mod tests {
             Limits::default().parser_stack_bytes,
             Some(&base),
             base.recognitions.clone(),
+            None,
         )
         .unwrap();
         assert_eq!(next.root().rule(), 3);
@@ -3298,8 +3414,14 @@ mod tests {
             ),
         }));
         let text = SourceText::new(&";".repeat(4000)).unwrap();
-        let mut probe =
-            SharedProbe::new(language, &text, Limits::default(), None, Index::default());
+        let mut probe = SharedProbe::new(
+            language,
+            &text,
+            Limits::default(),
+            None,
+            Index::default(),
+            None,
+        );
         probe.parser.cache_budget = 1024;
         for at in 0..4000 {
             assert!(probe.rule(1, at, 0).unwrap().is_some());
@@ -3346,8 +3468,14 @@ mod tests {
             ),
         }));
         let text = SourceText::new(&";".repeat(4000)).unwrap();
-        let mut probe =
-            SharedProbe::new(language, &text, Limits::default(), None, Index::default());
+        let mut probe = SharedProbe::new(
+            language,
+            &text,
+            Limits::default(),
+            None,
+            Index::default(),
+            None,
+        );
         probe.parser.cache_budget = 1024;
         for at in 0..4000 {
             let hit = probe.rule(1, at, 0).unwrap().unwrap();

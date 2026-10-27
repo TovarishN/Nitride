@@ -2,7 +2,7 @@
 //! attach structural handles; only recovery-created ancestors are constructed.
 use super::*;
 use crate::incremental::dependencies::Index;
-use crate::parser::shared::{Children, Handle, SharedProbe};
+use crate::parser::shared::{Children, Handle, Seed, SharedProbe};
 use std::sync::Arc;
 impl Probe<'static> for SharedProbe<'_> {
     fn selected(&mut self, root: u32) {
@@ -24,6 +24,7 @@ impl Probe<'static> for SharedProbe<'_> {
         self.reusable_rule(id, at)
     }
 }
+#[allow(clippy::too_many_arguments)]
 pub(crate) fn recover(
     language: &'static Language<'static>,
     text: &SourceText,
@@ -32,8 +33,18 @@ pub(crate) fn recover(
     base: Option<&ParseSnapshot>,
     index: Index,
     edit: Option<&TextEdit>,
+    seed: Option<&Seed>,
 ) -> Result<ParseSnapshot, Diagnostic> {
-    let result = recover_once(language, text, limits, options, base, index.clone(), edit);
+    let result = recover_once(
+        language,
+        text,
+        limits,
+        options,
+        base,
+        index.clone(),
+        edit,
+        seed,
+    );
     let exhausted = match &result {
         Ok(snapshot) => snapshot
             .diagnostics
@@ -52,7 +63,7 @@ pub(crate) fn recover(
                 .name("nitride-shared-recovery".into())
                 .stack_size(limits.parser_spill_stack_bytes)
                 .spawn_scoped(scope, move || {
-                    recover_once(language, text, spill, options, base, index, edit)
+                    recover_once(language, text, spill, options, base, index, edit, seed)
                 })
                 .map_err(|_| Diagnostic::new("limit", [0, 0], "cannot start a deep-parse thread"))?
                 .join()
@@ -62,6 +73,7 @@ pub(crate) fn recover(
         result
     }
 }
+#[allow(clippy::too_many_arguments)]
 fn recover_once(
     language: &'static Language<'static>,
     text: &SourceText,
@@ -70,13 +82,14 @@ fn recover_once(
     base: Option<&ParseSnapshot>,
     index: Index,
     edit: Option<&TextEdit>,
+    seed: Option<&Seed>,
 ) -> Result<ParseSnapshot, Diagnostic> {
     let mut engine = engine(
         language,
         Source::Shared(text),
         limits,
         options,
-        SharedProbe::new(language, text, limits, base, index),
+        SharedProbe::new(language, text, limits, base, index, seed),
     );
     let (state, failure) = match engine.run() {
         Ok(state) => (state, None),

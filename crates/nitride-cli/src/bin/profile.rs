@@ -264,8 +264,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             let (initial, cold_phase) =
                 measure(|| snapshot_parse(language, profile, &source, mode, compiled, generated));
             let mut current = initial.map_err(|e| e.message)?;
-            let cold =
-                serde_json::json!({"phase":cold_phase.json(),"snapshot":snapshot_report(&current)});
+            let cold = serde_json::json!({"phase":cold_phase.json(),"snapshot":snapshot_report(&current),
+                    "equivalent":validate.then(||validate_snapshot(&current,language,recover))});
             let mut history = std::collections::VecDeque::with_capacity(retain + 1);
             let mut rows = Vec::new();
             for edit in edits {

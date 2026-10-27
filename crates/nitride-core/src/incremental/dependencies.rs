@@ -396,6 +396,9 @@ impl Index {
             edit_map: None,
         }
     }
+    pub(crate) fn is_empty(&self) -> bool {
+        self.root.is_none()
+    }
     pub(crate) fn previous_position(&self, at: u32) -> Option<u32> {
         let (range, delta) = self.edit_map?;
         let value = i64::from(at);

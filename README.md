@@ -383,7 +383,9 @@ the current chunk after slot recycling. A later
 large-file timing gain came with increased memo-budget eviction churn. The
 [fused ASCII lexical checkpoint](docs/stage24-evidence.md) replaces first-byte-
 determined scanner decisions with immutable tables and exact work/depth/read
-accounting. Recovery probes
+accounting. The [seeded cold recovery checkpoint](docs/stage26-evidence.md)
+reuses a failed strict attempt's recognition facts in recovery instead of
+recognizing the prefix again. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.

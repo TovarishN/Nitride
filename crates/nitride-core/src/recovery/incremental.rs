@@ -278,6 +278,7 @@ pub(crate) fn recover_snapshot(
     options: RecoveryOptions,
     previous: Option<(&ParseSnapshot, &TextEdit)>,
     strict_error: Option<Diagnostic>,
+    seed: Option<&crate::parser::shared::Seed>,
 ) -> Result<ParseSnapshot, Diagnostic> {
     if options.max_states > 0
         && strict_error
@@ -297,6 +298,7 @@ pub(crate) fn recover_snapshot(
             base,
             index,
             previous.map(|(_, edit)| edit),
+            seed,
         );
         if let Ok(mut snapshot) = result {
             if !snapshot.diagnostics.has_category("limit") {
