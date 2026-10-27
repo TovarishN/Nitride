@@ -193,14 +193,31 @@ fn many_repairs_are_capped() {
     let text: String = (0..800)
         .map(|i| format!("let a{i}=1\nsum(a{i},1);\n"))
         .collect();
+    // The baseline opens and analyses the same file without asking for
+    // actions, so the bound holds on slow machines too. Each offered repair
+    // re-parses once (about ten); all 800 would be far past the bound.
+    let started = std::time::Instant::now();
+    let symbols = Session::run(
+        &dir,
+        vec![
+            open(&path, &text),
+            request(
+                5,
+                "textDocument/documentSymbol",
+                json!({"textDocument":{"uri":uri(&path)}}),
+            ),
+        ],
+    );
+    assert!(response(&symbols, 5)["result"].is_array());
+    let baseline = started.elapsed();
     let started = std::time::Instant::now();
     let found = actions(&dir, &path, &text, whole(), Some(vec!["quickfix"]));
+    let elapsed = started.elapsed();
     assert!(!found.is_empty());
     assert!(found.len() <= 20, "{}", found.len());
-    eprintln!("found {} in {:?}", found.len(), started.elapsed());
-    assert!(
-        started.elapsed() < std::time::Duration::from_secs(5),
-        "{:?}",
-        started.elapsed()
+    eprintln!(
+        "found {} in {elapsed:?} (baseline {baseline:?})",
+        found.len()
     );
+    assert!(elapsed < baseline * 30, "{elapsed:?} against {baseline:?}");
 }

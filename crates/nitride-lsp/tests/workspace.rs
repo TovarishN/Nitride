@@ -127,7 +127,9 @@ fn missing_grammar_is_manifest_diagnostic() {
 fn repo_manifest_loads() {
     let mut registry = Registry::default();
     registry.reload(&[repo()], &|_| None);
-    assert_eq!(registry.languages().len(), 12);
+    // The 12 nitride.json languages, and languages/signed's signed Portable.
+    assert_eq!(registry.languages().len(), 13);
+    assert_eq!(registry.languages().iter().filter(|l| l.signed).count(), 1);
     for language in registry.languages() {
         assert!(
             language.current.is_some(),

@@ -42,9 +42,10 @@ Nitride wins, even where it is less capable than Nitrogen.
      highlights, rename (with prepareRename), workspace symbols.
   3. Editing help: completion, signature help, formatting (document, range,
      on-type), inlay hints, code actions.
-  4. Nitrogen's extras: languages inside tagged C# strings, signed programs
-     (the `nitrogen-signature` routing), the Extract Block and Extract Quote
-     Helper commands, palette tokens.
+  4. Nitrogen's extras: palette tokens, signed programs (the
+     `nitrogen-signature` routing), the Extract Block and Extract Quote
+     Helper commands. (Languages inside tagged C# strings were listed here
+     and dropped on 2026-10-26; see Non-goals.)
 
 ## Non-goals
 
@@ -53,6 +54,9 @@ Nitride wins, even where it is less capable than Nitrogen.
   C# semantic content gives no types or navigation; the editor reflects what
   Nitride admits. Unsupported constructs surface as diagnostics, not as
   silent gaps.
+- Languages inside tagged C# strings (`/*lang=calc*/ "…"`, `// language=calc`).
+  The user decided on 2026-10-26 that Nitride does not need them; C# files
+  stay with the C# extension.
 - Full Visual Studio or Rider plugins.
 - Publishing to the VS Code Marketplace (a local `.vsix` is the deliverable).
 
