@@ -2582,6 +2582,11 @@ impl<'a> Parser<'a> {
 /// Recovery's opaque probe handles refer directly to immutable shared records.
 /// Only selected handles acquire committed ownership at VM stable boundaries.
 type RecoveryKeys = std::collections::HashSet<(u16, [u32; 2]), hash::Seeded>;
+impl SharedProbe<'_> {
+    pub(crate) fn may_consume(&self, id: u16, c: char) -> bool {
+        self.parser.dispatch.may_consume(id, c)
+    }
+}
 pub(crate) struct SharedProbe<'a> {
     parser: Parser<'a>,
     handles: Vec<Handle>,

@@ -15,6 +15,10 @@ trait Probe<'g> {
     fn reusable_rule(&mut self, _id: u16, _at: usize) -> Result<Option<ProbeHit>, Diagnostic> {
         Ok(None)
     }
+    /// Whether a non-empty match of lexical rule `id` may begin with `c`.
+    fn may_consume(&self, _id: u16, _c: char) -> bool {
+        true
+    }
 }
 impl<'g> Probe<'g> for StrictProbe<'g, '_> {
     fn rule(&mut self, id: u16, at: usize, power: u32) -> Result<Option<ProbeHit>, Diagnostic> {
@@ -190,6 +194,9 @@ struct Engine<'g, 'a, P> {
     lexical: Vec<u16>,
     prefixes: Vec<Prefix<'g>>,
     reused_batches: u64,
+    /// `starts` visit marks by code, current when equal to `start_epoch`.
+    start_seen: Vec<u32>,
+    start_epoch: u32,
 }
 
 pub(super) fn recover<'g>(
@@ -273,6 +280,8 @@ fn engine<'g, 'a, P: Probe<'g>>(
         lexical,
         prefixes: Vec::new(),
         reused_batches: 0,
+        start_seen: Vec::new(),
+        start_epoch: 0,
     };
     let end = engine.tasks.push(Task::End, 0);
     let stack = engine.tasks.push(
@@ -416,11 +425,17 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
     /// strictly by the interpreter. A visited set breaks nullable/ref cycles.
     fn starts(&mut self, code: Code, at: usize) -> Result<bool, Diagnostic> {
         let mut pending = vec![code];
-        let mut seen = HashSet::new();
+        if self.start_epoch == u32::MAX || self.start_seen.is_empty() {
+            self.start_seen = vec![0; self.graph.code.len()];
+            self.start_epoch = 0;
+        }
+        self.start_epoch += 1;
         while let Some(code) = pending.pop() {
-            if !seen.insert(code) {
+            let seen = &mut self.start_seen[code as usize];
+            if *seen == self.start_epoch {
                 continue;
             }
+            *seen = self.start_epoch;
             match &self.graph.code[code as usize] {
                 Instruction::Terminal(Expected::Literal(text), _) => {
                     if self.literal_end(text, at).is_some() {
@@ -466,13 +481,19 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
     }
     fn recognized_end(&mut self, at: usize) -> Result<usize, Diagnostic> {
         let mut end = at;
-        if let Some(c) = self.source.character(at) {
-            let first = c.encode_utf8(&mut [0; 4]).as_bytes()[0];
-            for text in &self.literal_tokens[first as usize] {
-                end = end.max(self.literal_end(text, at).unwrap_or(at));
-            }
+        // Only non-empty matches can raise the end, so a lexical rule that
+        // cannot consume the next character is not probed.
+        let Some(c) = self.source.character(at) else {
+            return Ok(end);
+        };
+        let first = c.encode_utf8(&mut [0; 4]).as_bytes()[0];
+        for text in &self.literal_tokens[first as usize] {
+            end = end.max(self.literal_end(text, at).unwrap_or(at));
         }
         for id in &self.lexical {
+            if !self.probe.may_consume(*id, c) {
+                continue;
+            }
             if let Some(hit) = self.probe.rule(*id, at, 0)? {
                 end = end.max(hit.end);
             }

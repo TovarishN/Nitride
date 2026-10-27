@@ -403,7 +403,9 @@ Nitrogen on cold and warm C# parses with and without errors. The
 with Roslyn and bounds recovery's prefix reopening, which made edits in files
 with an existing error and dense-error parses faster. The
 [recovery publication checkpoint](docs/stage35-evidence.md) speeds cold parses
-with errors by evacuating with dense tables and merging seed facts in one pass. Recovery probes otherwise
+with errors by evacuating with dense tables and merging seed facts in one pass. The
+[probe filtering checkpoint](docs/stage36-evidence.md) skips recovery probes of
+lexical rules that cannot consume the next character. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.

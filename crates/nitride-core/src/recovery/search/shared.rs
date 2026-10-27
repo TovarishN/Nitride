@@ -23,6 +23,9 @@ impl Probe<'static> for SharedProbe<'_> {
     fn reusable_rule(&mut self, id: u16, at: usize) -> Result<Option<ProbeHit>, Diagnostic> {
         self.reusable_rule(id, at)
     }
+    fn may_consume(&self, id: u16, c: char) -> bool {
+        self.may_consume(id, c)
+    }
 }
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn recover<'a>(

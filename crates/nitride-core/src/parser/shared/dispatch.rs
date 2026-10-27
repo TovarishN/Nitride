@@ -676,6 +676,14 @@ impl Dispatch {
             .copied()
             .unwrap_or(Start::UNKNOWN)
     }
+    /// Whether a non-empty match of rule `id` may begin with `c`; conservative.
+    pub(crate) fn may_consume(&self, id: u16, c: char) -> bool {
+        Start {
+            nullable: false,
+            ..self.start(id)
+        }
+        .allows(Some(c))
+    }
     pub(super) fn tail(&self, id: u16) -> Option<Start> {
         self.tails.get(id as usize).copied().flatten()
     }
