@@ -126,12 +126,16 @@ pub(crate) struct Relocation {
     live: Vec<Vec<bool>>,
     pub removed_bytes: usize,
     pub copied_bytes: usize,
-    evacuated: Option<std::collections::HashMap<SubtreeId, SubtreeId>>,
+    evacuated: Option<Vec<Vec<SubtreeId>>>,
 }
 impl Relocation {
     pub(crate) fn get(&self, id: SubtreeId) -> Option<SubtreeId> {
         if let Some(map) = &self.evacuated {
-            return map.get(&id).copied();
+            let chunk = self.index.get(&self.ids, id.chunk())?;
+            return map[chunk]
+                .get(id.slot())
+                .copied()
+                .filter(|next| *next != SubtreeId::NONE);
         }
         let chunk = self.index.get(&self.ids, id.chunk())?;
         if !*self.live[chunk].get(id.slot())? {
@@ -142,7 +146,8 @@ impl Relocation {
 }
 struct Evacuated {
     arena: PublishedArena,
-    mapping: std::collections::HashMap<SubtreeId, SubtreeId>,
+    /// New IDs by chunk position and slot; `NONE` for unreachable nodes.
+    mapping: Vec<Vec<SubtreeId>>,
     copied: usize,
 }
 #[derive(Clone)]
@@ -197,7 +202,7 @@ impl PublishedArena {
             let mapping = rebuilt.mapping;
             let copied = rebuilt.copied;
             for root in roots {
-                *root = mapping[root];
+                *root = mapping[index.get(&ids, root.chunk()).unwrap()][root.slot()];
             }
             let next = rebuilt.arena;
             let removed_bytes = before.saturating_sub(next.payload_bytes());
@@ -325,7 +330,16 @@ impl PublishedArena {
         roots: &[SubtreeId],
         mut builder: ArenaBuilder,
     ) -> Result<Evacuated, Diagnostic> {
-        let mut visited = std::collections::HashSet::new();
+        // Chunk positions follow the sequence's ascending IDs, as in `compact`.
+        let chunks: Vec<&Chunk> = self.chunks.iter().map(Arc::as_ref).collect();
+        let ids: Vec<u32> = chunks.iter().map(|c| c.id).collect();
+        let index = ChunkIndex::new(&ids);
+        let locate = |id: SubtreeId| {
+            let c = index.get(&ids, id.chunk()).expect("owned reachable chunk");
+            (c, id.slot())
+        };
+        let mut visited: Vec<Vec<bool>> =
+            chunks.iter().map(|c| vec![false; c.nodes.len()]).collect();
         let mut order = Vec::new();
         let mut stack: Vec<_> = roots.iter().map(|id| (*id, false)).collect();
         while let Some((id, expanded)) = stack.pop() {
@@ -333,27 +347,40 @@ impl PublishedArena {
                 order.push(id);
                 continue;
             }
-            if !visited.insert(id) {
+            let (c, slot) = locate(id);
+            if std::mem::replace(&mut visited[c][slot], true) {
                 continue;
             }
             stack.push((id, true));
-            stack.extend(self.children(id).map(|child| (child.node, false)));
+            stack.extend(
+                chunks[c]
+                    .children(chunks[c].nodes[slot])
+                    .map(|child| (child.node, false)),
+            );
         }
-        let mut mapping = std::collections::HashMap::with_capacity(order.len());
+        drop(visited);
+        let mut mapping: Vec<Vec<SubtreeId>> = chunks
+            .iter()
+            .map(|c| vec![SubtreeId::NONE; c.nodes.len()])
+            .collect();
         let mut copied = 0;
+        let mut children = Vec::new();
         for id in order {
-            let node = self.node(id).unwrap();
-            let children: Vec<_> = self
-                .children(id)
-                .map(|edge| Child {
-                    node: mapping[&edge.node],
+            let (c, slot) = locate(id);
+            let node = chunks[c].nodes[slot];
+            children.clear();
+            children.extend(chunks[c].children(node).map(|edge| {
+                let (ec, es) = locate(edge.node);
+                Child {
+                    node: mapping[ec][es],
                     ..edge
-                })
-                .collect();
+                }
+            }));
             copied +=
                 std::mem::size_of::<StoredNode>() + children.len() * std::mem::size_of::<Child>();
-            let next = builder.add_reusing(node.rule, node.width, children.into_iter(), None)?;
-            mapping.insert(id, next);
+            let next =
+                builder.add_reusing(node.rule, node.width, children.iter().copied(), None)?;
+            mapping[c][slot] = next;
         }
         Ok(Evacuated {
             arena: builder.finish(),

@@ -508,6 +508,13 @@ fn publish(
                 .into_iter()
                 .map(|((at, key), hit)| (at, key, hit)),
         );
+    } else if base.is_none() {
+        parser.index = parser.index.merged(
+            parser
+                .pending_index
+                .into_iter()
+                .map(|((at, key), hit)| (at, key, hit)),
+        );
     } else {
         for ((at, key), hit) in parser.pending_index {
             parser.index.insert(at, key, hit);
@@ -2574,7 +2581,7 @@ impl<'a> Parser<'a> {
 
 /// Recovery's opaque probe handles refer directly to immutable shared records.
 /// Only selected handles acquire committed ownership at VM stable boundaries.
-type RecoveryKeys = std::collections::HashSet<(u16, [u32; 2])>;
+type RecoveryKeys = std::collections::HashSet<(u16, [u32; 2]), hash::Seeded>;
 pub(crate) struct SharedProbe<'a> {
     parser: Parser<'a>,
     handles: Vec<Handle>,

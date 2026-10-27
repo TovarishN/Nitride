@@ -542,6 +542,7 @@ fn coverage_source(
     work.sorting(tokens.len())?;
     tokens.sort_unstable();
     let (mut sk, mut tk, mut at) = (0, 0, range[0] as usize);
+    let mut cursor = source.cursor();
     let mut result: Vec<Coverage> = Vec::new();
     while at < range[1] as usize {
         while sk < skipped.len() && skipped[sk][1] as usize <= at {
@@ -554,15 +555,19 @@ fn coverage_source(
             (skipped[sk][1] as usize, CoverageKind::Skipped)
         } else if tk < tokens.len() && tokens[tk][0] as usize <= at {
             (tokens[tk][1] as usize, CoverageKind::Retained)
-        } else if source.matches(at, "//") {
+        } else if cursor.matches(at, "//") {
             (
-                source.find(at, "\n").unwrap_or(source.len()),
+                cursor.find(at, "\n").unwrap_or(source.len()),
                 CoverageKind::Trivia,
             )
-        } else if source.matches(at, "/*") && source.find(at + 2, "*/").is_some() {
-            (source.find(at + 2, "*/").unwrap() + 2, CoverageKind::Trivia)
+        } else if let Some(close) = cursor
+            .matches(at, "/*")
+            .then(|| cursor.find(at + 2, "*/"))
+            .flatten()
+        {
+            (close + 2, CoverageKind::Trivia)
         } else {
-            let c = source.character(at).unwrap();
+            let c = cursor.character(at).unwrap();
             (
                 at + c.len_utf8(),
                 if c.is_whitespace() {

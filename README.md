@@ -401,7 +401,9 @@ place and predicts lexical tokens without building leaves. A
 Nitrogen on cold and warm C# parses with and without errors. The
 [incremental checkpoint](docs/stage34-evidence.md) compares single-character edits
 with Roslyn and bounds recovery's prefix reopening, which made edits in files
-with an existing error and dense-error parses faster. Recovery probes otherwise
+with an existing error and dense-error parses faster. The
+[recovery publication checkpoint](docs/stage35-evidence.md) speeds cold parses
+with errors by evacuating with dense tables and merging seed facts in one pass. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.

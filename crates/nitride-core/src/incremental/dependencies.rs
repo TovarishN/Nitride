@@ -403,6 +403,44 @@ impl Index {
             edit_map: None,
         }
     }
+    /// This index with `entries` inserted, built in one pass; a new entry
+    /// replaces an existing one at the same position and key, as `insert` does.
+    pub(crate) fn merged(&self, entries: impl IntoIterator<Item = (u32, Key, Hit)>) -> Self {
+        fn collect(node: &Link, displacement: i64, out: &mut Vec<Entry>) {
+            let Some(node) = node else {
+                return;
+            };
+            let displacement = displacement + node.lazy;
+            match &node.kind {
+                Kind::Leaf(store) => out.extend(store.entries().into_iter().map(|mut e| {
+                    e.at += displacement;
+                    e
+                })),
+                Kind::Branch(a, b) => {
+                    collect(&Some(a.clone()), displacement, out);
+                    collect(&Some(b.clone()), displacement, out);
+                }
+            }
+        }
+        let mut all: Vec<_> = entries
+            .into_iter()
+            .map(|(at, key, hit)| Entry {
+                at: i64::from(at),
+                key,
+                hit,
+            })
+            .collect();
+        let added = all.len();
+        collect(&self.root, 0, &mut all);
+        // A stable sort keeps each new entry ahead of the existing one it replaces.
+        all[..added].sort_unstable_by_key(|e| (e.at, e.key));
+        all.sort_by_key(|e| (e.at, e.key));
+        all.dedup_by_key(|e| (e.at, e.key));
+        Self {
+            root: pack(all),
+            edit_map: self.edit_map,
+        }
+    }
     pub(crate) fn is_empty(&self) -> bool {
         self.root.is_none()
     }
