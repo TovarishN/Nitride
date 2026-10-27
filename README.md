@@ -394,7 +394,9 @@ missing facts after the first error with the generated parser. The
 operators by their first two tokens and precomputes Pratt dispatch. The
 [token-cache checkpoint](docs/stage31-evidence.md) reads each token once per position
 and generates every choice. The [arena checkpoint](docs/stage32-evidence.md)
-removes per-release stack setup and published-node directory lookups. A
+removes per-release stack setup and published-node directory lookups. The
+[publication checkpoint](docs/stage33-evidence.md) publishes cold strict graphs in
+place and predicts lexical tokens without building leaves. A
 [three-way comparison](docs/stage30-comparison.md) measures Nitride, Roslyn and
 Nitrogen on cold and warm C# parses with and without errors. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery

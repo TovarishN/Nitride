@@ -941,6 +941,15 @@ impl ArenaBuilder {
     pub(crate) fn copied_bytes(&self) -> u64 {
         self.copied_existing_bytes
     }
+    /// Live nodes and node slots in unpublished chunks.
+    pub(crate) fn occupancy(&self) -> (usize, usize) {
+        self.chunks
+            .iter()
+            .flatten()
+            .fold((0, 0), |(alive, slots), c| {
+                (alive + c.alive, slots + c.data.nodes.len())
+            })
+    }
     pub(crate) fn finish(self) -> PublishedArena {
         let mut published = self.published;
         let mut chunks: Vec<_> = self

@@ -62,6 +62,30 @@ enum Memo {
         observed: u64,
         depth: u32,
     },
+    /// A lexical match recorded by a prediction, which needs only its end.
+    /// Its leaf is built, and the entry becomes a `Hit`, on first real use.
+    Scanned {
+        end: usize,
+        furthest: usize,
+        observed: u64,
+        depth: u32,
+    },
+}
+impl Memo {
+    /// Observation end and relative depth a hit replays.
+    fn replay(self) -> (u64, u32) {
+        match self {
+            Memo::Fail {
+                observed, depth, ..
+            }
+            | Memo::Hit {
+                observed, depth, ..
+            }
+            | Memo::Scanned {
+                observed, depth, ..
+            } => (observed, depth),
+        }
+    }
 }
 fn minimum_sensitive(rule: &Rule) -> bool {
     if matches!(&rule.expr, Expr::Pratt { .. }) {
@@ -463,6 +487,13 @@ fn publish(
     drop(parser.edge_buffers);
     let copied_bytes = parser.arena.copied_bytes();
     let allocation_charge = parser.arena.publication_allocation_bound();
+    // Releases free most failed attempts during the parse, and every live node
+    // is now reachable from the root. A cold strict graph with few dead slots
+    // is published in place: compaction would copy it all to drop little.
+    // Recovery publishes over the failed attempt's shared seed chunks, where
+    // compaction rebuilds a graph laid out for the edits that follow.
+    let (alive, slots) = parser.arena.occupancy();
+    let sparse = slots - alive > slots / 8;
     let maintenance_debt = base
         .map_or(0, |b| b.maintenance_debt)
         .saturating_add(allocation_charge);
@@ -488,9 +519,13 @@ fn publish(
     // approved half-fresh-output slack before evacuating an entire graph.
     let allowance =
         (8_usize * 1024 * 1024).saturating_add(base.map_or(0, |b| b.maintenance_base / 2));
-    let compact = base.is_none()
-        || maintenance_debt > allowance
-        || base.is_some_and(|b| u64::from(text.len()) * 3 < u64::from(b.source.len()) * 2);
+    let compact = match base {
+        None => sparse || matches!(mode, SnapshotMode::Recovering(_)),
+        Some(b) => {
+            maintenance_debt > allowance
+                || u64::from(text.len()) * 3 < u64::from(b.source.len()) * 2
+        }
+    };
     let root = if compact {
         let (next, mapping) = arena.compact(&mut relocated)?;
         arena = next;
@@ -519,7 +554,8 @@ fn publish(
         root.start,
         mode,
     );
-    if !compact {
+    // A cold graph published in place starts debt-free, as a compacted one.
+    if !compact && base.is_some() {
         snapshot.maintenance_debt = maintenance_debt;
         snapshot.maintenance_base = base.map_or(snapshot.maintenance_base, |b| b.maintenance_base);
     }
@@ -1163,9 +1199,39 @@ impl<'a> Parser<'a> {
         id: u16,
         depth: u32,
     ) -> Option<Result<Option<Handle>, Diagnostic>> {
+        let start = self.position;
+        let (end, work, scan_depth, observed) = self.scan(id, start, depth)?;
+        self.work = self.work.saturating_add(work);
+        self.max_depth = self.max_depth.max(scan_depth);
+        self.source.observe(observed);
+        self.stats.native_lexical_calls += 1;
+        self.stats.native_lexical_work = self.stats.native_lexical_work.saturating_add(work);
+        let Some(end) = end else {
+            self.furthest = self.furthest.max(start);
+            return Some(Ok(None));
+        };
+        self.position = end;
+        Some(self.lexical_leaf(id, start).map(Some))
+    }
+    /// The node a lexical match from `start` to the current position yields.
+    fn lexical_leaf(&mut self, id: u16, start: usize) -> Result<Handle, Diagnostic> {
+        let rule = &self.language.rules[id as usize];
+        if rule.alias && !self.options.alias_nodes && rule.owner.is_none() {
+            return Ok(NO_NODE);
+        }
+        self.add_node(id, start, &Children::new(start, None))
+    }
+    /// A compiled scanner's verdict at `start`, publishing nothing: its end
+    /// when matched, logical work, depth and observation. `None` without a
+    /// scanner, contiguous text or a valid native verdict.
+    fn scan(
+        &mut self,
+        id: u16,
+        start: usize,
+        depth: u32,
+    ) -> Option<(Option<usize>, u64, u32, u64)> {
         let scanner = self.lexers?.scanners.get(id as usize).copied().flatten()?;
         let source = self.source.contiguous_text()?;
-        let start = self.position;
         let mut context = crate::lexical::LexicalContext::new(
             source,
             start,
@@ -1180,25 +1246,81 @@ impl<'a> Parser<'a> {
         if end < start || end > source.len() || !source.is_char_boundary(end) {
             return None;
         }
-        self.work = self.work.saturating_add(context.work);
-        self.max_depth = self.max_depth.max(context.max_depth);
-        self.source.observe(context.observed);
+        Some((
+            matched.then_some(end),
+            context.work,
+            context.max_depth,
+            context.observed,
+        ))
+    }
+    /// `lexical_cached` for a prediction, which needs only the end: the same
+    /// memo hit, or the same scan, charges and memo entry, without the leaf.
+    /// `None` defers to the full call (no scanner or a declined scan).
+    fn lexical_predicted(
+        &mut self,
+        id: u16,
+        at: usize,
+        depth: u32,
+    ) -> Option<Result<Option<usize>, Diagnostic>> {
+        let key = MemoKey::new(id, at as u32, 0, 0x80);
+        if let Some(entry) = self.memo.iter().find_map(|m| m.get(&key)).copied() {
+            if let Err(error) = self.tick(depth) {
+                return Some(Err(error));
+            }
+            self.stats.memo_hits += 1;
+            self.stats.lexical_cache_hits += 1;
+            let (observed, relative_depth) = entry.replay();
+            let maximum = depth.saturating_add(relative_depth);
+            self.max_depth = self.max_depth.max(maximum);
+            if maximum > self.limits.parser_frames {
+                return Some(Err(Diagnostic::new(
+                    "limit",
+                    [at as u32; 2],
+                    "parser depth/work limit exceeded",
+                )));
+            }
+            self.source.observe(observed);
+            return Some(Ok(match entry {
+                Memo::Fail { .. } => None,
+                Memo::Hit { end, .. } | Memo::Scanned { end, .. } => Some(end),
+            }));
+        }
+        let (end, work, scan_depth, observed) = self.scan(id, at, depth)?;
+        self.work = self.work.saturating_add(work);
         self.stats.native_lexical_calls += 1;
-        self.stats.native_lexical_work =
-            self.stats.native_lexical_work.saturating_add(context.work);
-        if !matched {
-            self.furthest = self.furthest.max(start);
-            return Some(Ok(None));
-        }
-        self.position = end;
+        self.stats.native_lexical_work = self.stats.native_lexical_work.saturating_add(work);
+        let local_depth = depth.max(scan_depth);
+        self.max_depth = self.max_depth.max(local_depth);
+        self.source.observe(observed);
+        // The leaf this match would build weighs a bare node, unless the rule
+        // is an alias that builds none.
         let rule = &self.language.rules[id as usize];
-        if rule.alias && !self.options.alias_nodes && rule.owner.is_none() {
-            return Some(Ok(Some(NO_NODE)));
+        let weight = if rule.alias && !self.options.alias_nodes && rule.owner.is_none() {
+            0
+        } else {
+            32
+        };
+        let cost = weight + 256;
+        if self.memo_cost[0] + cost > 2 * 1024 * 1024 || self.memo[0].len() >= self.memo_capacity {
+            self.rotate_memo();
         }
-        Some(
-            self.add_node(id, start, &Children::new(start, None))
-                .map(Some),
-        )
+        let relative_depth = local_depth.saturating_sub(depth);
+        let entry = match end {
+            None => Memo::Fail {
+                furthest: at,
+                observed,
+                depth: relative_depth,
+            },
+            Some(end) => Memo::Scanned {
+                end,
+                furthest: 0,
+                observed,
+                depth: relative_depth,
+            },
+        };
+        self.memo[0].insert(key, entry);
+        self.memo_cost[0] += cost;
+        Some(Ok(end))
     }
     fn lexical_cached(
         &mut self,
@@ -1213,14 +1335,7 @@ impl<'a> Parser<'a> {
             self.tick(depth)?;
             self.stats.memo_hits += 1;
             self.stats.lexical_cache_hits += 1;
-            let (observed, relative_depth) = match entry {
-                Memo::Fail {
-                    observed, depth, ..
-                }
-                | Memo::Hit {
-                    observed, depth, ..
-                } => (observed, depth),
-            };
+            let (observed, relative_depth) = entry.replay();
             let maximum = depth.saturating_add(relative_depth);
             self.max_depth = self.max_depth.max(maximum);
             if maximum > self.limits.parser_frames {
@@ -1245,6 +1360,31 @@ impl<'a> Parser<'a> {
                     self.arena.clone_temporary(root.node);
                     self.position = end;
                     self.furthest = self.furthest.max(furthest);
+                    Ok(Some(root))
+                }
+                Memo::Scanned {
+                    end,
+                    furthest,
+                    observed,
+                    depth: relative_depth,
+                } => {
+                    // Build the leaf a lexical miss would have built, and
+                    // hold it in the entry as that miss would have.
+                    let start = self.position;
+                    self.position = end;
+                    self.furthest = self.furthest.max(furthest);
+                    let root = self.lexical_leaf(id, start)?;
+                    self.arena.retain_cache(root.node);
+                    let hit = Memo::Hit {
+                        end,
+                        furthest,
+                        root,
+                        observed,
+                        depth: relative_depth,
+                    };
+                    if let Some(slot) = self.memo.iter_mut().find_map(|m| m.get_mut(&key)) {
+                        *slot = hit;
+                    }
                     Ok(Some(root))
                 }
             };
@@ -1331,14 +1471,7 @@ impl<'a> Parser<'a> {
         );
         if let Some(entry) = self.memo.iter().find_map(|m| m.get(&key)).copied() {
             self.stats.memo_hits += 1;
-            let (observed, relative_depth) = match entry {
-                Memo::Fail {
-                    observed, depth, ..
-                }
-                | Memo::Hit {
-                    observed, depth, ..
-                } => (observed, depth),
-            };
+            let (observed, relative_depth) = entry.replay();
             let maximum = depth.saturating_add(relative_depth);
             self.max_depth = self.max_depth.max(maximum);
             if maximum > self.limits.parser_frames {
@@ -1365,6 +1498,7 @@ impl<'a> Parser<'a> {
                     self.furthest = self.furthest.max(furthest);
                     Ok(Some(root))
                 }
+                Memo::Scanned { .. } => unreachable!("Pratt keys hold no lexical scans"),
             };
         }
         let result = self.pratt_uncached(point, prefixes, infixes, minimum, depth)?;
@@ -1882,7 +2016,12 @@ impl<'a> Parser<'a> {
                     return Ok(end);
                 }
                 let saved = self.source.replace_observed(at as u64);
-                let end = self.lexical_end(rule, at, depth);
+                let end = if self.lexical_memoized(rule) {
+                    self.lexical_predicted(rule, at, depth)
+                } else {
+                    None
+                }
+                .unwrap_or_else(|| self.lexical_end(rule, at, depth));
                 let observed = self.source.replace_observed(saved);
                 self.source.observe(observed);
                 let end = end?;
@@ -1929,6 +2068,13 @@ impl<'a> Parser<'a> {
         self.source
             .observe(observed.max(end.min(source.len() + 1) as u64));
         word == end && source.as_bytes().get(at..end) == Some(text.as_bytes())
+    }
+    /// Whether a call of lexical rule `id` goes through `lexical_cached`.
+    fn lexical_memoized(&self, id: u16) -> bool {
+        self.optimize_recognition
+            && self.in_token == 0
+            && !self.options.token_children
+            && !matches!(self.language.rules[id as usize].expr, Expr::Pratt { .. })
     }
     fn lexical_end(&mut self, id: u16, at: usize, depth: u32) -> Result<Option<usize>, Diagnostic> {
         let mark = self.mark();

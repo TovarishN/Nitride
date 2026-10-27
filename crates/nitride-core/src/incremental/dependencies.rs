@@ -280,6 +280,13 @@ fn pack(entries: Vec<Entry>) -> Link {
     if entries.len() <= BUCKET {
         return leaf(entries);
     }
+    pack_slice(&entries)
+}
+/// Splits sorted entries without moving them; only leaves copy theirs.
+fn pack_slice(entries: &[Entry]) -> Link {
+    if entries.len() <= BUCKET {
+        return leaf(entries.to_vec());
+    }
     let mut middle = entries.len() / 2;
     while middle < entries.len() && entries[middle - 1].at == entries[middle].at {
         middle += 1;
@@ -291,11 +298,10 @@ fn pack(entries: Vec<Entry>) -> Link {
         }
     }
     if middle == 0 {
-        return leaf(entries);
+        return leaf(entries.to_vec());
     }
-    let mut left = entries;
-    let right = left.split_off(middle);
-    join(pack(left), pack(right))
+    let (left, right) = entries.split_at(middle);
+    join(pack_slice(left), pack_slice(right))
 }
 fn insert(node: &Link, entry: Entry) -> Link {
     let Some(node) = node else {
@@ -390,7 +396,8 @@ impl Index {
                 hit,
             })
             .collect();
-        entries.sort_by_key(|e| (e.at, e.key));
+        // Positions and keys are unique, so stability is irrelevant.
+        entries.sort_unstable_by_key(|e| (e.at, e.key));
         Self {
             root: pack(entries),
             edit_map: None,
