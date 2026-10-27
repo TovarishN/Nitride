@@ -1042,6 +1042,31 @@ impl<'a> Parser<'a> {
             width: (self.position - start) as u32,
         })
     }
+    /// `add_node` and committing it over `mark`'s temporaries.
+    fn add_committed_node(
+        &mut self,
+        mark: usize,
+        rule: u16,
+        start: usize,
+        children: &Children,
+    ) -> Result<Handle, Diagnostic> {
+        if self.in_token > 1 {
+            return Ok(NO_NODE);
+        }
+        let node = self.arena.add_committed(
+            mark,
+            rule,
+            (self.position - start) as u32,
+            children.iter(),
+            children.prior_node(),
+            children.prepare(),
+        )?;
+        Ok(Handle {
+            node,
+            start: start as u32,
+            width: (self.position - start) as u32,
+        })
+    }
     fn hole(&self, _category: u16) -> Option<usize> {
         None
     }
@@ -1776,10 +1801,7 @@ impl<'a> Parser<'a> {
             Self::recycle(&mut self.edge_buffers, children);
             return Ok(Some(node));
         }
-        let result = self.add_node(id, start, &children);
-        if let Ok(node) = result {
-            self.arena.commit(mark.trail, node.node);
-        }
+        let result = self.add_committed_node(mark.trail, id, start, &children);
         Self::recycle(&mut self.edge_buffers, children);
         result.map(Some)
     }

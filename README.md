@@ -415,7 +415,9 @@ probes and reads token ends from compiled scanners. The
 [post-error checkpoint](docs/stage40-evidence.md) bounds fact lookups past the
 seed and walks published nodes through a dense chunk index. The
 [arena slot checkpoint](docs/stage41-evidence.md) maps private chunk ids to slots
-densely and records where the valid path's remaining cost lies. Recovery probes otherwise
+densely and records where the valid path's remaining cost lies. The
+[fused commit checkpoint](docs/stage42-evidence.md) hands child temporaries to their
+parent directly and explains why an append-only arena is not pursued. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.

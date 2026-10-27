@@ -853,6 +853,55 @@ impl ArenaBuilder {
         prior: Option<SubtreeId>,
         prepared: Option<(Sequence<Child>, super::sequence::Costs)>,
     ) -> Result<SubtreeId, Diagnostic> {
+        self.add_owned(rule, width, children, prior, prepared, true)
+    }
+    /// `add_prepared` followed by `commit(mark, node)`. When the temporaries
+    /// above `mark` are exactly the node's unpublished children, in order,
+    /// they become the node's references directly: the retain that adding
+    /// takes and the release that committing gives cancel, so neither runs.
+    pub(crate) fn add_committed(
+        &mut self,
+        mark: usize,
+        rule: u16,
+        width: u32,
+        children: impl ExactSizeIterator<Item = Child> + DoubleEndedIterator + Clone,
+        prior: Option<SubtreeId>,
+        prepared: Option<(Sequence<Child>, super::sequence::Costs)>,
+    ) -> Result<SubtreeId, Diagnostic> {
+        let temporaries = self.trail.get(mark..).unwrap_or_default();
+        let mut owned = 0;
+        // Published children are never temporaries, and their ids precede
+        // this builder's. Wide nodes, mostly rebuilt lists of reused items,
+        // keep the ordinary path rather than scan every child.
+        let transfer = children.len() <= 32
+            && children.clone().all(|child| {
+                if temporaries.get(owned) == Some(&child.node) {
+                    owned += 1;
+                    true
+                } else {
+                    child.node.chunk() < self.first_id
+                }
+            })
+            && owned == temporaries.len();
+        if !transfer {
+            let id = self.add_owned(rule, width, children, prior, prepared, true)?;
+            self.commit(mark, id);
+            return Ok(id);
+        }
+        let id = self.add_owned(rule, width, children, prior, prepared, false)?;
+        self.trail.truncate(mark);
+        self.trail.push(id);
+        Ok(id)
+    }
+    fn add_owned(
+        &mut self,
+        rule: u16,
+        width: u32,
+        children: impl ExactSizeIterator<Item = Child> + DoubleEndedIterator + Clone,
+        prior: Option<SubtreeId>,
+        prepared: Option<(Sequence<Child>, super::sequence::Costs)>,
+        retain: bool,
+    ) -> Result<SubtreeId, Diagnostic> {
         if children.len() >= LARGE as usize {
             return Err(Diagnostic::new(
                 "limit",
@@ -864,7 +913,9 @@ impl ArenaBuilder {
         let mut weight = 32_u32.saturating_add((children.len() as u32).saturating_mul(24));
         for child in children.clone() {
             weight = weight.saturating_add(self.weight(child.node));
-            self.retain(child.node);
+            if retain {
+                self.retain(child.node);
+            }
         }
         let reuse = loop {
             match self.free_nodes.pop() {
