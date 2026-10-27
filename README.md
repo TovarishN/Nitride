@@ -417,7 +417,9 @@ seed and walks published nodes through a dense chunk index. The
 [arena slot checkpoint](docs/stage41-evidence.md) maps private chunk ids to slots
 densely and records where the valid path's remaining cost lies. The
 [fused commit checkpoint](docs/stage42-evidence.md) hands child temporaries to their
-parent directly and explains why an append-only arena is not pursued. Recovery probes otherwise
+parent directly and explains why an append-only arena is not pursued. The
+[recovery predicate checkpoint](docs/stage43-evidence.md) runs the rules that
+recovery predicates reference with the generated parser. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.

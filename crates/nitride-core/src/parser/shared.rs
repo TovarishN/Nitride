@@ -2795,6 +2795,35 @@ impl<'a> SharedProbe<'a> {
         (parser.work, parser.max_depth, parser.furthest) = saved;
         failed
     }
+    /// Whether `expr` matches at `at`, with every rule it references run by
+    /// the generated parser; only the fragment's own structure is
+    /// interpreted. `None` when there is no generated parser or the run
+    /// reached a limit, which the interpreted predicate then decides.
+    fn generated_predicate(
+        &mut self,
+        expr: &'static Expr<'static>,
+        at: usize,
+        reuse: bool,
+    ) -> Option<bool> {
+        let generated = self.generated?;
+        let parser = &mut self.parser;
+        let saved = (parser.work, parser.max_depth, parser.furthest);
+        parser.compiled = generated.compiled;
+        parser.lexers = Some(generated.lexers);
+        parser.optimize_recognition = true;
+        parser.position = at;
+        let mark = parser.mark();
+        let mut out = Children::sink(at);
+        parser.checkpoint_next = reuse;
+        let result = parser.expression(expr, false, None, 0, 0, &mut out);
+        parser.checkpoint_next = false;
+        parser.restore(mark);
+        parser.compiled = None;
+        parser.lexers = None;
+        parser.optimize_recognition = false;
+        (parser.work, parser.max_depth, parser.furthest) = saved;
+        result.ok()
+    }
     /// The end of lexical rule `id`'s match at `at`, or `None` when it fails,
     /// without building a node. A compiled scanner decides it when one
     /// accepts the call, charging its logical work, which equals the
@@ -2972,6 +3001,12 @@ impl<'a> SharedProbe<'a> {
             return result;
         }
         let reuse = prerecognized.is_some();
+        if let Some(matched) = self.generated_predicate(expr, at, reuse) {
+            // Decided with generated rules: charge it as a recorded fact's reuse.
+            let result = self.parser.tick(0).map(|()| matched);
+            self.enforce_budget();
+            return result;
+        }
         self.parser.position = at;
         let mark = self.parser.mark();
         let mut out = Children::sink(at);
