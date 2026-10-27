@@ -389,7 +389,9 @@ recognizing the prefix again. The [hot-path checkpoint](docs/stage27-evidence.md
 inlines the stack guard, hashes parser-private maps with a seeded fast hasher and
 moves cache eviction off the backtrack path. The
 [post-error checkpoint](docs/stage28-evidence.md) lets cold recovery pre-recognize
-missing facts after the first error with the generated parser. Recovery probes otherwise
+missing facts after the first error with the generated parser. The
+[token-lead checkpoint](docs/stage29-evidence.md) rejects alternatives and Pratt
+operators by their first two tokens and precomputes Pratt dispatch. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.

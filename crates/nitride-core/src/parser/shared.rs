@@ -1594,37 +1594,52 @@ impl<'a> Parser<'a> {
         &mut self,
         expr: &'static Expr<'static>,
         parts: &'static [Expr],
+        lexical: bool,
     ) -> Option<std::sync::Arc<dispatch::ChoicePlan>> {
-        if !self.optimize_recognition || !(4..=256).contains(&parts.len()) {
+        if !self.optimize_recognition || !(2..=256).contains(&parts.len()) {
+            return None;
+        }
+        if lexical && parts.len() < 4 {
             return None;
         }
         let limit = (self.cache_budget / 8).min(256 * 1024) as usize;
-        let maximum_cost = 130 * 4 * std::mem::size_of::<u64>()
-            + std::mem::size_of::<dispatch::ChoicePlan>()
-            + 192;
+        let base_cost = std::mem::size_of::<dispatch::ChoicePlan>() + 192;
         if self.choice_cache_bytes > limit {
             self.choice_cache = Default::default();
             self.choice_cache_bytes = 0;
         }
-        if maximum_cost > limit {
+        if base_cost > limit {
             return None;
         }
-        let key = expr as *const Expr as usize;
+        // Lexical and syntactic uses of one expression plan differently.
+        let key = expr as *const Expr as usize | usize::from(lexical);
         if let Some(plan) = self.choice_cache.get(&key) {
             return plan.clone();
-        }
-        if self.choice_cache_bytes + maximum_cost > limit {
-            // Drop buckets too: retained capacity must not escape the charge.
-            self.choice_cache = Default::default();
-            self.choice_cache_bytes = 0;
         }
         self.stats.choice_plan_builds += 1;
         let starts: Vec<_> = parts
             .iter()
             .map(|part| self.dispatch.choice_start(part, self.language))
             .collect();
-        let plan = dispatch::ChoicePlan::new(&starts).map(std::sync::Arc::new);
-        self.choice_cache_bytes += if plan.is_some() { maximum_cost } else { 192 };
+        let leads = if lexical {
+            Box::default()
+        } else {
+            parts
+                .iter()
+                .map(|part| self.dispatch.alternative_lead(part, self.language))
+                .collect()
+        };
+        let plan = dispatch::ChoicePlan::new(&starts, leads).map(std::sync::Arc::new);
+        let cost = base_cost + plan.as_ref().map_or(0, |plan| plan.bytes());
+        if cost > limit {
+            return None;
+        }
+        if self.choice_cache_bytes + cost > limit {
+            // Drop buckets too: retained capacity must not escape the charge.
+            self.choice_cache = Default::default();
+            self.choice_cache_bytes = 0;
+        }
+        self.choice_cache_bytes += cost;
         self.choice_cache.insert(key, plan.clone());
         plan
     }
@@ -1682,8 +1697,15 @@ impl<'a> Parser<'a> {
             }
             return Ok(false);
         };
+        let mut peek = Peek::new(at, character);
         let mut cursor = plan.first();
         for index in plan.candidates(character, cursor) {
+            if let Some(lead) = plan.lead(index) {
+                if let Some(failure) = self.lead_rejects(lead, &mut peek, depth + 1) {
+                    self.furthest = self.furthest.max(failure);
+                    continue;
+                }
+            }
             let skipped = index - cursor;
             self.tick_steps(skipped, depth + 1)?;
             if skipped != 0 {
@@ -1707,6 +1729,115 @@ impl<'a> Parser<'a> {
         }
         Ok(false)
     }
+    /// Whether the input at `peek` can begin one of `lead`. Tokens are read
+    /// exactly as the alternative's own first steps would read them: literals
+    /// with keyword boundaries, lexical rules memoized and rolled back. Any
+    /// error defers to the alternative, which meets it itself.
+    /// `None` when the input can begin one of `lead`; otherwise where every
+    /// path would fail: the first token, or the token after a matched one.
+    fn lead_rejects(
+        &mut self,
+        lead: &[dispatch::Step],
+        peek: &mut Peek,
+        depth: u32,
+    ) -> Option<usize> {
+        self.lead_failure(lead, peek, depth).unwrap_or(None)
+    }
+    fn lead_failure(
+        &mut self,
+        lead: &[dispatch::Step],
+        peek: &mut Peek,
+        depth: u32,
+    ) -> Result<Option<usize>, Diagnostic> {
+        let mut furthest = peek.at;
+        for step in lead {
+            let first = self.dispatch.terminal(step.first);
+            let Some(end) = self.token_end(first, peek.at, peek.character, peek, depth)? else {
+                continue;
+            };
+            let Some(second) = step.second() else {
+                return Ok(None);
+            };
+            let second = self.dispatch.terminal(second);
+            let (next, character) = self.after_token(end, peek)?;
+            if self
+                .token_end(second, next, character, peek, depth)?
+                .is_some()
+            {
+                return Ok(None);
+            }
+            furthest = furthest.max(next);
+        }
+        Ok(Some(furthest))
+    }
+    fn token_end(
+        &mut self,
+        terminal: dispatch::Terminal,
+        at: usize,
+        character: Option<char>,
+        peek: &mut Peek,
+        depth: u32,
+    ) -> Result<Option<usize>, Diagnostic> {
+        match terminal {
+            dispatch::Terminal::Literal(text) => Ok((text.chars().next() == character
+                && self.literal_at(at, text))
+            .then_some(at + text.len())),
+            dispatch::Terminal::Lexical(id) => {
+                if let Some(known) = peek.lexical(id, at) {
+                    return Ok(known);
+                }
+                let end = if self.dispatch.start(id).allows(character) {
+                    self.lexical_end(id, at, depth)?
+                } else {
+                    None
+                };
+                peek.remember_lexical(id, at, end);
+                Ok(end)
+            }
+        }
+    }
+    /// The position and character after trivia following a token.
+    fn after_token(
+        &mut self,
+        end: usize,
+        peek: &mut Peek,
+    ) -> Result<(usize, Option<char>), Diagnostic> {
+        if let Some(known) = peek.after(end) {
+            return Ok(known);
+        }
+        let saved = (self.position, self.work, self.max_depth, self.furthest);
+        self.position = end;
+        let result = self.dispatch_peek(true);
+        (self.position, self.work, self.max_depth, self.furthest) = saved;
+        let value = result?;
+        peek.remember_after(end, value);
+        Ok(value)
+    }
+    fn literal_at(&mut self, at: usize, text: &str) -> bool {
+        let keyword = text
+            .chars()
+            .next()
+            .is_some_and(|c| c.is_alphabetic() || c == '_')
+            && text.chars().all(|c| c.is_alphanumeric() || c == '_');
+        self.source.matches(at, text)
+            && (!keyword
+                || self
+                    .source
+                    .character(at + text.len())
+                    .is_none_or(|c| !(c.is_alphanumeric() || c == '_')))
+    }
+    fn lexical_end(&mut self, id: u16, at: usize, depth: u32) -> Result<Option<usize>, Diagnostic> {
+        let mark = self.mark();
+        let furthest = self.furthest;
+        let checkpoint = std::mem::replace(&mut self.checkpoint_next, false);
+        self.position = at;
+        let result = self.rule(id, 0, depth);
+        let end = self.position;
+        self.checkpoint_next = checkpoint;
+        self.restore(mark);
+        self.furthest = furthest;
+        Ok(result?.map(|_| end))
+    }
     fn dispatch_peek(&mut self, trivia: bool) -> Result<(usize, Option<char>), Diagnostic> {
         let saved = self.position;
         if trivia {
@@ -1725,12 +1856,20 @@ impl<'a> Parser<'a> {
         minimum: u32,
         depth: u32,
     ) -> Result<Option<Handle>, Diagnostic> {
+        if self.optimize_recognition && self.hole(point).is_none() {
+            let dispatch = std::sync::Arc::clone(&self.dispatch);
+            if let Some(plan) = dispatch.pratt(point) {
+                return self.pratt_planned(&dispatch, plan, minimum, depth);
+            }
+        }
         self.tick(depth)?;
         let prefix_mark = self.mark();
         let mut winner = None;
         // A hole is one operand node; operators may still follow it.
         let hole = self.hole(point);
+        let dispatch = std::sync::Arc::clone(&self.dispatch);
         let mut prefix_peek = None;
+        let mut prefix_leads = None;
         for id in prefixes.iter().filter(|_| hole.is_none()) {
             self.restore(prefix_mark);
             let rule =
@@ -1741,7 +1880,7 @@ impl<'a> Parser<'a> {
                 .precedence
                 .checked_add(1)
                 .ok_or_else(|| Diagnostic::new("grammar", [0, 0], "precedence overflow"))?;
-            let start = self.dispatch.start(*id);
+            let start = dispatch.start(*id);
             if self.optimize_recognition && !start.nullable() {
                 let (at, character) = if rule.lexical {
                     self.dispatch_peek(false)?
@@ -1752,9 +1891,17 @@ impl<'a> Parser<'a> {
                     prefix_peek = Some(value);
                     value
                 };
-                if !start.allows(character) {
+                let failure = if !start.allows(character) {
+                    Some(at)
+                } else if let Some(lead) = dispatch.lead(*id).filter(|_| !rule.lexical) {
+                    let peek = prefix_leads.get_or_insert_with(|| Peek::new(at, character));
+                    self.lead_rejects(lead, peek, depth + 1)
+                } else {
+                    None
+                };
+                if let Some(failure) = failure {
                     self.tick(depth + 1)?;
-                    self.furthest = self.furthest.max(at);
+                    self.furthest = self.furthest.max(failure);
                     continue;
                 }
             }
@@ -1780,6 +1927,7 @@ impl<'a> Parser<'a> {
             let infix_mark = self.mark();
             let mut winner = None;
             let mut infix_peek = None;
+            let mut infix_leads = None;
             for id in infixes {
                 self.restore(infix_mark);
                 let rule = self.language.rules.get(*id as usize).ok_or_else(|| {
@@ -1810,8 +1958,7 @@ impl<'a> Parser<'a> {
                     .precedence
                     .checked_add(u32::from(!rule.right_associative))
                     .ok_or_else(|| Diagnostic::new("grammar", [0, 0], "precedence overflow"))?;
-                if let Some(start) = self
-                    .dispatch
+                if let Some(start) = dispatch
                     .tail(*id)
                     .filter(|start| self.optimize_recognition && !start.nullable())
                 {
@@ -1822,9 +1969,17 @@ impl<'a> Parser<'a> {
                         infix_peek = Some(value);
                         value
                     };
-                    if !start.allows(character) {
+                    let failure = if !start.allows(character) {
+                        Some(at)
+                    } else if let Some(lead) = dispatch.tail_lead(*id) {
+                        let peek = infix_leads.get_or_insert_with(|| Peek::new(at, character));
+                        self.lead_rejects(lead, peek, depth + 1)
+                    } else {
+                        None
+                    };
+                    if let Some(failure) = failure {
                         self.tick(depth + 1)?;
-                        self.furthest = self.furthest.max(at);
+                        self.furthest = self.furthest.max(failure);
                         continue;
                     }
                 }
@@ -1883,6 +2038,137 @@ impl<'a> Parser<'a> {
                 return Ok(Some(left));
             }
         }
+    }
+    /// `pratt_uncached` over a precomputed plan: one peek per operand or
+    /// operator position, routed candidates in grammar order, and one bulk
+    /// charge for the excluded remainder.
+    fn pratt_planned(
+        &mut self,
+        dispatch: &dispatch::Dispatch,
+        plan: &dispatch::PrattPlan,
+        minimum: u32,
+        depth: u32,
+    ) -> Result<Option<Handle>, Diagnostic> {
+        self.tick(depth)?;
+        let prefix_mark = self.mark();
+        let mut winner = None;
+        let (at, character) = self.dispatch_peek(true)?;
+        let mut peek = Peek::new(at, character);
+        let mut attempted = 0;
+        for index in plan.prefix_candidates(character) {
+            let prefix = &plan.prefixes[index];
+            if let Some(lead) = dispatch.lead(prefix.id) {
+                if let Some(failure) = self.lead_rejects(lead, &mut peek, depth + 1) {
+                    self.furthest = self.furthest.max(failure);
+                    continue;
+                }
+            }
+            if attempted != 0 {
+                self.restore(prefix_mark);
+            }
+            attempted += 1;
+            if let Some(node) = self.rule(prefix.id, prefix.power, depth + 1)? {
+                if self.position > prefix_mark.position {
+                    self.consider(prefix_mark, node, prefix.precedence, &mut winner);
+                }
+            }
+        }
+        self.skip_alternatives(plan.prefixes.len() - attempted, at, depth + 1)?;
+        let left = self
+            .accept_winner(prefix_mark, winner)?
+            .map(|node| self.stand_in(node));
+        let Some(mut left) = left else {
+            return Ok(None);
+        };
+        loop {
+            self.tick(depth)?;
+            let infix_mark = self.mark();
+            if !plan.has_infixes(minimum) {
+                return Ok(Some(left));
+            }
+            let mut winner = None;
+            let (at, character) = self.dispatch_peek(true)?;
+            let mut peek = Peek::new(at, character);
+            let (candidates, excluded) = plan.infix_candidates(character, minimum);
+            self.skip_alternatives(excluded as usize, at, depth + 1)?;
+            for index in candidates {
+                let infix = &plan.infixes[index];
+                if let Some(lead) = dispatch.tail_lead(infix.id) {
+                    if let Some(failure) = self.lead_rejects(lead, &mut peek, depth + 1) {
+                        self.skip_alternatives(1, failure, depth + 1)?;
+                        continue;
+                    }
+                }
+                let mark = self.mark();
+                let start = left.start as usize;
+                let mut children = self.child_buffer(infix.id, start)?;
+                let label = self.intern(infix.label)?;
+                children.push(
+                    Edge { label, node: left },
+                    self.reusable.previous_position(left.start + left.width),
+                );
+                let compiled = self
+                    .compiled
+                    .and_then(|p| p.tails.get(infix.id as usize).copied().flatten());
+                let matched = if let Some(tail) = compiled {
+                    self.stats.native_syntax_tails += 1;
+                    tail(
+                        &mut SyntaxContext::new(self, &mut children),
+                        infix.power,
+                        depth + 1,
+                    )?
+                } else {
+                    let mut matched = true;
+                    for (index, part) in infix.parts.iter().enumerate().skip(1) {
+                        let owner = if index + 1 == infix.parts.len() {
+                            infix.owner
+                        } else {
+                            None
+                        };
+                        if !self.expression(
+                            part,
+                            false,
+                            owner,
+                            infix.power,
+                            depth + 1,
+                            &mut children,
+                        )? {
+                            matched = false;
+                            break;
+                        }
+                    }
+                    matched
+                };
+                if matched {
+                    if self.position == mark.position {
+                        return Err(Diagnostic::new(
+                            "grammar",
+                            [start as u32; 2],
+                            "zero-width infix",
+                        ));
+                    }
+                    let node = self.add_node(infix.id, start, &children)?;
+                    self.consider(infix_mark, node, infix.precedence, &mut winner);
+                }
+                Self::recycle(&mut self.edge_buffers, children);
+                self.restore(mark);
+            }
+            if let Some(node) = self.accept_winner(infix_mark, winner)? {
+                self.arena.commit(prefix_mark.trail, node.node);
+                left = node;
+            } else {
+                return Ok(Some(left));
+            }
+        }
+    }
+    /// Charge alternatives excluded before reaching their recognizers. One
+    /// physical check covers them, as in `tick_steps`.
+    fn skip_alternatives(&mut self, count: usize, at: usize, depth: u32) -> Result<(), Diagnostic> {
+        if count != 0 {
+            self.tick_steps(count, depth)?;
+            self.furthest = self.furthest.max(at);
+        }
+        Ok(())
     }
     fn expression(
         &mut self,
@@ -1989,7 +2275,7 @@ impl<'a> Parser<'a> {
                 matched
             }
             Expr::Choice(parts) => {
-                if let Some(plan) = self.choice_plan(expr, parts) {
+                if let Some(plan) = self.choice_plan(expr, parts, lexical) {
                     self.choice_with_plan(&plan, parts, lexical, depth, out)?
                 } else {
                     let mut matched = false;
@@ -2560,6 +2846,52 @@ impl<'a> SharedProbe<'a> {
         publish(self.parser, text, root, base, mode).map(|snapshot| (snapshot, self.recovery_keys))
     }
 }
+/// One trivia-skipped position and the token reads already made from it.
+struct Peek {
+    at: usize,
+    character: Option<char>,
+    lexical: [(u16, u32, Option<u32>); 12],
+    lexical_len: usize,
+    after: [(u32, u32, Option<char>); 4],
+    after_len: usize,
+}
+impl Peek {
+    fn new(at: usize, character: Option<char>) -> Self {
+        Self {
+            at,
+            character,
+            lexical: [(0, 0, None); 12],
+            lexical_len: 0,
+            after: [(0, 0, None); 4],
+            after_len: 0,
+        }
+    }
+    fn lexical(&self, id: u16, at: usize) -> Option<Option<usize>> {
+        self.lexical[..self.lexical_len]
+            .iter()
+            .find(|(known, from, _)| *known == id && *from as usize == at)
+            .map(|(_, _, end)| end.map(|end| end as usize))
+    }
+    fn remember_lexical(&mut self, id: u16, at: usize, end: Option<usize>) {
+        if self.lexical_len < self.lexical.len() {
+            self.lexical[self.lexical_len] = (id, at as u32, end.map(|end| end as u32));
+            self.lexical_len += 1;
+        }
+    }
+    fn after(&self, end: usize) -> Option<(usize, Option<char>)> {
+        self.after[..self.after_len]
+            .iter()
+            .find(|(known, _, _)| *known as usize == end)
+            .map(|(_, next, character)| (*next as usize, *character))
+    }
+    fn remember_after(&mut self, end: usize, (next, character): (usize, Option<char>)) {
+        if self.after_len < self.after.len() {
+            self.after[self.after_len] = (end as u32, next as u32, character);
+            self.after_len += 1;
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -2746,7 +3078,7 @@ mod tests {
         let mut held = None;
         for index in 0..900 {
             let expr = Box::leak(Box::new(Expr::Choice(parts)));
-            let plan = parser.choice_plan(expr, parts).unwrap();
+            let plan = parser.choice_plan(expr, parts, true).unwrap();
             if index == 0 {
                 held = Some(plan);
             }
@@ -2754,7 +3086,7 @@ mod tests {
         }
         parser.cache_budget = 8192;
         let expr = Box::leak(Box::new(Expr::Choice(parts)));
-        parser.choice_plan(expr, parts);
+        parser.choice_plan(expr, parts, true);
         assert!(parser.choice_cache_bytes <= 1024);
         assert!(
             parser.choice_cache.capacity() * std::mem::size_of::<usize>() <= 1024,
