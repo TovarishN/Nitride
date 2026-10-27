@@ -114,8 +114,11 @@ impl DiagnosticStore {
             .iter()
             .any(|(_, d)| d.message.as_ref() == message)
     }
-    pub(crate) fn has_category(&self, category: &str) -> bool {
-        self.records.iter().any(|(_, d)| d.category == category)
+    /// Whether any diagnostic has `category` with a message other than `except`.
+    pub(crate) fn has_category_except(&self, category: &str, except: &str) -> bool {
+        self.records
+            .iter()
+            .any(|(_, d)| d.category == category && d.message.as_ref() != except)
     }
     pub(crate) fn as_slice(&self) -> &[Diagnostic] {
         self.flat.get_or_init(|| {

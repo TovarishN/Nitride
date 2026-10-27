@@ -174,11 +174,9 @@ impl Engine<'static, '_, SharedProbe<'_>> {
         let mut exhausted = Vec::new();
         for event in events {
             match event {
-                Event::Exhausted { at } => exhausted.push(Diagnostic::new(
-                    "limit",
-                    [at as u32; 2],
-                    "local recovery search exhausted; resumed at a grammar continuation",
-                )),
+                Event::Exhausted { at } => {
+                    exhausted.push(Diagnostic::new("limit", [at as u32; 2], super::EXHAUSTED))
+                }
                 Event::Open { id, start, label } => {
                     let label = self.probe.label(label)?;
                     frames.push(SharedFrame {

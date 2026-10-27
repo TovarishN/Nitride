@@ -405,7 +405,9 @@ with an existing error and dense-error parses faster. The
 [recovery publication checkpoint](docs/stage35-evidence.md) speeds cold parses
 with errors by evacuating with dense tables and merging seed facts in one pass. The
 [probe filtering checkpoint](docs/stage36-evidence.md) skips recovery probes of
-lexical rules that cannot consume the next character. Recovery probes otherwise
+lexical rules that cannot consume the next character. The
+[exhausted-search checkpoint](docs/stage37-evidence.md) keeps shared recovery results
+whose only limit is a local search exhaustion instead of rerunning flat recovery. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.

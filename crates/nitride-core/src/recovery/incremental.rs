@@ -301,7 +301,13 @@ pub(crate) fn recover_snapshot(
             seed,
         );
         if let Ok(mut snapshot) = result {
-            if !snapshot.diagnostics.has_category("limit") {
+            // A local search exhaustion is decided by the search's state count,
+            // which both engines share; other limits depend on engine-specific
+            // accounting and fall back to the flat recovery.
+            if !snapshot
+                .diagnostics
+                .has_category_except("limit", super::search::EXHAUSTED)
+            {
                 snapshot.stats.source_bytes_copied = previous
                     .map_or(u64::from(text.len()), |(_, edit)| {
                         edit.replacement.len() as u64

@@ -2,6 +2,9 @@ use super::grammar::{Code, Grammar, Instruction};
 use super::*;
 use crate::parser::shared::hash::FastMap;
 use crate::parser::{ProbeHit, StrictProbe};
+/// The notice for a local search that ran out of states and resumed.
+pub(crate) const EXHAUSTED: &str =
+    "local recovery search exhausted; resumed at a grammar continuation";
 pub(super) mod shared;
 mod source;
 use source::Source;
@@ -1354,11 +1357,9 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
         let mut exhausted = Vec::new();
         for event in events {
             match event {
-                Event::Exhausted { at } => exhausted.push(Diagnostic::new(
-                    "limit",
-                    [at as u32; 2],
-                    "local recovery search exhausted; resumed at a grammar continuation",
-                )),
+                Event::Exhausted { at } => {
+                    exhausted.push(Diagnostic::new("limit", [at as u32; 2], EXHAUSTED))
+                }
                 Event::Open { id, start, label } => builder.frames.push(Frame {
                     id,
                     start,
