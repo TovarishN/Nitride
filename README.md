@@ -413,7 +413,9 @@ failures from the generated parser instead of interpreting them again. The
 [scanned-ends checkpoint](docs/stage39-evidence.md) does the same for predicate
 probes and reads token ends from compiled scanners. The
 [post-error checkpoint](docs/stage40-evidence.md) bounds fact lookups past the
-seed and walks published nodes through a dense chunk index. Recovery probes otherwise
+seed and walks published nodes through a dense chunk index. The
+[arena slot checkpoint](docs/stage41-evidence.md) maps private chunk ids to slots
+densely and records where the valid path's remaining cost lies. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.

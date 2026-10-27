@@ -533,6 +533,9 @@ pub(crate) struct ArenaBuilder {
     published: PublishedArena,
     chunks: Vec<Option<MutableChunk>>,
     by_id: crate::parser::shared::hash::FastMap<u32, usize>,
+    /// Slot index by `id - first_id`, or `u32::MAX`; `by_id` covers ids too
+    /// far apart for this table.
+    slots: Vec<u32>,
     current: usize,
     first_id: u32,
     free_chunks: Vec<usize>,
@@ -557,6 +560,7 @@ impl ArenaBuilder {
             published: published.clone(),
             chunks: vec![Some(chunk)],
             by_id: [(first_id, 0)].into_iter().collect(),
+            slots: vec![0],
             current: 0,
             first_id,
             free_chunks: Vec::new(),
@@ -578,14 +582,10 @@ impl ArenaBuilder {
     fn find_new(&self, id: SubtreeId) -> Option<usize> {
         // Chunk ids only increase, so every unpublished chunk is at least
         // `first_id`; anything older belongs to the published directory.
-        let index = id.chunk().checked_sub(self.first_id)? as usize;
-        if self
-            .chunks
-            .get(index)
-            .and_then(Option::as_ref)
-            .is_some_and(|c| c.data.id == id.chunk())
-        {
-            return Some(index);
+        let offset = id.chunk().checked_sub(self.first_id)? as usize;
+        // A table miss may be an id recorded only in `by_id`.
+        if let Some(&index) = self.slots.get(offset).filter(|index| **index != u32::MAX) {
+            return Some(index as usize);
         }
         if let Some(index) = self.current_chunk_index(id) {
             return Some(index);
@@ -757,6 +757,9 @@ impl ArenaBuilder {
                     let chunk_id = c.data.id;
                     self.chunks[index] = None;
                     self.by_id.remove(&chunk_id);
+                    if let Some(slot) = self.slots.get_mut((chunk_id - self.first_id) as usize) {
+                        *slot = u32::MAX;
+                    }
                     self.free_chunks.push(index);
                 }
             }
@@ -804,6 +807,15 @@ impl ArenaBuilder {
             self.chunks.len() - 1
         };
         self.by_id.insert(id, index);
+        // Ids come from a process-wide counter: record them densely unless
+        // other arenas have spread them far apart.
+        let offset = id.wrapping_sub(self.first_id) as usize;
+        if id >= self.first_id && offset <= self.slots.len() + 4 * self.chunks.len() + 64 {
+            if offset >= self.slots.len() {
+                self.slots.resize(offset + 1, u32::MAX);
+            }
+            self.slots[offset] = index as u32;
+        }
         self.current = index;
     }
     pub(crate) fn seal(&mut self) {
