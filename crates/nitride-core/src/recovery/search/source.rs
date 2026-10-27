@@ -65,4 +65,64 @@ impl<'a> Source<'a> {
         }
         Ok(true)
     }
+    /// The end of whitespace and comments from `at`; an unterminated block
+    /// comment is not trivia. One reader serves the whole run.
+    pub(super) fn trivia_end(self, at: usize) -> usize {
+        match self {
+            Self::Flat(s) => skip_trivia(&mut Flat(s), at),
+            Self::Shared(s) => skip_trivia(&mut Reader::new(s), at),
+        }
+    }
+}
+
+trait Cursor {
+    fn len(&self) -> usize;
+    fn character(&mut self, at: usize) -> Option<char>;
+    fn matches(&mut self, at: usize, text: &str) -> bool;
+    fn find(&mut self, at: usize, text: &str) -> Option<usize>;
+}
+struct Flat<'a>(&'a str);
+impl Cursor for Flat<'_> {
+    fn len(&self) -> usize {
+        self.0.len()
+    }
+    fn character(&mut self, at: usize) -> Option<char> {
+        Source::Flat(self.0).character(at)
+    }
+    fn matches(&mut self, at: usize, text: &str) -> bool {
+        Source::Flat(self.0).matches(at, text)
+    }
+    fn find(&mut self, at: usize, text: &str) -> Option<usize> {
+        Source::Flat(self.0).find(at, text)
+    }
+}
+impl Cursor for Reader<'_> {
+    fn len(&self) -> usize {
+        Reader::len(self)
+    }
+    fn character(&mut self, at: usize) -> Option<char> {
+        Reader::character(self, at)
+    }
+    fn matches(&mut self, at: usize, text: &str) -> bool {
+        Reader::matches(self, at, text)
+    }
+    fn find(&mut self, at: usize, text: &str) -> Option<usize> {
+        Reader::find(self, at, text)
+    }
+}
+fn skip_trivia(cursor: &mut impl Cursor, mut at: usize) -> usize {
+    loop {
+        if let Some(c) = cursor.character(at).filter(|c| c.is_whitespace()) {
+            at += c.len_utf8();
+        } else if cursor.matches(at, "//") {
+            at = cursor.find(at, "\n").unwrap_or(cursor.len());
+        } else if cursor.matches(at, "/*") {
+            match cursor.find(at + 2, "*/") {
+                Some(end) => at = end + 2,
+                None => return at,
+            }
+        } else {
+            return at;
+        }
+    }
 }

@@ -1,5 +1,5 @@
 //! Fast hashing for parser-private maps. Their keys are fixed-width positions,
-//! rule ids and pointers, never arbitrary text. A random seed per map keeps
+//! rule ids, pointers and grammar label names, never source text. A random seed per map keeps
 //! bucket placement unpredictable, as the standard randomized hasher does.
 use std::hash::{BuildHasher, Hasher};
 

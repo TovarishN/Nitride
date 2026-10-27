@@ -1,5 +1,6 @@
 use super::grammar::{Code, Grammar, Instruction};
 use super::*;
+use crate::parser::shared::hash::FastMap;
 use crate::parser::{ProbeHit, StrictProbe};
 pub(super) mod shared;
 mod source;
@@ -131,17 +132,21 @@ struct Prefix<'g> {
     power: u32,
     label: &'g str,
     furthest: usize,
+    /// The furthest observation of this checkpoint or any earlier one on its
+    /// chain, so a reopening walk stops once no remaining checkpoint covers
+    /// the failure.
+    reach: usize,
 }
 
 struct Tasks<'g> {
     nodes: Vec<(Task<'g>, u32)>,
-    known: HashMap<(Task<'g>, u32), u32>,
+    known: FastMap<(Task<'g>, u32), u32>,
 }
 impl<'g> Tasks<'g> {
     fn new() -> Self {
         Self {
             nodes: vec![(Task::End, 0)],
-            known: HashMap::new(),
+            known: FastMap::default(),
         }
     }
     fn push(&mut self, task: Task<'g>, next: u32) -> u32 {
@@ -174,12 +179,13 @@ struct Engine<'g, 'a, P> {
     committed_history: u32,
     states: Vec<State>,
     queue: BinaryHeap<(Rank, usize)>,
-    seen: HashMap<StateKey, RepairRank>,
+    seen: FastMap<StateKey, RepairRank>,
     stats: RecoveryStats,
     epoch_states: usize,
     serial: u64,
     best: Option<State>,
-    literal_tokens: Vec<&'g str>,
+    /// Distinct grammar literals, grouped by their first byte.
+    literal_tokens: Vec<Vec<&'g str>>,
     character_tokens: Vec<&'g Expr<'g>>,
     lexical: Vec<u16>,
     prefixes: Vec<Prefix<'g>>,
@@ -219,13 +225,18 @@ fn engine<'g, 'a, P: Probe<'g>>(
     probe: P,
 ) -> Engine<'g, 'a, P> {
     let graph = Grammar::new(language);
-    let mut literal_tokens = Vec::new();
+    let mut literal_tokens = vec![Vec::new(); 256];
     let mut character_tokens = Vec::new();
     for rule in language.rules.iter().filter(|r| !r.lexical) {
         let mut pending = vec![&rule.expr];
         while let Some(expr) = pending.pop() {
             match expr {
-                Expr::Literal(s) if !s.is_empty() => literal_tokens.push(*s),
+                Expr::Literal(s) if !s.is_empty() => {
+                    let group: &mut Vec<&str> = &mut literal_tokens[s.as_bytes()[0] as usize];
+                    if !group.contains(s) {
+                        group.push(*s);
+                    }
+                }
                 Expr::Class(_) | Expr::NotClass(_) | Expr::Any => character_tokens.push(expr),
                 Expr::Sequence(parts) | Expr::Choice(parts) => pending.extend(parts.iter()),
                 Expr::Label(_, inner) | Expr::Repeat { inner, .. } => pending.push(inner),
@@ -252,7 +263,7 @@ fn engine<'g, 'a, P: Probe<'g>>(
         committed_history: 0,
         states: vec![],
         queue: BinaryHeap::new(),
-        seen: HashMap::new(),
+        seen: FastMap::default(),
         stats: RecoveryStats::default(),
         epoch_states: 0,
         serial: 0,
@@ -382,22 +393,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
         Ok(())
     }
     fn trivia(&mut self, state: &mut State) {
-        loop {
-            let at = state.position;
-            if let Some(c) = self.source.character(at).filter(|c| c.is_whitespace()) {
-                state.position += c.len_utf8();
-            } else if self.source.matches(at, "//") {
-                state.position += self.source.find(at, "\n").unwrap_or(self.source.len()) - at;
-            } else if self.source.matches(at, "/*") {
-                if let Some(end) = self.source.find(at + 2, "*/") {
-                    state.position = end + 2;
-                } else {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
+        state.position = self.source.trivia_end(state.position);
     }
     fn literal_end(&self, text: &str, at: usize) -> Option<usize> {
         let end = at.checked_add(text.len())?;
@@ -470,8 +466,11 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
     }
     fn recognized_end(&mut self, at: usize) -> Result<usize, Diagnostic> {
         let mut end = at;
-        for text in &self.literal_tokens {
-            end = end.max(self.literal_end(text, at).unwrap_or(at));
+        if let Some(c) = self.source.character(at) {
+            let first = c.encode_utf8(&mut [0; 4]).as_bytes()[0];
+            for text in &self.literal_tokens[first as usize] {
+                end = end.max(self.literal_end(text, at).unwrap_or(at));
+            }
         }
         for id in &self.lexical {
             if let Some(hit) = self.probe.rule(*id, at, 0)? {
@@ -501,10 +500,20 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
         state.repairs += 1;
         state.clean = 0;
     }
+    fn checkpoint(&mut self, mut prefix: Prefix<'g>) -> usize {
+        prefix.reach = prefix.state.prefix.map_or(prefix.furthest, |parent| {
+            prefix.furthest.max(self.prefixes[parent].reach)
+        });
+        self.prefixes.push(prefix);
+        self.prefixes.len() - 1
+    }
     fn reopen_prefix(&mut self, state: &State) {
         let mut prefix = state.prefix;
         while let Some(index) = prefix {
             let checkpoint = &self.prefixes[index];
+            if state.position > checkpoint.reach {
+                break;
+            }
             prefix = checkpoint.state.prefix;
             if state.position <= checkpoint.furthest {
                 let mut alternative = checkpoint.state.clone();
@@ -638,9 +647,9 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                                         power,
                                         label,
                                         furthest: hit.furthest,
+                                        reach: 0,
                                     };
-                                    state.prefix = Some(self.prefixes.len());
-                                    self.prefixes.push(checkpoint);
+                                    state.prefix = Some(self.checkpoint(checkpoint));
                                 }
                                 state.position = hit.end;
                                 state.clean += 1;
@@ -866,14 +875,14 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                                         },
                                         state.stack,
                                     );
-                                    state.prefix = Some(self.prefixes.len());
-                                    self.prefixes.push(Prefix {
+                                    state.prefix = Some(self.checkpoint(Prefix {
                                         state: checkpoint,
                                         id,
                                         power: 0,
                                         label: item_label,
                                         furthest: hit.furthest,
-                                    });
+                                        reach: 0,
+                                    }));
                                 }
                                 state.position = hit.end;
                                 state.clean += 1;
