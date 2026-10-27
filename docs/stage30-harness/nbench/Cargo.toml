@@ -1,0 +1,16 @@
+[package]
+name = "nbench"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+nitride-core = { path = "/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/crates/nitride-core" }
+nitride-cli = { path = "/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/crates/nitride-cli" }
+
+[profile.release]
+lto = true
+codegen-units = 1
+panic = "abort"
+
+# Standalone: not a member of the repository workspace.
+[workspace]
