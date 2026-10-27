@@ -385,7 +385,9 @@ large-file timing gain came with increased memo-budget eviction churn. The
 determined scanner decisions with immutable tables and exact work/depth/read
 accounting. The [seeded cold recovery checkpoint](docs/stage26-evidence.md)
 reuses a failed strict attempt's recognition facts in recovery instead of
-recognizing the prefix again. Recovery probes otherwise
+recognizing the prefix again. The [hot-path checkpoint](docs/stage27-evidence.md)
+inlines the stack guard, hashes parser-private maps with a seeded fast hasher and
+moves cache eviction off the backtrack path. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.

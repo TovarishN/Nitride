@@ -5,7 +5,9 @@ use crate::syntax::{arena::ArenaBuilder, text::Reader};
 use crate::*;
 use std::collections::HashMap;
 mod children;
+mod hash;
 mod memo;
+use hash::FastMap;
 use memo::MemoKey;
 pub mod generated;
 pub use generated::{CompiledParser, SyntaxContext, SyntaxMark};
@@ -24,7 +26,7 @@ struct PriorNode {
     start: u32,
     old_start: u32,
 }
-type PriorPath = HashMap<u16, (PriorNode, bool)>;
+type PriorPath = FastMap<u16, (PriorNode, bool)>;
 const NO_NODE: Handle = Handle {
     node: SubtreeId::NONE,
     start: 0,
@@ -85,13 +87,13 @@ struct Parser<'a> {
     optimize_recognition: bool,
     compiled: Option<&'static CompiledParser>,
     lexers: Option<&'static crate::lexical::CompiledLexers>,
-    choice_cache: HashMap<usize, Option<std::sync::Arc<dispatch::ChoicePlan>>>,
+    choice_cache: FastMap<usize, Option<std::sync::Arc<dispatch::ChoicePlan>>>,
     choice_cache_bytes: usize,
     language: &'static Language<'static>,
     minimum_sensitive: Vec<bool>,
     dispatch: std::sync::Arc<dispatch::Dispatch>,
     labels: Vec<&'static str>,
-    label_ids: HashMap<(usize, usize), u16>,
+    label_ids: FastMap<(usize, usize), u16>,
     source: Reader<'a>,
     options: ParseOptions,
     limits: Limits,
@@ -102,7 +104,7 @@ struct Parser<'a> {
     arena: ArenaBuilder,
     edge_buffers: Vec<Children>,
     in_token: u32,
-    memo: [HashMap<MemoKey, Memo>; 2],
+    memo: [FastMap<MemoKey, Memo>; 2],
     memo_capacity: usize,
     cache_budget: u64,
     memo_cost: [usize; 2],
@@ -116,10 +118,10 @@ struct Parser<'a> {
     checkpoint_next: bool,
     failure_checkpoint: Option<(u32, Key)>,
     pending_failures: usize,
-    pending_index: HashMap<(u32, Key), Hit>,
+    pending_index: FastMap<(u32, Key), Hit>,
     prior: Index,
     prior_nodes: Vec<PriorNode>,
-    prior_paths: HashMap<(SubtreeId, u32), PriorPath>,
+    prior_paths: FastMap<(SubtreeId, u32), PriorPath>,
     prior_paths_bytes: usize,
     reused_ranges: Vec<[u32; 2]>,
 }
@@ -600,16 +602,16 @@ impl<'a> Parser<'a> {
             checkpoint_next: true,
             failure_checkpoint: None,
             pending_failures: 0,
-            pending_index: HashMap::new(),
+            pending_index: FastMap::default(),
             prior: base.map_or_else(Index::default, |b| b.recognitions.clone()),
             prior_nodes: root_hint.into_iter().collect(),
-            prior_paths: HashMap::new(),
+            prior_paths: FastMap::default(),
             prior_paths_bytes: 0,
             reused_ranges: Vec::new(),
         }
     }
 }
-fn label_ids(labels: &[&'static str]) -> HashMap<(usize, usize), u16> {
+fn label_ids(labels: &[&'static str]) -> FastMap<(usize, usize), u16> {
     labels
         .iter()
         .enumerate()
@@ -694,6 +696,7 @@ impl Parser<'_> {
         }
         self.memo_cost[generation] = 0;
     }
+    #[inline]
     fn memo_storage_bound(&self) -> u64 {
         self.memo
             .iter()
@@ -715,11 +718,17 @@ impl Parser<'_> {
                     + 64) as u64
             }
     }
+    /// Runs after every backtrack; the bound check is the common case.
+    #[inline]
     fn enforce_cache_budget(&mut self) {
-        let budget = self.cache_budget;
-        if self.arena.cache_only_bytes() + self.memo_storage_bound() <= budget {
-            return;
+        if self.arena.cache_only_bytes() + self.memo_storage_bound() > self.cache_budget {
+            self.evict_caches();
         }
+    }
+    #[cold]
+    #[inline(never)]
+    fn evict_caches(&mut self) {
+        let budget = self.cache_budget;
         self.stats.cache_evictions += 1;
         self.clear_memo(1);
         self.clear_memo(0);
@@ -785,7 +794,7 @@ impl Parser<'_> {
             return Ok(path.get(&rule).map(|(p, _)| PriorNode { start, ..*p }));
         }
         let at = approximate.max(cursor.old_start);
-        let mut path = HashMap::new();
+        let mut path = PriorPath::default();
         loop {
             self.tick(0)?;
             let Some(node) = self.arena.node(cursor.node) else {
@@ -1418,7 +1427,7 @@ impl Parser<'_> {
     fn tick(&mut self, depth: u32) -> Result<(), Diagnostic> {
         self.work += 1;
         self.max_depth = self.max_depth.max(depth);
-        if super::stack_position().abs_diff(self.stack_base) > self.stack_budget {
+        if super::stack_position_inline().abs_diff(self.stack_base) > self.stack_budget {
             return Err(Diagnostic::new(
                 "limit",
                 [self.position as u32; 2],
@@ -2030,7 +2039,7 @@ pub(crate) struct SharedProbe<'a> {
     unselected: std::collections::VecDeque<u32>,
     free_handles: Vec<u32>,
     committed: usize,
-    cache: HashMap<(u16, usize, u32), Option<super::ProbeHit>>,
+    cache: FastMap<(u16, usize, u32), Option<super::ProbeHit>>,
     prior_recovery: std::sync::Arc<[(u16, u32, SubtreeId)]>,
     recovery_keys: RecoveryKeys,
 }

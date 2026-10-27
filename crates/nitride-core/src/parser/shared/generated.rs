@@ -43,7 +43,7 @@ impl<'p, 's> SyntaxContext<'p, 's> {
     /// additional logical expression. Recursive rule calls retain their checks.
     #[inline]
     pub fn guard(&self) -> Result<(), Diagnostic> {
-        if super::super::stack_position().abs_diff(self.parser.stack_base)
+        if super::super::stack_position_inline().abs_diff(self.parser.stack_base)
             > self.parser.stack_budget
         {
             return Err(Diagnostic::new(
