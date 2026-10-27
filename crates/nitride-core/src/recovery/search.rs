@@ -22,6 +22,10 @@ trait Probe<'g> {
     fn may_consume(&self, _id: u16, _c: char) -> bool {
         true
     }
+    /// The end of lexical rule `id`'s match at `at`, if it matches.
+    fn token_end(&mut self, id: u16, at: usize) -> Result<Option<usize>, Diagnostic> {
+        Ok(self.rule(id, at, 0)?.map(|hit| hit.end))
+    }
 }
 impl<'g> Probe<'g> for StrictProbe<'g, '_> {
     fn rule(&mut self, id: u16, at: usize, power: u32) -> Result<Option<ProbeHit>, Diagnostic> {
@@ -497,8 +501,8 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
             if !self.probe.may_consume(*id, c) {
                 continue;
             }
-            if let Some(hit) = self.probe.rule(*id, at, 0)? {
-                end = end.max(hit.end);
+            if let Some(token) = self.probe.token_end(*id, at)? {
+                end = end.max(token);
             }
         }
         for expr in &self.character_tokens {

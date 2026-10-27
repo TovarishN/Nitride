@@ -409,7 +409,9 @@ lexical rules that cannot consume the next character. The
 [exhausted-search checkpoint](docs/stage37-evidence.md) keeps shared recovery results
 whose only limit is a local search exhaustion instead of rerunning flat recovery. The
 [generated-failure checkpoint](docs/stage38-evidence.md) lets recovery probes take
-failures from the generated parser instead of interpreting them again. Recovery probes otherwise
+failures from the generated parser instead of interpreting them again. The
+[scanned-ends checkpoint](docs/stage39-evidence.md) does the same for predicate
+probes and reads token ends from compiled scanners. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.

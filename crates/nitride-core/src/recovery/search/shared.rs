@@ -26,6 +26,9 @@ impl Probe<'static> for SharedProbe<'_> {
     fn may_consume(&self, id: u16, c: char) -> bool {
         self.may_consume(id, c)
     }
+    fn token_end(&mut self, id: u16, at: usize) -> Result<Option<usize>, Diagnostic> {
+        self.token_end(id, at)
+    }
 }
 #[allow(clippy::too_many_arguments)]
 pub(crate) fn recover<'a>(

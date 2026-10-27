@@ -1237,8 +1237,20 @@ impl<'a> Parser<'a> {
         start: usize,
         depth: u32,
     ) -> Option<(Option<usize>, u64, u32, u64)> {
-        let scanner = self.lexers?.scanners.get(id as usize).copied().flatten()?;
+        let lexers = self.lexers?;
         let source = self.source.contiguous_text()?;
+        self.scan_with(lexers, source, id, start, depth)
+    }
+    /// `scan` over explicit scanners and contiguous text.
+    fn scan_with(
+        &mut self,
+        lexers: &crate::lexical::CompiledLexers,
+        source: &str,
+        id: u16,
+        start: usize,
+        depth: u32,
+    ) -> Option<(Option<usize>, u64, u32, u64)> {
+        let scanner = lexers.scanners.get(id as usize).copied().flatten()?;
         let mut context = crate::lexical::LexicalContext::new(
             source,
             start,
@@ -2596,6 +2608,8 @@ pub(crate) struct SharedProbe<'a> {
     free_handles: Vec<u32>,
     committed: usize,
     cache: FastMap<(u16, usize, u32), Option<super::ProbeHit>>,
+    /// Scanned lexical ends, for `token_end`; cleared with `cache`.
+    ends: FastMap<(u16, usize), Option<usize>>,
     prior_recovery: std::sync::Arc<[(u16, u32, SubtreeId)]>,
     recovery_keys: RecoveryKeys,
     generated: Option<Generated<'a>>,
@@ -2634,6 +2648,7 @@ impl<'a> SharedProbe<'a> {
             free_handles: Vec::new(),
             committed: 0,
             cache: Default::default(),
+            ends: Default::default(),
             prior_recovery: base
                 .and_then(|b| b.recovery())
                 .map_or_else(|| std::sync::Arc::from([]), |r| r.structures.clone()),
@@ -2758,14 +2773,40 @@ impl<'a> SharedProbe<'a> {
         (parser.work, parser.max_depth, parser.furthest) = saved;
         failed
     }
+    /// The end of lexical rule `id`'s match at `at`, or `None` when it fails,
+    /// without building a node. A compiled scanner decides it when one
+    /// accepts the call, charging its logical work, which equals the
+    /// interpreter's; otherwise the ordinary probe does.
+    pub(crate) fn token_end(&mut self, id: u16, at: usize) -> Result<Option<usize>, Diagnostic> {
+        // Only the end is needed, so a cached hit lends no node.
+        if let Some(hit) = self.cache.get(&(id, at, 0)).copied() {
+            return Ok(hit.map(|hit| hit.end));
+        }
+        if let Some(end) = self.ends.get(&(id, at)).copied() {
+            return Ok(end);
+        }
+        if let Some(generated) = self.generated {
+            let source = generated.source;
+            if let Some((end, work, _, _)) =
+                self.parser.scan_with(generated.lexers, source, id, at, 0)
+            {
+                // The scanner ran within the remaining work budget.
+                self.parser.work = self.parser.work.saturating_add(work);
+                self.ends.insert((id, at), end);
+                return Ok(end);
+            }
+        }
+        Ok(self.rule(id, at, 0)?.map(|hit| hit.end))
+    }
     /// A predicate over a single syntax reference skips trivia, then calls the
-    /// rule there. Pre-recognize that call; report whether a fact now exists.
-    fn prerecognize_reference(&mut self, expr: &'static Expr<'static>, at: usize) -> bool {
+    /// rule there. Pre-recognize that call: `Some(true)` when the generated
+    /// parser decided it fails, `Some(false)` when a fact now exists.
+    fn prerecognize_reference(&mut self, expr: &'static Expr<'static>, at: usize) -> Option<bool> {
         let Expr::Ref(id) = *expr else {
-            return false;
+            return None;
         };
         if self.generated.is_none() || self.parser.language.rules[id as usize].lexical {
-            return false;
+            return None;
         }
         let saved = (
             self.parser.work,
@@ -2781,15 +2822,20 @@ impl<'a> SharedProbe<'a> {
             self.parser.furthest,
         ) = saved;
         if skipped.is_err() {
-            return false;
+            return None;
         }
         let key = Key {
             rule: id,
             minimum: self.parser.key_minimum(id, 0),
             in_token: 0,
         };
-        self.prerecognize(id, start, 0, key);
-        self.parser.pending_index.contains_key(&(start as u32, key))
+        if self.prerecognize(id, start, 0, key) {
+            return Some(true);
+        }
+        self.parser
+            .pending_index
+            .contains_key(&(start as u32, key))
+            .then_some(false)
     }
     fn borrow_result(&mut self, id: u32) {
         if id == u32::MAX || self.active[id as usize] {
@@ -2812,7 +2858,7 @@ impl<'a> SharedProbe<'a> {
     fn enforce_budget(&mut self) {
         let budget = self.parser.cache_budget;
         let limit = (budget as usize / 512).clamp(1, 16384);
-        let clear = self.cache.len() > limit;
+        let clear = self.cache.len() + self.ends.len() > limit;
         let lookup = if self.cache.capacity() == 0 {
             0
         } else {
@@ -2820,6 +2866,11 @@ impl<'a> SharedProbe<'a> {
                 * std::mem::size_of::<((u16, usize, u32), Option<super::ProbeHit>)>()
                 * 2
                 + 64) as u64
+        } + if self.ends.capacity() == 0 {
+            0
+        } else {
+            (self.ends.capacity() * std::mem::size_of::<((u16, usize), Option<usize>)>() * 2 + 64)
+                as u64
         };
         let reserved = lookup.saturating_add(
             (self.unselected.capacity() * 4 + self.free_handles.capacity() * 4) as u64,
@@ -2854,6 +2905,8 @@ impl<'a> SharedProbe<'a> {
         if clear {
             self.cache.clear();
             self.cache.shrink_to(limit);
+            self.ends.clear();
+            self.ends.shrink_to(limit);
         } else {
             self.cache.retain(|_, hit| {
                 hit.is_none_or(|h| h.root == u32::MAX || handles[h.root as usize] != NO_NODE)
@@ -2889,7 +2942,14 @@ impl<'a> SharedProbe<'a> {
     ) -> Result<bool, Diagnostic> {
         self.retire_borrowed();
         self.enforce_budget();
-        let reuse = self.prerecognize_reference(expr, at);
+        let prerecognized = self.prerecognize_reference(expr, at);
+        if prerecognized == Some(true) {
+            // The referenced rule fails: charge it as a recorded failure's reuse.
+            let result = self.parser.tick(0).map(|()| false);
+            self.enforce_budget();
+            return result;
+        }
+        let reuse = prerecognized.is_some();
         self.parser.position = at;
         let mark = self.parser.mark();
         let mut out = Children::sink(at);
