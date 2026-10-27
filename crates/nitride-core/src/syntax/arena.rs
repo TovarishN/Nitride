@@ -121,6 +121,7 @@ impl Iterator for Children<'_> {
 }
 pub(crate) struct Relocation {
     ids: Vec<u32>,
+    index: ChunkIndex,
     maps: Vec<Vec<u32>>,
     live: Vec<Vec<bool>>,
     pub removed_bytes: usize,
@@ -132,7 +133,7 @@ impl Relocation {
         if let Some(map) = &self.evacuated {
             return map.get(&id).copied();
         }
-        let chunk = self.ids.binary_search(&id.chunk()).ok()?;
+        let chunk = self.index.get(&self.ids, id.chunk())?;
         if !*self.live[chunk].get(id.slot())? {
             return None;
         }
@@ -170,12 +171,11 @@ impl PublishedArena {
         let chunks: Vec<_> = self.chunks.iter().cloned().collect();
         self.chunks = Sequence::default();
         let ids: Vec<_> = chunks.iter().map(|c| c.id).collect();
+        let index = ChunkIndex::new(&ids);
         let mut live: Vec<Vec<bool>> = chunks.iter().map(|c| vec![false; c.nodes.len()]).collect();
         let mut pending = roots.to_vec();
         while let Some(id) = pending.pop() {
-            let c = ids
-                .binary_search(&id.chunk())
-                .expect("owned reachable chunk");
+            let c = index.get(&ids, id.chunk()).expect("owned reachable chunk");
             if live[c][id.slot()] {
                 continue;
             }
@@ -204,6 +204,7 @@ impl PublishedArena {
             return Ok((
                 next,
                 Relocation {
+                    index,
                     ids,
                     maps: Vec::new(),
                     live,
@@ -237,7 +238,7 @@ impl PublishedArena {
             })
             .collect();
         let relocated = |id: SubtreeId| {
-            let c = ids.binary_search(&id.chunk()).unwrap();
+            let c = index.get(&ids, id.chunk()).unwrap();
             let slot = maps[c][id.slot()];
             assert_ne!(slot, u32::MAX);
             SubtreeId::new(id.chunk(), slot)
@@ -309,6 +310,7 @@ impl PublishedArena {
         Ok((
             self,
             Relocation {
+                index,
                 ids,
                 maps,
                 live,
@@ -472,12 +474,14 @@ impl MutableChunk {
 pub(crate) struct ArenaBuilder {
     published: PublishedArena,
     chunks: Vec<Option<MutableChunk>>,
-    by_id: std::collections::HashMap<u32, usize>,
+    by_id: crate::parser::shared::hash::FastMap<u32, usize>,
     current: usize,
     first_id: u32,
     free_chunks: Vec<usize>,
     free_nodes: Vec<SubtreeId>,
     trail: Vec<SubtreeId>,
+    /// Reused by `free_released` across calls.
+    release_stack: Vec<SubtreeId>,
     copied_existing_bytes: u64,
     cache_only_bytes: u64,
 }
@@ -494,12 +498,13 @@ impl ArenaBuilder {
         Self {
             published: published.clone(),
             chunks: vec![Some(chunk)],
-            by_id: std::collections::HashMap::from([(first_id, 0)]),
+            by_id: [(first_id, 0)].into_iter().collect(),
             current: 0,
             first_id,
             free_chunks: Vec::new(),
             free_nodes: Vec::new(),
             trail: Vec::new(),
+            release_stack: Vec::new(),
             copied_existing_bytes: 0,
             cache_only_bytes: 0,
         }
@@ -513,15 +518,16 @@ impl ArenaBuilder {
             .map(|_| self.current)
     }
     fn find_new(&self, id: SubtreeId) -> Option<usize> {
-        if let Some(index) = id.chunk().checked_sub(self.first_id).map(|n| n as usize) {
-            if self
-                .chunks
-                .get(index)
-                .and_then(Option::as_ref)
-                .is_some_and(|c| c.data.id == id.chunk())
-            {
-                return Some(index);
-            }
+        // Chunk ids only increase, so every unpublished chunk is at least
+        // `first_id`; anything older belongs to the published directory.
+        let index = id.chunk().checked_sub(self.first_id)? as usize;
+        if self
+            .chunks
+            .get(index)
+            .and_then(Option::as_ref)
+            .is_some_and(|c| c.data.id == id.chunk())
+        {
+            return Some(index);
         }
         if let Some(index) = self.current_chunk_index(id) {
             return Some(index);
@@ -604,6 +610,18 @@ impl ArenaBuilder {
         let index = self.find_new(id)?;
         let c = self.chunks[index].as_mut().unwrap();
         let slot = id.slot();
+        // Without cache pins before or after, no bytes are charged either way.
+        if cache == 0 && c.cache_references[slot] == 0 {
+            if let ReferenceCounts::Small(values) = &mut c.references {
+                let references = values[slot];
+                assert!(references > 0, "reference to released unpublished node");
+                let next = i64::from(references) + strong;
+                if let Ok(next) = u32::try_from(next) {
+                    values[slot] = next;
+                    return Some((index, next == 0));
+                }
+            }
+        }
         let charged = |refs: u64, pins: u32| {
             if pins != 0 && refs == u64::from(pins) {
                 u64::from(c.weights[slot])
@@ -643,56 +661,55 @@ impl ArenaBuilder {
     pub(crate) fn release_cache(&mut self, id: SubtreeId) {
         self.release_kind(id, true);
     }
+    #[inline]
     fn release_kind(&mut self, id: SubtreeId, cache: bool) {
-        let mut local = [(SubtreeId::NONE, false); 32];
-        local[0] = (id, cache);
-        let mut count = 1;
-        let mut overflow = Vec::new();
+        // Most releases leave the node alive; only a free walks the subtree.
+        if let Some((index, true)) = self.adjust(id, -1, if cache { -1 } else { 0 }) {
+            self.free_released(id, index);
+        }
+    }
+    /// Frees `id`, whose last reference was just released, and releases its
+    /// unpublished children, freeing those that reach zero in turn.
+    fn free_released(&mut self, id: SubtreeId, index: usize) {
+        let mut stack = std::mem::take(&mut self.release_stack);
+        let mut freed = Some((id, index));
         loop {
-            let next = if count > 0 {
-                count -= 1;
-                Some(local[count])
-            } else {
-                overflow.pop()
-            };
-            let Some((id, cache)) = next else {
-                break;
-            };
-            let Some((index, true)) = self.adjust(id, -1, if cache { -1 } else { 0 }) else {
-                continue;
-            };
-            let first_new = self.first_id;
-            let c = self.chunks[index].as_mut().unwrap();
-            let node = c.data.nodes[id.slot()];
-            for child in c.data.children(node) {
+            if let Some((id, index)) = freed.take() {
+                let first_new = self.first_id;
+                let c = self.chunks[index].as_mut().unwrap();
+                let node = c.data.nodes[id.slot()];
                 // Published dependencies already belong to the shared directory.
                 // They need neither temporary owners nor release-stack entries.
-                if child.node.chunk() < first_new {
-                    continue;
+                stack.extend(
+                    c.data
+                        .children(node)
+                        .map(|child| child.node)
+                        .filter(|child| child.chunk() >= first_new),
+                );
+                if node.count & LARGE != 0 {
+                    c.data.large[node.first as usize] = Sequence::default();
+                    c.sequence_charges[node.first as usize] = 0;
+                    c.free_large.push(node.first);
+                } else if node.count != 0 {
+                    c.free_edges[node.count as usize].push(node.first);
                 }
-                if count < local.len() {
-                    local[count] = (child.node, false);
-                    count += 1;
-                } else {
-                    overflow.push((child.node, false));
+                c.alive -= 1;
+                self.free_nodes.push(id);
+                if c.alive == 0 {
+                    let chunk_id = c.data.id;
+                    self.chunks[index] = None;
+                    self.by_id.remove(&chunk_id);
+                    self.free_chunks.push(index);
                 }
             }
-            if node.count & LARGE != 0 {
-                c.data.large[node.first as usize] = Sequence::default();
-                c.sequence_charges[node.first as usize] = 0;
-                c.free_large.push(node.first);
-            } else if node.count != 0 {
-                c.free_edges[node.count as usize].push(node.first);
-            }
-            c.alive -= 1;
-            self.free_nodes.push(id);
-            if c.alive == 0 {
-                let chunk_id = c.data.id;
-                self.chunks[index] = None;
-                self.by_id.remove(&chunk_id);
-                self.free_chunks.push(index);
+            let Some(child) = stack.pop() else {
+                break;
+            };
+            if let Some((index, true)) = self.adjust(child, -1, 0) {
+                freed = Some((child, index));
             }
         }
+        self.release_stack = stack;
     }
     pub(crate) fn is_cache_only(&self, id: SubtreeId) -> bool {
         let Some(index) = self.find_new(id) else {
@@ -941,6 +958,43 @@ impl ArenaBuilder {
         chunks.sort_by_key(|c| c.id);
         published.chunks = published.chunks.concat(Sequence::from_vec(chunks));
         published
+    }
+}
+
+/// Positions of sorted chunk IDs, by direct table when they are dense
+/// (chunks of one build are mostly consecutive), else by binary search.
+struct ChunkIndex {
+    first: u32,
+    table: Vec<u32>,
+}
+impl ChunkIndex {
+    fn new(ids: &[u32]) -> Self {
+        let (Some(&first), Some(&last)) = (ids.first(), ids.last()) else {
+            return Self {
+                first: 0,
+                table: Vec::new(),
+            };
+        };
+        let span = (last - first) as usize + 1;
+        if span > ids.len().saturating_mul(4).max(64) {
+            return Self {
+                first,
+                table: Vec::new(),
+            };
+        }
+        let mut table = vec![u32::MAX; span];
+        for (index, id) in ids.iter().enumerate() {
+            table[(id - first) as usize] = index as u32;
+        }
+        Self { first, table }
+    }
+    #[inline]
+    fn get(&self, ids: &[u32], id: u32) -> Option<usize> {
+        if self.table.is_empty() {
+            return ids.binary_search(&id).ok();
+        }
+        let slot = *self.table.get(id.checked_sub(self.first)? as usize)?;
+        (slot != u32::MAX).then_some(slot as usize)
     }
 }
 

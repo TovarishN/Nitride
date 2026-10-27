@@ -5,7 +5,7 @@ use crate::syntax::{arena::ArenaBuilder, text::Reader};
 use crate::*;
 use std::collections::HashMap;
 mod children;
-mod hash;
+pub(crate) mod hash;
 mod memo;
 use hash::FastMap;
 use memo::MemoKey;
@@ -1479,24 +1479,29 @@ impl<'a> Parser<'a> {
         self.label_ids.insert(key, id);
         Ok(id)
     }
+    #[inline]
     fn tick(&mut self, depth: u32) -> Result<(), Diagnostic> {
         self.work += 1;
         self.max_depth = self.max_depth.max(depth);
-        if super::stack_position_inline().abs_diff(self.stack_base) > self.stack_budget {
-            return Err(Diagnostic::new(
-                "limit",
-                [self.position as u32; 2],
-                super::STACK_EXHAUSTED,
-            ));
-        }
-        if depth > self.limits.parser_frames || self.work > self.work_budget {
-            return Err(Diagnostic::new(
-                "limit",
-                [self.position as u32; 2],
-                "parser depth/work limit exceeded",
-            ));
+        let stack = super::stack_position_inline().abs_diff(self.stack_base);
+        if stack > self.stack_budget
+            || depth > self.limits.parser_frames
+            || self.work > self.work_budget
+        {
+            return Err(self.tick_error(stack));
         }
         Ok(())
+    }
+    /// The stack limit takes precedence over the depth and work limits.
+    #[cold]
+    #[inline(never)]
+    fn tick_error(&self, stack: usize) -> Diagnostic {
+        let message = if stack > self.stack_budget {
+            super::STACK_EXHAUSTED
+        } else {
+            "parser depth/work limit exceeded"
+        };
+        Diagnostic::new("limit", [self.position as u32; 2], message)
     }
     fn match_rule(
         &mut self,
@@ -1678,6 +1683,7 @@ impl<'a> Parser<'a> {
         self.choice_cache.insert(key, plan.clone());
         plan
     }
+    #[inline]
     fn tick_steps(&mut self, count: usize, depth: u32) -> Result<(), Diagnostic> {
         if count == 0 {
             return Ok(());
