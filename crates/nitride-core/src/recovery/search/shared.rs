@@ -25,15 +25,15 @@ impl Probe<'static> for SharedProbe<'_> {
     }
 }
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn recover(
+pub(crate) fn recover<'a>(
     language: &'static Language<'static>,
-    text: &SourceText,
+    text: &'a SourceText,
     limits: Limits,
     options: RecoveryOptions,
     base: Option<&ParseSnapshot>,
     index: Index,
     edit: Option<&TextEdit>,
-    seed: Option<&Seed>,
+    seed: Option<&Seed<'a>>,
 ) -> Result<ParseSnapshot, Diagnostic> {
     let result = recover_once(
         language,
@@ -74,15 +74,15 @@ pub(crate) fn recover(
     }
 }
 #[allow(clippy::too_many_arguments)]
-fn recover_once(
+fn recover_once<'a>(
     language: &'static Language<'static>,
-    text: &SourceText,
+    text: &'a SourceText,
     limits: Limits,
     options: RecoveryOptions,
     base: Option<&ParseSnapshot>,
     index: Index,
     edit: Option<&TextEdit>,
-    seed: Option<&Seed>,
+    seed: Option<&Seed<'a>>,
 ) -> Result<ParseSnapshot, Diagnostic> {
     let mut engine = engine(
         language,

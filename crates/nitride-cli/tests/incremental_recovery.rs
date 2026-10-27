@@ -471,3 +471,23 @@ fn generated_cold_recovery_reuses_the_strict_attempt_prefix() {
     check(&source.replacen("return 1", "return 2", 1), &edited);
     assert!(edited.stats().reused_subtrees > 0);
 }
+
+#[test]
+fn generated_cold_recovery_recognizes_code_after_the_error() {
+    let mut source = String::from("namespace Broken { class B { int F() { return 1 } } }\n");
+    for i in 0..40 {
+        source.push_str(&format!(
+            "namespace N{i} {{ class C{i} {{ int F(int x) {{ if (x > {i}) {{ return x * 2; }} return x; }} }} }}\n"
+        ));
+    }
+    let cold = parse_snapshot_generated(
+        &nitride_cli::csharp4::PARSER,
+        &source,
+        Limits::default(),
+        SnapshotMode::Recovering(RecoveryOptions::default()),
+    )
+    .unwrap();
+    check(&source, &cold);
+    assert_eq!(cold.stats().full_parse_fallbacks, 0);
+    assert!(cold.stats().native_syntax_calls > 0, "{:?}", cold.stats());
+}

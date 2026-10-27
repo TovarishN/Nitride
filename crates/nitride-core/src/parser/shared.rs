@@ -134,11 +134,19 @@ struct Input<'a> {
 }
 /// Recognition facts from a failed cold strict attempt over the same text.
 /// Recovery probes reuse them as an edit reuses a previous snapshot's facts;
-/// the arena owns only syntax reachable from those facts.
-pub(crate) struct Seed {
+/// the arena owns only syntax reachable from those facts. A generated attempt
+/// also lends its callbacks and contiguous source to recovery probes.
+pub(crate) struct Seed<'a> {
     arena: crate::syntax::arena::PublishedArena,
     recognitions: Index,
     dispatch: std::sync::Arc<dispatch::Dispatch>,
+    generated: Option<Generated<'a>>,
+}
+#[derive(Clone, Copy)]
+struct Generated<'a> {
+    compiled: Option<&'static CompiledParser>,
+    lexers: &'static crate::lexical::CompiledLexers,
+    source: &'a str,
 }
 pub fn parse_snapshot(
     language: &'static Language<'static>,
@@ -361,14 +369,14 @@ impl ParseSnapshot {
         }
     }
 }
-fn parse_with_spill(
+fn parse_with_spill<'a>(
     language: &'static Language<'static>,
-    text: Input<'_>,
+    text: Input<'a>,
     limits: Limits,
     options: ParseOptions,
     base: Option<&ParseSnapshot>,
     index: Index,
-    mut seed: Option<&mut Option<Seed>>,
+    mut seed: Option<&mut Option<Seed<'a>>>,
 ) -> Result<ParseSnapshot, Diagnostic> {
     let result = parse_source(
         language,
@@ -402,15 +410,15 @@ fn parse_with_spill(
     }
 }
 #[allow(clippy::too_many_arguments)]
-fn parse_source(
+fn parse_source<'a>(
     language: &'static Language<'static>,
-    text: Input<'_>,
+    text: Input<'a>,
     limits: Limits,
     options: ParseOptions,
     stack_budget: usize,
     base: Option<&ParseSnapshot>,
     index: Index,
-    seed: Option<&mut Option<Seed>>,
+    seed: Option<&mut Option<Seed<'a>>>,
 ) -> Result<ParseSnapshot, Diagnostic> {
     let input = text;
     let text = input.text;
@@ -619,13 +627,21 @@ fn label_ids(labels: &[&'static str]) -> FastMap<(usize, usize), u16> {
         .map(|(i, s)| ((s.as_ptr() as usize, s.len()), i as u16))
         .collect()
 }
-impl Parser<'_> {
+impl<'a> Parser<'a> {
     /// Convert a failed cold strict attempt into recovery seed facts. Fact
     /// roots become owners; all other syntax, including the partial root, is
     /// reclaimed before compaction.
-    fn into_seed(mut self) -> Result<Seed, Diagnostic> {
+    fn into_seed(mut self) -> Result<Seed<'a>, Diagnostic> {
         self.clear_memo(0);
         self.clear_memo(1);
+        let generated = self
+            .lexers
+            .zip(self.source.contiguous_text())
+            .map(|(lexers, source)| Generated {
+                compiled: self.compiled,
+                lexers,
+                source,
+            });
         let facts: Vec<_> = self.pending_index.drain().collect();
         for (_, hit) in &facts {
             if hit.root != SubtreeId::NONE {
@@ -653,10 +669,14 @@ impl Parser<'_> {
             arena,
             recognitions,
             dispatch: self.dispatch,
+            generated,
         })
     }
     /// Reuse a cold seed for the same text: its facts need no edit mapping.
-    fn adopt_seed(&mut self, seed: &Seed) {
+    fn adopt_seed(&mut self, text: &'a SourceText, seed: &Seed<'a>) {
+        if let Some(generated) = seed.generated {
+            self.source = Reader::contiguous(text, generated.source);
+        }
         self.labels = seed.arena.labels.to_vec();
         self.label_ids = label_ids(&self.labels);
         self.arena = ArenaBuilder::from_published(&seed.arena);
@@ -2042,6 +2062,7 @@ pub(crate) struct SharedProbe<'a> {
     cache: FastMap<(u16, usize, u32), Option<super::ProbeHit>>,
     prior_recovery: std::sync::Arc<[(u16, u32, SubtreeId)]>,
     recovery_keys: RecoveryKeys,
+    generated: Option<Generated<'a>>,
 }
 impl<'a> SharedProbe<'a> {
     pub(crate) fn new(
@@ -2050,7 +2071,7 @@ impl<'a> SharedProbe<'a> {
         limits: Limits,
         base: Option<&ParseSnapshot>,
         index: Index,
-        seed: Option<&Seed>,
+        seed: Option<&Seed<'a>>,
     ) -> Self {
         let mut probe = Self {
             parser: Parser::new(
@@ -2081,12 +2102,14 @@ impl<'a> SharedProbe<'a> {
                 .and_then(|b| b.recovery())
                 .map_or_else(|| std::sync::Arc::from([]), |r| r.structures.clone()),
             recovery_keys: Default::default(),
+            generated: None,
         };
         // Probe work is part of the existing recovery search budget. Keep its
         // recognizer unchanged until that accounting contract is versioned.
         probe.parser.optimize_recognition = false;
         if let Some(seed) = seed.filter(|_| base.is_none()) {
-            probe.parser.adopt_seed(seed);
+            probe.parser.adopt_seed(text, seed);
+            probe.generated = seed.generated;
         }
         probe
     }
@@ -2104,18 +2127,17 @@ impl<'a> SharedProbe<'a> {
             }
             return Ok(hit);
         }
+        let key = Key {
+            rule: id,
+            minimum: self.parser.key_minimum(id, power),
+            in_token: 0,
+        };
+        self.prerecognize(id, at, power, key);
         self.parser.position = at;
         self.parser.furthest = at;
         self.parser.checkpoint_next = true;
         let mark = self.parser.mark();
-        self.parser.failure_checkpoint = Some((
-            at as u32,
-            Key {
-                rule: id,
-                minimum: self.parser.key_minimum(id, power),
-                in_token: 0,
-            },
-        ));
+        self.parser.failure_checkpoint = Some((at as u32, key));
         let result = self.parser.rule(id, power, 0);
         self.parser.failure_checkpoint = None;
         let hit = result.map(|root| {
@@ -2154,6 +2176,71 @@ impl<'a> SharedProbe<'a> {
         }
         self.enforce_budget();
         hit
+    }
+    /// Recognize a missing successful fact with the generated parser before
+    /// the interpreted probe runs. The probe then reuses it as it reuses a
+    /// seeded fact, so only that reuse is charged to the recovery budget.
+    /// Failures leave no fact; the interpreted probe decides them as before.
+    fn prerecognize(&mut self, id: u16, at: usize, power: u32, key: Key) {
+        let Some(generated) = self.generated else {
+            return;
+        };
+        let parser = &mut self.parser;
+        if parser.language.rules[id as usize].lexical
+            || parser.reusable.get(at as u32, key).is_some()
+            || parser.pending_index.contains_key(&(at as u32, key))
+        {
+            return;
+        }
+        let saved = (parser.work, parser.max_depth, parser.furthest);
+        parser.compiled = generated.compiled;
+        parser.lexers = Some(generated.lexers);
+        parser.optimize_recognition = true;
+        parser.position = at;
+        parser.furthest = at;
+        parser.checkpoint_next = true;
+        let mark = parser.mark();
+        let _ = parser.rule(id, power, 0);
+        parser.checkpoint_next = false;
+        parser.position = mark.position;
+        parser.arena.restore(mark.trail);
+        parser.compiled = None;
+        parser.lexers = None;
+        parser.optimize_recognition = false;
+        (parser.work, parser.max_depth, parser.furthest) = saved;
+    }
+    /// A predicate over a single syntax reference skips trivia, then calls the
+    /// rule there. Pre-recognize that call; report whether a fact now exists.
+    fn prerecognize_reference(&mut self, expr: &'static Expr<'static>, at: usize) -> bool {
+        let Expr::Ref(id) = *expr else {
+            return false;
+        };
+        if self.generated.is_none() || self.parser.language.rules[id as usize].lexical {
+            return false;
+        }
+        let saved = (
+            self.parser.work,
+            self.parser.max_depth,
+            self.parser.furthest,
+        );
+        self.parser.position = at;
+        let skipped = self.parser.trivia();
+        let start = self.parser.position;
+        (
+            self.parser.work,
+            self.parser.max_depth,
+            self.parser.furthest,
+        ) = saved;
+        if skipped.is_err() {
+            return false;
+        }
+        let key = Key {
+            rule: id,
+            minimum: self.parser.key_minimum(id, 0),
+            in_token: 0,
+        };
+        self.prerecognize(id, start, 0, key);
+        self.parser.pending_index.contains_key(&(start as u32, key))
     }
     fn borrow_result(&mut self, id: u32) {
         if id == u32::MAX || self.active[id as usize] {
@@ -2253,10 +2340,14 @@ impl<'a> SharedProbe<'a> {
     ) -> Result<bool, Diagnostic> {
         self.retire_borrowed();
         self.enforce_budget();
+        let reuse = self.prerecognize_reference(expr, at);
         self.parser.position = at;
         let mark = self.parser.mark();
         let mut out = Children::sink(at);
+        // A pre-recognized reference is reused only by that one rule call.
+        self.parser.checkpoint_next = reuse;
         let result = self.parser.expression(expr, false, None, 0, 0, &mut out);
+        self.parser.checkpoint_next = false;
         self.parser.restore(mark);
         self.enforce_budget();
         result

@@ -387,7 +387,9 @@ accounting. The [seeded cold recovery checkpoint](docs/stage26-evidence.md)
 reuses a failed strict attempt's recognition facts in recovery instead of
 recognizing the prefix again. The [hot-path checkpoint](docs/stage27-evidence.md)
 inlines the stack guard, hashes parser-private maps with a seeded fast hasher and
-moves cache eviction off the backtrack path. Recovery probes otherwise
+moves cache eviction off the backtrack path. The
+[post-error checkpoint](docs/stage28-evidence.md) lets cold recovery pre-recognize
+missing facts after the first error with the generated parser. Recovery probes otherwise
 retain their original recognition work accounting. Cold construction, recovery
 search, explicit export and semantic indexing are separate costs; this API
 does not promise constant-time edits.
