@@ -89,6 +89,7 @@ struct Parser<'a> {
     lexers: Option<&'static crate::lexical::CompiledLexers>,
     choice_cache: FastMap<usize, Option<std::sync::Arc<dispatch::ChoicePlan>>>,
     choice_cache_bytes: usize,
+    tokens: TokenCache,
     language: &'static Language<'static>,
     minimum_sensitive: Vec<bool>,
     dispatch: std::sync::Arc<dispatch::Dispatch>,
@@ -568,6 +569,7 @@ impl<'a> Parser<'a> {
             lexers: input.lexers,
             choice_cache: Default::default(),
             choice_cache_bytes: 0,
+            tokens: TokenCache::default(),
             language,
             minimum_sensitive: language.rules.iter().map(minimum_sensitive).collect(),
             dispatch: base
@@ -1390,6 +1392,31 @@ impl<'a> Parser<'a> {
         Ok(result)
     }
     fn trivia(&mut self) -> Result<(), Diagnostic> {
+        // Trivia at a position is fixed by the source: skip it once, then
+        // replay its end, observation and logical work. One physical check
+        // covers a replay.
+        if !(self.optimize_recognition && self.compiled.is_some()) {
+            return self.trivia_scan();
+        }
+        let start = self.position;
+        if let Some((end, observed, steps)) = self.tokens.trivia(start) {
+            self.tick_steps(steps as usize, 0)?;
+            self.position = end;
+            self.source.observe(observed);
+            return Ok(());
+        }
+        let saved = self.source.replace_observed(start as u64);
+        let work = self.work;
+        let result = self.trivia_scan();
+        let observed = self.source.replace_observed(saved);
+        self.source.observe(observed);
+        result?;
+        let steps = (self.work - work).min(u64::from(u32::MAX)) as u32;
+        self.tokens
+            .remember_trivia(start, self.position, observed, steps);
+        Ok(())
+    }
+    fn trivia_scan(&mut self) -> Result<(), Diagnostic> {
         loop {
             self.tick(0)?;
             let character = self.source.character(self.position);
@@ -1750,48 +1777,72 @@ impl<'a> Parser<'a> {
         depth: u32,
     ) -> Result<Option<usize>, Diagnostic> {
         let mut furthest = peek.at;
+        let byte = peek.character.map_or(dispatch::Dispatch::LEXICAL, |c| {
+            if c.is_ascii() {
+                c as u8
+            } else {
+                dispatch::Dispatch::WIDE
+            }
+        });
+        // Steps sort by first token: read each distinct one once.
+        let mut first = (u16::MAX, None);
         for step in lead {
-            let first = self.dispatch.terminal(step.first);
-            let Some(end) = self.token_end(first, peek.at, peek.character, peek, depth)? else {
+            if step.first != first.0 {
+                let lead_byte = self.dispatch.first_byte(step.first);
+                let end = if lead_byte < dispatch::Dispatch::LEXICAL && lead_byte != byte {
+                    None
+                } else {
+                    self.token_end(step.first, peek.at, peek.character, depth)?
+                };
+                first = (step.first, end);
+            }
+            let Some(end) = first.1 else {
                 continue;
             };
             let Some(second) = step.second() else {
                 return Ok(None);
             };
-            let second = self.dispatch.terminal(second);
             let (next, character) = self.after_token(end, peek)?;
-            if self
-                .token_end(second, next, character, peek, depth)?
-                .is_some()
-            {
+            if self.token_end(second, next, character, depth)?.is_some() {
                 return Ok(None);
             }
             furthest = furthest.max(next);
         }
         Ok(Some(furthest))
     }
+    /// Where terminal `id` ends when read at `at`, exactly as the alternative
+    /// would read it. Reads are recorded as observations, cached or not.
     fn token_end(
         &mut self,
-        terminal: dispatch::Terminal,
+        id: u16,
         at: usize,
         character: Option<char>,
-        peek: &mut Peek,
         depth: u32,
     ) -> Result<Option<usize>, Diagnostic> {
-        match terminal {
-            dispatch::Terminal::Literal(text) => Ok((text.chars().next() == character
-                && self.literal_at(at, text))
-            .then_some(at + text.len())),
-            dispatch::Terminal::Lexical(id) => {
-                if let Some(known) = peek.lexical(id, at) {
-                    return Ok(known);
+        match self.dispatch.terminal(id) {
+            dispatch::Terminal::Literal(text) => {
+                if !text.starts_with(|c| Some(c) == character) {
+                    return Ok(None);
                 }
-                let end = if self.dispatch.start(id).allows(character) {
-                    self.lexical_end(id, at, depth)?
-                } else {
-                    None
-                };
-                peek.remember_lexical(id, at, end);
+                let keyword = self.dispatch.keyword(id);
+                Ok(self
+                    .literal_at(at, text, keyword)
+                    .then_some(at + text.len()))
+            }
+            dispatch::Terminal::Lexical(rule) => {
+                if !self.dispatch.start(rule).allows(character) {
+                    return Ok(None);
+                }
+                if let Some((end, observed)) = self.tokens.lexical(at, rule) {
+                    self.source.observe(observed);
+                    return Ok(end);
+                }
+                let saved = self.source.replace_observed(at as u64);
+                let end = self.lexical_end(rule, at, depth);
+                let observed = self.source.replace_observed(saved);
+                self.source.observe(observed);
+                let end = end?;
+                self.tokens.remember_lexical(at, rule, end, observed);
                 Ok(end)
             }
         }
@@ -1813,25 +1864,35 @@ impl<'a> Parser<'a> {
         peek.remember_after(end, value);
         Ok(value)
     }
-    fn literal_at(&mut self, at: usize, text: &str) -> bool {
-        let keyword = text
-            .chars()
-            .next()
-            .is_some_and(|c| c.is_alphabetic() || c == '_')
-            && text.chars().all(|c| c.is_alphanumeric() || c == '_');
-        self.source.matches(at, text)
-            && (!keyword
-                || self
-                    .source
-                    .character(at + text.len())
-                    .is_none_or(|c| !(c.is_alphanumeric() || c == '_')))
+    /// `literal`'s comparison. A keyword compares against the identifier word
+    /// at `at`, which also decides its boundary; reading the whole word only
+    /// widens the recorded observation.
+    fn literal_at(&mut self, at: usize, text: &str, keyword: bool) -> bool {
+        let Some(source) = self.source.contiguous_text() else {
+            return self.source.matches(at, text)
+                && (!keyword
+                    || self
+                        .source
+                        .character(at + text.len())
+                        .is_none_or(|c| !(c.is_alphanumeric() || c == '_')));
+        };
+        let end = at + text.len();
+        if !keyword {
+            self.source.observe(end.min(source.len() + 1) as u64);
+            return source.as_bytes().get(at..end) == Some(text.as_bytes());
+        }
+        let (word, observed) = self.tokens.word(source, at);
+        self.source
+            .observe(observed.max(end.min(source.len() + 1) as u64));
+        word == end && source.as_bytes().get(at..end) == Some(text.as_bytes())
     }
     fn lexical_end(&mut self, id: u16, at: usize, depth: u32) -> Result<Option<usize>, Diagnostic> {
         let mark = self.mark();
         let furthest = self.furthest;
         let checkpoint = std::mem::replace(&mut self.checkpoint_next, false);
         self.position = at;
-        let result = self.rule(id, 0, depth);
+        // Lexical rules have no reusable or pending facts: enter below `rule`.
+        let result = self.rule_inner(id, 0, depth);
         let end = self.position;
         self.checkpoint_next = checkpoint;
         self.restore(mark);
@@ -2850,8 +2911,6 @@ impl<'a> SharedProbe<'a> {
 struct Peek {
     at: usize,
     character: Option<char>,
-    lexical: [(u16, u32, Option<u32>); 12],
-    lexical_len: usize,
     after: [(u32, u32, Option<char>); 4],
     after_len: usize,
 }
@@ -2860,22 +2919,8 @@ impl Peek {
         Self {
             at,
             character,
-            lexical: [(0, 0, None); 12],
-            lexical_len: 0,
             after: [(0, 0, None); 4],
             after_len: 0,
-        }
-    }
-    fn lexical(&self, id: u16, at: usize) -> Option<Option<usize>> {
-        self.lexical[..self.lexical_len]
-            .iter()
-            .find(|(known, from, _)| *known == id && *from as usize == at)
-            .map(|(_, _, end)| end.map(|end| end as usize))
-    }
-    fn remember_lexical(&mut self, id: u16, at: usize, end: Option<usize>) {
-        if self.lexical_len < self.lexical.len() {
-            self.lexical[self.lexical_len] = (id, at as u32, end.map(|end| end as u32));
-            self.lexical_len += 1;
         }
     }
     fn after(&self, end: usize) -> Option<(usize, Option<char>)> {
@@ -2889,6 +2934,127 @@ impl Peek {
             self.after[self.after_len] = (end as u32, next as u32, character);
             self.after_len += 1;
         }
+    }
+}
+
+/// Token reads shared by every prediction at a position: identifier word
+/// extents and lexical rule ends, each with the observation it made. The
+/// source never changes during a parse, so entries never go stale; slots are
+/// direct-mapped by position and simply overwritten.
+#[derive(Default)]
+struct TokenCache {
+    /// Allocated on first use: small edits often read few positions.
+    slots: Vec<TokenSlot>,
+}
+#[derive(Clone, Copy)]
+struct TokenSlot {
+    at: u32,
+    /// Word end and the observation that found it; `u32::MAX` when unknown.
+    word: u32,
+    word_observed: u32,
+    /// End of trivia from here, its observation and logical steps;
+    /// `u32::MAX` when unknown.
+    trivia: u32,
+    trivia_observed: u32,
+    trivia_steps: u32,
+    /// Lexical rule, end (`u32::MAX` for no match) and observation.
+    lexical: [(u16, u32, u32); 3],
+    lexical_len: u8,
+}
+/// Backtracking revisits recent positions; a short window covers it.
+const TOKEN_SLOTS: usize = 512;
+impl TokenSlot {
+    const EMPTY: Self = Self {
+        at: u32::MAX,
+        word: u32::MAX,
+        word_observed: 0,
+        trivia: u32::MAX,
+        trivia_observed: 0,
+        trivia_steps: 0,
+        lexical: [(0, 0, 0); 3],
+        lexical_len: 0,
+    };
+}
+impl TokenCache {
+    fn get(&self, at: usize) -> Option<&TokenSlot> {
+        self.slots
+            .get(at % TOKEN_SLOTS)
+            .filter(|slot| slot.at == at as u32)
+    }
+    fn slot(&mut self, at: usize) -> &mut TokenSlot {
+        if self.slots.is_empty() {
+            self.slots = vec![TokenSlot::EMPTY; TOKEN_SLOTS];
+        }
+        let slot = &mut self.slots[at % TOKEN_SLOTS];
+        if slot.at != at as u32 {
+            *slot = TokenSlot {
+                at: at as u32,
+                ..TokenSlot::EMPTY
+            };
+        }
+        slot
+    }
+    fn trivia(&self, at: usize) -> Option<(usize, u64, u32)> {
+        let slot = self.get(at).filter(|slot| slot.trivia != u32::MAX)?;
+        Some((
+            slot.trivia as usize,
+            u64::from(slot.trivia_observed),
+            slot.trivia_steps,
+        ))
+    }
+    fn remember_trivia(&mut self, at: usize, end: usize, observed: u64, steps: u32) {
+        let slot = self.slot(at);
+        slot.trivia = end as u32;
+        slot.trivia_observed = observed.min(u64::from(u32::MAX)) as u32;
+        slot.trivia_steps = steps;
+    }
+    fn lexical(&mut self, at: usize, rule: u16) -> Option<(Option<usize>, u64)> {
+        let slot = self.get(at)?;
+        slot.lexical[..slot.lexical_len as usize]
+            .iter()
+            .find(|(known, _, _)| *known == rule)
+            .map(|(_, end, observed)| {
+                (
+                    (*end != u32::MAX).then_some(*end as usize),
+                    u64::from(*observed),
+                )
+            })
+    }
+    fn remember_lexical(&mut self, at: usize, rule: u16, end: Option<usize>, observed: u64) {
+        let slot = self.slot(at);
+        let entry = (
+            rule,
+            end.map_or(u32::MAX, |end| end as u32),
+            observed.min(u64::from(u32::MAX)) as u32,
+        );
+        if (slot.lexical_len as usize) < slot.lexical.len() {
+            slot.lexical[slot.lexical_len as usize] = entry;
+            slot.lexical_len += 1;
+        } else {
+            slot.lexical.rotate_left(1);
+            slot.lexical[2] = entry;
+        }
+    }
+    /// The end of the identifier word at `at` (`at` when none), and the
+    /// observation: through the first character after the word.
+    fn word(&mut self, source: &str, at: usize) -> (usize, u64) {
+        let slot = self.slot(at);
+        if slot.word != u32::MAX {
+            return (slot.word as usize, u64::from(slot.word_observed));
+        }
+        let mut end = at;
+        let mut observed = None;
+        for (offset, c) in source.get(at..).unwrap_or("").char_indices() {
+            if !(c.is_alphanumeric() || c == '_') {
+                observed = Some(at + offset + c.len_utf8());
+                break;
+            }
+            end = at + offset + c.len_utf8();
+        }
+        let observed = observed.unwrap_or(source.len() + 1);
+        slot.word = end as u32;
+        slot.word_observed = observed as u32;
+        (end, observed as u64)
     }
 }
 

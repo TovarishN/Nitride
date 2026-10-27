@@ -445,6 +445,10 @@ pub(crate) struct Dispatch {
     pratts: Vec<Option<Box<PrattPlan>>>,
     /// Sorted; steps index into it.
     terminals: Vec<Terminal>,
+    /// Per terminal: an identifier-like literal, which needs a word boundary.
+    keywords: Vec<bool>,
+    /// Per terminal: a literal's ASCII first byte; `LEXICAL` or `WIDE` otherwise.
+    first_bytes: Vec<u8>,
 }
 impl Dispatch {
     pub(crate) fn new(language: &Language<'static>) -> Self {
@@ -490,6 +494,8 @@ impl Dispatch {
                 tail_leads: Leads::default(),
                 pratts: language.rules.iter().map(|_| None).collect(),
                 terminals: Vec::new(),
+                keywords: Vec::new(),
+                first_bytes: Vec::new(),
             };
         }
         let tails: Vec<Option<Start>> = language
@@ -523,6 +529,26 @@ impl Dispatch {
         terminals.sort_unstable();
         terminals.dedup();
         terminals.shrink_to_fit();
+        let keywords = terminals
+            .iter()
+            .map(|terminal| match terminal {
+                Terminal::Literal(text) => {
+                    text.starts_with(|c: char| c.is_alphabetic() || c == '_')
+                        && text.chars().all(|c| c.is_alphanumeric() || c == '_')
+                }
+                Terminal::Lexical(_) => false,
+            })
+            .collect();
+        let first_bytes = terminals
+            .iter()
+            .map(|terminal| match terminal {
+                Terminal::Literal(text) => match text.as_bytes()[0] {
+                    byte if byte.is_ascii() => byte,
+                    _ => Self::WIDE,
+                },
+                Terminal::Lexical(_) => Self::LEXICAL,
+            })
+            .collect();
         let mut dispatch = Self {
             starts,
             tails,
@@ -530,9 +556,13 @@ impl Dispatch {
             tail_leads: Leads::default(),
             pratts,
             terminals,
+            keywords,
+            first_bytes,
         };
         if dispatch.terminals.len() >= Step::ANY as usize {
             dispatch.terminals = Vec::new();
+            dispatch.keywords = Vec::new();
+            dispatch.first_bytes = Vec::new();
             return dispatch;
         }
         let mut analysis = Analysis {
@@ -577,6 +607,15 @@ impl Dispatch {
     }
     pub(super) fn terminal(&self, id: u16) -> Terminal {
         self.terminals[id as usize]
+    }
+    pub(super) fn keyword(&self, id: u16) -> bool {
+        self.keywords[id as usize]
+    }
+    pub(super) const LEXICAL: u8 = 0x80;
+    pub(super) const WIDE: u8 = 0x81;
+    /// A literal's ASCII first byte, `WIDE` for other literals, `LEXICAL`.
+    pub(super) fn first_byte(&self, id: u16) -> u8 {
+        self.first_bytes[id as usize]
     }
     /// Possible beginnings of a non-lexical alternative that cannot match empty.
     pub(super) fn alternative_lead(
@@ -648,6 +687,12 @@ impl Dispatch {
             visitor(Class::Index, id, bytes);
         }
         if let Some((id, bytes)) = memory::vector(&self.terminals) {
+            visitor(Class::Index, id, bytes);
+        }
+        if let Some((id, bytes)) = memory::vector(&self.keywords) {
+            visitor(Class::Index, id, bytes);
+        }
+        if let Some((id, bytes)) = memory::vector(&self.first_bytes) {
             visitor(Class::Index, id, bytes);
         }
         if let Some((id, bytes)) = memory::vector(&self.pratts) {
