@@ -190,4 +190,7 @@ fn grammar_references_include_function_calls() {
         assert_eq!(&grammar.text[used.span[0]..used.span[1]], name);
         assert_eq!(used.module, "M");
     }
+    // `Same(Value: Expr) : Expr` uses Expr as its parameter and result type.
+    let types = references.iter().filter(|r| r.name == "Expr").count();
+    assert_eq!(types, 2, "{references:?}");
 }

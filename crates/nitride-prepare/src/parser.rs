@@ -195,7 +195,8 @@ pub fn parses(source: &Source) -> bool {
 }
 
 /// Names used in a grammar, with the module each is used in: rules named by
-/// element references, `extend` targets and function calls, and modules named
+/// element references, `extend` targets, function calls and parameter and
+/// result types, and modules named
 /// by `using` and by the qualifier of a qualified rule name.
 pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, PrepareError> {
     let source = &tolerant(source)?;
@@ -216,6 +217,9 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
         let (kind, span) = match decoder.kind(id) {
             "Reference" | "Extend" => ("rule", decoder.span(decoder.field(id, "Name"))),
             "HelperCall" => ("rule", decoder.span(decoder.field(id, "Target"))),
+            // Parameter, capture and result types of helpers and functions.
+            "Parameter" => ("rule", decoder.span(decoder.field(id, "Category"))),
+            "Helper" | "Function" => ("rule", decoder.span(decoder.field(id, "Result"))),
             // A call head is one token, `Name(`: the name is all but the parenthesis.
             "FunctionCall" | "CallValue" => {
                 let [start, end] = decoder.span(decoder.field(id, "Head"));
