@@ -398,7 +398,9 @@ removes per-release stack setup and published-node directory lookups. The
 [publication checkpoint](docs/stage33-evidence.md) publishes cold strict graphs in
 place and predicts lexical tokens without building leaves. A
 [three-way comparison](docs/stage30-comparison.md) measures Nitride, Roslyn and
-Nitrogen on cold and warm C# parses with and without errors. The
+Nitrogen on cold and warm C# parses with and without errors; the
+[refreshed comparison](docs/stage45-comparison.md) repeats it after stage44 and adds
+incremental edits against Roslyn. The
 [incremental checkpoint](docs/stage34-evidence.md) compares single-character edits
 with Roslyn and bounds recovery's prefix reopening, which made edits in files
 with an existing error and dense-error parses faster. The
