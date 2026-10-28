@@ -121,7 +121,8 @@ pub fn grammar_parses(source: &Source) -> bool {
     parser::parses(source)
 }
 
-/// Every rule name a grammar file uses: element references and `extend` targets.
+/// Every rule name a grammar file uses: element references, `extend` targets
+/// and function calls.
 pub fn grammar_references(source: &Source) -> Result<Vec<GrammarReference>, PrepareError> {
     parser::references(source)
 }

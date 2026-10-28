@@ -194,8 +194,8 @@ pub fn parses(source: &Source) -> bool {
     syntax(source).is_ok()
 }
 
-/// Rule names used in a grammar: element references and `extend` targets,
-/// with the module each is used in.
+/// Rule names used in a grammar: element references, `extend` targets and
+/// function calls, with the module each is used in.
 pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, PrepareError> {
     let source = &tolerant(source)?;
     let tree = syntax(source)?;
@@ -212,18 +212,23 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
         .collect();
     let mut found = Vec::new();
     for id in 0..tree.nodes.len() as u32 {
-        if !matches!(decoder.kind(id), "Reference" | "Extend") {
-            continue;
-        }
-        let name = decoder.field(id, "Name");
-        let span = decoder.span(name);
+        let span = match decoder.kind(id) {
+            "Reference" | "Extend" => decoder.span(decoder.field(id, "Name")),
+            "HelperCall" => decoder.span(decoder.field(id, "Target")),
+            // A call head is one token, `Name(`: the name is all but the parenthesis.
+            "FunctionCall" | "CallValue" => {
+                let [start, end] = decoder.span(decoder.field(id, "Head"));
+                [start, end - 1]
+            }
+            _ => continue,
+        };
         let module = modules
             .iter()
             .find(|(m, _)| m[0] <= span[0] && span[1] <= m[1])
             .map(|(_, name)| name.clone())
             .unwrap_or_default();
         found.push(crate::GrammarReference {
-            name: decoder.text(name).into(),
+            name: source.text[span[0]..span[1]].into(),
             span,
             module,
         });

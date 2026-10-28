@@ -122,3 +122,20 @@ fn grammar_references_found() {
     let first = &references[0];
     assert_eq!(&grammar.text[first.span[0]..first.span[1]], first.name);
 }
+
+#[test]
+fn grammar_references_include_function_calls() {
+    let grammar = Source {
+        path: "Calls.ngr".into(),
+        text: "syntax module M\n{\n  function Twice(r: Grammar.Rule) : Grammar.Rule = r r;\n  \
+               syntax function Same(Value: Expr) : Expr = <[ $Value ]>;\n  token N = ['0'..'9'];\n  \
+               syntax Expr = Value:Twice(N) rewrites Same(Value);\n}\n"
+            .into(),
+    };
+    let references = grammar_references(&grammar).unwrap();
+    for name in ["Twice", "Same"] {
+        let used = references.iter().find(|r| r.name == name).unwrap();
+        assert_eq!(&grammar.text[used.span[0]..used.span[1]], name);
+        assert_eq!(used.module, "M");
+    }
+}
