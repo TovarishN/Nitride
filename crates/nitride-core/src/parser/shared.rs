@@ -2620,6 +2620,21 @@ impl SharedProbe<'_> {
     pub(crate) fn may_consume(&self, id: u16, c: char) -> bool {
         self.parser.dispatch.may_consume(id, c)
     }
+    /// Whether a call of rule `id` at `at` may match, judged by the character
+    /// there. Reading it records no observation: no fact is built from it.
+    fn may_begin(&mut self, id: u16, at: usize) -> bool {
+        let c = match self.generated {
+            Some(generated) => generated.source.get(at..).and_then(|s| s.chars().next()),
+            None => {
+                let observed = self.parser.source.observed();
+                let c = self.parser.source.character(at);
+                self.parser.source.replace_observed(observed);
+                c
+            }
+        };
+        let lexical = self.parser.language.rules[id as usize].lexical;
+        self.parser.dispatch.may_begin(id, lexical, c)
+    }
 }
 pub(crate) struct SharedProbe<'a> {
     parser: Parser<'a>,
@@ -2699,6 +2714,15 @@ impl<'a> SharedProbe<'a> {
                 self.borrow_result(hit.root);
             }
             return Ok(hit);
+        }
+        if !self.may_begin(id, at) {
+            // No match can begin here: charge it as a recorded failure's reuse.
+            let hit = self.parser.tick(0).map(|()| None);
+            if hit.is_ok() {
+                self.cache.insert((id, at, power), None);
+            }
+            self.enforce_budget();
+            return hit;
         }
         let key = Key {
             rule: id,
@@ -2858,6 +2882,9 @@ impl<'a> SharedProbe<'a> {
         };
         if self.generated.is_none() || self.parser.language.rules[id as usize].lexical {
             return None;
+        }
+        if !self.may_begin(id, at) {
+            return Some(true);
         }
         let saved = (
             self.parser.work,

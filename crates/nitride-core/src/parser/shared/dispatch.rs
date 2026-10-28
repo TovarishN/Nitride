@@ -676,6 +676,18 @@ impl Dispatch {
             .copied()
             .unwrap_or(Start::UNKNOWN)
     }
+    /// Whether a call of rule `id` at a position whose character is `c` may
+    /// match: the start set a reference sees, including leading trivia for a
+    /// syntax rule. Conservative.
+    pub(crate) fn may_begin(&self, id: u16, lexical: bool, c: Option<char>) -> bool {
+        let start = self.start(id);
+        if lexical || start == Start::default() {
+            start
+        } else {
+            start.with_trivia()
+        }
+        .allows(c)
+    }
     /// Whether a non-empty match of rule `id` may begin with `c`; conservative.
     pub(crate) fn may_consume(&self, id: u16, c: char) -> bool {
         Start {
