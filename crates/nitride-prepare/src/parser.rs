@@ -194,8 +194,9 @@ pub fn parses(source: &Source) -> bool {
     syntax(source).is_ok()
 }
 
-/// Rule names used in a grammar: element references, `extend` targets and
-/// function calls, with the module each is used in.
+/// Names used in a grammar, with the module each is used in: rules named by
+/// element references, `extend` targets and function calls, and modules named
+/// by `using` and by the qualifier of a qualified rule name.
 pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, PrepareError> {
     let source = &tolerant(source)?;
     let tree = syntax(source)?;
@@ -212,14 +213,15 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
         .collect();
     let mut found = Vec::new();
     for id in 0..tree.nodes.len() as u32 {
-        let span = match decoder.kind(id) {
-            "Reference" | "Extend" => decoder.span(decoder.field(id, "Name")),
-            "HelperCall" => decoder.span(decoder.field(id, "Target")),
+        let (kind, span) = match decoder.kind(id) {
+            "Reference" | "Extend" => ("rule", decoder.span(decoder.field(id, "Name"))),
+            "HelperCall" => ("rule", decoder.span(decoder.field(id, "Target"))),
             // A call head is one token, `Name(`: the name is all but the parenthesis.
             "FunctionCall" | "CallValue" => {
                 let [start, end] = decoder.span(decoder.field(id, "Head"));
-                [start, end - 1]
+                ("rule", [start, end - 1])
             }
+            "Using" => ("module", decoder.span(decoder.field(id, "Name"))),
             _ => continue,
         };
         let module = modules
@@ -227,8 +229,18 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
             .find(|(m, _)| m[0] <= span[0] && span[1] <= m[1])
             .map(|(_, name)| name.clone())
             .unwrap_or_default();
+        let name = &source.text[span[0]..span[1]];
+        if let Some(dot) = name.rfind('.').filter(|_| kind == "rule") {
+            found.push(crate::GrammarReference {
+                kind: "module",
+                name: name[..dot].into(),
+                span: [span[0], span[0] + dot],
+                module: module.clone(),
+            });
+        }
         found.push(crate::GrammarReference {
-            name: source.text[span[0]..span[1]].into(),
+            kind,
+            name: name.into(),
             span,
             module,
         });

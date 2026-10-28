@@ -493,3 +493,58 @@ fn quote_placeholders_navigate_to_their_binders() {
         "```ngr\nInner:Expr\n```\n*field*"
     );
 }
+
+#[test]
+fn modules_navigate_from_using_and_qualifiers() {
+    let dir = rewrites("module-navigation");
+    let path = lang("rewrites/Rewrites.ngr");
+    let text = std::fs::read_to_string(&path).unwrap();
+    let dates = std::fs::read_to_string(lang("dates/Dates.ngr")).unwrap();
+    let declaration = dates
+        .lines()
+        .position(|l| l.contains("syntax module Dates"))
+        .unwrap() as u32;
+    let module = location(declaration, 14, 19);
+    let find = |line: &str, needle: &str| {
+        let n = text.lines().position(|l| l.contains(line)).unwrap();
+        let c = text.lines().nth(n).unwrap().find(needle).unwrap();
+        (n as u32, c as u32)
+    };
+    let definition = |(line, character): (u32, u32)| {
+        at(
+            &dir,
+            &path,
+            &text,
+            "textDocument/definition",
+            line,
+            character,
+            json!({}),
+        )["result"]
+            .clone()
+    };
+    for (line, needle) in [
+        ("using Dates", "Dates"),
+        ("extend syntax Dates.Expr", "Dates."),
+    ] {
+        let result = definition(find(line, needle));
+        assert_eq!(result["range"], module, "{line}");
+        assert!(
+            result["uri"].as_str().unwrap().ends_with("Dates.ngr"),
+            "{line}"
+        );
+    }
+    // The rule of a qualified name still resolves past its qualifier.
+    let result = definition(find("extend syntax Dates.Expr", "Expr"));
+    assert_ne!(result["range"], module);
+    let (line, character) = find("using Dates", "Dates");
+    let result = at(
+        &dir,
+        &path,
+        &text,
+        "textDocument/prepareRename",
+        line,
+        character,
+        json!({}),
+    );
+    assert!(result["error"].is_object(), "{result}");
+}

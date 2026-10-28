@@ -24,7 +24,8 @@ pub struct GrammarIndex {
     definitions: Vec<RuleDef>,
 }
 
-/// A rule definition: its file, module and outline item.
+/// A module or rule definition: its file, module and outline item (a
+/// module's item has no children).
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct RuleDef {
     pub file: usize,
@@ -101,11 +102,19 @@ pub fn build(
     }
 }
 
-/// Every rule definition in `files`, with its module.
+/// Every module and rule definition in `files`, with its module.
 fn definitions(files: &[GrammarFile]) -> Vec<RuleDef> {
     let mut found = Vec::new();
     for (file, grammar) in files.iter().enumerate() {
         for module in &grammar.outline {
+            found.push(RuleDef {
+                file,
+                module: module.name.clone(),
+                item: GrammarItem {
+                    children: vec![],
+                    ..module.clone()
+                },
+            });
             for member in &module.children {
                 let items = std::iter::once(member).chain(&member.children);
                 for item in items.filter(|i| DEFINING.contains(&i.kind)) {
@@ -132,34 +141,60 @@ impl GrammarIndex {
         &self.definitions
     }
 
-    /// Resolves a rule name used in `module`: `M.R` names rule `R` of module
-    /// `M`; a bare `R` is the module's own, else the only `R` anywhere.
+    /// Resolves a rule name used in `module`, as `resolve` does.
     pub fn definition(&self, name: &str, module: &str) -> Option<RuleDef> {
-        self.resolve(name, module).cloned()
+        self.resolve(&GrammarReference {
+            kind: "rule",
+            name: name.into(),
+            span: [0, 0],
+            module: module.into(),
+        })
+        .cloned()
     }
 
-    fn resolve(&self, name: &str, module: &str) -> Option<&RuleDef> {
-        let definitions = &self.definitions;
+    /// Resolves a name used in `module`. A module name names the first module
+    /// so called. For a rule, `M.R` names rule `R` of module `M`; a bare `R`
+    /// is the module's own, else the only `R` anywhere.
+    fn resolve(&self, used: &GrammarReference) -> Option<&RuleDef> {
+        let (name, module) = (used.name.as_str(), used.module.as_str());
+        if used.kind == "module" {
+            return self
+                .definitions
+                .iter()
+                .find(|d| d.item.kind == "module" && d.item.name == name);
+        }
+        let definitions = self.definitions.iter().filter(|d| d.item.kind != "module");
         if let Some((qualifier, rule)) = name.rsplit_once('.') {
             return definitions
-                .iter()
+                .clone()
                 .find(|d| d.module == qualifier && d.item.name == rule);
         }
         if let Some(own) = definitions
-            .iter()
+            .clone()
             .find(|d| d.module == module && d.item.name == name)
         {
             return Some(own);
         }
-        let mut named = definitions.iter().filter(|d| d.item.name == name);
+        let mut named = definitions.filter(|d| d.item.name == name);
         let only = named.next()?;
         named.next().is_none().then_some(only)
     }
 
-    /// The rule defined or used at `offset` of `file` (span ends included).
-    pub fn at(&self, file: usize, offset: u32) -> Option<RuleDef> {
+    /// The innermost name used at `offset` of `file` (span ends included): a
+    /// qualifier's module rather than the qualified rule.
+    pub fn reference_at(&self, file: usize, offset: u32) -> Option<&GrammarReference> {
         let offset = offset as usize;
-        let inside = |span: [usize; 2]| span[0] <= offset && offset <= span[1];
+        self.files
+            .get(file)?
+            .references
+            .iter()
+            .filter(|r| r.span[0] <= offset && offset <= r.span[1])
+            .min_by_key(|r| r.span[1] - r.span[0])
+    }
+
+    /// The module or rule defined or used at `offset` of `file` (span ends included).
+    pub fn at(&self, file: usize, offset: u32) -> Option<RuleDef> {
+        let inside = |span: [usize; 2]| span[0] <= offset as usize && offset as usize <= span[1];
         if let Some(def) = self
             .definitions
             .iter()
@@ -167,13 +202,7 @@ impl GrammarIndex {
         {
             return Some(def.clone());
         }
-        let used = self
-            .files
-            .get(file)?
-            .references
-            .iter()
-            .find(|r| inside(r.span))?;
-        self.definition(&used.name, &used.module)
+        self.resolve(self.reference_at(file, offset)?).cloned()
     }
 
     /// The local defined or used at `offset` of `file` (span ends included,
@@ -193,12 +222,12 @@ impl GrammarIndex {
         })
     }
 
-    /// Every use of a rule, in every file, as (file, span).
+    /// Every use of a module or rule, in every file, as (file, span).
     pub fn uses(&self, rule: &RuleDef) -> Vec<(usize, [u32; 2])> {
         let mut found = Vec::new();
         for (file, grammar) in self.files.iter().enumerate() {
             for used in &grammar.references {
-                if self.resolve(&used.name, &used.module) == Some(rule) {
+                if self.resolve(used) == Some(rule) {
                     found.push((file, used.span.map(|b| b as u32)));
                 }
             }

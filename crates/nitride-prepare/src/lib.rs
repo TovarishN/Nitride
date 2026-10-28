@@ -107,9 +107,11 @@ pub struct ReferenceClause {
     pub kinds: Vec<String>,
 }
 
-/// A rule name used in a grammar file, and the module it is used in.
+/// A rule or module name used in a grammar file, and the module it is used in.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GrammarReference {
+    /// "rule" or "module".
+    pub kind: &'static str,
     pub name: String,
     pub span: [usize; 2],
     pub module: String,
@@ -141,8 +143,8 @@ pub fn grammar_parses(source: &Source) -> bool {
     parser::parses(source)
 }
 
-/// Every rule name a grammar file uses: element references, `extend` targets
-/// and function calls.
+/// Every rule and module name a grammar file uses: element references,
+/// `extend` targets and function calls, `using` and rule qualifiers.
 pub fn grammar_references(source: &Source) -> Result<Vec<GrammarReference>, PrepareError> {
     parser::references(source)
 }

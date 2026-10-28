@@ -20,6 +20,7 @@ fn rule_word(kind: &str) -> &'static str {
         "alternative" => "alternative",
         "function" => "function",
         "helper" => "helper",
+        "module" => "syntax module",
         _ => "rule",
     }
 }
@@ -49,10 +50,13 @@ pub fn hover(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
                 let start = rule.item.span[0];
                 let line = text[start..].lines().next().unwrap_or_default().trim();
                 let line: String = line.chars().take(200).collect();
+                let name = match rule.item.kind {
+                    "module" => rule.module.clone(),
+                    _ => format!("{}.{}", rule.module, rule.item.name),
+                };
                 json!({
                     "contents": {"kind": "markdown", "value": format!(
-                        "```ngr\n{line}\n```\n*{}* `{}.{}`",
-                        rule_word(rule.item.kind), rule.module, rule.item.name)},
+                        "```ngr\n{line}\n```\n*{}* `{name}`", rule_word(rule.item.kind))},
                     "range": range(&analysis.lines, span),
                 })
             }
@@ -108,11 +112,7 @@ pub fn rule_at(index: &GrammarIndex, file: usize, offset: u32) -> Option<(RuleDe
     let span = if rule.file == file && inside(name) {
         name
     } else {
-        index.files[file]
-            .references
-            .iter()
-            .map(|r| r.span.map(|b| b as u32))
-            .find(|s| inside(*s))?
+        index.reference_at(file, offset)?.span.map(|b| b as u32)
     };
     Some((rule, span))
 }
@@ -261,6 +261,10 @@ pub fn prepare_rename(
             return Ok(json!({"range": range(&analysis.lines, span), "placeholder": local.name}));
         }
         return Ok(match rule_at(index, file, offset) {
+            // Manifests name modules too (`start`), beyond what a rename edits.
+            Some((rule, _)) if rule.item.kind == "module" => {
+                return Err(refuse("modules cannot be renamed"));
+            }
             Some((rule, span)) => {
                 // Only the last segment of a qualified use is the rule's name.
                 let text = &index.files[file].text[span[0] as usize..span[1] as usize];
@@ -401,6 +405,7 @@ pub fn workspace_symbols<'a>(
         .filter(|r| matches(&r.item.name, query))
     {
         let kind = match rule.item.kind {
+            "module" => 2,
             "token" => 14,
             "function" | "helper" => 12,
             _ => 5,

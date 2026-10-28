@@ -69,7 +69,11 @@ pub fn items(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
     let typed = text[start..(offset as usize).min(text.len())].to_lowercase();
     let mut names: Vec<Value> = Vec::new();
     if let Some(GrammarAt { index, .. }) = grammar {
-        for rule in index.definitions() {
+        for rule in index
+            .definitions()
+            .iter()
+            .filter(|d| d.item.kind != "module")
+        {
             let kind = match rule.item.kind {
                 "token" => CONSTANT,
                 "function" | "helper" => FUNCTION,
