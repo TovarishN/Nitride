@@ -3,9 +3,27 @@ use nitride_codegen::generate;
 #[test]
 fn composed_typed_and_existing_syntax_profiles_generate() {
     for input in [
-        include_str!("../../../languages/power/language.json"),
-        include_str!("../../../languages/composition/language.json"),
-        include_str!("../../../languages/xml/language.json"),
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/power/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/composition/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/xml/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
     ] {
         assert!(generate(input).is_ok());
     }
@@ -13,8 +31,16 @@ fn composed_typed_and_existing_syntax_profiles_generate() {
 
 #[test]
 fn syntax_profile_cannot_smuggle_semantic_actions() {
-    let mut data: serde_json::Value =
-        serde_json::from_str(include_str!("../../../languages/portable/language.json")).unwrap();
+    let mut data: serde_json::Value = serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/portable/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap();
     data["mode"] = "syntax".into();
     assert!(generate(&data.to_string()).is_err());
 }
@@ -23,8 +49,16 @@ fn syntax_profile_cannot_smuggle_semantic_actions() {
 // parser's ambiguity diagnostic at parse time, not a codegen rejection.
 #[test]
 fn shared_infix_operators_are_admitted() {
-    let mut data: serde_json::Value =
-        serde_json::from_str(include_str!("../../../languages/portable/language.json")).unwrap();
+    let mut data: serde_json::Value = serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/portable/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap();
     let mut twin = data["rules"]
         .as_array()
         .unwrap()
