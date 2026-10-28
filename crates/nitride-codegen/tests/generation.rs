@@ -2,7 +2,13 @@ use nitride_codegen::generate;
 
 #[test]
 fn generates_static_language_from_export() {
-    let source = include_str!("../../../languages/portable/language.json");
+    let source = &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../languages/portable/project.json"
+    )))
+    .unwrap()
+    .data
+    .to_string();
     let result = generate(source).expect("supported normalized grammar");
     assert!(result.contains("pub static LANGUAGE"));
     assert_eq!(generate(source).unwrap(), result);
@@ -10,24 +16,48 @@ fn generates_static_language_from_export() {
 
 #[test]
 fn unknown_format_version_is_rejected() {
-    let mut data: serde_json::Value =
-        serde_json::from_str(include_str!("../../../languages/portable/language.json")).unwrap();
+    let mut data: serde_json::Value = serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/portable/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap();
     data["version"] = 99.into();
     assert!(generate(&data.to_string()).is_err());
 }
 
 #[test]
 fn zero_width_repeat_is_rejected_even_after_consuming_prefix() {
-    let mut data: serde_json::Value =
-        serde_json::from_str(include_str!("../../../languages/portable/language.json")).unwrap();
+    let mut data: serde_json::Value = serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/portable/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap();
     data["rules"][0]["expr"] = serde_json::json!({"kind":"sequence","items":[{"kind":"literal","text":"x"},{"kind":"repeat","min":0,"max":100,"inner":{"kind":"literal","text":""}}]});
     assert!(generate(&data.to_string()).is_err());
 }
 
 #[test]
 fn unknown_operation_type_and_field_are_rejected() {
-    let original: serde_json::Value =
-        serde_json::from_str(include_str!("../../../languages/portable/language.json")).unwrap();
+    let original: serde_json::Value = serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/portable/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap();
     let mut data = original.clone();
     data["catalog"]["operations"][0]["result"] = "Missing.Type".into();
     assert!(generate(&data.to_string()).is_err());
@@ -38,8 +68,16 @@ fn unknown_operation_type_and_field_are_rejected() {
 
 #[test]
 fn incompatible_symbol_kinds_are_not_erased() {
-    let mut data: serde_json::Value =
-        serde_json::from_str(include_str!("../../../languages/portable/language.json")).unwrap();
+    let mut data: serde_json::Value = serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/portable/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap();
     for rule in data["rules"].as_array_mut().unwrap() {
         for clause in rule["clauses"].as_array_mut().unwrap() {
             if clause["kind"] == "References" {
@@ -53,9 +91,16 @@ fn incompatible_symbol_kinds_are_not_erased() {
 #[test]
 fn unknown_or_incompatible_fixture_host_handlers_fail_generation() {
     for handler in ["add", "unknown"] {
-        let mut data: serde_json::Value =
-            serde_json::from_str(include_str!("../../../languages/portable/language.json"))
-                .unwrap();
+        let mut data: serde_json::Value = serde_json::from_str(
+            &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/../../languages/portable/project.json"
+            )))
+            .unwrap()
+            .data
+            .to_string(),
+        )
+        .unwrap();
         data["catalog"]["operations"][0]["handler"] = handler.into();
         assert!(generate(&data.to_string()).is_err());
     }
@@ -63,8 +108,16 @@ fn unknown_or_incompatible_fixture_host_handlers_fail_generation() {
 
 #[test]
 fn emits_native_scanners_only_for_acyclic_lexical_graphs() {
-    let mut data: serde_json::Value =
-        serde_json::from_str(include_str!("../../../languages/portable/language.json")).unwrap();
+    let mut data: serde_json::Value = serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/portable/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap();
     let base = data["rules"]
         .as_array()
         .unwrap()
@@ -113,8 +166,16 @@ fn emits_native_scanners_only_for_acyclic_lexical_graphs() {
 
 #[test]
 fn generates_syntax_bodies_and_infix_tails_with_bounded_fallback() {
-    let mut data: serde_json::Value =
-        serde_json::from_str(include_str!("../../../languages/portable/language.json")).unwrap();
+    let mut data: serde_json::Value = serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/portable/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap();
     let rules = data["rules"].as_array().unwrap();
     let id = |name: &str| rules.iter().position(|r| r["name"] == name).unwrap();
     let (ordinary, add, pratt, lexical) = (
@@ -154,8 +215,16 @@ fn generates_syntax_bodies_and_infix_tails_with_bounded_fallback() {
 
 #[test]
 fn fused_ascii_tables_keep_guards_fallback_and_ref_boundaries() {
-    let mut data: serde_json::Value =
-        serde_json::from_str(include_str!("../../../languages/portable/language.json")).unwrap();
+    let mut data: serde_json::Value = serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/portable/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap();
     let base = data["rules"]
         .as_array()
         .unwrap()

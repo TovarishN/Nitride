@@ -21,6 +21,11 @@ fn existing_exports_match_native_frontend() {
         "rewrites",
     ] {
         let directory = root().join("languages").join(profile);
+        // Exports are generated locally and ignored by Git; compare only those
+        // present in this checkout.
+        let Ok(export) = std::fs::read_to_string(directory.join("language.json")) else {
+            continue;
+        };
         let manifest: Value =
             serde_json::from_str(&std::fs::read_to_string(directory.join("project.json")).unwrap())
                 .unwrap();
@@ -45,10 +50,7 @@ fn existing_exports_match_native_frontend() {
             manifest["mode"].as_str().unwrap(),
         )
         .unwrap();
-        let mut expected: Value = serde_json::from_str(
-            &std::fs::read_to_string(directory.join("language.json")).unwrap(),
-        )
-        .unwrap();
+        let mut expected: Value = serde_json::from_str(&export).unwrap();
         normalize_legacy_classes(&mut expected);
         for (key, value) in expected.as_object().unwrap() {
             if key == "rules" {

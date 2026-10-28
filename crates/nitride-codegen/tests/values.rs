@@ -1,7 +1,16 @@
 use serde_json::{Value, json};
 
 fn fixture() -> Value {
-    serde_json::from_str(include_str!("../../../languages/dates/language.json")).unwrap()
+    serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/dates/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap()
 }
 
 fn rule<'a>(d: &'a mut Value, name: &str) -> &'a mut Value {
@@ -82,8 +91,16 @@ fn malformed_value_check_and_text_metadata_is_rejected() {
 
 #[test]
 fn syntax_only_profiles_cannot_carry_values_or_checks() {
-    let mut d: Value =
-        serde_json::from_str(include_str!("../../../languages/xml/language.json")).unwrap();
+    let mut d: Value = serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/xml/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap();
     d["catalog"]["checks"] =
         json!({"Xml.Document":[{"code":"X1","field":"Root","predicate":"iso-date","message":"m"}]});
     assert!(
