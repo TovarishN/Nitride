@@ -115,6 +115,26 @@ pub struct GrammarReference {
     pub module: String,
 }
 
+/// A name bound inside one member of a grammar file: a helper parameter, a
+/// match capture or an element label, with every use within its scope.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GrammarLocal {
+    /// "parameter", "capture" or "field".
+    pub kind: &'static str,
+    pub name: String,
+    /// The binder as written, e.g. `Value: Expr`.
+    pub detail: String,
+    /// Where the name is bound; a label may bind it more than once.
+    pub definitions: Vec<[usize; 2]>,
+    /// `$Name` in quotes (the name only), match selectors and clause fields.
+    pub uses: Vec<[usize; 2]>,
+}
+
+/// The local names of a grammar file and their uses.
+pub fn grammar_locals(source: &Source) -> Result<Vec<GrammarLocal>, PrepareError> {
+    parser::locals(source)
+}
+
 /// Whether a grammar file parses as written. The outline and references of a
 /// file that does not are taken from its undamaged lines.
 pub fn grammar_parses(source: &Source) -> bool {

@@ -237,6 +237,39 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
     Ok(found)
 }
 
+/// Helper parameters, match captures and element labels, with their uses.
+pub fn locals(source: &Source) -> Result<Vec<crate::GrammarLocal>, PrepareError> {
+    let source = &tolerant(source)?;
+    let tree = syntax(source)?;
+    let decoder = Decoder {
+        source,
+        tree: &tree,
+        tolerant: true,
+        skipped: Default::default(),
+    };
+    let mut found = Vec::new();
+    for id in 0..tree.nodes.len() as u32 {
+        match decoder.kind(id) {
+            "Helper" => decoder.helper_locals(id, &mut found),
+            "SyntaxRule" | "Alternative" => decoder.label_locals(id, &mut found),
+            _ => {}
+        }
+    }
+    found.sort_by_key(|l| l.definitions[0][0]);
+    Ok(found)
+}
+
+/// Records a use of `name` with the first local that binds it.
+fn bind(locals: &mut [crate::GrammarLocal], name: &str, span: [usize; 2]) -> bool {
+    match locals.iter_mut().find(|l| l.name == name) {
+        Some(local) => {
+            local.uses.push(span);
+            true
+        }
+        None => false,
+    }
+}
+
 /// Outline items: modules and the rules, tokens and functions they declare.
 pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError> {
     let source = &tolerant(source)?;
@@ -338,6 +371,153 @@ impl Decoder<'_> {
     }
     fn named(&self, id: u32, label: &str) -> String {
         self.text(self.field(id, label)).into()
+    }
+    /// Descendants of `id` (itself included) whose kind is one of `kinds`, in source order.
+    fn within(&self, id: u32, kinds: &[&str]) -> Vec<u32> {
+        let mut found = Vec::new();
+        let mut stack = vec![id];
+        while let Some(n) = stack.pop() {
+            if kinds.contains(&self.kind(n)) {
+                found.push(n);
+            }
+            stack.extend(self.tree.children(n).iter().map(|e| e.node));
+        }
+        found.sort_unstable_by_key(|&n| self.span(n)[0]);
+        found
+    }
+    /// The `$Name` placeholders of a quote: each name and its span, `$` excluded.
+    fn holes(&self, quote: u32) -> Vec<(&str, [usize; 2])> {
+        let start = self.span(quote)[0];
+        let text = self.text(quote);
+        let bytes = text.as_bytes();
+        let word = |b: u8| b.is_ascii_alphanumeric() || b == b'_';
+        let mut found = Vec::new();
+        let mut i = 0;
+        while i < bytes.len() {
+            if bytes[i] != b'$' {
+                i += 1;
+                continue;
+            }
+            let end = (i + 1..bytes.len())
+                .find(|&j| !word(bytes[j]))
+                .unwrap_or(bytes.len());
+            if end > i + 1 && !bytes[i + 1].is_ascii_digit() {
+                found.push((&text[i + 1..end], [start + i + 1, start + end]));
+            }
+            i = end;
+        }
+        found
+    }
+    /// A local bound by `binder`, a node with a `Name` field.
+    fn local(&self, kind: &'static str, binder: u32) -> crate::GrammarLocal {
+        crate::GrammarLocal {
+            kind,
+            name: self.named(binder, "Name"),
+            detail: self
+                .text(binder)
+                .split_whitespace()
+                .collect::<Vec<_>>()
+                .join(" "),
+            definitions: vec![self.span(self.field(binder, "Name"))],
+            uses: vec![],
+        }
+    }
+    /// A helper's parameters, used by its selector and quotes, and each
+    /// arm's captures, which shadow parameters within the arm.
+    fn helper_locals(&self, id: u32, found: &mut Vec<crate::GrammarLocal>) {
+        let mut parameters: Vec<_> = self
+            .fields(id, "Parameters")
+            .into_iter()
+            .map(|p| self.local("parameter", p))
+            .collect();
+        let body = self.first(self.field(id, "Body"));
+        if self.kind(body) == "QuoteBody" {
+            for (name, span) in self.holes(self.field(body, "Text")) {
+                bind(&mut parameters, name, span);
+            }
+            found.extend(parameters);
+            return;
+        }
+        let selector = self.field(body, "Selector");
+        bind(&mut parameters, self.text(selector), self.span(selector));
+        for arm in self.fields(body, "Arms") {
+            let form = self.field(arm, "Form");
+            let mut captures: Vec<_> = match self.tree.field(form, "Captures") {
+                Some(c) => self
+                    .fields(c, "Items")
+                    .into_iter()
+                    .map(|p| self.local("capture", p))
+                    .collect(),
+                None => vec![],
+            };
+            let quotes = match self.tree.field(form, "Pattern") {
+                Some(pattern) => vec![pattern, self.field(form, "Result")],
+                None => vec![self.field(form, "Result")],
+            };
+            for quote in quotes {
+                for (name, span) in self.holes(quote) {
+                    if !bind(&mut captures, name, span) {
+                        bind(&mut parameters, name, span);
+                    }
+                }
+            }
+            found.extend(captures);
+        }
+        found.extend(parameters);
+    }
+    /// The element labels of a rule or alternative, used by its clauses:
+    /// quote placeholders, helper and lowering arguments, and named fields.
+    fn label_locals(&self, id: u32, found: &mut Vec<crate::GrammarLocal>) {
+        let Some(body) = self.tree.field(id, "Body") else {
+            return;
+        };
+        let mut labels: Vec<crate::GrammarLocal> = Vec::new();
+        for label in self.within(body, &["Labelled"]) {
+            let name = self.field(label, "Name");
+            match labels.iter_mut().find(|l| l.name == self.text(name)) {
+                Some(local) => local.definitions.push(self.span(name)),
+                None => labels.push(self.local("field", label)),
+            }
+        }
+        if labels.is_empty() {
+            return;
+        }
+        const USING: [&str; 9] = [
+            "QuoteText",
+            "HelperCall",
+            "Call",
+            "Declares",
+            "References",
+            "LiteralLowering",
+            "ValueLowering",
+            "Template",
+            "Expand",
+        ];
+        for clause in self.fields(id, "Clauses") {
+            for n in self.within(clause, &USING) {
+                let names = match self.kind(n) {
+                    "QuoteText" => {
+                        for (name, span) in self.holes(n) {
+                            bind(&mut labels, name, span);
+                        }
+                        continue;
+                    }
+                    "HelperCall" | "Call" => self
+                        .fields(n, "Args")
+                        .into_iter()
+                        .map(|a| match self.kind(a) {
+                            "Argument" => self.field(self.first(a), "Name"),
+                            _ => self.field(a, "Name"),
+                        })
+                        .collect(),
+                    _ => vec![self.field(n, "Field")],
+                };
+                for name in names {
+                    bind(&mut labels, self.text(name), self.span(name));
+                }
+            }
+        }
+        found.extend(labels);
     }
     fn literal(&self, id: u32) -> Result<String, PrepareError> {
         crate::literal::decode(self.source, self.span(id), self.kind(id) == "Char")

@@ -36,6 +36,13 @@ pub fn hover(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
         return Value::Null;
     }
     if let Some(GrammarAt { index, file }) = grammar {
+        if let Some((local, span)) = index.local_at(file, offset) {
+            return json!({
+                "contents": {"kind": "markdown",
+                    "value": format!("```ngr\n{}\n```\n*{}*", local.detail, local.kind)},
+                "range": range(&analysis.lines, span),
+            });
+        }
         return match rule_at(index, file, offset) {
             Some((rule, span)) => {
                 let text = &index.files[rule.file].text;
@@ -126,6 +133,15 @@ fn occurrences(
     grammar: Option<&GrammarAt<'_>>,
 ) -> Option<Vec<(Value, bool)>> {
     if let Some(GrammarAt { index, file }) = grammar {
+        if let Some((local, _)) = index.local_at(*file, offset) {
+            let at = |span: &[usize; 2]| grammar_location(index, *file, span.map(|b| b as u32));
+            let definitions = local.definitions.iter().map(|s| (at(s), true));
+            return Some(
+                definitions
+                    .chain(local.uses.iter().map(|s| (at(s), false)))
+                    .collect(),
+            );
+        }
         let (rule, _) = rule_at(index, *file, offset)?;
         let mut found = vec![(
             grammar_location(index, rule.file, rule.item.name_span.map(|b| b as u32)),
@@ -241,6 +257,9 @@ pub fn prepare_rename(
         return Ok(Value::Null);
     }
     if let Some(GrammarAt { index, file }) = grammar {
+        if let Some((local, span)) = index.local_at(file, offset) {
+            return Ok(json!({"range": range(&analysis.lines, span), "placeholder": local.name}));
+        }
         return Ok(match rule_at(index, file, offset) {
             Some((rule, span)) => {
                 // Only the last segment of a qualified use is the rule's name.
@@ -309,6 +328,16 @@ pub fn rename(
             .push(json!({"range": range(lines, span), "newText": new_name}));
     };
     if let Some(GrammarAt { index, file }) = grammar {
+        if let Some((local, _)) = index.local_at(file, offset) {
+            let grammar = &index.files[file];
+            if grammar.damaged {
+                return Err(refuse("fix the syntax errors in this file before renaming"));
+            }
+            for span in local.definitions.iter().chain(&local.uses) {
+                edit(grammar.uri.clone(), &analysis.lines, span.map(|b| b as u32));
+            }
+            return Ok(json!({ "changes": changes }));
+        }
         let Some((rule, _)) = rule_at(index, file, offset) else {
             return Ok(Value::Null);
         };

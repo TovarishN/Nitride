@@ -1,6 +1,6 @@
 //! Rules across the grammar files of a language: where each is defined and
 //! every place a grammar uses it.
-use nitride_prepare::{GrammarItem, GrammarReference, Source};
+use nitride_prepare::{GrammarItem, GrammarLocal, GrammarReference, Source};
 use std::path::{Path, PathBuf};
 
 pub struct GrammarFile {
@@ -13,6 +13,8 @@ pub struct GrammarFile {
     pub text: String,
     pub outline: Vec<GrammarItem>,
     pub references: Vec<GrammarReference>,
+    /// Parameters, captures and labels, each with its uses in this file.
+    pub locals: Vec<GrammarLocal>,
 }
 
 pub struct GrammarIndex {
@@ -84,6 +86,7 @@ pub fn build(
         files.push(GrammarFile {
             uri: uri_of(path),
             damaged: !nitride_prepare::grammar_parses(&source),
+            locals: nitride_prepare::grammar_locals(&source).unwrap_or_default(),
             path: path.clone(),
             text: source.text,
             outline,
@@ -171,6 +174,23 @@ impl GrammarIndex {
             .iter()
             .find(|r| inside(r.span))?;
         self.definition(&used.name, &used.module)
+    }
+
+    /// The local defined or used at `offset` of `file` (span ends included,
+    /// and a placeholder's `$`), and the span of the name there.
+    pub fn local_at(&self, file: usize, offset: u32) -> Option<(&GrammarLocal, [u32; 2])> {
+        let offset = offset as usize;
+        let grammar = self.files.get(file)?;
+        let dollar = grammar.text.as_bytes().get(offset) == Some(&b'$');
+        let start = |s: &[usize; 2]| if dollar { s[0].saturating_sub(1) } else { s[0] };
+        grammar.locals.iter().find_map(|local| {
+            local
+                .definitions
+                .iter()
+                .chain(&local.uses)
+                .find(|s| start(s) <= offset && offset <= s[1])
+                .map(|s| (local, s.map(|b| b as u32)))
+        })
     }
 
     /// Every use of a rule, in every file, as (file, span).

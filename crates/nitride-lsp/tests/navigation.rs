@@ -414,3 +414,82 @@ fn empty_name_is_not_a_definition() {
     let result = hover(&dir, &dir.join("x.calls"), "let =1;", 0, 4);
     assert!(!result.to_string().contains("``"), "{result}");
 }
+
+pub fn rewrites(name: &str) -> PathBuf {
+    let dir = scratch(name);
+    manifest(
+        &dir,
+        "nitride.json",
+        "Rewrites",
+        ".rewrites",
+        &[lang("dates/Dates.ngr"), lang("rewrites/Rewrites.ngr")],
+        "Dates.Program",
+        Some(&lang("dates/catalog.json")),
+    );
+    dir
+}
+
+#[test]
+fn quote_placeholders_navigate_to_their_binders() {
+    let dir = rewrites("quote-placeholders");
+    let path = lang("rewrites/Rewrites.ngr");
+    let text = std::fs::read_to_string(&path).unwrap();
+    // (line, character) of the first `needle` in the first line containing `line`.
+    let find = |line: &str, needle: &str| {
+        let n = text.lines().position(|l| l.contains(line)).unwrap();
+        let c = text.lines().nth(n).unwrap().find(needle).unwrap();
+        (n as u32, c as u32)
+    };
+    for (use_line, use_text, def_line, def_text) in [
+        (
+            "$Count * 14",
+            "Count *",
+            "FortnightDuration(Count:",
+            "Count:",
+        ),
+        ("_ => <[ $Value", "Value ]", "SwapAddition(Value:", "Value:"),
+        (
+            "<[ $Right + $Left ]>",
+            "Right + $Left ]",
+            "Right: Expr)",
+            "Right:",
+        ),
+        ("| Soon", "Amount days", "| Soon", "Amount:"),
+        // Clicking the `$` of a placeholder.
+        ("| Soon", "$Amount days", "| Soon", "Amount:"),
+    ] {
+        let (line, character) = find(use_line, use_text);
+        let result = at(
+            &dir,
+            &path,
+            &text,
+            "textDocument/definition",
+            line,
+            character,
+            json!({}),
+        );
+        let (line, start) = find(def_line, def_text);
+        let end = start + def_text.len() as u32 - 1;
+        assert_eq!(
+            result["result"]["range"],
+            location(line, start, end),
+            "{use_text}"
+        );
+    }
+    let (line, character) = find("| Twice", "Inner:");
+    let result = at(
+        &dir,
+        &path,
+        &text,
+        "textDocument/references",
+        line,
+        character,
+        json!({"context":{"includeDeclaration":true}}),
+    );
+    assert_eq!(result["result"].as_array().unwrap().len(), 3);
+    let result = hover(&dir, &path, &text, line, character);
+    assert_eq!(
+        result["contents"]["value"],
+        "```ngr\nInner:Expr\n```\n*field*"
+    );
+}
