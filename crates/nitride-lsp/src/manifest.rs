@@ -1,4 +1,6 @@
-//! Workspace manifests: `nitride.json`, else `nitrogen.json`.
+//! Workspace manifests: `nitride.nproj` and the language files it includes,
+//! else Nitrogen's `nitrogen.json` (until Nitrogen reads `.nproj`).
+use nitride_prepare::{ProjectLanguage, Source};
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
@@ -17,6 +19,8 @@ pub struct Entry {
     /// The `.ncatalog` files of a typed language, in merge order.
     pub catalogs: Vec<PathBuf>,
     pub mode: Mode,
+    /// Where a `.nproj` names the start rule.
+    pub start_span: Option<[u32; 2]>,
 }
 
 /// A manifest problem at a byte span of the manifest text.
@@ -26,35 +30,87 @@ pub struct ManifestError {
     pub message: String,
 }
 
-pub const NAMES: [&str; 2] = ["nitride.json", "nitrogen.json"];
+/// The workspace file, then Nitrogen's manifest.
+pub const NAMES: [&str; 2] = ["nitride.nproj", "nitrogen.json"];
 
 /// A manifest's valid languages and the problems of its invalid ones; `Err`
-/// when the manifest as a whole is unreadable.
-pub type Parsed = Result<(Vec<Entry>, Vec<ManifestError>), ManifestError>;
+/// when the manifest as a whole is unreadable (its languages are kept).
+pub type Parsed = Result<(Vec<Entry>, Vec<ManifestError>), Vec<ManifestError>>;
 
-/// The manifest at a workspace folder root and its languages. Nitride's own
-/// `catalogs` and `mode` are read only from `nitride.json`; a `nitrogen.json`
-/// language is syntax-only.
-pub fn read(folder: &Path) -> (Option<PathBuf>, Parsed) {
-    for name in NAMES {
-        let path = folder.join(name);
-        if let Ok(text) = std::fs::read_to_string(&path) {
-            let entries = parse(&text, folder, name == NAMES[0]);
-            return (Some(path), entries);
-        }
+/// The manifests at a workspace folder root, each with its languages and
+/// problems: `nitride.nproj` (problems only) and every `.nproj` it includes,
+/// else `nitrogen.json`, whose languages are syntax-only. `open` supplies
+/// editor buffers, which win over disk.
+pub fn read(folder: &Path, open: &dyn Fn(&Path) -> Option<String>) -> Vec<(PathBuf, Parsed)> {
+    let text = |path: &Path| open(path).or_else(|| std::fs::read_to_string(path).ok());
+    let workspace = folder.join(NAMES[0]);
+    if let Some(source) = text(&workspace) {
+        return projects(&workspace, source, &text, open);
     }
-    (None, Ok((vec![], vec![])))
+    let fallback = folder.join(NAMES[1]);
+    match text(&fallback) {
+        Some(source) => vec![(fallback, nitrogen(&source, folder))],
+        None => vec![],
+    }
 }
 
-/// Languages from manifest text; paths resolve against `folder`. An invalid
-/// entry is reported and skipped; the others still load.
-pub fn parse(text: &str, folder: &Path, nitride: bool) -> Parsed {
+fn projects(
+    workspace: &Path,
+    text: String,
+    read: &dyn Fn(&Path) -> Option<String>,
+    open: &dyn Fn(&Path) -> Option<String>,
+) -> Vec<(PathBuf, Parsed)> {
+    let source = Source {
+        path: workspace.display().to_string(),
+        text,
+    };
+    let exists = |path: &Path| open(path).is_some() || path.exists();
+    let resolved = nitride_prepare::read_workspace(&source, read, &exists);
+    let mut found: Vec<(PathBuf, Parsed)> = vec![(workspace.to_owned(), Ok((vec![], vec![])))];
+    for language in resolved.languages {
+        found.push((language.path.clone(), Ok((vec![entry(language)], vec![]))));
+    }
+    for error in resolved.errors {
+        let path = PathBuf::from(&error.path);
+        let problem = ManifestError {
+            span: error.span.map(|v| v as u32),
+            message: error.message,
+        };
+        match found.iter_mut().find(|(p, _)| *p == path) {
+            Some((_, Ok((_, problems)))) => problems.push(problem),
+            Some((_, Err(problems))) => problems.push(problem),
+            // A language file that did not resolve: its earlier languages stay.
+            None => found.push((path, Err(vec![problem]))),
+        }
+    }
+    found
+}
+
+fn entry(language: ProjectLanguage) -> Entry {
+    Entry {
+        mode: if language.typed() {
+            Mode::Typed
+        } else {
+            Mode::Syntax
+        },
+        name: language.name,
+        extensions: language.extensions,
+        grammars: language.grammars,
+        start: language.start,
+        start_span: Some(language.start_span.map(|v| v as u32)),
+        catalogs: language.catalogs,
+    }
+}
+
+/// Languages from `nitrogen.json` text, all syntax-only; paths resolve against
+/// `folder`. An invalid entry is reported and skipped; the others still load.
+fn nitrogen(text: &str, folder: &Path) -> Parsed {
     let value: Value = serde_json::from_str(text).map_err(|e| {
         let offset = offset_of(text, e.line(), e.column());
-        ManifestError {
+        vec![ManifestError {
             span: [offset, offset],
             message: format!("invalid manifest JSON: {e}"),
-        }
+        }]
     })?;
     let invalid = |message: String| ManifestError {
         span: [0, 0],
@@ -62,7 +118,7 @@ pub fn parse(text: &str, folder: &Path, nitride: bool) -> Parsed {
     };
     let languages = value["languages"]
         .as_array()
-        .ok_or_else(|| invalid("manifest needs a \"languages\" array".into()))?;
+        .ok_or_else(|| vec![invalid("manifest needs a \"languages\" array".into())])?;
     let entries = languages.iter().enumerate().map(|(i, language)| {
         let string = |key: &str| {
             language[key]
@@ -76,31 +132,6 @@ pub fn parse(text: &str, folder: &Path, nitride: bool) -> Parsed {
                 .and_then(|a| a.iter().map(|v| v.as_str().map(str::to_owned)).collect())
                 .ok_or_else(|| invalid(format!("language {i} needs a string array \"{key}\"")))
         };
-        if nitride && language.get("catalog").is_some() {
-            return Err(invalid(format!(
-                "language {i}: \"catalog\" is replaced by \"catalogs\", a list of .ncatalog files"
-            )));
-        }
-        let catalogs = if nitride && language.get("catalogs").is_some() {
-            strings("catalogs")?
-                .iter()
-                .map(|c| folder.join(c))
-                .collect()
-        } else {
-            vec![]
-        };
-        let mode = match (nitride, language["mode"].as_str()) {
-            (false, _) => Mode::Syntax,
-            (true, Some("typed")) => Mode::Typed,
-            (true, Some("syntax")) => Mode::Syntax,
-            (true, None) if !catalogs.is_empty() => Mode::Typed,
-            (true, None) => Mode::Syntax,
-            (true, Some(other)) => {
-                return Err(invalid(format!(
-                    "language {i} has unknown mode \"{other}\""
-                )));
-            }
-        };
         Ok(Entry {
             name: string("name")?,
             extensions: strings("extensions")?,
@@ -109,8 +140,9 @@ pub fn parse(text: &str, folder: &Path, nitride: bool) -> Parsed {
                 .map(|g| folder.join(g))
                 .collect(),
             start: string("start")?,
-            catalogs,
-            mode,
+            catalogs: vec![],
+            mode: Mode::Syntax,
+            start_span: None,
         })
     });
     let mut valid = Vec::new();

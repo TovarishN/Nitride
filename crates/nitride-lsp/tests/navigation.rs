@@ -11,7 +11,7 @@ pub fn calls(name: &str) -> PathBuf {
     let dir = scratch(name);
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "Calls",
         ".calls",
         &[lang("calls/Calls.ngr")],
@@ -25,7 +25,7 @@ pub fn power(name: &str) -> PathBuf {
     let dir = scratch(name);
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "PortablePower",
         ".powercalc",
         &[lang("portable/Portable.ngr"), lang("power/Power.ngr")],
@@ -327,7 +327,7 @@ fn locations_use_canonical_paths() {
     std::fs::copy(lang("portable/Portable.ngr"), dir.join("g/Portable.ngr")).unwrap();
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "Portable",
         ".portable",
         &[dir.join("sub/../g/Portable.ngr")],
@@ -419,7 +419,7 @@ pub fn rewrites(name: &str) -> PathBuf {
     let dir = scratch(name);
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "Rewrites",
         ".rewrites",
         &[lang("dates/Dates.ngr"), lang("rewrites/Rewrites.ngr")],

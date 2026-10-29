@@ -11,7 +11,7 @@ fn calls(name: &str) -> PathBuf {
     let dir = scratch(name);
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "Calls",
         ".calls",
         &[lang("calls/Calls.ngr")],
@@ -116,7 +116,7 @@ fn rename_rule_across_files() {
     let (portable, power) = (dir.join("Portable.ngr"), dir.join("Power.ngr"));
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "PortablePower",
         ".powercalc",
         &[portable.clone(), power.clone()],
@@ -189,7 +189,7 @@ fn rename_refuses_when_sibling_damaged() {
     .unwrap();
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "PortablePower",
         ".powercalc",
         &[portable.clone(), power.clone()],

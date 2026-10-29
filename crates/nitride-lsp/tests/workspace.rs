@@ -2,7 +2,7 @@ mod support;
 use nitride_lsp::manifest::{self, Mode};
 use nitride_lsp::registry::Registry;
 use serde_json::json;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use support::*;
 
 fn write(dir: &Path, name: &str, text: &str) {
@@ -14,22 +14,44 @@ fn write(dir: &Path, name: &str, text: &str) {
 const GRAMMAR: &str =
     "syntax module M\n{\n  token Number = ['0'..'9']+;\n  syntax Program = Items:Number*;\n}\n";
 
+/// `dir/nitride.nproj` including `folders`.
+fn workspace(dir: &Path, folders: &[&str]) -> PathBuf {
+    let includes: String = folders.iter().map(|f| format!("  include {f};\n")).collect();
+    write(dir, "nitride.nproj", &format!("workspace\n{{\n{includes}}}\n"));
+    dir.join("nitride.nproj")
+}
+
+/// `dir/<folder>/<name>.nproj` holding `text`.
+fn language(dir: &Path, folder: &str, name: &str, text: &str) -> PathBuf {
+    let path = format!("{folder}/{name}.nproj");
+    write(dir, &path, text);
+    dir.join(path)
+}
+
+fn no_buffers(_: &Path) -> Option<String> {
+    None
+}
+
 #[test]
-fn prefers_nitride_json() {
+fn nproj_wins_over_nitrogen_json() {
     let dir = scratch("prefers");
-    write(
-        &dir,
-        "nitride.json",
-        r#"{"languages":[{"name":"A","extensions":[".a"],"grammars":["m.ngr"],"start":"M.Program"}]}"#,
-    );
+    write(&dir, "a/m.ngr", GRAMMAR);
+    language(&dir, "a", "A", "language A { extensions .a; grammar m.ngr; start M.Program; }");
+    let root = workspace(&dir, &["a"]);
     write(
         &dir,
         "nitrogen.json",
-        r#"{"languages":[{"name":"B","extensions":[".b"],"grammars":["m.ngr"],"start":"M.Program"}]}"#,
+        r#"{"languages":[{"name":"B","extensions":[".b"],"grammars":["a/m.ngr"],"start":"M.Program"}]}"#,
     );
-    let (path, entries) = manifest::read(&dir);
-    assert_eq!(path.unwrap(), dir.join("nitride.json"));
-    assert_eq!(entries.unwrap().0[0].name, "A");
+    let read = manifest::read(&dir, &no_buffers);
+    let paths: Vec<_> = read.iter().map(|(p, _)| p.clone()).collect();
+    assert_eq!(paths, [root, dir.join("a/A.nproj")]);
+    let names: Vec<_> = read
+        .into_iter()
+        .flat_map(|(_, parsed)| parsed.unwrap().0)
+        .map(|e| e.name)
+        .collect();
+    assert_eq!(names, ["A"]);
 }
 
 #[test]
@@ -40,49 +62,46 @@ fn falls_back_to_nitrogen_json() {
         "nitrogen.json",
         r#"{"languages":[{"name":"B","extensions":[".b"],"grammars":["m.ngr"],"start":"M.Program","catalog":"c.json","mode":"typed","sources":["x.cs"]}]}"#,
     );
-    let (path, entries) = manifest::read(&dir);
-    assert_eq!(path.unwrap(), dir.join("nitrogen.json"));
-    let entry = &entries.unwrap().0[0];
+    let read = manifest::read(&dir, &no_buffers);
+    assert_eq!(read.len(), 1);
+    assert_eq!(read[0].0, dir.join("nitrogen.json"));
+    let entry = &read[0].1.as_ref().unwrap().0[0];
     assert_eq!(entry.mode, Mode::Syntax);
     assert!(entry.catalogs.is_empty());
     assert_eq!(entry.grammars, [dir.join("m.ngr")]);
 }
 
 #[test]
-fn mode_defaults_from_catalog() {
+fn no_manifest_reads_nothing() {
+    assert!(manifest::read(&scratch("empty"), &no_buffers).is_empty());
+}
+
+#[test]
+fn typed_follows_catalog() {
     let dir = scratch("mode");
-    write(
-        &dir,
-        "nitride.json",
-        r#"{"languages":[
-        {"name":"T","extensions":[".t"],"grammars":["m.ngr"],"start":"M.Program","catalogs":["c.ncatalog"]},
-        {"name":"S","extensions":[".s"],"grammars":["m.ngr"],"start":"M.Program"},
-        {"name":"E","extensions":[".e"],"grammars":["m.ngr"],"start":"M.Program","catalogs":["c.ncatalog"],"mode":"syntax"},
-        {"name":"O","extensions":[".o"],"grammars":["m.ngr"],"start":"M.Program","catalog":"c.json"}]}"#,
-    );
-    let (entries, problems) = manifest::read(&dir).1.unwrap();
+    write(&dir, "m.ngr", GRAMMAR);
+    write(&dir, "c.ncatalog", "");
+    language(&dir, "t", "T", "language T { extensions .t; grammar ../m.ngr; start M.Program; catalog ../c.ncatalog; }");
+    language(&dir, "s", "S", "language S { extensions .s; grammar ../m.ngr; start M.Program; }");
+    workspace(&dir, &["t", "s"]);
+    let entries: Vec<_> = manifest::read(&dir, &no_buffers)
+        .into_iter()
+        .flat_map(|(_, parsed)| parsed.unwrap().0)
+        .collect();
     let modes: Vec<_> = entries.iter().map(|e| e.mode).collect();
-    assert_eq!(modes, [Mode::Typed, Mode::Syntax, Mode::Syntax]);
-    assert_eq!(entries[0].catalogs, [dir.join("c.ncatalog")]);
-    // The JSON catalog of earlier manifests is reported, not ignored.
-    assert_eq!(
-        problems[0].message,
-        "language 3: \"catalog\" is replaced by \"catalogs\", a list of .ncatalog files"
-    );
+    assert_eq!(modes, [Mode::Typed, Mode::Syntax]);
+    assert_eq!(entries[0].catalogs, [dir.join("t/../c.ncatalog")]);
 }
 
 #[test]
 fn bad_manifest_reports_and_continues() {
     let bad = scratch("bad-manifest");
-    let text = r#"{"languages":[],}"#;
-    write(&bad, "nitride.json", text);
+    let text = "workspace { include ";
+    write(&bad, "nitride.nproj", text);
     let good = scratch("good-manifest");
-    write(
-        &good,
-        "nitride.json",
-        r#"{"languages":[{"name":"M","extensions":[".m"],"grammars":["m.ngr"],"start":"M.Program"}]}"#,
-    );
-    write(&good, "m.ngr", GRAMMAR);
+    write(&good, "m/m.ngr", GRAMMAR);
+    language(&good, "m", "M", "language M { extensions .m; grammar m.ngr; start M.Program; }");
+    workspace(&good, &["m"]);
 
     let mut registry = Registry::default();
     registry.reload(&[bad.clone(), good.clone()], &|_| None);
@@ -98,34 +117,32 @@ fn bad_manifest_reports_and_continues() {
     init["params"]["workspaceFolders"] =
         json!([{"uri":uri(&bad),"name":"bad"},{"uri":uri(&good),"name":"good"}]);
     let mut input = frame(&init);
-    input.extend(frame(&open(&bad.join("nitride.json"), text)));
+    input.extend(frame(&open(&bad.join("nitride.nproj"), text)));
     input.extend(frame(&request(2, "shutdown", serde_json::Value::Null)));
     input.extend(frame(&notification("exit", serde_json::Value::Null)));
     let messages = Session::raw(input);
-    let diagnostics = diagnostics(&messages, &bad.join("nitride.json"));
-    assert_eq!(diagnostics.as_array().unwrap().len(), 1);
-    // serde_json reports the trailing comma at the closing brace.
-    assert_eq!(
-        diagnostics[0]["range"]["start"],
-        json!({"line":0,"character":16})
-    );
+    let diagnostics = diagnostics(&messages, &bad.join("nitride.nproj"));
+    assert_eq!(diagnostics.as_array().unwrap().len(), 1, "{diagnostics}");
+    assert_eq!(diagnostics[0]["range"]["start"]["line"], 0);
 }
 
 #[test]
-fn missing_grammar_is_manifest_diagnostic() {
+fn missing_grammar_is_reported_on_its_nproj() {
     let dir = scratch("missing-grammar");
-    write(
-        &dir,
-        "nitride.json",
-        r#"{"languages":[{"name":"M","extensions":[".m"],"grammars":["absent.ngr"],"start":"M.Program"}]}"#,
-    );
+    let file = language(&dir, "m", "M", "language M { extensions .m; grammar absent.ngr; start M.Program; }");
+    workspace(&dir, &["m"]);
     let messages = Session::run(&dir, vec![]);
-    let diagnostics = diagnostics(&messages, &dir.join("nitride.json"));
+    let diagnostics = diagnostics(&messages, &file);
     assert!(
         diagnostics[0]["message"]
             .as_str()
             .unwrap()
-            .contains("absent.ngr")
+            .contains("absent.ngr"),
+        "{diagnostics}"
+    );
+    assert_eq!(
+        diagnostics[0]["range"]["start"],
+        json!({"line":0,"character":36})
     );
 }
 
@@ -133,7 +150,7 @@ fn missing_grammar_is_manifest_diagnostic() {
 fn repo_manifest_loads() {
     let mut registry = Registry::default();
     registry.reload(&[repo()], &|_| None);
-    // The 12 nitride.json languages, and languages/signed's signed Portable.
+    // The 12 nitride.nproj languages, and languages/signed's signed Portable.
     assert_eq!(registry.languages().len(), 13);
     assert_eq!(registry.languages().iter().filter(|l| l.signed).count(), 1);
     for language in registry.languages() {
@@ -145,28 +162,26 @@ fn repo_manifest_loads() {
         );
         assert!(language.errors.is_empty(), "{}", language.entry.name);
     }
+    for manifest in registry.manifests() {
+        assert!(manifest.errors.is_empty(), "{}: {:?}", manifest.path.display(), manifest.errors);
+    }
 }
 
-const XML: &str =
-    r#"{"name":"Xml","extensions":[".xml"],"grammars":["Xml.ngr"],"start":"Xml.Document"}"#;
+const XML: &str = "language Xml { extensions .xml; grammar ../Xml.ngr; start Xml.Document; }";
 
-fn xml_folder(name: &str, second: &str) -> std::path::PathBuf {
+/// A workspace of Xml and a second language `second` (folder `b`).
+fn xml_folder(name: &str, second: &str) -> PathBuf {
     let dir = scratch(name);
     std::fs::copy(repo().join("languages/xml/Xml.ngr"), dir.join("Xml.ngr")).unwrap();
-    write(
-        &dir,
-        "nitride.json",
-        &format!(r#"{{"languages":[{XML},{second}]}}"#),
-    );
+    language(&dir, "xml", "Xml", XML);
+    language(&dir, "b", "B", second);
+    workspace(&dir, &["xml", "b"]);
     dir
 }
 
 #[test]
-fn one_bad_entry_keeps_others() {
-    let dir = xml_folder(
-        "bad-entry",
-        r#"{"name":"A","extensions":[".a"],"grammars":["Xml.ngr"]}"#,
-    );
+fn one_bad_language_keeps_others() {
+    let dir = xml_folder("bad-entry", "language B { extensions .b; grammar ../Xml.ngr; }");
     let mut registry = Registry::default();
     registry.reload(std::slice::from_ref(&dir), &|_| None);
     assert!(
@@ -176,51 +191,84 @@ fn one_bad_entry_keeps_others() {
             .current
             .is_some()
     );
-    let errors = &registry.manifests()[0].errors;
+    let b = registry
+        .manifests()
+        .iter()
+        .find(|m| m.path == dir.join("b/B.nproj"))
+        .unwrap();
     assert!(
-        errors.iter().any(|e| e.message.contains("\"start\"")),
-        "{errors:?}"
+        b.errors.iter().any(|e| e.message.contains("start rule")),
+        "{:?}",
+        b.errors
     );
 }
 
 #[test]
-fn invalid_manifest_buffer_keeps_languages() {
+fn broken_nproj_keeps_previous_language() {
     let dir = xml_folder(
         "transient",
-        r#"{"name":"B","extensions":[".b"],"grammars":["Xml.ngr"],"start":"Xml.Document"}"#,
+        "language B { extensions .b; grammar ../Xml.ngr; start Xml.Document; }",
     );
     let mut registry = Registry::default();
     registry.reload(std::slice::from_ref(&dir), &|_| None);
-    let manifest = dir.join("nitride.json");
-    let typing = r#"{"languages":[, {"#.to_owned();
+    let file = dir.join("b/B.nproj");
+    let typing = "language B {".to_owned();
     registry.reload(std::slice::from_ref(&dir), &|p| {
-        (p == manifest).then(|| typing.clone())
+        (p == file).then(|| typing.clone())
     });
     assert!(
         registry
-            .for_path(&dir.join("t.xml"))
+            .for_path(&dir.join("t.b"))
             .unwrap()
             .current
             .is_some()
     );
-    assert_eq!(registry.manifests()[0].errors.len(), 1);
+    let with_errors: Vec<_> = registry
+        .manifests()
+        .iter()
+        .filter(|m| !m.errors.is_empty())
+        .collect();
+    assert_eq!(with_errors.len(), 1);
+    assert_eq!(with_errors[0].path, file);
+    assert_eq!(with_errors[0].errors.len(), 1);
 }
 
 #[test]
-fn unknown_start_rule_is_manifest_diagnostic() {
-    let dir = xml_folder(
-        "bad-start",
-        r#"{"name":"A","extensions":[".a"],"grammars":["Xml.ngr"],"start":"Xml.Nope"}"#,
-    );
+fn bad_include_reports_on_workspace_file() {
+    let dir = scratch("bad-include");
+    std::fs::copy(repo().join("languages/xml/Xml.ngr"), dir.join("Xml.ngr")).unwrap();
+    language(&dir, "xml", "Xml", XML);
+    let root = workspace(&dir, &["gone", "xml"]);
+    let mut registry = Registry::default();
+    registry.reload(std::slice::from_ref(&dir), &|_| None);
+    assert!(registry.for_path(&dir.join("t.xml")).unwrap().current.is_some());
+    let errors = &registry
+        .manifests()
+        .iter()
+        .find(|m| m.path == root)
+        .unwrap()
+        .errors;
+    assert_eq!(errors.len(), 1, "{errors:?}");
+    assert!(errors[0].message.contains("no .nproj in gone"));
+    assert_eq!(errors[0].span, [22, 26]);
+}
+
+#[test]
+fn unknown_start_rule_is_reported_at_start() {
+    let text = "language B { extensions .b; grammar ../Xml.ngr; start Xml.Nope; }";
+    let dir = xml_folder("bad-start", text);
     let grammar = dir.join("Xml.ngr");
-    let text = std::fs::read_to_string(&grammar).unwrap();
-    let messages = Session::run(&dir, vec![open(&grammar, &text)]);
-    let on_manifest = diagnostics(&messages, &dir.join("nitride.json"));
+    let grammar_text = std::fs::read_to_string(&grammar).unwrap();
+    let messages = Session::run(&dir, vec![open(&grammar, &grammar_text)]);
+    let on_nproj = diagnostics(&messages, &dir.join("b/B.nproj"));
     assert!(
-        on_manifest
+        on_nproj
             .to_string()
             .contains("unknown syntax start rule Xml.Nope"),
-        "{on_manifest}"
+        "{on_nproj}"
     );
+    let at = text.find("Xml.Nope").unwrap() as u64;
+    assert_eq!(on_nproj[0]["range"]["start"], json!({"line":0,"character":at}));
+    assert_eq!(on_nproj[0]["range"]["end"], json!({"line":0,"character":at + 8}));
     assert_eq!(diagnostics(&messages, &grammar), json!([]));
 }

@@ -677,6 +677,7 @@ fn language_input(uri: &str) -> bool {
     manifest::NAMES.contains(&name)
         || name.ends_with(".ngr")
         || name.ends_with(".ncatalog")
+        || name.ends_with(".nproj")
         || name.ends_with(".json")
 }
 

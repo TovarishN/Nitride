@@ -72,17 +72,9 @@ impl Registry {
         let mut previous = std::mem::take(&mut self.languages);
         self.manifests.clear();
         for folder in folders {
-            let (path, entries) = manifest::read(folder);
-            let Some(path) = path else { continue };
-            // An open manifest buffer replaces the file on disk.
-            let entries = match open(&path) {
-                Some(text) => {
-                    let nitride = path.file_name().is_some_and(|n| n == manifest::NAMES[0]);
-                    manifest::parse(&text, folder, nitride)
-                }
-                None => entries,
-            };
-            self.load(&path, entries, &mut previous, open);
+            for (path, entries) in manifest::read(folder, open) {
+                self.load(&path, entries, &mut previous, open);
+            }
         }
         for path in discover(folders, open, open_paths) {
             self.load_signed(&path, &mut previous, open);
@@ -136,6 +128,7 @@ impl Registry {
                 Mode::Typed
             },
             catalogs,
+            start_span: None,
         };
         let at_name = |message: String| located(path, &source.text, declaration.name_span, message);
         let mut state = if declaration.start.is_none() {
@@ -219,7 +212,7 @@ impl Registry {
                 self.languages.extend(kept);
                 self.manifests.push(ManifestState {
                     path: path.to_owned(),
-                    errors: vec![error],
+                    errors: error,
                 });
                 return;
             }
@@ -231,8 +224,14 @@ impl Registry {
                 .map(|i| previous.swap_remove(i));
             let state = prepare(entry, path, old, open);
             for error in state.errors.iter().filter(|e| e.project) {
+                // A `.nproj` points at its start rule; JSON manifests at their start.
+                let span = state
+                    .entry
+                    .start_span
+                    .filter(|_| error.message.contains("start rule"))
+                    .unwrap_or([0, 0]);
                 errors.push(ManifestError {
-                    span: [0, 0],
+                    span,
                     message: format!("{}: {}", state.entry.name, error.message),
                 });
             }
@@ -409,7 +408,10 @@ pub fn watched_change_matters(registry: &Registry, path: &Path, kind: u64) -> bo
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
-    if manifest::NAMES.contains(&name.as_str()) || name.ends_with(".ngr") || name.ends_with(".json")
+    if manifest::NAMES.contains(&name.as_str())
+        || name.ends_with(".ngr")
+        || name.ends_with(".nproj")
+        || name.ends_with(".json")
     {
         return true;
     }
