@@ -12,7 +12,8 @@ mod nproj;
 mod parser;
 mod project;
 pub use nproj::{
-    NitrogenSection, ProjectLanguage, ProjectWorkspace, read_language, read_workspace, snapshot,
+    NitrogenSection, ProjectLanguage, ProjectReference, ProjectWorkspace, read_language,
+    read_workspace, snapshot,
 };
 pub use project::{PreparedProject, prepare_project, write_prepared};
 
@@ -304,6 +305,16 @@ pub fn catalog_language() -> &'static nitride_core::Language<'static> {
 /// The compiled project frontend, a syntax-only language for `.nproj` files.
 pub fn project_language() -> &'static nitride_core::Language<'static> {
     &project_seed::LANGUAGE
+}
+
+/// The language or workspace a `.nproj` file declares.
+pub fn project_outline(source: &Source) -> Result<Vec<GrammarItem>, PrepareError> {
+    nproj::outline(source)
+}
+
+/// Every file, include folder and start rule a `.nproj` file names.
+pub fn project_references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError> {
+    nproj::references(source)
 }
 
 /// A declaration in a grammar file's outline.

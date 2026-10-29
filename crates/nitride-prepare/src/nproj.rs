@@ -372,3 +372,105 @@ pub fn snapshot(language: &ProjectLanguage, root: &Path) -> serde_json::Value {
         })),
     })
 }
+
+/// A name a `.nproj` uses: a "grammar", "catalog" or "source" file, an
+/// "include" folder (its target is the folder's one `.nproj`), or the start
+/// "rule".
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct ProjectReference {
+    pub kind: &'static str,
+    pub text: String,
+    pub span: [usize; 2],
+    pub target: Option<PathBuf>,
+}
+
+/// The language or workspace a `.nproj` declares (kind "language" or
+/// "workspace").
+pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError> {
+    let tree = syntax(source)?;
+    let d = Decoder { tree: &tree };
+    let item = d.item();
+    let (kind, name) = if d.kind(item) == "Language" {
+        ("language", d.field(item, "Name"))
+    } else {
+        let at = d.span(item)[0];
+        (
+            "workspace",
+            Written {
+                text: "workspace".into(),
+                span: [at, at + "workspace".len()],
+            },
+        )
+    };
+    Ok(vec![crate::GrammarItem {
+        kind,
+        name: name.text,
+        span: d.span(item),
+        name_span: name.span,
+        children: vec![],
+    }])
+}
+
+/// Every file, folder and rule a `.nproj` names, in source order.
+pub fn references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError> {
+    let tree = syntax(source)?;
+    let d = Decoder { tree: &tree };
+    let base = directory(source);
+    let mut found = Vec::new();
+    let files = |kind: &'static str, paths: Vec<Written>, found: &mut Vec<ProjectReference>| {
+        for path in paths {
+            found.push(ProjectReference {
+                kind,
+                target: Some(base.join(&path.text)),
+                text: path.text,
+                span: path.span,
+            });
+        }
+    };
+    let item = d.item();
+    if d.kind(item) == "Workspace" {
+        for include in children(&tree, item, "Includes") {
+            let path = d.field(include, "Path");
+            let folder = base.join(&path.text);
+            let nproj: Vec<PathBuf> = std::fs::read_dir(&folder)
+                .into_iter()
+                .flatten()
+                .flatten()
+                .map(|e| e.path())
+                .filter(|p| p.extension().is_some_and(|e| e == "nproj"))
+                .collect();
+            found.push(ProjectReference {
+                kind: "include",
+                target: (nproj.len() == 1).then(|| nproj[0].clone()),
+                text: path.text,
+                span: path.span,
+            });
+        }
+        return Ok(found);
+    }
+    let mut members = children(&tree, item, "Members");
+    while let Some(member) = members.pop() {
+        let m = d.concrete(
+            member,
+            &["Extensions", "Grammar", "Start", "Catalog", "Nitrogen", "Namespace", "Source"],
+        );
+        match d.kind(m) {
+            "Grammar" => files("grammar", d.fields(m, "Paths"), &mut found),
+            "Catalog" => files("catalog", d.fields(m, "Paths"), &mut found),
+            "Source" => files("source", d.fields(m, "Paths"), &mut found),
+            "Nitrogen" => members.extend(children(&tree, m, "Members")),
+            "Start" => {
+                let rule = d.field(m, "Rule");
+                found.push(ProjectReference {
+                    kind: "rule",
+                    text: rule.text,
+                    span: rule.span,
+                    target: None,
+                });
+            }
+            _ => {}
+        }
+    }
+    found.sort_by_key(|r| r.span[0]);
+    Ok(found)
+}

@@ -212,6 +212,9 @@ impl<W: Write> Server<W> {
                     .current(&uri)
                     .map_or(json!([]), |a| structure::selections(a, &positions)))
             }
+            "textDocument/definition" | "textDocument/declaration" if uri.ends_with(".nproj") => {
+                Ok(self.project_definition(&uri, params).unwrap_or(Value::Null))
+            }
             "textDocument/hover"
             | "textDocument/definition"
             | "textDocument/declaration"
@@ -453,6 +456,38 @@ impl<W: Write> Server<W> {
     }
 
     /// The document's analysis, brought up to date first if an edit is pending.
+    /// The file, language file or start rule named at a position of a `.nproj`.
+    fn project_definition(&mut self, uri: &str, params: &Value) -> Option<Value> {
+        let line = params["position"]["line"].as_u64()? as u32;
+        let character = params["position"]["character"].as_u64()? as u32;
+        let offset = self.current(uri)?.lines.offset(line, character) as usize;
+        let path = uri::to_path(uri)?;
+        let buffers = self.buffers();
+        let source = nitride_prepare::Source {
+            path: path.to_string_lossy().into_owned(),
+            text: buffers.get(&path)?,
+        };
+        let references = nitride_prepare::project_references(&source).ok()?;
+        let at = references
+            .iter()
+            .find(|r| r.span[0] <= offset && offset <= r.span[1])?;
+        let uri_of = self.uri_of();
+        if let Some(target) = &at.target {
+            let start = json!({"line":0,"character":0});
+            return Some(json!({"uri":uri_of(target),"range":{"start":start,"end":start}}));
+        }
+        let grammars: Vec<PathBuf> = references
+            .iter()
+            .filter(|r| r.kind == "grammar")
+            .filter_map(|r| r.target.clone())
+            .collect();
+        let index = grammar_index::build(&grammars, &|p: &Path| buffers.get(p), &uri_of);
+        let rule = index.definition(&at.text, "")?;
+        let file = &index.files[rule.file];
+        let span = rule.item.name_span.map(|v| v as u32);
+        Some(json!({"uri":file.uri,"range":range(&LineIndex::new(&file.text), span)}))
+    }
+
     fn current(&mut self, uri: &str) -> Option<&Analysis> {
         // A request can arrive before the debounce elapses: load languages first.
         if std::mem::take(&mut self.reload) {
