@@ -30,6 +30,7 @@ impl LoadedLanguage {
             storage: Vec::new(),
         };
         let language = builder.language(&value)?;
+        nitride_core::validate_rule_checks(&language)?;
         Ok(LoadedLanguage {
             language,
             _storage: builder.storage,
@@ -343,6 +344,7 @@ impl Builder {
             handlers: self.strs(f.get("handlers")?)?,
             checks: self.slice(f.get("checks")?, Self::check)?,
             helpers: self.slice(f.get("helpers")?, Self::helper)?,
+            rule_checks: self.slice(f.get("rule_checks")?, Self::rule_check)?,
             source_hash: self.str(f.get("source_hash")?)?,
         })
     }
@@ -395,6 +397,46 @@ impl Builder {
                 other => return Err(format!("generated table: bad selector {other:?}")),
             },
             arms: self.slice(f.get("arms")?, Self::arm)?,
+        })
+    }
+    fn rule_check(&mut self, node: &Node) -> Result<RuleCheck<'static>, String> {
+        let f = fields(node)?;
+        let test = match f.get("test")? {
+            Node::Struct(p, _) if tail(p) == "Compare" => {
+                let t = fields(f.get("test")?)?;
+                RuleTest::Compare {
+                    left: self.str(t.get("left")?)?,
+                    right: self.str(t.get("right")?)?,
+                    equal: match t.get("equal")? {
+                        Node::Bool(b) => *b,
+                        other => return Err(format!("generated table: bad equal {other:?}")),
+                    },
+                }
+            }
+            Node::Struct(p, _) if tail(p) == "Match" => {
+                let t = fields(f.get("test")?)?;
+                RuleTest::Match {
+                    captures: self.slice(t.get("captures")?, Self::hole)?,
+                    pattern: self.str(t.get("pattern")?)?,
+                }
+            }
+            other => return Err(format!("generated table: bad rule test {other:?}")),
+        };
+        Ok(RuleCheck {
+            rule: int(f.get("rule")?)?,
+            code: self.str(f.get("code")?)?,
+            severity: match f.get("severity")? {
+                Node::Path(p) if tail(p) == "Error" => Severity::Error,
+                Node::Path(p) if tail(p) == "Warning" => Severity::Warning,
+                other => return Err(format!("generated table: bad severity {other:?}")),
+            },
+            test,
+            message: self.str(f.get("message")?)?,
+            at: match f.get("at")? {
+                Node::Path(p) if p == "None" => None,
+                Node::Call(p, args) if p == "Some" && args.len() == 1 => Some(self.str(&args[0])?),
+                other => return Err(format!("generated table: bad check target {other:?}")),
+            },
         })
     }
     fn builtin(&mut self, node: &Node) -> Result<Builtin<'static>, String> {

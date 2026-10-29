@@ -257,16 +257,6 @@ impl Catalog {
     /// Every grammar rule and field the catalog names exists in the prepared
     /// language `data`; an error points at the catalog.
     fn check(&self, data: &Value) -> Result<(), PrepareError> {
-        fn labels<'a>(e: &'a Value, found: &mut Vec<&'a str>) {
-            if let Some(label) = e["label"].as_str() {
-                found.push(label);
-            }
-            match e {
-                Value::Array(items) => items.iter().for_each(|i| labels(i, found)),
-                Value::Object(map) => map.values().for_each(|v| labels(v, found)),
-                _ => {}
-            }
-        }
         let rules = data["rules"].as_array().map(Vec::as_slice).unwrap_or(&[]);
         for used in &self.uses {
             let source = &self.sources[used.source];
@@ -277,7 +267,7 @@ impl Catalog {
             };
             if let Some(field) = &used.field {
                 let mut found = Vec::new();
-                labels(&rule["expr"], &mut found);
+                expr_labels(&rule["expr"], &mut found);
                 if !found.contains(&field.as_str()) {
                     return Err(
                         source.error(used.span, format!("'{}' has no field '{field}'", used.rule))
@@ -347,4 +337,16 @@ pub struct GrammarItem {
 /// The modules of one grammar file and the members they declare.
 pub fn grammar_outline(source: &Source) -> Result<Vec<GrammarItem>, PrepareError> {
     parser::outline(source)
+}
+
+/// The field labels anywhere within a prepared expression.
+pub(crate) fn expr_labels<'a>(e: &'a Value, found: &mut Vec<&'a str>) {
+    if let Some(label) = e["label"].as_str() {
+        found.push(label);
+    }
+    match e {
+        Value::Array(items) => items.iter().for_each(|i| expr_labels(i, found)),
+        Value::Object(map) => map.values().for_each(|v| expr_labels(v, found)),
+        _ => {}
+    }
 }

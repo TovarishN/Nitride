@@ -220,6 +220,7 @@ mod tests {
         handlers: &[],
         checks: &[],
         helpers: &[],
+        rule_checks: &[],
         source_hash: "syntax-context-test",
         rules: &[Rule {
             name: "Item",

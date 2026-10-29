@@ -71,7 +71,16 @@ syntax module NitrideGrammar
   syntax TokenRule = "token" Name:Identifier "=" Body:Expression Except:ExceptList? ";";
   syntax ExceptList = "except" Words:String+;
   syntax SyntaxRule = "syntax" Name:Identifier "=" Body:Expression Clauses:Clause* End:End;
-  syntax End = Semantics / Terminator;
+  syntax End = Terminator / Checks / Semantics;
+  // A rule's own diagnostics over its nodes; any other block is Nitrogen C#.
+  syntax Checks = &"{" "{" Items:RuleCheck* "}";
+  syntax RuleCheck = CompareCheck / MatchCheck;
+  syntax CompareCheck = "check" Code:Identifier Left:FieldText Op:CompareOp Right:FieldText ":" Message:Interpolated Target:CheckTarget? ";";
+  syntax FieldText = Field:Identifier "." "Text";
+  syntax CheckTarget = "at" Field:Identifier;
+  syntax MatchCheck = "match" Captures:Captures? Pattern:QuoteText "=>" Severity:CheckSeverity Code:Identifier ":" Message:Interpolated ";";
+  token CheckSeverity = ("error" / "warning") !NameTail;
+  token Interpolated = "$" String;
   syntax Terminator = ";";
   syntax Semantics = Body:Opaque;
   syntax ExtensibleRule = "extensible" "syntax" Name:Identifier "{" Properties:PropertyDecl* Alternatives:Alternative* "}";

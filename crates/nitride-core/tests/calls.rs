@@ -9,6 +9,7 @@ fn language(builtins: &'static [Builtin<'static>]) -> &'static Language<'static>
         handlers: &[],
         checks: &[],
         helpers: &[],
+        rule_checks: &[],
         operations: &[
             Signature {
                 id: "A",

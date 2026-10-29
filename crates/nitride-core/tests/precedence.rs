@@ -67,6 +67,7 @@ fn language() -> Language<'static> {
         handlers: &[],
         checks: &[],
         helpers: &[],
+        rule_checks: &[],
         source_hash: "test",
     }
 }
@@ -160,6 +161,7 @@ fn call_language() -> &'static Language<'static> {
         handlers: &[],
         checks: &[],
         helpers: &[],
+        rule_checks: &[],
         source_hash: "test",
     }))
 }
@@ -245,6 +247,7 @@ fn shared_operator_alternatives_take_longest_match() {
         handlers: &[],
         checks: &[],
         helpers: &[],
+        rule_checks: &[],
         source_hash: "test",
     }));
     let root = |source: &str| {

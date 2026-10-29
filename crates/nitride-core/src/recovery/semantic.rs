@@ -11,6 +11,18 @@ pub fn compile_recovering<'g>(
     parsed: &RecoveredParse<'g>,
     limits: Limits,
 ) -> RecoveredAnalysis<'g> {
+    let mut analysis = compile_program(language, parsed, limits);
+    analysis
+        .diagnostics
+        .extend(crate::rule_diagnostics(language, &parsed.tree));
+    analysis
+}
+
+fn compile_program<'g>(
+    language: &'g Language<'g>,
+    parsed: &RecoveredParse<'g>,
+    limits: Limits,
+) -> RecoveredAnalysis<'g> {
     if language.profile == Profile::SyntaxOnly {
         return RecoveredAnalysis {
             program: None,

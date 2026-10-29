@@ -23,6 +23,7 @@ pub struct Diagnostic {
     pub message: String,
     /// The catalog code of a failed source check.
     pub code: Option<Box<str>>,
+    pub severity: Severity,
 }
 
 impl Diagnostic {
@@ -32,6 +33,7 @@ impl Diagnostic {
             span,
             message: message.into(),
             code: None,
+            severity: Severity::Error,
         }
     }
 }
@@ -108,6 +110,8 @@ impl Default for Limits {
     }
 }
 
+mod checks;
+pub use checks::{placeholders, rule_diagnostics, validate_rule_checks};
 mod templates;
 
 mod incremental;

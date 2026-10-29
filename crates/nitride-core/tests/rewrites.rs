@@ -45,6 +45,7 @@ fn language(extra: &'static [Helper<'static>]) -> &'static Language<'static> {
         handlers: &[],
         checks: &[],
         helpers: Box::leak(helpers.into_boxed_slice()),
+        rule_checks: &[],
         operations: &[Signature {
             id: "Add",
             inputs: &["Core.Scalar", "Core.Scalar"],

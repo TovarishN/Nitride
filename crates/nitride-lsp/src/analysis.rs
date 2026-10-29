@@ -308,7 +308,10 @@ fn program(state: &LanguageState, text: &str, source: &str) -> Analysis {
     let mut add = |d: &Diagnostic| {
         let problem = Problem {
             span: d.span,
-            severity: 1,
+            severity: match d.severity {
+                Severity::Error => 1,
+                Severity::Warning => 2,
+            },
             message: d.message.clone(),
             code: d.code.as_deref().map(str::to_owned),
         };
@@ -324,7 +327,7 @@ fn program(state: &LanguageState, text: &str, source: &str) -> Analysis {
     let values = checked
         .program
         .as_ref()
-        .filter(|_| problems.is_empty())
+        .filter(|_| problems.iter().all(|p| p.severity != 1))
         .map(crate::values::compute)
         .unwrap_or_default();
     let index = match &checked.program {
