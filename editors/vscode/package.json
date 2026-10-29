@@ -10,7 +10,6 @@
   },
   "main": "./out/extension.js",
   "activationEvents": [
-    "onLanguage:ngr",
     "workspaceContains:nitride.json",
     "workspaceContains:nitrogen.json"
   ],

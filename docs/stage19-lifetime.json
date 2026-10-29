@@ -1,0 +1,25 @@
+{
+  "source_sha256": "d0183ca2dab581ae3f5ee5e468f9094bfcfec20fde05f74f8e2d425b576bbe49",
+  "scope": "Existing interpreted edit/reader-window path; generated initial snapshots separately tested for old-reader/edit parity and in full differential traces. Native callbacks are not retained by snapshots.",
+  "windows": [
+    {
+      "bound_bytes": 8549536,
+      "edits": 100000,
+      "fresh_bytes": 19904,
+      "latest_bytes": 129096,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 129096,
+      "window": 0
+    },
+    {
+      "bound_bytes": 8549536,
+      "edits": 100000,
+      "fresh_bytes": 19904,
+      "latest_bytes": 129096,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 137704,
+      "window": 8
+    }
+  ],
+  "command": "cargo test --release --locked -p nitride-cli --test incremental bounded_reader_window_does_not_retain_edit_history -- --ignored --nocapture"
+}

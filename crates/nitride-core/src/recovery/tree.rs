@@ -32,7 +32,7 @@ pub enum Expected<'g> {
     Character,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub enum Repair<'g> {
     Missing { expected: Expected<'g>, at: u32 },
     Skipped { span: [u32; 2] },

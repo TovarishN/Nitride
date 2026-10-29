@@ -1,0 +1,801 @@
+{
+  "measured_at_utc": "2026-10-26T18:07:44.791419+00:00",
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "nitride_source_sha256": "85d77a50cfdd69ce83f5051cf510d91bde49a37461aa9bd076282326fc15d11f",
+  "nitride_profiler_sha256": "1d6d561f727b3bdc6446841f7b415ad43207240268c1b9a30c55657ff60be41c",
+  "roslyn_harness_source": "using System.Diagnostics;\nusing System.Text.Json;\nusing Microsoft.CodeAnalysis;\nusing Microsoft.CodeAnalysis.CSharp;\nvar source = File.ReadAllText(args[0]);\nvar options = new CSharpParseOptions(LanguageVersion.CSharp4);\nvar warmups = int.Parse(args[1]);\nvar runs = int.Parse(args[2]);\nfor (int i=0; i<warmups; i++) { var warm=CSharpSyntaxTree.ParseText(source,options); GC.KeepAlive(warm.GetRoot()); }\nvar samples = new List<object>();\nfor (int i=0; i<runs; i++) {\n var clock=Stopwatch.StartNew();\n var tree=CSharpSyntaxTree.ParseText(source,options);\n var root=tree.GetRoot();\n clock.Stop();\n var elapsed=(long)clock.Elapsed.TotalNanoseconds;\n var errors=tree.GetDiagnostics().Count(d=>d.Severity==DiagnosticSeverity.Error);\n samples.Add(new {elapsed_ns=elapsed, errors, source_length=root.FullSpan.Length});\n GC.KeepAlive(root); GC.KeepAlive(tree);\n}\nConsole.WriteLine(JsonSerializer.Serialize(new {roslyn_version=typeof(CSharpSyntaxTree).Assembly.GetName().Version!.ToString(),runtime=System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription, samples}));\n",
+  "roslyn_artifacts": {
+    "Bench": "ba49c23764dc6b6f13a01f7cca8744340c0c7fe1c2fbedaf7c97dd6050088326",
+    "Microsoft.CodeAnalysis.CSharp.dll": "36f5ac8da30a6107f53a2ca6509b61e284c08eb59aa1b22956d4e200e4514aa5",
+    "Microsoft.CodeAnalysis.dll": "10f489db67b8ac7489e58d392166c928302ba5698506dd652311da5d89f0a0f8",
+    "Bench.pdb": "9356ece1f861f680e9cddedf94b46141bb841a713ffd45bfde03aeeaf50eec6e",
+    "Bench.runtimeconfig.json": "9950d4583cfc9a106857c0d5b8a75b53e8774852b57b80bc3823a74d44a4d87f",
+    "Bench.deps.json": "f0c3d044704eba9eef62d38183ffdd2d94890e0b4155f532a5bbbde25e5a5cfe",
+    "Bench.dll": "e27aa8f44e9841fe44ab23c2e42ad6ed396073ac07dee957bba699e0baeb1656"
+  },
+  "protocol": "Three fresh-process full parses per backend per size, alternating order, same generated valid CSharp4 inputs. Nitride Stage24 --native-syntax --snapshot uninstrumented Release, Roslyn CSharpSyntaxTree.ParseText+GetRoot. Separate Roslyn process per size:3 warmups then5 measured full parses. Source I/O, process startup, Roslyn option construction, post-parse validation and serialization excluded. Nitride includes SourceText, dispatch preparation, shared syntax and dependency index. Different syntax representations. No instrumentation/builds/tests concurrent with timing.",
+  "measurements": [
+    {
+      "size_target": 262144,
+      "source_sha256": "fb24d3b7883f34ab3c7774bbdb289f6d6e609ee81e386469e8cf3d5e6cb743f6",
+      "samples": {
+        "nitride": [
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 115279125,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 262212,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 653913,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 150907,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 169132,
+              "native_lexical_calls": 81651,
+              "native_lexical_work": 7257067,
+              "native_syntax_calls": 519057,
+              "native_syntax_tails": 21870,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 89552,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 262212,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 262212,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 2187783,
+              "winner_descendants_copied": 0,
+              "work": 15771241
+            },
+            "storage": {
+              "chunks": 56,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 702576,
+              "physical_retained_bytes": 4589656,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 262212,
+              "source_bytes": 262472,
+              "syntax_bytes": 3624560,
+              "syntax_payload_bytes": 3616080,
+              "unique_allocations": 5373
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 114358333,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 262212,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 653913,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 150907,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 169132,
+              "native_lexical_calls": 81651,
+              "native_lexical_work": 7257067,
+              "native_syntax_calls": 519057,
+              "native_syntax_tails": 21870,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 89520,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 262212,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 262212,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 2187783,
+              "winner_descendants_copied": 0,
+              "work": 15771241
+            },
+            "storage": {
+              "chunks": 56,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 702576,
+              "physical_retained_bytes": 4589656,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 262212,
+              "source_bytes": 262472,
+              "syntax_bytes": 3624560,
+              "syntax_payload_bytes": 3616080,
+              "unique_allocations": 5373
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 113990625,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 262212,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 653913,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 150907,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 169132,
+              "native_lexical_calls": 81651,
+              "native_lexical_work": 7257067,
+              "native_syntax_calls": 519057,
+              "native_syntax_tails": 21870,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 89552,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 262212,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 262212,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 2187783,
+              "winner_descendants_copied": 0,
+              "work": 15771241
+            },
+            "storage": {
+              "chunks": 56,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 702576,
+              "physical_retained_bytes": 4589656,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 262212,
+              "source_bytes": 262472,
+              "syntax_bytes": 3624560,
+              "syntax_payload_bytes": 3616080,
+              "unique_allocations": 5373
+            }
+          }
+        ],
+        "roslyn": [
+          {
+            "roslyn_version": "5.0.0.0",
+            "runtime": ".NET 10.0.0",
+            "samples": [
+              {
+                "elapsed_ns": 74560700,
+                "errors": 0,
+                "source_length": 262212
+              }
+            ]
+          },
+          {
+            "roslyn_version": "5.0.0.0",
+            "runtime": ".NET 10.0.0",
+            "samples": [
+              {
+                "elapsed_ns": 73564000,
+                "errors": 0,
+                "source_length": 262212
+              }
+            ]
+          },
+          {
+            "roslyn_version": "5.0.0.0",
+            "runtime": ".NET 10.0.0",
+            "samples": [
+              {
+                "elapsed_ns": 73405900,
+                "errors": 0,
+                "source_length": 262212
+              }
+            ]
+          }
+        ]
+      },
+      "median_seconds": {
+        "nitride": 0.114358333,
+        "roslyn": 0.073564
+      },
+      "nitride_over_roslyn": 1.5545420722092327,
+      "roslyn_warm": {
+        "roslyn_version": "5.0.0.0",
+        "runtime": ".NET 10.0.0",
+        "samples": [
+          {
+            "elapsed_ns": 35831000,
+            "errors": 0,
+            "source_length": 262212
+          },
+          {
+            "elapsed_ns": 36158200,
+            "errors": 0,
+            "source_length": 262212
+          },
+          {
+            "elapsed_ns": 39957000,
+            "errors": 0,
+            "source_length": 262212
+          },
+          {
+            "elapsed_ns": 38578700,
+            "errors": 0,
+            "source_length": 262212
+          },
+          {
+            "elapsed_ns": 33415200,
+            "errors": 0,
+            "source_length": 262212
+          }
+        ]
+      },
+      "roslyn_warm_median_seconds": 0.0361582
+    },
+    {
+      "size_target": 4194304,
+      "source_sha256": "bfa28dd3a2fa6c86836d2706d48026317228b2209d169ee355a7274f5ee2f919",
+      "samples": {
+        "nitride": [
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 1823561334,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 4194492,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 10163907,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 2345521,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 2628796,
+              "native_lexical_calls": 1269075,
+              "native_lexical_work": 113457291,
+              "native_syntax_calls": 8067681,
+              "native_syntax_tails": 339930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 1360224,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 4194492,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 4194492,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 34004385,
+              "winner_descendants_copied": 0,
+              "work": 245792223
+            },
+            "storage": {
+              "chunks": 867,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 10720360,
+              "physical_retained_bytes": 71243304,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 4194492,
+              "source_bytes": 4197376,
+              "syntax_bytes": 56325520,
+              "syntax_payload_bytes": 56202000,
+              "unique_allocations": 84611
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 1833534708,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 4194492,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 10163907,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 2345521,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 2628796,
+              "native_lexical_calls": 1269075,
+              "native_lexical_work": 113457291,
+              "native_syntax_calls": 8067681,
+              "native_syntax_tails": 339930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 1360096,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 4194492,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 4194492,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 34004385,
+              "winner_descendants_copied": 0,
+              "work": 245792223
+            },
+            "storage": {
+              "chunks": 867,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 10720360,
+              "physical_retained_bytes": 71243304,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 4194492,
+              "source_bytes": 4197376,
+              "syntax_bytes": 56325520,
+              "syntax_payload_bytes": 56202000,
+              "unique_allocations": 84611
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 1830206834,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 4194492,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 10163907,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 2345521,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 2628796,
+              "native_lexical_calls": 1269075,
+              "native_lexical_work": 113457291,
+              "native_syntax_calls": 8067681,
+              "native_syntax_tails": 339930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 1360160,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 4194492,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 4194492,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 34004385,
+              "winner_descendants_copied": 0,
+              "work": 245792223
+            },
+            "storage": {
+              "chunks": 867,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 10720360,
+              "physical_retained_bytes": 71243304,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 4194492,
+              "source_bytes": 4197376,
+              "syntax_bytes": 56325520,
+              "syntax_payload_bytes": 56202000,
+              "unique_allocations": 84611
+            }
+          }
+        ],
+        "roslyn": [
+          {
+            "roslyn_version": "5.0.0.0",
+            "runtime": ".NET 10.0.0",
+            "samples": [
+              {
+                "elapsed_ns": 672822700,
+                "errors": 0,
+                "source_length": 4194492
+              }
+            ]
+          },
+          {
+            "roslyn_version": "5.0.0.0",
+            "runtime": ".NET 10.0.0",
+            "samples": [
+              {
+                "elapsed_ns": 746598400,
+                "errors": 0,
+                "source_length": 4194492
+              }
+            ]
+          },
+          {
+            "roslyn_version": "5.0.0.0",
+            "runtime": ".NET 10.0.0",
+            "samples": [
+              {
+                "elapsed_ns": 614760200,
+                "errors": 0,
+                "source_length": 4194492
+              }
+            ]
+          }
+        ]
+      },
+      "median_seconds": {
+        "nitride": 1.830206834,
+        "roslyn": 0.6728227
+      },
+      "nitride_over_roslyn": 2.7201918633244686,
+      "roslyn_warm": {
+        "roslyn_version": "5.0.0.0",
+        "runtime": ".NET 10.0.0",
+        "samples": [
+          {
+            "elapsed_ns": 138409800,
+            "errors": 0,
+            "source_length": 4194492
+          },
+          {
+            "elapsed_ns": 115594700,
+            "errors": 0,
+            "source_length": 4194492
+          },
+          {
+            "elapsed_ns": 167059500,
+            "errors": 0,
+            "source_length": 4194492
+          },
+          {
+            "elapsed_ns": 144948000,
+            "errors": 0,
+            "source_length": 4194492
+          },
+          {
+            "elapsed_ns": 158339000,
+            "errors": 0,
+            "source_length": 4194492
+          }
+        ]
+      },
+      "roslyn_warm_median_seconds": 0.144948
+    },
+    {
+      "size_target": 16777216,
+      "source_sha256": "92d0168144c734efaf090d7a82048a4149ff45481caacffd10a834e1c2fad508",
+      "samples": {
+        "nitride": [
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 7648903375,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 16777292,
+            "stats": {
+              "cache_evictions": 1263025,
+              "choice_plan_builds": 11,
+              "choice_skips": 40345024,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 8680856,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 9744763,
+              "native_lexical_calls": 5740491,
+              "native_lexical_work": 506889738,
+              "native_syntax_calls": 32075653,
+              "native_syntax_tails": 1335930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 4900144,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 16777292,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 16777292,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 134954271,
+              "winner_descendants_copied": 0,
+              "work": 1030258386
+            },
+            "storage": {
+              "chunks": 3404,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 39442984,
+              "physical_retained_bytes": 277588776,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 16777292,
+              "source_bytes": 16788528,
+              "syntax_bytes": 221357216,
+              "syntax_payload_bytes": 220874000,
+              "unique_allocations": 278235
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 7625215583,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 16777292,
+            "stats": {
+              "cache_evictions": 1263025,
+              "choice_plan_builds": 11,
+              "choice_skips": 40345024,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 8680856,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 9744763,
+              "native_lexical_calls": 5740491,
+              "native_lexical_work": 506889738,
+              "native_syntax_calls": 32075653,
+              "native_syntax_tails": 1335930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 4899760,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 16777292,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 16777292,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 134954271,
+              "winner_descendants_copied": 0,
+              "work": 1030258386
+            },
+            "storage": {
+              "chunks": 3404,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 39442984,
+              "physical_retained_bytes": 277588776,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 16777292,
+              "source_bytes": 16788528,
+              "syntax_bytes": 221357216,
+              "syntax_payload_bytes": 220874000,
+              "unique_allocations": 278235
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 7705573334,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 16777292,
+            "stats": {
+              "cache_evictions": 1263025,
+              "choice_plan_builds": 11,
+              "choice_skips": 40345024,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 8680856,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 9744763,
+              "native_lexical_calls": 5740491,
+              "native_lexical_work": 506889738,
+              "native_syntax_calls": 32075653,
+              "native_syntax_tails": 1335930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 4899984,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 16777292,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 16777292,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 134954271,
+              "winner_descendants_copied": 0,
+              "work": 1030258386
+            },
+            "storage": {
+              "chunks": 3404,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 39442984,
+              "physical_retained_bytes": 277588776,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 16777292,
+              "source_bytes": 16788528,
+              "syntax_bytes": 221357216,
+              "syntax_payload_bytes": 220874000,
+              "unique_allocations": 278235
+            }
+          }
+        ],
+        "roslyn": [
+          {
+            "roslyn_version": "5.0.0.0",
+            "runtime": ".NET 10.0.0",
+            "samples": [
+              {
+                "elapsed_ns": 1278360200,
+                "errors": 0,
+                "source_length": 16777292
+              }
+            ]
+          },
+          {
+            "roslyn_version": "5.0.0.0",
+            "runtime": ".NET 10.0.0",
+            "samples": [
+              {
+                "elapsed_ns": 1297057800,
+                "errors": 0,
+                "source_length": 16777292
+              }
+            ]
+          },
+          {
+            "roslyn_version": "5.0.0.0",
+            "runtime": ".NET 10.0.0",
+            "samples": [
+              {
+                "elapsed_ns": 1284679000,
+                "errors": 0,
+                "source_length": 16777292
+              }
+            ]
+          }
+        ]
+      },
+      "median_seconds": {
+        "nitride": 7.648903375,
+        "roslyn": 1.284679
+      },
+      "nitride_over_roslyn": 5.953941315301332,
+      "roslyn_warm": {
+        "roslyn_version": "5.0.0.0",
+        "runtime": ".NET 10.0.0",
+        "samples": [
+          {
+            "elapsed_ns": 590116400,
+            "errors": 0,
+            "source_length": 16777292
+          },
+          {
+            "elapsed_ns": 685406500,
+            "errors": 0,
+            "source_length": 16777292
+          },
+          {
+            "elapsed_ns": 569405500,
+            "errors": 0,
+            "source_length": 16777292
+          },
+          {
+            "elapsed_ns": 637526500,
+            "errors": 0,
+            "source_length": 16777292
+          },
+          {
+            "elapsed_ns": 726536500,
+            "errors": 0,
+            "source_length": 16777292
+          }
+        ]
+      },
+      "roslyn_warm_median_seconds": 0.6375265
+    }
+  ],
+  "complete": true,
+  "controller_source": "from pathlib import Path\nimport sys,json,hashlib,subprocess,statistics,datetime,platform\nsys.path.insert(0,'scripts');from shared_subtrees import source_digest\nfrom csharp4_scaling import generated\nw=Path('.superpowers/sdd/2026-10-26-predictive-alternatives');b=json.loads((w/'baseline.json').read_text());dll=(w/'roslyn-bench/Bench.dll').resolve();exe=(w/'profile-stage24').resolve();out=Path('docs/stage25-roslyn-baseline.json');assert not out.exists();assert source_digest()==b['source_sha256']\nr={'measured_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'host':platform.platform(),'nitride_source_sha256':b['source_sha256'],'nitride_profiler_sha256':b['profiler_sha256'],'roslyn_harness_source':(w/'roslyn-source.cs').read_text(),'roslyn_artifacts':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in dll.parent.iterdir() if p.is_file()},'protocol':'Three fresh-process full parses per backend per size, alternating order, same generated valid CSharp4 inputs. Nitride Stage24 --native-syntax --snapshot uninstrumented Release, Roslyn CSharpSyntaxTree.ParseText+GetRoot. Separate Roslyn process per size:3 warmups then5 measured full parses. Source I/O, process startup, Roslyn option construction, post-parse validation and serialization excluded. Nitride includes SourceText, dispatch preparation, shared syntax and dependency index. Different syntax representations. No instrumentation/builds/tests concurrent with timing.','measurements':[]}\nprior=json.loads(Path('docs/stage24-paired.json').read_text())\nfor size in [262144,4194304,16777216]:\n p=Path('/tmp/nitride-alt-input.cs');p.write_text(generated(size));sha=hashlib.sha256(p.read_bytes()).hexdigest();assert sha==next(x for x in prior['measurements'] if x['size_target']==size)['source_sha256'];samples={'nitride':[],'roslyn':[]};row={'size_target':size,'source_sha256':sha,'samples':samples};r['measurements'].append(row)\n for run in range(3):\n  for k in ['nitride','roslyn'] if run%2==0 else ['roslyn','nitride']:\n   cmd=[str(exe),'--native-syntax','--snapshot','csharp4',str(p)] if k=='nitride' else ['dotnet',str(dll),str(p),'0','1'];q=subprocess.run(cmd,capture_output=True,text=True);assert q.returncode==0,q.stderr;x=json.loads(q.stdout)\n   if k=='nitride':assert x['diagnostics']==0 and x['parse']['allocation_instrumented'] is False\n   else:assert x['samples'][0]['errors']==0 and x['samples'][0]['source_length']==p.stat().st_size\n   samples[k].append(x);out.write_text(json.dumps(r,indent=2)+'\\n')\n med={k:statistics.median(x['parse']['elapsed_ns'] if k=='nitride' else x['samples'][0]['elapsed_ns'] for x in a)/1e9 for k,a in samples.items()};row['median_seconds']=med;row['nitride_over_roslyn']=med['nitride']/med['roslyn'];q=subprocess.run(['dotnet',str(dll),str(p),'3','5'],capture_output=True,text=True);assert q.returncode==0,q.stderr;row['roslyn_warm']=json.loads(q.stdout);assert all(x['errors']==0 for x in row['roslyn_warm']['samples']);row['roslyn_warm_median_seconds']=statistics.median(x['elapsed_ns'] for x in row['roslyn_warm']['samples'])/1e9;out.write_text(json.dumps(r,indent=2)+'\\n');print(size,med,row['nitride_over_roslyn'],'warm',row['roslyn_warm_median_seconds'],flush=True)\nassert source_digest()==b['source_sha256'];r['complete']=True;r['controller_source']=Path(__file__).read_text();out.write_text(json.dumps(r,indent=2)+'\\n');print('Roslyn baseline complete',flush=True)\n"
+}

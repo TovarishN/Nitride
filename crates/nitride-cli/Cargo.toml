@@ -24,3 +24,7 @@ serde_json = "1"
 [build-dependencies]
 nitride-prepare = { path = "../nitride-prepare" }
 nitride-codegen = { path = "../nitride-codegen" }
+
+[features]
+# Measure latency with the ordinary default allocator; allocator metrics are null.
+uninstrumented-profiler = []

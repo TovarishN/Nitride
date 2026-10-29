@@ -1,6 +1,47 @@
 use super::grammar::{Code, Grammar, Instruction};
 use super::*;
-use crate::parser::StrictProbe;
+use crate::parser::shared::hash::FastMap;
+use crate::parser::{ProbeHit, StrictProbe};
+/// The notice for a local search that ran out of states and resumed.
+pub(crate) const EXHAUSTED: &str =
+    "local recovery search exhausted; resumed at a grammar continuation";
+pub(super) mod shared;
+mod source;
+use source::Source;
+
+trait Probe<'g> {
+    fn rule(&mut self, id: u16, at: usize, power: u32) -> Result<Option<ProbeHit>, Diagnostic>;
+    fn predicate(&mut self, expr: &'g Expr<'g>, at: usize) -> Result<bool, Diagnostic>;
+    fn commit(&mut self, roots: &mut [u32], keep_from: usize);
+    fn work(&self) -> u64;
+    fn selected(&mut self, _root: u32) {}
+    fn reusable_rule(&mut self, _id: u16, _at: usize) -> Result<Option<ProbeHit>, Diagnostic> {
+        Ok(None)
+    }
+    /// Whether a non-empty match of lexical rule `id` may begin with `c`.
+    fn may_consume(&self, _id: u16, _c: char) -> bool {
+        true
+    }
+    /// The end of lexical rule `id`'s match at `at`, if it matches.
+    fn token_end(&mut self, id: u16, at: usize) -> Result<Option<usize>, Diagnostic> {
+        Ok(self.rule(id, at, 0)?.map(|hit| hit.end))
+    }
+}
+impl<'g> Probe<'g> for StrictProbe<'g, '_> {
+    fn rule(&mut self, id: u16, at: usize, power: u32) -> Result<Option<ProbeHit>, Diagnostic> {
+        self.rule(id, at, power)
+    }
+    fn predicate(&mut self, expr: &'g Expr<'g>, at: usize) -> Result<bool, Diagnostic> {
+        self.predicate(expr, at)
+    }
+    fn commit(&mut self, roots: &mut [u32], keep_from: usize) {
+        self.commit(roots, keep_from)
+    }
+    fn work(&self) -> u64 {
+        self.work()
+    }
+}
+
 use std::collections::{BinaryHeap, HashMap, HashSet};
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
@@ -102,17 +143,21 @@ struct Prefix<'g> {
     power: u32,
     label: &'g str,
     furthest: usize,
+    /// The furthest observation of this checkpoint or any earlier one on its
+    /// chain, so a reopening walk stops once no remaining checkpoint covers
+    /// the failure.
+    reach: usize,
 }
 
 struct Tasks<'g> {
     nodes: Vec<(Task<'g>, u32)>,
-    known: HashMap<(Task<'g>, u32), u32>,
+    known: FastMap<(Task<'g>, u32), u32>,
 }
 impl<'g> Tasks<'g> {
     fn new() -> Self {
         Self {
             nodes: vec![(Task::End, 0)],
-            known: HashMap::new(),
+            known: FastMap::default(),
         }
     }
     fn push(&mut self, task: Task<'g>, next: u32) -> u32 {
@@ -133,27 +178,32 @@ type Rank = (
 );
 type StateKey = (u32, usize, usize, Option<usize>);
 type RepairRank = (u32, usize, u32);
-struct Engine<'g, 'a> {
+struct Engine<'g, 'a, P> {
     language: &'g Language<'g>,
-    source: &'a str,
+    source: Source<'a>,
     limits: Limits,
     options: RecoveryOptions,
     graph: Grammar<'g>,
-    probe: StrictProbe<'g, 'a>,
+    probe: P,
     tasks: Tasks<'g>,
     history: Vec<(u32, Event<'g>)>,
     committed_history: u32,
     states: Vec<State>,
     queue: BinaryHeap<(Rank, usize)>,
-    seen: HashMap<StateKey, RepairRank>,
+    seen: FastMap<StateKey, RepairRank>,
     stats: RecoveryStats,
     epoch_states: usize,
     serial: u64,
     best: Option<State>,
-    literal_tokens: Vec<&'g str>,
+    /// Distinct grammar literals, grouped by their first byte.
+    literal_tokens: Vec<Vec<&'g str>>,
     character_tokens: Vec<&'g Expr<'g>>,
     lexical: Vec<u16>,
     prefixes: Vec<Prefix<'g>>,
+    reused_batches: u64,
+    /// `starts` visit marks by code, current when equal to `start_epoch`.
+    start_seen: Vec<u32>,
+    start_epoch: u32,
 }
 
 pub(super) fn recover<'g>(
@@ -162,14 +212,45 @@ pub(super) fn recover<'g>(
     limits: Limits,
     options: RecoveryOptions,
 ) -> RecoveredParse<'g> {
+    let mut engine = engine(
+        language,
+        Source::Flat(source),
+        limits,
+        options,
+        StrictProbe::new(language, source, limits),
+    );
+    match engine.run() {
+        Ok(state) => engine.finish(state, None),
+        Err(error) => {
+            if let Some(state) = engine.best.clone() {
+                engine.finish(state, Some(error))
+            } else {
+                tree::fallback(language, source, error)
+            }
+        }
+    }
+}
+
+fn engine<'g, 'a, P: Probe<'g>>(
+    language: &'g Language<'g>,
+    source: Source<'a>,
+    limits: Limits,
+    options: RecoveryOptions,
+    probe: P,
+) -> Engine<'g, 'a, P> {
     let graph = Grammar::new(language);
-    let mut literal_tokens = Vec::new();
+    let mut literal_tokens = vec![Vec::new(); 256];
     let mut character_tokens = Vec::new();
     for rule in language.rules.iter().filter(|r| !r.lexical) {
         let mut pending = vec![&rule.expr];
         while let Some(expr) = pending.pop() {
             match expr {
-                Expr::Literal(s) if !s.is_empty() => literal_tokens.push(*s),
+                Expr::Literal(s) if !s.is_empty() => {
+                    let group: &mut Vec<&str> = &mut literal_tokens[s.as_bytes()[0] as usize];
+                    if !group.contains(s) {
+                        group.push(*s);
+                    }
+                }
                 Expr::Class(_) | Expr::NotClass(_) | Expr::Any => character_tokens.push(expr),
                 Expr::Sequence(parts) | Expr::Choice(parts) => pending.extend(parts.iter()),
                 Expr::Label(_, inner) | Expr::Repeat { inner, .. } => pending.push(inner),
@@ -190,13 +271,13 @@ pub(super) fn recover<'g>(
         limits,
         options,
         graph,
-        probe: StrictProbe::new(language, source, limits),
+        probe,
         tasks: Tasks::new(),
         history: vec![(0, Event::Close { end: 0 })],
         committed_history: 0,
         states: vec![],
         queue: BinaryHeap::new(),
-        seen: HashMap::new(),
+        seen: FastMap::default(),
         stats: RecoveryStats::default(),
         epoch_states: 0,
         serial: 0,
@@ -205,6 +286,9 @@ pub(super) fn recover<'g>(
         character_tokens,
         lexical,
         prefixes: Vec::new(),
+        reused_batches: 0,
+        start_seen: Vec::new(),
+        start_epoch: 0,
     };
     let end = engine.tasks.push(Task::End, 0);
     let stack = engine.tasks.push(
@@ -230,19 +314,10 @@ pub(super) fn recover<'g>(
         prefix: None,
         reopen_through: None,
     });
-    match engine.run() {
-        Ok(state) => engine.finish(state, None),
-        Err(error) => {
-            if let Some(state) = engine.best.clone() {
-                engine.finish(state, Some(error))
-            } else {
-                tree::fallback(language, source, error)
-            }
-        }
-    }
+    engine
 }
 
-impl<'g> Engine<'g, '_> {
+impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
     fn enqueue(&mut self, state: State) {
         if state.cost > self.options.max_local_cost
             || (state.cost > 0
@@ -278,6 +353,9 @@ impl<'g> Engine<'g, '_> {
         self.queue.push((priority, id));
     }
     fn event(&mut self, state: &mut State, event: Event<'g>) {
+        if let Event::Strict { root, .. } = event {
+            self.probe.selected(root);
+        }
         let id = self.history.len() as u32;
         self.history.push((state.history, event));
         state.history = id;
@@ -331,31 +409,21 @@ impl<'g> Engine<'g, '_> {
         Ok(())
     }
     fn trivia(&mut self, state: &mut State) {
-        loop {
-            let rest = &self.source[state.position..];
-            if let Some(c) = rest.chars().next().filter(|c| c.is_whitespace()) {
-                state.position += c.len_utf8();
-            } else if rest.starts_with("//") {
-                state.position += rest.find('\n').unwrap_or(rest.len());
-            } else if let Some(after_open) = rest.strip_prefix("/*") {
-                if let Some(end) = after_open.find("*/") {
-                    state.position += end + 4;
-                } else {
-                    break;
-                }
-            } else {
-                break;
-            }
-        }
+        state.position = self.source.trivia_end(state.position);
     }
     fn literal_end(&self, text: &str, at: usize) -> Option<usize> {
         let end = at.checked_add(text.len())?;
-        if !self.source.get(at..)?.starts_with(text) {
+        if !self.source.matches(at, text) {
             return None;
         }
         let keyword = text.starts_with(|c: char| c.is_alphabetic() || c == '_')
             && text.chars().all(|c| c.is_alphanumeric() || c == '_');
-        if keyword && self.source[end..].starts_with(|c: char| c.is_alphanumeric() || c == '_') {
+        if keyword
+            && self
+                .source
+                .character(end)
+                .is_some_and(|c| c.is_alphanumeric() || c == '_')
+        {
             return None;
         }
         Some(end)
@@ -364,11 +432,17 @@ impl<'g> Engine<'g, '_> {
     /// strictly by the interpreter. A visited set breaks nullable/ref cycles.
     fn starts(&mut self, code: Code, at: usize) -> Result<bool, Diagnostic> {
         let mut pending = vec![code];
-        let mut seen = HashSet::new();
+        if self.start_epoch == u32::MAX || self.start_seen.is_empty() {
+            self.start_seen = vec![0; self.graph.code.len()];
+            self.start_epoch = 0;
+        }
+        self.start_epoch += 1;
         while let Some(code) = pending.pop() {
-            if !seen.insert(code) {
+            let seen = &mut self.start_seen[code as usize];
+            if *seen == self.start_epoch {
                 continue;
             }
+            *seen = self.start_epoch;
             match &self.graph.code[code as usize] {
                 Instruction::Terminal(Expected::Literal(text), _) => {
                     if self.literal_end(text, at).is_some() {
@@ -414,17 +488,26 @@ impl<'g> Engine<'g, '_> {
     }
     fn recognized_end(&mut self, at: usize) -> Result<usize, Diagnostic> {
         let mut end = at;
-        for text in &self.literal_tokens {
+        // Only non-empty matches can raise the end, so a lexical rule that
+        // cannot consume the next character is not probed.
+        let Some(c) = self.source.character(at) else {
+            return Ok(end);
+        };
+        let first = c.encode_utf8(&mut [0; 4]).as_bytes()[0];
+        for text in &self.literal_tokens[first as usize] {
             end = end.max(self.literal_end(text, at).unwrap_or(at));
         }
         for id in &self.lexical {
-            if let Some(hit) = self.probe.rule(*id, at, 0)? {
-                end = end.max(hit.end);
+            if !self.probe.may_consume(*id, c) {
+                continue;
+            }
+            if let Some(token) = self.probe.token_end(*id, at)? {
+                end = end.max(token);
             }
         }
         for expr in &self.character_tokens {
             if self.probe.predicate(expr, at)? {
-                end = end.max(at + self.source[at..].chars().next().map_or(0, char::len_utf8));
+                end = end.max(at + self.source.character(at).map_or(0, char::len_utf8));
             }
         }
         Ok(end)
@@ -434,7 +517,7 @@ impl<'g> Engine<'g, '_> {
         Ok(if end > at {
             end
         } else {
-            at + self.source[at..].chars().next().map_or(0, char::len_utf8)
+            at + self.source.character(at).map_or(0, char::len_utf8)
         })
     }
     fn repair_base(&self, state: &mut State) {
@@ -445,10 +528,20 @@ impl<'g> Engine<'g, '_> {
         state.repairs += 1;
         state.clean = 0;
     }
+    fn checkpoint(&mut self, mut prefix: Prefix<'g>) -> usize {
+        prefix.reach = prefix.state.prefix.map_or(prefix.furthest, |parent| {
+            prefix.furthest.max(self.prefixes[parent].reach)
+        });
+        self.prefixes.push(prefix);
+        self.prefixes.len() - 1
+    }
     fn reopen_prefix(&mut self, state: &State) {
         let mut prefix = state.prefix;
         while let Some(index) = prefix {
             let checkpoint = &self.prefixes[index];
+            if state.position > checkpoint.reach {
+                break;
+            }
             prefix = checkpoint.state.prefix;
             if state.position <= checkpoint.furthest {
                 let mut alternative = checkpoint.state.clone();
@@ -505,11 +598,7 @@ impl<'g> Engine<'g, '_> {
         let end = if recognized > start {
             recognized
         } else {
-            start
-                + self.source[start..]
-                    .chars()
-                    .next()
-                    .map_or(0, char::len_utf8)
+            start + self.source.character(start).map_or(0, char::len_utf8)
         };
         if end == start {
             return Ok(());
@@ -586,9 +675,9 @@ impl<'g> Engine<'g, '_> {
                                         power,
                                         label,
                                         furthest: hit.furthest,
+                                        reach: 0,
                                     };
-                                    state.prefix = Some(self.prefixes.len());
-                                    self.prefixes.push(checkpoint);
+                                    state.prefix = Some(self.checkpoint(checkpoint));
                                 }
                                 state.position = hit.end;
                                 state.clean += 1;
@@ -659,10 +748,9 @@ impl<'g> Engine<'g, '_> {
                 Task::Close { id, start, .. } => {
                     let end = state.position;
                     self.event(&mut state, Event::Close { end });
-                    if self.language.rules[id as usize]
-                        .except
-                        .contains(&&self.source[start..state.position])
-                    {
+                    if self.language.rules[id as usize].except.iter().any(|text| {
+                        text.len() == state.position - start && self.source.matches(start, text)
+                    }) {
                         continue;
                     }
                 }
@@ -749,7 +837,7 @@ impl<'g> Engine<'g, '_> {
                             let end = match expected {
                                 Expected::Literal(text) => self.literal_end(text, at),
                                 _ => self.probe.predicate(expr, at)?.then(|| {
-                                    at + self.source[at..].chars().next().map_or(0, char::len_utf8)
+                                    at + self.source.character(at).map_or(0, char::len_utf8)
                                 }),
                             };
                             if let Some(end) = end {
@@ -769,6 +857,97 @@ impl<'g> Engine<'g, '_> {
                     max,
                     label,
                 } => {
+                    // A stable, clean list can replay already validated strict
+                    // items without queueing intermediate VM tasks. Cold parsing
+                    // and every repair hypothesis retain the original path.
+                    if max > 1
+                        && count >= min
+                        && state.cost == 0
+                        && self.queue.peek().is_none_or(|((cost, ..), _)| cost.0 > 0)
+                    {
+                        let mut inner = code;
+                        let mut item_label = label;
+                        while let Instruction::Label(name, next) = self.graph.code[inner as usize] {
+                            item_label = name;
+                            inner = next;
+                        }
+                        if let Instruction::Ref(id) = self.graph.code[inner as usize] {
+                            let mut accepted = 0;
+                            while accepted < 128 && count + accepted < max {
+                                let before = state.position;
+                                self.trivia(&mut state);
+                                let Some(hit) = self.probe.reusable_rule(id, state.position)?
+                                else {
+                                    state.position = before;
+                                    break;
+                                };
+                                if state.reopen_through.is_some_and(|target| {
+                                    hit.end < target && hit.furthest >= target
+                                }) {
+                                    state.position = before;
+                                    break;
+                                }
+                                if !self.language.rules[id as usize].lexical
+                                    && hit.furthest > hit.end
+                                {
+                                    let mut checkpoint = state.clone();
+                                    checkpoint.stack = self.tasks.push(
+                                        Task::AfterRepeat {
+                                            code,
+                                            count: count + accepted,
+                                            min,
+                                            max,
+                                            label,
+                                            start: state.position,
+                                            history: state.history,
+                                        },
+                                        state.stack,
+                                    );
+                                    state.prefix = Some(self.checkpoint(Prefix {
+                                        state: checkpoint,
+                                        id,
+                                        power: 0,
+                                        label: item_label,
+                                        furthest: hit.furthest,
+                                        reach: 0,
+                                    }));
+                                }
+                                state.position = hit.end;
+                                state.clean += 1;
+                                self.event(
+                                    &mut state,
+                                    Event::Strict {
+                                        root: hit.root,
+                                        label: item_label,
+                                    },
+                                );
+                                accepted += 1;
+                            }
+                            if accepted > 0 {
+                                if state.prefix.is_none() && self.queue.is_empty() {
+                                    self.commit(&mut state);
+                                    state.skipped = 0;
+                                    state.mandatory_skipped = 0;
+                                    state.missing = 0;
+                                    state.origin = state.position;
+                                }
+                                self.best = Some(state.clone());
+                                self.reused_batches += 1;
+                                self.push(
+                                    &mut state,
+                                    Task::Repeat {
+                                        code,
+                                        count: count + accepted,
+                                        min,
+                                        max,
+                                        label,
+                                    },
+                                );
+                                self.enqueue(state);
+                                continue;
+                            }
+                        }
+                    }
                     let before_trivia = state.position;
                     self.trivia(&mut state);
                     let starts = count < max && self.starts(code, state.position)?;
@@ -1060,7 +1239,7 @@ impl<'g> Engine<'g, '_> {
                 if max > 1 {
                     let mut at = best.position.max(start);
                     if at == start {
-                        at += self.source[at..].chars().next().map_or(0, char::len_utf8);
+                        at += self.source.character(at).map_or(0, char::len_utf8);
                     }
                     let bound = self
                         .source
@@ -1139,6 +1318,8 @@ impl<'g> Engine<'g, '_> {
             .predicate(self.graph.expressions[code as usize], at)
             .map(|yes| yes.then_some(()))
     }
+}
+impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
     fn finish(mut self, state: State, failure: Option<Diagnostic>) -> RecoveredParse<'g> {
         let mut events = Vec::new();
         let mut history = state.history;
@@ -1167,7 +1348,7 @@ impl<'g> Engine<'g, '_> {
                 let Ok(id) = u16::try_from(labels.len()) else {
                     return super::tree::fallback(
                         self.language,
-                        self.source,
+                        self.source.flat(),
                         Diagnostic::new("limit", [0, 0], "too many syntax edge labels"),
                     );
                 };
@@ -1180,11 +1361,9 @@ impl<'g> Engine<'g, '_> {
         let mut exhausted = Vec::new();
         for event in events {
             match event {
-                Event::Exhausted { at } => exhausted.push(Diagnostic::new(
-                    "limit",
-                    [at as u32; 2],
-                    "local recovery search exhausted; resumed at a grammar continuation",
-                )),
+                Event::Exhausted { at } => {
+                    exhausted.push(Diagnostic::new("limit", [at as u32; 2], EXHAUSTED))
+                }
                 Event::Open { id, start, label } => builder.frames.push(Frame {
                     id,
                     start,
@@ -1249,7 +1428,7 @@ impl<'g> Engine<'g, '_> {
             id
         };
         builder.nodes[root as usize].span = [0, self.source.len() as u32];
-        let mut diagnostics = repair_diagnostics(&repairs, self.source);
+        let mut diagnostics = repair_diagnostics(&repairs, self.source.flat());
         diagnostics.extend(exhausted);
         if let Some(error) = failure {
             diagnostics.push(error);
@@ -1278,7 +1457,7 @@ impl<'g> Engine<'g, '_> {
             .filter(|(_, n)| n.span[0] == n.span[1] && missing.contains(&(n.rule, n.span[0])))
             .map(|(id, _)| id as u32)
             .collect();
-        let coverage = coverage(self.source, &repairs, &builder.nodes, self.language);
+        let coverage = coverage(self.source.flat(), &repairs, &builder.nodes, self.language);
         self.stats.repair_count = repairs.len() as u64;
         self.stats.work += self.probe.work();
         builder.nodes.shrink_to_fit();
@@ -1287,7 +1466,7 @@ impl<'g> Engine<'g, '_> {
         RecoveredParse {
             tree: SyntaxTree {
                 language: self.language,
-                source: self.source.into(),
+                source: self.source.flat().into(),
                 nodes: builder.nodes,
                 edges: builder.edges,
                 labels: builder.labels,

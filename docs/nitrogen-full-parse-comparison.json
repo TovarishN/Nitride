@@ -1,0 +1,1931 @@
+{
+  "measured_at_utc": "2026-10-26T14:09:56.158195+00:00",
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "machine": "arm64",
+  "nitride_source_sha256": "805c559269dcefc14ae704b1b6df6f1efdd4a8fe317fb7c432a3b7ac0f9f2aff",
+  "nitride_profiler_sha256": "5b384ec26ed6bc353258b77c0327f2c070d3a6e6b350a143b74e085a7a07676a",
+  "nitrogen_revision": "ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+  "nitrogen_build_source_sha256": "3a3ebb6eaec891796c385bac920097c39a238387a4db169214cb30cbf98f096c",
+  "harness_project": "<Project Sdk=\"Microsoft.NET.Sdk\"><PropertyGroup><OutputType>Exe</OutputType><TargetFramework>net10.0</TargetFramework><ImplicitUsings>enable</ImplicitUsings><Nullable>enable</Nullable><AllowUnsafeBlocks>true</AllowUnsafeBlocks><RootNamespace>Nitride.NitrogenBench.CSharp4</RootNamespace></PropertyGroup><ItemGroup><CompilerVisibleProperty Include=\"RootNamespace\" /><CompilerVisibleItemMetadata Include=\"AdditionalFiles\" MetadataName=\"Namespace\" /><ProjectReference Include=\"/Users/dmitrikamenetski/work/Nitrogen/Nitrogen.Runtime/Nitrogen.Runtime.csproj\" /><ProjectReference Include=\"/Users/dmitrikamenetski/work/Nitrogen/Nitrogen.Generator/Nitrogen.Generator.csproj\" OutputItemType=\"Analyzer\" ReferenceOutputAssembly=\"false\" /><AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Core.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Lexical.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/NamesTypes.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Expressions.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Statements.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Attributes.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Declarations.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/CompilationUnits.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Unsafe.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/GlobalTargetsThird.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Generics.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/NullableValues.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/AnonymousMethods.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Iterators.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/DefaultValues.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/DeclarationForms.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/AliasQualification.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/GenericUnsafe.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/FixedBuffers.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Lambdas.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Queries.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/ObjectInitializers.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/AnonymousTypes.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/ImplicitArrays.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/ExtensionReceivers.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/GenericFollowersThird.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/NamedArguments.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/OptionalParameters.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/Variance.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" />\n<AdditionalFiles Include=\"/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/languages/csharp4/Grammars/GenericFollowersFourth.ngr\" Namespace=\"Nitride.NitrogenBench.CSharp4\" /></ItemGroup></Project>\n",
+  "harness_source": "using System.Diagnostics;\nusing System.Reflection;\nusing System.Runtime.InteropServices;\nusing System.Runtime;\nusing System.Text.Json;\nusing Nitrogen;\n\nvar source = File.ReadAllText(args[0]);\nvar warmups = int.Parse(args[1]);\nvar runs = int.Parse(args[2]);\nvar incremental = args[3] == \"incremental\";\nvar setup = Stopwatch.StartNew();\nvar assembly = Assembly.GetExecutingAssembly();\nvar modules = assembly.GetTypes()\n    .Where(t => t.Namespace == \"Nitride.NitrogenBench.CSharp4\" && typeof(SyntaxModule).IsAssignableFrom(t) && !t.IsAbstract)\n    .Select(t => t.GetProperty(\"Instance\", BindingFlags.Public | BindingFlags.Static)?.GetValue(null)\n        ?? t.GetField(\"Instance\", BindingFlags.Public | BindingFlags.Static)?.GetValue(null))\n    .OfType<SyntaxModule>().ToArray();\nif (modules.Length != 30) throw new Exception($\"Expected30 modules, got{modules.Length}\");\nvar builder = new LanguageBuilder();\nforeach (var module in modules) builder.Add(module);\nvar language = builder.Build();\nvar type = assembly.GetType(\"Nitride.NitrogenBench.CSharp4.CompilationUnitsModule\")!;\nvar member = type.GetMember(\"CompilationUnit\").Single();\nvar start = (Rule)(member is FieldInfo field ? field.GetValue(null)! : ((PropertyInfo)member).GetValue(null)!);\nsetup.Stop();\nParseResult Parse() => incremental ? language.ParseIncremental(source, start) : language.Parse(source, start);\nvoid Validate(ParseResult result) {\n    if (!result.Success || result.HasErrors || result.Tree.Text.Length != source.Length)\n        throw new Exception(\"Benchmark input rejected or errored\");\n}\nfor (int i=0; i<warmups; i++) { using var warm = Parse(); Validate(warm); }\nvar samples = new List<object>();\nfor (int i=0; i<runs; i++) {\n    var clock = Stopwatch.StartNew();\n    var result = Parse();\n    clock.Stop();\n    var elapsed = (long)clock.Elapsed.TotalNanoseconds;\n    Validate(result);\n    var span = result.Tree.Span(result.Tree.Root);\n    samples.Add(new {elapsed_ns=elapsed, errors=result.Diagnostics.Length, source_length=result.Tree.Text.Length,\n        nodes=result.Tree.NodeCount, root_span=new[]{span.Start,span.End}, incremental=result.IsIncremental,\n        stats=result.Stats});\n    GC.KeepAlive(result.Tree);\n    result.Dispose();\n}\nvar runtimeAssembly = typeof(Language).Assembly;\nConsole.WriteLine(JsonSerializer.Serialize(new {\n    nitrogen_version=runtimeAssembly.GetName().Version!.ToString(),\n    nitrogen_build=runtimeAssembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion,\n    runtime=RuntimeInformation.FrameworkDescription, architecture=RuntimeInformation.ProcessArchitecture.ToString(),\n    server_gc=GCSettings.IsServerGC, tiered_pgo=Environment.GetEnvironmentVariable(\"DOTNET_TieredPGO\"),\n    warmups, runs, mode=incremental?\"incremental-initial\":\"one-shot\", modules=modules.Length,\n    language_setup_ns=(long)setup.Elapsed.TotalNanoseconds, samples\n}));\n",
+  "harness_artifacts": {
+    "Bench": "e353176904ad75352c2d7c64a20343bd64ad18cbf9bf9ab6ca6ed4d6f82a2a81",
+    "Nitrogen.Runtime.dll": "19896429d1d2c8939b03d38a1c689b544925d8757e2dc27fb3a8fd4cad8f88db",
+    "Nitrogen.Runtime.pdb": "a1ad6b8c87a771a18fa6067c81e46394590ec858c4cc50b8d1e24c0f3b792c9f",
+    "Bench.pdb": "cb08ced25b6896c94f87ce609d91db9be67424ac560055c118fc95d2920a72c2",
+    "Bench.runtimeconfig.json": "9950d4583cfc9a106857c0d5b8a75b53e8774852b57b80bc3823a74d44a4d87f",
+    "Bench.deps.json": "ccb85777b3c3a9fafa9f7520dd82ea00335b9765a36b07563015892a8ce13f94",
+    "Bench.dll": "1ea97e025ea4615911893f5975b9d03a1528b4973b78ec6e4a433f4912781860"
+  },
+  "grammar_files": {
+    "Grammars/Core.ngr": "15bfd71d09d01c62f89e4ee01f38f7b4fd450c20a52321ce6fa8f6ebed846582",
+    "Grammars/Lexical.ngr": "a9da2f66268d3fb1110297a9566e9a1d12c4e8bd1dcb471db34ff5e2ba4ab558",
+    "Grammars/NamesTypes.ngr": "50c201a4786fbb7d4c9dec3f1e98376bd0ffc364c301d0011eea85a08e7c9db8",
+    "Grammars/Expressions.ngr": "a04ca5890e9ac573f2da958d3190d4ac7bf8d5abae4397d28b6bd1150ba46d8c",
+    "Grammars/Statements.ngr": "0377f4035de4f7d338b8015e828f8f8b336fbb1ffe11be1782c51ce0d9d67079",
+    "Grammars/Attributes.ngr": "fb4eef485934703ad3da340b29161e553be07e07ed4f199799542045ec8d7279",
+    "Grammars/Declarations.ngr": "75a9f37d3ab5cf71183c4692f53601b7bdd1ade040a7b7406d24cad23f25b764",
+    "Grammars/CompilationUnits.ngr": "5d963b5d399070ab8c37489ab9c8d0f85b15b584df8e512ee1ba3014ee91da81",
+    "Grammars/Unsafe.ngr": "12cc7ecf5e00ba464b40af6bec6f2c4221fdd3f0bf81d1dce3afaf37f4596931",
+    "Grammars/GlobalTargetsThird.ngr": "b3eb871626788dfe9853b74ea7fe57173d44048d9d7c6b63e5a3699dea7b95b3",
+    "Grammars/Generics.ngr": "3ce24d0d88ab89e0bc13be10642dfb82ebd779bab160b9b738f682509ddb9cd6",
+    "Grammars/NullableValues.ngr": "d2131a00fbfcfe861e5583c5af7b976f7589ceeeff350729d76d5adaa9116248",
+    "Grammars/AnonymousMethods.ngr": "670ff6fd3489e7b5a6e224ad7ffc3a0ea26afe90b331834883f93869411ce44c",
+    "Grammars/Iterators.ngr": "865a8b068c2273ec5960496b428a04294236e00ba57c465bf5a3a59fd251e91c",
+    "Grammars/DefaultValues.ngr": "7340fea025fca72bdefe614c6a3ee03a80458f8fbda95d804f50dc8848f4f5d9",
+    "Grammars/DeclarationForms.ngr": "aa6ec389b399a86eddcbfbb9594ec10027cdcbbefdcdc49dc77975d097dbc604",
+    "Grammars/AliasQualification.ngr": "ac3b25fba989c54870be1def143982d06acfd0682d2261578821459a286685e9",
+    "Grammars/GenericUnsafe.ngr": "e50e489e82a6e0b5159aa2129ac389941e0b4aacdcc53efd3bf2caebb57399af",
+    "Grammars/FixedBuffers.ngr": "fccd0af24edf2c2574a270b8d37a30c0c6a071ec02c1f73b5c4ed643c30f903e",
+    "Grammars/Lambdas.ngr": "57a30b107fbd64c97aee7758cb27bdb0d81eb1eea0accfb8052a97cac625fcf5",
+    "Grammars/Queries.ngr": "7fc1d68096a7fd25a5659e55193be360734e2c21bc590dc1ea87b56e1097bdd4",
+    "Grammars/ObjectInitializers.ngr": "dde6274e5a85578db960fa21b6c980a3ec1ab961ea9495236dd20270819e6fbc",
+    "Grammars/AnonymousTypes.ngr": "72dc2a8cd082c7ab77a03f63770b173f5738c51fbc45b81148d3f398f58957f3",
+    "Grammars/ImplicitArrays.ngr": "7356641a9a152580abc501da8e874b694f71976968385ff0b38e3204353d8cc8",
+    "Grammars/ExtensionReceivers.ngr": "09e3e96e642b2c5cd063679c2d8e5a16590c32b39ea4c20e18d824a030042a21",
+    "Grammars/GenericFollowersThird.ngr": "b429ace8eed80ce8ce89a3ff4ecd94dbbf6ae9ff926bf5419ff4735bc8761ffe",
+    "Grammars/NamedArguments.ngr": "af7f137cb0fc2506c88ffe073758db2ecb54167551a59dbc975752cecd41e301",
+    "Grammars/OptionalParameters.ngr": "9b67d5e2577aeb4cf79bf20204e9fef1be6b2546e2700d3da8769a16291a9caf",
+    "Grammars/Variance.ngr": "4719a73c8c438ce006e1a7a68c6356ae6e7cafa5635f593fd17f824b3a220797",
+    "Grammars/GenericFollowersFourth.ngr": "74cab733e02b04ff50342ae275b75ec00af9e8d37df4810863d4186b128e333f"
+  },
+  "protocol": "Same byte-identical generated valid C# inputs as the Roslyn/full-parse checkpoints,256KiB/4MiB/16MiB targets. Three fresh-process runs per backend/size with three-backend rotated order. Nitride Stage22 uninstrumented --native-syntax --snapshot; Nitrogen current0.19 Runtime/Generator from pinned sources, Language.Parse one-shot and Language.ParseIncremental initial parse. All are full parses. Separate Nitrogen process per size/mode does3 full warmup parses then5 measured full parses, disposing results outside measured time. No forced GC or concurrent builds/tests. Input I/O, process launch, .NET language/module construction, result validation, JSON serialization and disposal excluded. Nitride parse phase includes its SourceText creation, dispatch preparation, persistent syntax and dependency index. Nitrogen one-shot creates flat syntax without incremental reuse table; incremental-initial includes that table. Representations and metadata differ. Warm Nitrogen is a separate control, not a warmed Nitride measurement.",
+  "measurements": [
+    {
+      "size_target": 262144,
+      "source_bytes": 262212,
+      "source_sha256": "fb24d3b7883f34ab3c7774bbdb289f6d6e609ee81e386469e8cf3d5e6cb743f6",
+      "cold": {
+        "nitride": [
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 122815792,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 262212,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 653913,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 150907,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 169132,
+              "native_lexical_calls": 81651,
+              "native_lexical_work": 7257067,
+              "native_syntax_calls": 519057,
+              "native_syntax_tails": 21870,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 89456,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 262212,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 262212,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 2187783,
+              "winner_descendants_copied": 0,
+              "work": 15771241
+            },
+            "storage": {
+              "chunks": 56,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 702576,
+              "physical_retained_bytes": 4589656,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 262212,
+              "source_bytes": 262472,
+              "syntax_bytes": 3624560,
+              "syntax_payload_bytes": 3616080,
+              "unique_allocations": 5373
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 121860958,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 262212,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 653913,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 150907,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 169132,
+              "native_lexical_calls": 81651,
+              "native_lexical_work": 7257067,
+              "native_syntax_calls": 519057,
+              "native_syntax_tails": 21870,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 89552,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 262212,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 262212,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 2187783,
+              "winner_descendants_copied": 0,
+              "work": 15771241
+            },
+            "storage": {
+              "chunks": 56,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 702576,
+              "physical_retained_bytes": 4589656,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 262212,
+              "source_bytes": 262472,
+              "syntax_bytes": 3624560,
+              "syntax_payload_bytes": 3616080,
+              "unique_allocations": 5373
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 123455042,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 262212,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 653913,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 150907,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 169132,
+              "native_lexical_calls": 81651,
+              "native_lexical_work": 7257067,
+              "native_syntax_calls": 519057,
+              "native_syntax_tails": 21870,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 89520,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 262212,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 262212,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 2187783,
+              "winner_descendants_copied": 0,
+              "work": 15771241
+            },
+            "storage": {
+              "chunks": 56,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 702576,
+              "physical_retained_bytes": 4589656,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 262212,
+              "source_bytes": 262472,
+              "syntax_bytes": 3624560,
+              "syntax_payload_bytes": 3616080,
+              "unique_allocations": 5373
+            }
+          }
+        ],
+        "nitrogen_one_shot": [
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "one-shot",
+            "modules": 30,
+            "language_setup_ns": 48172000,
+            "samples": [
+              {
+                "elapsed_ns": 341835200,
+                "errors": 0,
+                "source_length": 262212,
+                "nodes": 207052,
+                "root_span": [
+                  0,
+                  262211
+                ],
+                "incremental": false,
+                "stats": {
+                  "ArenaNodes": 235483,
+                  "TreeNodes": 207052,
+                  "MemoHits": 58320,
+                  "MemoMisses": 223815,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "one-shot",
+            "modules": 30,
+            "language_setup_ns": 46315500,
+            "samples": [
+              {
+                "elapsed_ns": 341668900,
+                "errors": 0,
+                "source_length": 262212,
+                "nodes": 207052,
+                "root_span": [
+                  0,
+                  262211
+                ],
+                "incremental": false,
+                "stats": {
+                  "ArenaNodes": 235483,
+                  "TreeNodes": 207052,
+                  "MemoHits": 58320,
+                  "MemoMisses": 223815,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "one-shot",
+            "modules": 30,
+            "language_setup_ns": 48877500,
+            "samples": [
+              {
+                "elapsed_ns": 353798000,
+                "errors": 0,
+                "source_length": 262212,
+                "nodes": 207052,
+                "root_span": [
+                  0,
+                  262211
+                ],
+                "incremental": false,
+                "stats": {
+                  "ArenaNodes": 235483,
+                  "TreeNodes": 207052,
+                  "MemoHits": 58320,
+                  "MemoMisses": 223815,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          }
+        ],
+        "nitrogen_incremental_initial": [
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "incremental-initial",
+            "modules": 30,
+            "language_setup_ns": 45410100,
+            "samples": [
+              {
+                "elapsed_ns": 371197000,
+                "errors": 0,
+                "source_length": 262212,
+                "nodes": 207052,
+                "root_span": [
+                  0,
+                  262211
+                ],
+                "incremental": true,
+                "stats": {
+                  "ArenaNodes": 235483,
+                  "TreeNodes": 207052,
+                  "MemoHits": 58320,
+                  "MemoMisses": 223815,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "incremental-initial",
+            "modules": 30,
+            "language_setup_ns": 48592900,
+            "samples": [
+              {
+                "elapsed_ns": 373142100,
+                "errors": 0,
+                "source_length": 262212,
+                "nodes": 207052,
+                "root_span": [
+                  0,
+                  262211
+                ],
+                "incremental": true,
+                "stats": {
+                  "ArenaNodes": 235483,
+                  "TreeNodes": 207052,
+                  "MemoHits": 58320,
+                  "MemoMisses": 223815,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "incremental-initial",
+            "modules": 30,
+            "language_setup_ns": 46353900,
+            "samples": [
+              {
+                "elapsed_ns": 374630000,
+                "errors": 0,
+                "source_length": 262212,
+                "nodes": 207052,
+                "root_span": [
+                  0,
+                  262211
+                ],
+                "incremental": true,
+                "stats": {
+                  "ArenaNodes": 235483,
+                  "TreeNodes": 207052,
+                  "MemoHits": 58320,
+                  "MemoMisses": 223815,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "warm": {
+        "nitrogen_one_shot": {
+          "nitrogen_version": "0.19.0.0",
+          "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "runtime": ".NET 10.0.0",
+          "architecture": "Arm64",
+          "server_gc": false,
+          "tiered_pgo": null,
+          "warmups": 3,
+          "runs": 5,
+          "mode": "one-shot",
+          "modules": 30,
+          "language_setup_ns": 45335200,
+          "samples": [
+            {
+              "elapsed_ns": 89602500,
+              "errors": 0,
+              "source_length": 262212,
+              "nodes": 207052,
+              "root_span": [
+                0,
+                262211
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 235483,
+                "TreeNodes": 207052,
+                "MemoHits": 58320,
+                "MemoMisses": 223815,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 74613000,
+              "errors": 0,
+              "source_length": 262212,
+              "nodes": 207052,
+              "root_span": [
+                0,
+                262211
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 235483,
+                "TreeNodes": 207052,
+                "MemoHits": 58320,
+                "MemoMisses": 223815,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 75453000,
+              "errors": 0,
+              "source_length": 262212,
+              "nodes": 207052,
+              "root_span": [
+                0,
+                262211
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 235483,
+                "TreeNodes": 207052,
+                "MemoHits": 58320,
+                "MemoMisses": 223815,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 72915500,
+              "errors": 0,
+              "source_length": 262212,
+              "nodes": 207052,
+              "root_span": [
+                0,
+                262211
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 235483,
+                "TreeNodes": 207052,
+                "MemoHits": 58320,
+                "MemoMisses": 223815,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 70617100,
+              "errors": 0,
+              "source_length": 262212,
+              "nodes": 207052,
+              "root_span": [
+                0,
+                262211
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 235483,
+                "TreeNodes": 207052,
+                "MemoHits": 58320,
+                "MemoMisses": 223815,
+                "ReusedNodes": 0
+              }
+            }
+          ]
+        },
+        "nitrogen_incremental_initial": {
+          "nitrogen_version": "0.19.0.0",
+          "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "runtime": ".NET 10.0.0",
+          "architecture": "Arm64",
+          "server_gc": false,
+          "tiered_pgo": null,
+          "warmups": 3,
+          "runs": 5,
+          "mode": "incremental-initial",
+          "modules": 30,
+          "language_setup_ns": 46440400,
+          "samples": [
+            {
+              "elapsed_ns": 106523400,
+              "errors": 0,
+              "source_length": 262212,
+              "nodes": 207052,
+              "root_span": [
+                0,
+                262211
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 235483,
+                "TreeNodes": 207052,
+                "MemoHits": 58320,
+                "MemoMisses": 223815,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 93095700,
+              "errors": 0,
+              "source_length": 262212,
+              "nodes": 207052,
+              "root_span": [
+                0,
+                262211
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 235483,
+                "TreeNodes": 207052,
+                "MemoHits": 58320,
+                "MemoMisses": 223815,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 90031900,
+              "errors": 0,
+              "source_length": 262212,
+              "nodes": 207052,
+              "root_span": [
+                0,
+                262211
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 235483,
+                "TreeNodes": 207052,
+                "MemoHits": 58320,
+                "MemoMisses": 223815,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 92333100,
+              "errors": 0,
+              "source_length": 262212,
+              "nodes": 207052,
+              "root_span": [
+                0,
+                262211
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 235483,
+                "TreeNodes": 207052,
+                "MemoHits": 58320,
+                "MemoMisses": 223815,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 86159200,
+              "errors": 0,
+              "source_length": 262212,
+              "nodes": 207052,
+              "root_span": [
+                0,
+                262211
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 235483,
+                "TreeNodes": 207052,
+                "MemoHits": 58320,
+                "MemoMisses": 223815,
+                "ReusedNodes": 0
+              }
+            }
+          ]
+        }
+      },
+      "cold_median_seconds": {
+        "nitride": 0.122815792,
+        "nitrogen_one_shot": 0.3418352,
+        "nitrogen_incremental_initial": 0.3731421
+      },
+      "warm_median_seconds": {
+        "nitrogen_one_shot": 0.074613,
+        "nitrogen_incremental_initial": 0.0923331
+      },
+      "nitride_over_nitrogen_cold": {
+        "nitrogen_one_shot": 0.3592836314106914,
+        "nitrogen_incremental_initial": 0.3291394672431763
+      },
+      "nitride_mib_per_second": 2.036096871430961
+    },
+    {
+      "size_target": 4194304,
+      "source_bytes": 4194492,
+      "source_sha256": "bfa28dd3a2fa6c86836d2706d48026317228b2209d169ee355a7274f5ee2f919",
+      "cold": {
+        "nitride": [
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 1978769416,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 4194492,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 10163907,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 2345521,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 2628796,
+              "native_lexical_calls": 1269075,
+              "native_lexical_work": 113457291,
+              "native_syntax_calls": 8067681,
+              "native_syntax_tails": 339930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 1360128,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 4194492,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 4194492,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 34004385,
+              "winner_descendants_copied": 0,
+              "work": 245792223
+            },
+            "storage": {
+              "chunks": 867,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 10720360,
+              "physical_retained_bytes": 71243304,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 4194492,
+              "source_bytes": 4197376,
+              "syntax_bytes": 56325520,
+              "syntax_payload_bytes": 56202000,
+              "unique_allocations": 84611
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 1973670666,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 4194492,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 10163907,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 2345521,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 2628796,
+              "native_lexical_calls": 1269075,
+              "native_lexical_work": 113457291,
+              "native_syntax_calls": 8067681,
+              "native_syntax_tails": 339930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 1360448,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 4194492,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 4194492,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 34004385,
+              "winner_descendants_copied": 0,
+              "work": 245792223
+            },
+            "storage": {
+              "chunks": 867,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 10720360,
+              "physical_retained_bytes": 71243304,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 4194492,
+              "source_bytes": 4197376,
+              "syntax_bytes": 56325520,
+              "syntax_payload_bytes": 56202000,
+              "unique_allocations": 84611
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 1978495959,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 4194492,
+            "stats": {
+              "cache_evictions": 0,
+              "choice_plan_builds": 11,
+              "choice_skips": 10163907,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 2345521,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 2628796,
+              "native_lexical_calls": 1269075,
+              "native_lexical_work": 113457291,
+              "native_syntax_calls": 8067681,
+              "native_syntax_tails": 339930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 1360288,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 4194492,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 4194492,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 34004385,
+              "winner_descendants_copied": 0,
+              "work": 245792223
+            },
+            "storage": {
+              "chunks": 867,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 10720360,
+              "physical_retained_bytes": 71243304,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 4194492,
+              "source_bytes": 4197376,
+              "syntax_bytes": 56325520,
+              "syntax_payload_bytes": 56202000,
+              "unique_allocations": 84611
+            }
+          }
+        ],
+        "nitrogen_one_shot": [
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "one-shot",
+            "modules": 30,
+            "language_setup_ns": 45802600,
+            "samples": [
+              {
+                "elapsed_ns": 1342788700,
+                "errors": 0,
+                "source_length": 4194492,
+                "nodes": 3218020,
+                "root_span": [
+                  0,
+                  4194491
+                ],
+                "incremental": false,
+                "stats": {
+                  "ArenaNodes": 3659929,
+                  "TreeNodes": 3218020,
+                  "MemoHits": 906480,
+                  "MemoMisses": 3478629,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "one-shot",
+            "modules": 30,
+            "language_setup_ns": 48292000,
+            "samples": [
+              {
+                "elapsed_ns": 1368328500,
+                "errors": 0,
+                "source_length": 4194492,
+                "nodes": 3218020,
+                "root_span": [
+                  0,
+                  4194491
+                ],
+                "incremental": false,
+                "stats": {
+                  "ArenaNodes": 3659929,
+                  "TreeNodes": 3218020,
+                  "MemoHits": 906480,
+                  "MemoMisses": 3478629,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "one-shot",
+            "modules": 30,
+            "language_setup_ns": 46581700,
+            "samples": [
+              {
+                "elapsed_ns": 1375875400,
+                "errors": 0,
+                "source_length": 4194492,
+                "nodes": 3218020,
+                "root_span": [
+                  0,
+                  4194491
+                ],
+                "incremental": false,
+                "stats": {
+                  "ArenaNodes": 3659929,
+                  "TreeNodes": 3218020,
+                  "MemoHits": 906480,
+                  "MemoMisses": 3478629,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          }
+        ],
+        "nitrogen_incremental_initial": [
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "incremental-initial",
+            "modules": 30,
+            "language_setup_ns": 48032500,
+            "samples": [
+              {
+                "elapsed_ns": 1592253700,
+                "errors": 0,
+                "source_length": 4194492,
+                "nodes": 3218020,
+                "root_span": [
+                  0,
+                  4194491
+                ],
+                "incremental": true,
+                "stats": {
+                  "ArenaNodes": 3659929,
+                  "TreeNodes": 3218020,
+                  "MemoHits": 906480,
+                  "MemoMisses": 3478629,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "incremental-initial",
+            "modules": 30,
+            "language_setup_ns": 48467300,
+            "samples": [
+              {
+                "elapsed_ns": 1612759000,
+                "errors": 0,
+                "source_length": 4194492,
+                "nodes": 3218020,
+                "root_span": [
+                  0,
+                  4194491
+                ],
+                "incremental": true,
+                "stats": {
+                  "ArenaNodes": 3659929,
+                  "TreeNodes": 3218020,
+                  "MemoHits": 906480,
+                  "MemoMisses": 3478629,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "incremental-initial",
+            "modules": 30,
+            "language_setup_ns": 47750100,
+            "samples": [
+              {
+                "elapsed_ns": 1582085400,
+                "errors": 0,
+                "source_length": 4194492,
+                "nodes": 3218020,
+                "root_span": [
+                  0,
+                  4194491
+                ],
+                "incremental": true,
+                "stats": {
+                  "ArenaNodes": 3659929,
+                  "TreeNodes": 3218020,
+                  "MemoHits": 906480,
+                  "MemoMisses": 3478629,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "warm": {
+        "nitrogen_one_shot": {
+          "nitrogen_version": "0.19.0.0",
+          "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "runtime": ".NET 10.0.0",
+          "architecture": "Arm64",
+          "server_gc": false,
+          "tiered_pgo": null,
+          "warmups": 3,
+          "runs": 5,
+          "mode": "one-shot",
+          "modules": 30,
+          "language_setup_ns": 48168900,
+          "samples": [
+            {
+              "elapsed_ns": 798755400,
+              "errors": 0,
+              "source_length": 4194492,
+              "nodes": 3218020,
+              "root_span": [
+                0,
+                4194491
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 3659929,
+                "TreeNodes": 3218020,
+                "MemoHits": 906480,
+                "MemoMisses": 3478629,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 796950500,
+              "errors": 0,
+              "source_length": 4194492,
+              "nodes": 3218020,
+              "root_span": [
+                0,
+                4194491
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 3659929,
+                "TreeNodes": 3218020,
+                "MemoHits": 906480,
+                "MemoMisses": 3478629,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 814418200,
+              "errors": 0,
+              "source_length": 4194492,
+              "nodes": 3218020,
+              "root_span": [
+                0,
+                4194491
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 3659929,
+                "TreeNodes": 3218020,
+                "MemoHits": 906480,
+                "MemoMisses": 3478629,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 833832800,
+              "errors": 0,
+              "source_length": 4194492,
+              "nodes": 3218020,
+              "root_span": [
+                0,
+                4194491
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 3659929,
+                "TreeNodes": 3218020,
+                "MemoHits": 906480,
+                "MemoMisses": 3478629,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 802901000,
+              "errors": 0,
+              "source_length": 4194492,
+              "nodes": 3218020,
+              "root_span": [
+                0,
+                4194491
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 3659929,
+                "TreeNodes": 3218020,
+                "MemoHits": 906480,
+                "MemoMisses": 3478629,
+                "ReusedNodes": 0
+              }
+            }
+          ]
+        },
+        "nitrogen_incremental_initial": {
+          "nitrogen_version": "0.19.0.0",
+          "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "runtime": ".NET 10.0.0",
+          "architecture": "Arm64",
+          "server_gc": false,
+          "tiered_pgo": null,
+          "warmups": 3,
+          "runs": 5,
+          "mode": "incremental-initial",
+          "modules": 30,
+          "language_setup_ns": 48025400,
+          "samples": [
+            {
+              "elapsed_ns": 898203700,
+              "errors": 0,
+              "source_length": 4194492,
+              "nodes": 3218020,
+              "root_span": [
+                0,
+                4194491
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 3659929,
+                "TreeNodes": 3218020,
+                "MemoHits": 906480,
+                "MemoMisses": 3478629,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 892688200,
+              "errors": 0,
+              "source_length": 4194492,
+              "nodes": 3218020,
+              "root_span": [
+                0,
+                4194491
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 3659929,
+                "TreeNodes": 3218020,
+                "MemoHits": 906480,
+                "MemoMisses": 3478629,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 880390800,
+              "errors": 0,
+              "source_length": 4194492,
+              "nodes": 3218020,
+              "root_span": [
+                0,
+                4194491
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 3659929,
+                "TreeNodes": 3218020,
+                "MemoHits": 906480,
+                "MemoMisses": 3478629,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 882866000,
+              "errors": 0,
+              "source_length": 4194492,
+              "nodes": 3218020,
+              "root_span": [
+                0,
+                4194491
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 3659929,
+                "TreeNodes": 3218020,
+                "MemoHits": 906480,
+                "MemoMisses": 3478629,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 901170900,
+              "errors": 0,
+              "source_length": 4194492,
+              "nodes": 3218020,
+              "root_span": [
+                0,
+                4194491
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 3659929,
+                "TreeNodes": 3218020,
+                "MemoHits": 906480,
+                "MemoMisses": 3478629,
+                "ReusedNodes": 0
+              }
+            }
+          ]
+        }
+      },
+      "cold_median_seconds": {
+        "nitride": 1.978495959,
+        "nitrogen_one_shot": 1.3683285,
+        "nitrogen_incremental_initial": 1.5922537
+      },
+      "warm_median_seconds": {
+        "nitrogen_one_shot": 0.802901,
+        "nitrogen_incremental_initial": 0.8926882
+      },
+      "nitride_over_nitrogen_cold": {
+        "nitrogen_one_shot": 1.445921764400873,
+        "nitrogen_incremental_initial": 1.242575827583255
+      },
+      "nitride_mib_per_second": 2.021828385635578
+    },
+    {
+      "size_target": 16777216,
+      "source_bytes": 16777292,
+      "source_sha256": "92d0168144c734efaf090d7a82048a4149ff45481caacffd10a834e1c2fad508",
+      "cold": {
+        "nitride": [
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 8039101958,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 16777292,
+            "stats": {
+              "cache_evictions": 1263025,
+              "choice_plan_builds": 11,
+              "choice_skips": 40345024,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 8680856,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 9744763,
+              "native_lexical_calls": 5740491,
+              "native_lexical_work": 506889738,
+              "native_syntax_calls": 32075653,
+              "native_syntax_tails": 1335930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 4899264,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 16777292,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 16777292,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 134954271,
+              "winner_descendants_copied": 0,
+              "work": 1030258386
+            },
+            "storage": {
+              "chunks": 3404,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 39442984,
+              "physical_retained_bytes": 277588776,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 16777292,
+              "source_bytes": 16788528,
+              "syntax_bytes": 221357216,
+              "syntax_payload_bytes": 220874000,
+              "unique_allocations": 278235
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 8057632167,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 16777292,
+            "stats": {
+              "cache_evictions": 1263025,
+              "choice_plan_builds": 11,
+              "choice_skips": 40345024,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 8680856,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 9744763,
+              "native_lexical_calls": 5740491,
+              "native_lexical_work": 506889738,
+              "native_syntax_calls": 32075653,
+              "native_syntax_tails": 1335930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 4899904,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 16777292,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 16777292,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 134954271,
+              "winner_descendants_copied": 0,
+              "work": 1030258386
+            },
+            "storage": {
+              "chunks": 3404,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 39442984,
+              "physical_retained_bytes": 277588776,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 16777292,
+              "source_bytes": 16788528,
+              "syntax_bytes": 221357216,
+              "syntax_payload_bytes": 220874000,
+              "unique_allocations": 278235
+            }
+          },
+          {
+            "compiled_lexers": true,
+            "compiled_syntax": true,
+            "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+            "diagnostics": 0,
+            "language": "csharp4",
+            "metric": "requested System bytes; no implicit flat export/semantic indexing in shared strict mode; recovery fallback is explicit; excludes caller input and OS/thread mappings",
+            "parse": {
+              "allocation_count": null,
+              "allocation_instrumented": false,
+              "baseline_live_bytes": null,
+              "elapsed_ns": 8137287834,
+              "net_retained_bytes": null,
+              "peak_bytes": null,
+              "retained_bytes": null
+            },
+            "source_bytes": 16777292,
+            "stats": {
+              "cache_evictions": 1263025,
+              "choice_plan_builds": 11,
+              "choice_skips": 40345024,
+              "export_nodes_copied": 0,
+              "full_parse_fallbacks": 0,
+              "lexical_cache_hits": 8680856,
+              "maintenance_passes": 0,
+              "memo_descendants_copied": 0,
+              "memo_hits": 9744763,
+              "native_lexical_calls": 5740491,
+              "native_lexical_work": 506889738,
+              "native_syntax_calls": 32075653,
+              "native_syntax_tails": 1335930,
+              "probe_descendants_copied": 0,
+              "reclaimed_syntax_bytes": 4900304,
+              "recovery_batches": 0,
+              "recovery_child_bytes": 0,
+              "recovery_coverage_bytes": 0,
+              "recovery_metadata_work": 0,
+              "reparsed_bytes": 16777292,
+              "reused_subtrees": 0,
+              "source_bytes_copied": 16777292,
+              "syntax_bytes_copied": 0,
+              "trivia_fast_skips": 134954271,
+              "winner_descendants_copied": 0,
+              "work": 1030258386
+            },
+            "storage": {
+              "chunks": 3404,
+              "engine_retained_bytes": null,
+              "export_retained_bytes": null,
+              "index_bytes": 39442984,
+              "physical_retained_bytes": 277588776,
+              "representation": "shared",
+              "sidecar_bytes": 48,
+              "source_buffer_bytes": 16777292,
+              "source_bytes": 16788528,
+              "syntax_bytes": 221357216,
+              "syntax_payload_bytes": 220874000,
+              "unique_allocations": 278235
+            }
+          }
+        ],
+        "nitrogen_one_shot": [
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "one-shot",
+            "modules": 30,
+            "language_setup_ns": 47384800,
+            "samples": [
+              {
+                "elapsed_ns": 4345059200,
+                "errors": 0,
+                "source_length": 16777292,
+                "nodes": 12646820,
+                "root_span": [
+                  0,
+                  16777291
+                ],
+                "incremental": false,
+                "stats": {
+                  "ArenaNodes": 14383529,
+                  "TreeNodes": 12646820,
+                  "MemoHits": 3562480,
+                  "MemoMisses": 13671029,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "one-shot",
+            "modules": 30,
+            "language_setup_ns": 48770500,
+            "samples": [
+              {
+                "elapsed_ns": 4475139000,
+                "errors": 0,
+                "source_length": 16777292,
+                "nodes": 12646820,
+                "root_span": [
+                  0,
+                  16777291
+                ],
+                "incremental": false,
+                "stats": {
+                  "ArenaNodes": 14383529,
+                  "TreeNodes": 12646820,
+                  "MemoHits": 3562480,
+                  "MemoMisses": 13671029,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "one-shot",
+            "modules": 30,
+            "language_setup_ns": 47378700,
+            "samples": [
+              {
+                "elapsed_ns": 4237103500,
+                "errors": 0,
+                "source_length": 16777292,
+                "nodes": 12646820,
+                "root_span": [
+                  0,
+                  16777291
+                ],
+                "incremental": false,
+                "stats": {
+                  "ArenaNodes": 14383529,
+                  "TreeNodes": 12646820,
+                  "MemoHits": 3562480,
+                  "MemoMisses": 13671029,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          }
+        ],
+        "nitrogen_incremental_initial": [
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "incremental-initial",
+            "modules": 30,
+            "language_setup_ns": 49354100,
+            "samples": [
+              {
+                "elapsed_ns": 5069167300,
+                "errors": 0,
+                "source_length": 16777292,
+                "nodes": 12646820,
+                "root_span": [
+                  0,
+                  16777291
+                ],
+                "incremental": true,
+                "stats": {
+                  "ArenaNodes": 14383529,
+                  "TreeNodes": 12646820,
+                  "MemoHits": 3562480,
+                  "MemoMisses": 13671029,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "incremental-initial",
+            "modules": 30,
+            "language_setup_ns": 46693000,
+            "samples": [
+              {
+                "elapsed_ns": 4942843300,
+                "errors": 0,
+                "source_length": 16777292,
+                "nodes": 12646820,
+                "root_span": [
+                  0,
+                  16777291
+                ],
+                "incremental": true,
+                "stats": {
+                  "ArenaNodes": 14383529,
+                  "TreeNodes": 12646820,
+                  "MemoHits": 3562480,
+                  "MemoMisses": 13671029,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          },
+          {
+            "nitrogen_version": "0.19.0.0",
+            "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+            "runtime": ".NET 10.0.0",
+            "architecture": "Arm64",
+            "server_gc": false,
+            "tiered_pgo": null,
+            "warmups": 0,
+            "runs": 1,
+            "mode": "incremental-initial",
+            "modules": 30,
+            "language_setup_ns": 50108600,
+            "samples": [
+              {
+                "elapsed_ns": 6030959800,
+                "errors": 0,
+                "source_length": 16777292,
+                "nodes": 12646820,
+                "root_span": [
+                  0,
+                  16777291
+                ],
+                "incremental": true,
+                "stats": {
+                  "ArenaNodes": 14383529,
+                  "TreeNodes": 12646820,
+                  "MemoHits": 3562480,
+                  "MemoMisses": 13671029,
+                  "ReusedNodes": 0
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "warm": {
+        "nitrogen_one_shot": {
+          "nitrogen_version": "0.19.0.0",
+          "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "runtime": ".NET 10.0.0",
+          "architecture": "Arm64",
+          "server_gc": false,
+          "tiered_pgo": null,
+          "warmups": 3,
+          "runs": 5,
+          "mode": "one-shot",
+          "modules": 30,
+          "language_setup_ns": 47071700,
+          "samples": [
+            {
+              "elapsed_ns": 3323860700,
+              "errors": 0,
+              "source_length": 16777292,
+              "nodes": 12646820,
+              "root_span": [
+                0,
+                16777291
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 14383529,
+                "TreeNodes": 12646820,
+                "MemoHits": 3562480,
+                "MemoMisses": 13671029,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 3357566300,
+              "errors": 0,
+              "source_length": 16777292,
+              "nodes": 12646820,
+              "root_span": [
+                0,
+                16777291
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 14383529,
+                "TreeNodes": 12646820,
+                "MemoHits": 3562480,
+                "MemoMisses": 13671029,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 3918158500,
+              "errors": 0,
+              "source_length": 16777292,
+              "nodes": 12646820,
+              "root_span": [
+                0,
+                16777291
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 14383529,
+                "TreeNodes": 12646820,
+                "MemoHits": 3562480,
+                "MemoMisses": 13671029,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 4059686700,
+              "errors": 0,
+              "source_length": 16777292,
+              "nodes": 12646820,
+              "root_span": [
+                0,
+                16777291
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 14383529,
+                "TreeNodes": 12646820,
+                "MemoHits": 3562480,
+                "MemoMisses": 13671029,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 3330265600,
+              "errors": 0,
+              "source_length": 16777292,
+              "nodes": 12646820,
+              "root_span": [
+                0,
+                16777291
+              ],
+              "incremental": false,
+              "stats": {
+                "ArenaNodes": 14383529,
+                "TreeNodes": 12646820,
+                "MemoHits": 3562480,
+                "MemoMisses": 13671029,
+                "ReusedNodes": 0
+              }
+            }
+          ]
+        },
+        "nitrogen_incremental_initial": {
+          "nitrogen_version": "0.19.0.0",
+          "nitrogen_build": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "runtime": ".NET 10.0.0",
+          "architecture": "Arm64",
+          "server_gc": false,
+          "tiered_pgo": null,
+          "warmups": 3,
+          "runs": 5,
+          "mode": "incremental-initial",
+          "modules": 30,
+          "language_setup_ns": 48113500,
+          "samples": [
+            {
+              "elapsed_ns": 3720324500,
+              "errors": 0,
+              "source_length": 16777292,
+              "nodes": 12646820,
+              "root_span": [
+                0,
+                16777291
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 14383529,
+                "TreeNodes": 12646820,
+                "MemoHits": 3562480,
+                "MemoMisses": 13671029,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 3654369700,
+              "errors": 0,
+              "source_length": 16777292,
+              "nodes": 12646820,
+              "root_span": [
+                0,
+                16777291
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 14383529,
+                "TreeNodes": 12646820,
+                "MemoHits": 3562480,
+                "MemoMisses": 13671029,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 3674471700,
+              "errors": 0,
+              "source_length": 16777292,
+              "nodes": 12646820,
+              "root_span": [
+                0,
+                16777291
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 14383529,
+                "TreeNodes": 12646820,
+                "MemoHits": 3562480,
+                "MemoMisses": 13671029,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 3736977900,
+              "errors": 0,
+              "source_length": 16777292,
+              "nodes": 12646820,
+              "root_span": [
+                0,
+                16777291
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 14383529,
+                "TreeNodes": 12646820,
+                "MemoHits": 3562480,
+                "MemoMisses": 13671029,
+                "ReusedNodes": 0
+              }
+            },
+            {
+              "elapsed_ns": 3722359000,
+              "errors": 0,
+              "source_length": 16777292,
+              "nodes": 12646820,
+              "root_span": [
+                0,
+                16777291
+              ],
+              "incremental": true,
+              "stats": {
+                "ArenaNodes": 14383529,
+                "TreeNodes": 12646820,
+                "MemoHits": 3562480,
+                "MemoMisses": 13671029,
+                "ReusedNodes": 0
+              }
+            }
+          ]
+        }
+      },
+      "cold_median_seconds": {
+        "nitride": 8.057632167,
+        "nitrogen_one_shot": 4.3450592,
+        "nitrogen_incremental_initial": 5.0691673
+      },
+      "warm_median_seconds": {
+        "nitrogen_one_shot": 3.3575663,
+        "nitrogen_incremental_initial": 3.7203245
+      },
+      "nitride_over_nitrogen_cold": {
+        "nitrogen_one_shot": 1.8544355315112853,
+        "nitrogen_incremental_initial": 1.5895376282017757
+      },
+      "nitride_mib_per_second": 1.985704006789523
+    }
+  ],
+  "failures": [],
+  "complete": true,
+  "nitrogen_source_and_status_unchanged": true,
+  "controller_source": "from pathlib import Path\nimport sys,json,subprocess,hashlib,statistics,platform,datetime,shutil\nsys.path.insert(0,'scripts');from shared_subtrees import source_digest\nfrom csharp4_scaling import generated\nroot=Path.cwd();w=root/'.superpowers/sdd/2026-10-26-nitrogen-comparison';setup=json.loads((w/'setup.json').read_text());folder=Path(setup['harness_directory']);dll=folder/'artifacts/bin/Bench/release/Bench.dll';frozen=w/'nitrogen-bench';assert not frozen.exists();shutil.copytree(dll.parent,frozen);dll=frozen/'Bench.dll';ng=Path('/Users/dmitrikamenetski/work/Nitrogen');nitride=w/'nitride-profile'\nassert source_digest()==setup['nitride_source_sha256'];assert hashlib.sha256(nitride.read_bytes()).hexdigest()==setup['nitride_profiler_sha256']\nr={'measured_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'host':platform.platform(),'machine':platform.machine(),'nitride_source_sha256':setup['nitride_source_sha256'],'nitride_profiler_sha256':setup['nitride_profiler_sha256'],'nitrogen_revision':setup['nitrogen_revision'],'nitrogen_build_source_sha256':setup['nitrogen_build_source_sha256'],'harness_project':setup['harness_project'],'harness_source':setup['harness_source'],'harness_artifacts':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in frozen.iterdir() if p.is_file()},'grammar_files':setup['grammar_files'],'protocol':'Same byte-identical generated valid C# inputs as the Roslyn/full-parse checkpoints,256KiB/4MiB/16MiB targets. Three fresh-process runs per backend/size with three-backend rotated order. Nitride Stage22 uninstrumented --native-syntax --snapshot; Nitrogen current0.19 Runtime/Generator from pinned sources, Language.Parse one-shot and Language.ParseIncremental initial parse. All are full parses. Separate Nitrogen process per size/mode does3 full warmup parses then5 measured full parses, disposing results outside measured time. No forced GC or concurrent builds/tests. Input I/O, process launch, .NET language/module construction, result validation, JSON serialization and disposal excluded. Nitride parse phase includes its SourceText creation, dispatch preparation, persistent syntax and dependency index. Nitrogen one-shot creates flat syntax without incremental reuse table; incremental-initial includes that table. Representations and metadata differ. Warm Nitrogen is a separate control, not a warmed Nitride measurement.','measurements':[],'failures':[]}\nout=root/'docs/nitrogen-full-parse-comparison.json';assert not out.exists()\ndef save():out.write_text(json.dumps(r,indent=2)+'\\n')\ndef invoke(command):\n p=subprocess.run([str(x) for x in command],capture_output=True,text=True)\n if p.returncode:raise RuntimeError(f'{command}: exit{p.returncode}: {p.stderr}')\n return json.loads(p.stdout)\nprior=json.loads((root/'docs/stage22-paired.json').read_text())\nfor size in [262144,4194304,16777216]:\n source=generated(size);path=folder/'input.cs';path.write_text(source);sha=hashlib.sha256(path.read_bytes()).hexdigest();assert sha==next(m for m in prior['measurements'] if m['size_target']==size)['source_sha256'];cold={'nitride':[],'nitrogen_one_shot':[],'nitrogen_incremental_initial':[]};row={'size_target':size,'source_bytes':len(source.encode()),'source_sha256':sha,'cold':cold,'warm':{}};r['measurements'].append(row)\n backends=list(cold)\n for run in range(3):\n  for backend in backends[run:]+backends[:run]:\n   if backend=='nitride':\n    x=invoke([nitride,'--native-syntax','--snapshot','csharp4',path]);assert x['diagnostics']==0 and x['parse']['allocation_instrumented'] is False and x['compiled_syntax'];assert x['source_bytes']==len(source.encode())\n   else:\n    x=invoke(['dotnet',dll,path,0,1,'incremental' if backend.endswith('initial') else 'oneshot']);assert len(x['samples'])==1 and x['samples'][0]['errors']==0 and x['samples'][0]['source_length']==len(source);assert x['samples'][0]['incremental']==backend.endswith('initial')\n   cold[backend].append(x);save();print(size,'cold',run,backend, x['parse']['elapsed_ns']/1e9 if backend=='nitride' else x['samples'][0]['elapsed_ns']/1e9,flush=True)\n row['cold_median_seconds']={k:statistics.median(x['parse']['elapsed_ns'] if k=='nitride' else x['samples'][0]['elapsed_ns'] for x in samples)/1e9 for k,samples in cold.items()}\n for backend,mode in [('nitrogen_one_shot','oneshot'),('nitrogen_incremental_initial','incremental')]:\n  x=invoke(['dotnet',dll,path,3,5,mode]);assert len(x['samples'])==5 and all(s['errors']==0 and s['source_length']==len(source) for s in x['samples']);row['warm'][backend]=x;save();print(size,'warm',backend,statistics.median(s['elapsed_ns'] for s in x['samples'])/1e9,flush=True)\n row['warm_median_seconds']={k:statistics.median(s['elapsed_ns'] for s in x['samples'])/1e9 for k,x in row['warm'].items()};row['nitride_over_nitrogen_cold']={k:row['cold_median_seconds']['nitride']/v for k,v in row['cold_median_seconds'].items() if k!='nitride'};row['nitride_mib_per_second']=(row['source_bytes']/(1<<20))/row['cold_median_seconds']['nitride'];save();print('SIZE COMPLETE',size,row['cold_median_seconds'],row['warm_median_seconds'],flush=True)\nassert source_digest()==setup['nitride_source_sha256'];assert subprocess.check_output(['git','-C',str(ng),'status','--porcelain'],text=True)==setup['nitrogen_status_before'];assert subprocess.check_output(['git','-C',str(ng),'rev-parse','HEAD'],text=True).strip()==setup['nitrogen_revision']\nfor name,sha in setup['nitrogen_source_files'].items():assert hashlib.sha256((ng/name).read_bytes()).hexdigest()==sha,name\nfor name,sha in setup['grammar_files'].items():assert hashlib.sha256((root/'languages/csharp4'/name).read_bytes()).hexdigest()==sha,name\nr['complete']=True;r['nitrogen_source_and_status_unchanged']=True;r['controller_source']=Path(__file__).read_text();save();print('COMPLETE',flush=True)\n",
+  "validation": {
+    "cold_measured_samples": 27,
+    "warm_measured_samples": 30,
+    "warmup_parses": 18,
+    "all_inputs_accepted_without_diagnostics": true,
+    "nitrogen_plain_and_incremental_node_counts_match": true,
+    "invalid_suffix_negative_controls": [
+      {
+        "mode": "oneshot",
+        "returncode": -6,
+        "expected_message": true
+      },
+      {
+        "mode": "incremental",
+        "returncode": -6,
+        "expected_message": true
+      }
+    ],
+    "nitride_source_and_active_binary_unchanged": true,
+    "nitrogen_source_and_status_unchanged": true
+  }
+}

@@ -66,3 +66,19 @@ impl<'g> SyntaxTree<'g> {
             + self.recovery.as_ref().map_or(0, |r| r.retained_bytes())
     }
 }
+
+pub(crate) mod sequence;
+pub(crate) mod text;
+pub use text::{SourceText, TextEdit};
+pub(crate) mod arena;
+pub use arena::SubtreeId;
+pub(crate) mod shared;
+pub use shared::{NodeView, ParseSnapshot, SnapshotMode, SnapshotStats, StorageStats};
+
+pub(crate) mod access;
+pub use access::{compile_snapshot, compile_snapshot_recovering};
+
+pub(crate) mod memory;
+pub use shared::shared_storage_bytes;
+
+pub(crate) mod sidecars;

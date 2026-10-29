@@ -1,7 +1,16 @@
 use serde_json::{Value, json};
 
 fn fixture() -> Value {
-    serde_json::from_str(include_str!("../../../languages/rewrites/language.json")).unwrap()
+    serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/rewrites/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap()
 }
 
 fn rule<'a>(d: &'a mut Value, name: &str) -> &'a mut Value {

@@ -3,3 +3,12 @@
 /tools/**/obj/
 __pycache__/
 .superpowers/
+
+# Generated build outputs at any depth.
+bin/
+obj/
+target/
+/prepared-*.json
+
+# Exported language tables; prepare from project.json instead.
+/languages/*/language.json

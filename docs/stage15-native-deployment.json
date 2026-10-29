@@ -1,0 +1,15 @@
+{
+  "source_directory": "/private/var/folders/vx/sr5h142j4b51c8_zc2g53syr0000gn/T/nitride-shared-source-only-cs3bbll8",
+  "dotnet_on_path": false,
+  "offline_build": true,
+  "copied_source_files": 253,
+  "cli_bytes": 1667808,
+  "cli_sha256": "4c2bb7f5353ea5ef36f479dca73a3956f4be679ebe83693d06a01b023713f4ca",
+  "core_third_party_dependencies": 0,
+  "checks": [
+    "prepare CSharp4",
+    "recover CSharp4 and following method",
+    "shared recovered snapshot profiler"
+  ],
+  "snapshot_fallbacks": 0
+}

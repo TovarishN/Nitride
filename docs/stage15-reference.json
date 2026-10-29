@@ -1,0 +1,67 @@
+{
+  "reference_binaries": {
+    "origin": "Copied existing development reference binaries from primary Nitride checkout; sibling Nitrogen unchanged",
+    "binaries": {
+      "tools/Nitride.Reference/bin/Debug/net10.0/Nitride.Reference.dll": "37f40c362549ecc520fde04e78fe2d3661bbe001c74773059a53216871dd92d4",
+      "tools/Nitride.RecoveryReference/bin/Debug/net10.0/Nitride.RecoveryReference.dll": "286111fc4c50f037708b9d705d987b82da50a1a86152dae98ce3acdd93b1d8e0"
+    }
+  },
+  "checks": [
+    {
+      "script": "test_reference.py",
+      "returncode": 0
+    },
+    {
+      "script": "test_composition.py",
+      "returncode": 0
+    },
+    {
+      "script": "test_recovery_metrics.py",
+      "returncode": 0
+    },
+    {
+      "script": "check_reference.py",
+      "returncode": 0
+    },
+    {
+      "script": "differential.py",
+      "returncode": 0
+    },
+    {
+      "script": "stage2_differential.py",
+      "returncode": 0
+    },
+    {
+      "script": "namespaces_reference.py",
+      "returncode": 0
+    },
+    {
+      "script": "inference_reference.py",
+      "returncode": 0
+    },
+    {
+      "script": "calls_reference.py",
+      "returncode": 0
+    },
+    {
+      "script": "functions_reference.py",
+      "returncode": 0
+    },
+    {
+      "script": "dates_reference.py",
+      "returncode": 0
+    },
+    {
+      "script": "rewrites_reference.py",
+      "returncode": 0
+    },
+    {
+      "script": "csharp4_reference.py",
+      "returncode": 0
+    },
+    {
+      "script": "prepare_parity.py",
+      "returncode": 0
+    }
+  ]
+}

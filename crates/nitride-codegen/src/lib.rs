@@ -1,3 +1,5 @@
+mod lexical;
+mod syntax;
 use serde_json::Value;
 mod runtime;
 pub use runtime::LoadedLanguage;
@@ -755,8 +757,10 @@ pub fn generate(input: &str) -> Result<String, String> {
             }
         }
     }
+    let lexers = lexical::generate(rules, &ids)?;
+    let parser = syntax::generate(rules, &ids)?;
     Ok(format!(
-        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},helpers:{},source_hash:{},profile:Profile::{}}};\n",
+        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},helpers:{},source_hash:{},profile:Profile::{}}};\n{lexers}{parser}",
         list(output_rules),
         list(types.into_iter().map(quoted)),
         list(signatures),

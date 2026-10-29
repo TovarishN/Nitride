@@ -1,0 +1,23 @@
+{
+  "source_sha256": "f19077f2e0b8e6ec2004d71bb287da77ee90e477abb1c9c411d6f1cc7140c439",
+  "instrumented_cold_samples": 45,
+  "uninstrumented_cold_samples_shared_and_legacy": 36,
+  "edit_cases": 96,
+  "timed_edits": 9600,
+  "warmup_edits": 960,
+  "zero_descendant_copy_samples": 10608,
+  "explicit_cold_fallback_samples": 15,
+  "instrumented_failed_gates": 17,
+  "uninstrumented_failed_gates": 6,
+  "performance_admitted": false,
+  "edit_gates_pass": true,
+  "retained_gates_pass": true,
+  "independent_final_post_fix_review": false,
+  "reports_sha256": {
+    "stage15-scaling.json": "9c726ed1ac4ad68ef265c9be88de987bef858cd191dd544042962a3ebccda70d",
+    "stage15-latency-uninstrumented.json": "c6b4ce3f88c745d2ac1415511d66b0c89698e4d3e0c1461145526f8613187932",
+    "stage15-differential.json": "6e1e3c406158cbb6596aa95dd0a4e72ec5e67322583328bf9a1d6c16d1691f14",
+    "stage15-adversarial-shared.json": "35bc2b3b54557d3e809c64528a3fcd3c71229b5fc2abea536280dd56c8c71b18",
+    "stage15-lifetime.json": "13d8c368886f4fe81ce7653b2bde172926bd50174872f24ca12b4f6122a441ed"
+  }
+}

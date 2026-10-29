@@ -79,6 +79,13 @@ fn stack_position() -> usize {
     let marker = 0u8;
     std::hint::black_box(std::ptr::addr_of!(marker) as usize)
 }
+/// The same probe for hot guards: a local in the caller's own frame, without
+/// a call. It differs from `stack_position` by at most one small frame.
+#[inline(always)]
+fn stack_position_inline() -> usize {
+    let marker = 0u8;
+    std::hint::black_box(std::ptr::addr_of!(marker) as usize)
+}
 
 /// Parses within a measured stack budget on the caller's thread. Deep input
 /// reruns once on a dedicated thread with a large stack, as Roslyn moves deep
@@ -1064,3 +1071,9 @@ impl<'g> Parser<'g, '_> {
         Ok(result)
     }
 }
+
+pub(crate) mod shared;
+pub use shared::{
+    CompiledParser, SyntaxContext, SyntaxMark, parse_snapshot, parse_snapshot_compiled,
+    parse_snapshot_generated,
+};

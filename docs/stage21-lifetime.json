@@ -1,0 +1,24 @@
+{
+  "source_sha256": "08435f8f044175c2019ded3be80a5e37593f4207afe179692b0c63542de401f8",
+  "scope": "Interpreted edit path, 100000 edits each with zero and eight retained readers. Generated initial snapshot parity checked separately.",
+  "windows": [
+    {
+      "bound_bytes": 8549536,
+      "edits": 100000,
+      "fresh_bytes": 19904,
+      "latest_bytes": 129096,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 129096,
+      "window": 0
+    },
+    {
+      "bound_bytes": 8549536,
+      "edits": 100000,
+      "fresh_bytes": 19904,
+      "latest_bytes": 129096,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 137704,
+      "window": 8
+    }
+  ]
+}

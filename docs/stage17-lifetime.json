@@ -1,0 +1,24 @@
+{
+  "source_sha256": "262a1a44382d73cefdd95b7b3ce5bbd019a54da85fc60af64d6e00b955125131",
+  "windows": [
+    {
+      "bound_bytes": 8549536,
+      "edits": 100000,
+      "fresh_bytes": 19904,
+      "latest_bytes": 129096,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 129096,
+      "window": 0
+    },
+    {
+      "bound_bytes": 8549536,
+      "edits": 100000,
+      "fresh_bytes": 19904,
+      "latest_bytes": 129096,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 137704,
+      "window": 8
+    }
+  ],
+  "command": "cargo test --release --locked -p nitride-cli --test incremental bounded_reader_window_does_not_retain_edit_history -- --ignored --nocapture"
+}

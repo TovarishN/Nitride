@@ -1,0 +1,146 @@
+[
+ {
+  "source": "in_256k.cs",
+  "edits": "edits_256k_strict_middle.json",
+  "roslyn": {
+   "edits": 180,
+   "median": 0.001156,
+   "p90": 0.0012133,
+   "max": 0.0037927,
+   "mean": 0.0010363999999999996
+  },
+  "nitride": {
+   "median": 0.0001806875,
+   "p90": 0.000185958,
+   "max": 0.000254625
+  }
+ },
+ {
+  "source": "in_4m.cs",
+  "edits": "edits_4m_strict_early.json",
+  "roslyn": {
+   "edits": 180,
+   "median": 0.0110885,
+   "p90": 0.021223,
+   "max": 0.0460958,
+   "mean": 0.013969777777777777
+  },
+  "nitride": {
+   "median": 0.001742459,
+   "p90": 0.001792458,
+   "max": 0.003183125
+  }
+ },
+ {
+  "source": "in_4m.cs",
+  "edits": "edits_4m_strict_middle.json",
+  "roslyn": {
+   "edits": 180,
+   "median": 0.0113389,
+   "p90": 0.0215306,
+   "max": 0.0457276,
+   "mean": 0.01409586944444445
+  },
+  "nitride": {
+   "median": 0.001724958,
+   "p90": 0.001792042,
+   "max": 0.003118042
+  }
+ },
+ {
+  "source": "in_4m.cs",
+  "edits": "edits_4m_strict_late.json",
+  "roslyn": {
+   "edits": 180,
+   "median": 0.0108841,
+   "p90": 0.0211103,
+   "max": 0.0449533,
+   "mean": 0.013687022777777778
+  },
+  "nitride": {
+   "median": 0.001689813,
+   "p90": 0.001782917,
+   "max": 0.003179709
+  }
+ },
+ {
+  "source": "one_4m.cs",
+  "edits": "edits_4m_one_early.json",
+  "roslyn": {
+   "edits": 180,
+   "median": 0.0110116,
+   "p90": 0.0211202,
+   "max": 0.0454456,
+   "mean": 0.013642577777777776
+  },
+  "nitride": {
+   "median": 0.008130624999999999,
+   "p90": 0.008389083,
+   "max": 0.008882875
+  }
+ },
+ {
+  "source": "one_4m.cs",
+  "edits": "edits_4m_one_middle.json",
+  "roslyn": {
+   "edits": 180,
+   "median": 0.0114372,
+   "p90": 0.0214972,
+   "max": 0.0452309,
+   "mean": 0.014251771666666675
+  },
+  "nitride": {
+   "median": 0.0077554165,
+   "p90": 0.007960583,
+   "max": 0.008544917
+  }
+ },
+ {
+  "source": "one_4m.cs",
+  "edits": "edits_4m_one_late.json",
+  "roslyn": {
+   "edits": 180,
+   "median": 0.0109852,
+   "p90": 0.0211072,
+   "max": 0.0462516,
+   "mean": 0.013615109999999996
+  },
+  "nitride": {
+   "median": 0.008025041,
+   "p90": 0.008257166,
+   "max": 0.008770542
+  }
+ },
+ {
+  "source": "in_16m.cs",
+  "edits": "edits_16m_strict_middle.json",
+  "roslyn": {
+   "edits": 180,
+   "median": 0.0521261,
+   "p90": 0.0871041,
+   "max": 0.105474,
+   "mean": 0.0593134622222222
+  },
+  "nitride": {
+   "median": 0.008552978999999999,
+   "p90": 0.009390042,
+   "max": 0.013532958
+  }
+ },
+ {
+  "source": "one_16m.cs",
+  "edits": "edits_16m_one_middle.json",
+  "roslyn": {
+   "edits": 180,
+   "median": 0.0545078,
+   "p90": 0.090798,
+   "max": 0.1089251,
+   "mean": 0.06145739777777775
+  },
+  "nitride": {
+   "median": 0.032034771000000004,
+   "p90": 0.032707167,
+   "max": 0.0356125
+  }
+ }
+]

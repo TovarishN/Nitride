@@ -1,0 +1,177 @@
+{
+  "source_sha256": "805c559269dcefc14ae704b1b6df6f1efdd4a8fe317fb7c432a3b7ac0f9f2aff",
+  "profiler_sha256": "5b384ec26ed6bc353258b77c0327f2c070d3a6e6b350a143b74e085a7a07676a",
+  "source_overlay_restores_stage21_sha256": "08435f8f044175c2019ded3be80a5e37593f4207afe179692b0c63542de401f8",
+  "owned_source_files": [
+    "crates/nitride-core/src/syntax/arena.rs"
+  ],
+  "workspace_test_executions": 310,
+  "standard_traces": 4334,
+  "adversarial_traces": 1286,
+  "first_edit_ms": 143.512834,
+  "first_edit_equivalent": true,
+  "first_edit_copied_bytes": 1537,
+  "first_edit_fallbacks": 0,
+  "first_edit_maintenance": 0,
+  "damaged_cold_single_seconds": 75.090209083,
+  "logical_work_and_cache_hits_equal_to_stage21": true,
+  "edit_control": {
+    "stage21": {
+      "first_ms": 116.882542,
+      "median_ms": 111.80375000000001,
+      "median_after_first_ms": 111.778125,
+      "max_ms": 116.882542
+    },
+    "arena_lookup": {
+      "first_ms": 115.91475,
+      "median_ms": 113.0835215,
+      "median_after_first_ms": 113.078709,
+      "max_ms": 115.91475
+    }
+  },
+  "roslyn_parity_met": false,
+  "validation": {
+    "source_sha256": "805c559269dcefc14ae704b1b6df6f1efdd4a8fe317fb7c432a3b7ac0f9f2aff",
+    "profiler_sha256": "5b384ec26ed6bc353258b77c0327f2c070d3a6e6b350a143b74e085a7a07676a",
+    "checks": [
+      {
+        "name": "suite",
+        "command": [
+          "cargo",
+          "test",
+          "--workspace",
+          "--locked"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "clippy",
+        "command": [
+          "cargo",
+          "clippy",
+          "--workspace",
+          "--all-targets",
+          "--all-features",
+          "--locked",
+          "--",
+          "-D",
+          "warnings"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "fmt",
+        "command": [
+          "cargo",
+          "fmt",
+          "--all",
+          "--check"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "bootstrap",
+        "command": [
+          "cargo",
+          "run",
+          "--locked",
+          "-p",
+          "nitride-prepare",
+          "--example",
+          "bootstrap",
+          "--",
+          "--check"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "python",
+        "command": [
+          "python3",
+          "scripts/test_shared_subtrees.py"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "differential",
+        "command": [
+          "python3",
+          "scripts/shared_subtrees.py",
+          "--differential",
+          "--native-syntax",
+          "--profiler",
+          "/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/.superpowers/sdd/2026-10-26-arena-lookup/profile-current-after-dense",
+          "--report",
+          "docs/stage22-differential.json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "adversarial",
+        "command": [
+          "python3",
+          "scripts/shared_subtrees.py",
+          "--differential",
+          "--native-syntax",
+          "--profiler",
+          "/Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/.superpowers/sdd/2026-10-26-arena-lookup/profile-current-after-dense",
+          "--manifest",
+          "fixtures/recovery/adversarial.json",
+          "--limit",
+          "1286",
+          "--report",
+          "docs/stage22-adversarial.json"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "lifetime",
+        "command": [
+          "cargo",
+          "test",
+          "--release",
+          "--locked",
+          "-p",
+          "nitride-cli",
+          "--test",
+          "incremental",
+          "bounded_reader_window_does_not_retain_edit_history",
+          "--",
+          "--ignored",
+          "--nocapture"
+        ],
+        "exit_code": 0
+      },
+      {
+        "name": "first-edit",
+        "command": [
+          "python3",
+          "/tmp/nitride-arena-first-edit.py"
+        ],
+        "exit_code": 0
+      }
+    ],
+    "complete": true
+  },
+  "review": {
+    "verdict": "ready to retain Stage22; no blocking findings",
+    "reviewer": "arena_lookup_final_review",
+    "critical": [],
+    "important": [],
+    "minor": [
+      {
+        "file": "crates/nitride-core/src/syntax/arena.rs",
+        "line": 975,
+        "finding": "Other-live-chunk test resolves earlier node via dense index0, so non-current recycled HashMap fallback is not deterministically covered.",
+        "disposition": "deferred; unchanged fallback and full-ID guard make this a nonblocking coverage gap"
+      }
+    ],
+    "declined_to_judge": [
+      "Universal or cross-platform performance; one host and generated corpus.",
+      "First-edit p95 and general incremental parity; one control process per backend and twenty related edits.",
+      "Fresh Roslyn parity; reference remains historical.",
+      "Independent re-admission of the entire prior Stage15\u201321 stack; this review covers sole Stage22 delta and integration."
+    ],
+    "scope": "Read-only source/evidence audit, no source changes or heavy test reruns."
+  }
+}

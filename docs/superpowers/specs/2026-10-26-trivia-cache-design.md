@@ -1,0 +1,15 @@
+# Bounded trivia result reuse
+
+User approved the bounded trivia cache as the next measured optimization toward Roslyn full-parse speed. Build on verified Stage19 without changing grammar/ranking, token recognition, tree construction, published storage or recovery-probe execution.
+
+Builder decisions: a parse-local, lazy direct-mapped array caches successful trivia scans keyed by byte position and strict-comment policy. Each entry stores the end, local maximum read reach including EOF, and exact logical work cost. Cap entry payload at32KiB and1024 power-of-two slots, additionally bounded by one eighth of the private cache budget; disable at fewer than16 slots. Drop old storage before allocating after a budget change, including before the ownership-cache enforcer can return early. No hashing, source copies, node ownership, global cache or snapshot retention. Errors are never cached. Successful consuming scans may also seed the terminal position with cost1 and the same conservative read reach; skip the terminal seed when its slot collides with the primary result.
+
+A hit is used only when all original logical work fits. Charge one ordinary tick for actual stack/depth/work checks, then the remaining nonrecursive logical checks in bulk; restore the cached end and observation reach. With insufficient work headroom, run the unchanged scanner to preserve the first failing byte/error/read state. Scan misses with a scoped Reader observation initialized to0 and always fold it back, including errors, so earlier outer lookahead never contaminates cached dependencies. Cached results survive speculative position/work rollback because each entry stores only its own cost and source reads. Keep furthest unchanged by trivia.
+
+Enable only contiguous input in generated-syntax mode and optimize_recognition=true. Compatibility/default/lexical-only paths, edited ropes and recovery probes remain on the scanner. Source and parse policy are stable inside one Parser; strict policy is nevertheless part of the key. Cache storage dies with the parser. Existing ParseOptions/Language/CompiledParser interfaces remain unchanged; add hit/scan/peak-entry-byte telemetry to SnapshotStats.
+
+Validation covers repeated and terminal hits, UTF-8/EOF, whitespace/comments, policy changes, source-read scopes, speculative rollback, every near-budget failure position, physical guards, collisions and budget shrinkage. Require exact Stage19 logical work/tree/diagnostic equivalence, frozen/adversarial edit corpora, old readers and retained-memory bounds, one final read-only review, and measured benefit in alternating uninstrumented Release runs against the frozen Stage19 executable. Roslyn parity remains a measured goal, never inferred from counter reductions. No commits/integration or unrelated dirty-file changes.
+
+## Experiment outcome
+
+The proposed array, inline, terminal-slot and16-byte-marker layouts failed performance admission. No cache is retained; active source restored exactly to Stage19. See docs/stage20-evidence.md. The design above records the initial proposal, not an adopted API/storage change.

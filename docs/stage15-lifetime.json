@@ -1,0 +1,34 @@
+{
+  "source_sha256": "f19077f2e0b8e6ec2004d71bb287da77ee90e477abb1c9c411d6f1cc7140c439",
+  "windows": [
+    {
+      "bound_bytes": 8523016,
+      "edits": 100000,
+      "fresh_bytes": 2224,
+      "latest_bytes": 111416,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 111416,
+      "window": 0
+    },
+    {
+      "bound_bytes": 8523016,
+      "edits": 100000,
+      "fresh_bytes": 2224,
+      "latest_bytes": 111416,
+      "maintenance_passes": 155,
+      "reader_union_bytes": 120408,
+      "window": 8
+    }
+  ],
+  "deliberate_history": [
+    {
+      "history_snapshots": 1001,
+      "latest_bytes": 204696,
+      "logical_sum_bytes": 157146656,
+      "unique_bytes": 1634288
+    }
+  ],
+  "release_all_net_bytes": 0,
+  "release_all_evidence": "cargo test --workspace: dropping_all_snapshot_readers_releases_all_dynamic_storage",
+  "failures": []
+}

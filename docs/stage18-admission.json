@@ -1,0 +1,20 @@
+{
+  "source_sha256": "2142c1f63e2d1094ef676c6096b20a545e515c6a9fc83c61f3759869838314ea",
+  "profiler_sha256": "b17de81b70e5f31e36574cd961ab20150d24840db994df64a7f31b1fd4788223",
+  "prototype_functionally_validated": true,
+  "roslyn_parity_met": false,
+  "workspace_test_executions": 295,
+  "core_tests": 57,
+  "standard_traces": 4334,
+  "adversarial_traces": 1286,
+  "cold_samples": 9,
+  "paired_samples": 18,
+  "generated_scanners": 59,
+  "first_edit_equivalent": true,
+  "first_edit_ms": 102.606542,
+  "first_edit_copied_bytes": 1537,
+  "damaged_cold_single_seconds": 74.1630705,
+  "stage17_damaged_cold_single_seconds": 67.164137041,
+  "recovery_probe_optimizations_enabled": false,
+  "edited_rope_native_scanning_enabled": false
+}

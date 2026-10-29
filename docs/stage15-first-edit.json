@@ -1,0 +1,123 @@
+{
+  "cold": {
+    "phase": {
+      "allocation_count": 3212986,
+      "allocation_instrumented": true,
+      "baseline_live_bytes": 16779787,
+      "elapsed_ns": 89932279625,
+      "net_retained_bytes": 379995632,
+      "peak_bytes": 702736098,
+      "retained_bytes": 379995632
+    },
+    "snapshot": {
+      "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+      "diagnostics": 1,
+      "stats": {
+        "cache_evictions": 65933,
+        "export_nodes_copied": 0,
+        "full_parse_fallbacks": 0,
+        "maintenance_passes": 0,
+        "memo_descendants_copied": 0,
+        "memo_hits": 4025796,
+        "probe_descendants_copied": 0,
+        "reclaimed_syntax_bytes": 3378496,
+        "recovery_batches": 0,
+        "recovery_child_bytes": 713040,
+        "recovery_coverage_bytes": 0,
+        "recovery_metadata_work": 129485529,
+        "reparsed_bytes": 16777291,
+        "reused_subtrees": 0,
+        "source_bytes_copied": 16777291,
+        "syntax_bytes_copied": 0,
+        "winner_descendants_copied": 0,
+        "work": 4332683509
+      },
+      "storage": {
+        "chunks": 3375,
+        "index_bytes": 39430760,
+        "physical_retained_bytes": 379995632,
+        "representation": "shared",
+        "sidecar_bytes": 102421912,
+        "source_buffer_bytes": 16777291,
+        "source_bytes": 16788528,
+        "syntax_bytes": 221354432,
+        "syntax_payload_bytes": 220874000,
+        "unique_allocations": 1113215
+      }
+    }
+  },
+  "edits": [
+    {
+      "equivalent": true,
+      "logical_reader_bytes": 380002768,
+      "phase": {
+        "allocation_count": 9326,
+        "allocation_instrumented": true,
+        "baseline_live_bytes": 396781019,
+        "elapsed_ns": 108957583,
+        "net_retained_bytes": 7136,
+        "peak_bytes": 22453474,
+        "retained_bytes": 7136
+      },
+      "readers": 1,
+      "shared_reader_bytes": 380002768,
+      "snapshot": {
+        "counter_scope": "shared recognition; syntax copies count published child payload, not newly constructed records; reparsed bytes exclude reused recognition ranges",
+        "diagnostics": 1,
+        "stats": {
+          "cache_evictions": 2,
+          "export_nodes_copied": 0,
+          "full_parse_fallbacks": 0,
+          "maintenance_passes": 0,
+          "memo_descendants_copied": 0,
+          "memo_hits": 101,
+          "probe_descendants_copied": 0,
+          "reclaimed_syntax_bytes": 0,
+          "recovery_batches": 352,
+          "recovery_child_bytes": 544,
+          "recovery_coverage_bytes": 63,
+          "recovery_metadata_work": 357179,
+          "reparsed_bytes": 44710,
+          "reused_subtrees": 44623,
+          "source_bytes_copied": 1,
+          "syntax_bytes_copied": 1536,
+          "winner_descendants_copied": 0,
+          "work": 512259
+        },
+        "storage": {
+          "chunks": 3376,
+          "index_bytes": 39430880,
+          "physical_retained_bytes": 380002768,
+          "representation": "shared",
+          "sidecar_bytes": 102422136,
+          "source_buffer_bytes": 16777292,
+          "source_bytes": 16788712,
+          "syntax_bytes": 221361040,
+          "syntax_payload_bytes": 221589760,
+          "unique_allocations": 1113277
+        }
+      }
+    }
+  ],
+  "language": "csharp4",
+  "metric": "edit phase includes old-reader window eviction; requested System bytes exclude caller input, reader container, JSON and OS/thread mappings; net retained bytes may be negative; independent peaks are not summed",
+  "recover": true,
+  "source_bytes": 16777291,
+  "scope": "Two independently validated source versions: cold damaged 16 MiB input and its first early edit; diagnostic timing overlapped other validation; final p95 uses the clean matrix.",
+  "profiler_sha256": "47018108a9810da468987d9d7082dd1ab7a3b13f71b3105d834a979f91b90c1d",
+  "source_sha256": "93874ec247b904a4388f164d3eef0f1a91d847c369d6b3a92d5c9350ee233b16",
+  "config": {
+    "recover": true,
+    "validate": true,
+    "retain": 0,
+    "edits": [
+      {
+        "range": [
+          1637826,
+          1637827
+        ],
+        "replacement": "3"
+      }
+    ]
+  }
+}

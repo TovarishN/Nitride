@@ -1,0 +1,162 @@
+{
+  "source_sha256": "f74351565eaa17fa9f1e94b7c440770e09f50b72306730b48e7f69195bd5bc2b",
+  "profiler_sha256": "4356b0b56a5bfdc6b375840b17431154dc3f3f49afe5be063d8879bd334f3007",
+  "scope": "Separate pre-review structural-only candidate; symbolized Release, frame pointers and sampling enabled. Diagnostic ranking only, not a benchmark or CPU-time percentage breakdown. Additional tests and native trivia optimization followed.",
+  "sample_returncode": 0,
+  "parse_returncode": 0,
+  "sample_stdout": "",
+  "sample_stderr": "Sampling process 67529 for 10 seconds with 1 millisecond of run time between samples\nCouldn't find _sigtramp symbol in expected dylibs\nFound _sigtramp symbol after 6 tries\nSampling completed, processing symbols...\nSample analysis of process 67529 written to file /Users/dmitrikamenetski/.codex/worktrees/shared-subtrees/Nitride/.superpowers/sdd/2026-10-26-generated-syntax/cpu-sample.txt\n",
+  "build_command": "cargo rustc --release --locked -p nitride-cli --bin nitride-profile --features uninstrumented-profiler -- -C strip=none -C force-frame-pointers=yes -C debuginfo=1",
+  "top_of_stack": [
+    {
+      "symbol": "_RNvXs3_NtNtCs9nEiEE0E2Vj_4core4hash3sipINtB5_6HasherNtB5_11Sip13RoundsENtB7_6Hasher5writeCs5jHjBof3ATB_12nitride_core",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 556
+    },
+    {
+      "symbol": "_platform_memcmp",
+      "image": "libsystem_platform.dylib",
+      "top_of_stack_samples": 518
+    },
+    {
+      "symbol": "_RNvMs0_NtNtCs5jHjBof3ATB_12nitride_core6parser6sharedNtB5_6Parser14match_contents",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 330
+    },
+    {
+      "symbol": "_RNvMs0_NtNtCs5jHjBof3ATB_12nitride_core6parser6sharedNtB5_6Parser6trivia",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 314
+    },
+    {
+      "symbol": "_RNvMs0_NtNtCs5jHjBof3ATB_12nitride_core6parser6sharedNtB5_6Parser14pratt_uncached",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 282
+    },
+    {
+      "symbol": "_RNvMs0_NtNtCs5jHjBof3ATB_12nitride_core6parser6sharedNtB5_6Parser4tick",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 281
+    },
+    {
+      "symbol": "_RNvMs9_NtNtCs5jHjBof3ATB_12nitride_core6syntax5arenaNtB5_12ArenaBuilder12release_kind",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 276
+    },
+    {
+      "symbol": "_RNvMs0_NtNtCs5jHjBof3ATB_12nitride_core6parser6sharedNtB5_6Parser10rule_inner",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 259
+    },
+    {
+      "symbol": "_RNvMs1_NtNtCs5jHjBof3ATB_12nitride_core6syntax4textNtB5_6Reader7matches",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 234
+    },
+    {
+      "symbol": "_RNvMs1_NtNtCs5jHjBof3ATB_12nitride_core6syntax4textNtB5_6Reader6window",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 230
+    },
+    {
+      "symbol": "_RNvMs9_NtNtCs5jHjBof3ATB_12nitride_core6syntax5arenaNtB5_12ArenaBuilder6adjust",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 216
+    },
+    {
+      "symbol": "_RINvYNtNtNtCs1coMeGJvsuS_3std4hash6random11RandomStateNtNtCs9nEiEE0E2Vj_4core4hash11BuildHasher8hash_oneRmECs5jHjBof3ATB_12nitride_core",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 197
+    },
+    {
+      "symbol": "_RNvMs0_NtNtCs5jHjBof3ATB_12nitride_core6parser6sharedNtB5_6Parser12child_buffer",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 189
+    },
+    {
+      "symbol": "_RNvMs0_NtNtCs5jHjBof3ATB_12nitride_core6parser6sharedNtB5_6Parser20enforce_cache_budget",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 186
+    },
+    {
+      "symbol": "_RNvNtCs5jHjBof3ATB_12nitride_core6parser14stack_position",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 173
+    },
+    {
+      "symbol": "_RNvMs0_NtNtCs5jHjBof3ATB_12nitride_core6parser6sharedNtB5_6Parser4rule",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 166
+    },
+    {
+      "symbol": "_RNvMs0_NtNtCs5jHjBof3ATB_12nitride_core6parser6sharedNtB5_6Parser7recycle",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 158
+    },
+    {
+      "symbol": "_RNvMs9_NtNtCs5jHjBof3ATB_12nitride_core6syntax5arenaNtB5_12ArenaBuilder8find_new",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 140
+    },
+    {
+      "symbol": "_RNvNtCskxTbeMxzWLW_11nitride_cli7csharp414nitride_lex_27",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 139
+    },
+    {
+      "symbol": "_dyld_start",
+      "image": "dyld",
+      "top_of_stack_samples": 124
+    },
+    {
+      "symbol": "_RNvMs0_NtNtCs5jHjBof3ATB_12nitride_core6parser6sharedNtB5_6Parser10expression",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 118
+    },
+    {
+      "symbol": "_RNvMs_NtCs5jHjBof3ATB_12nitride_core7lexicalNtB4_14LexicalContext5class",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 117
+    },
+    {
+      "symbol": "_RNvMs5_NtNtCs5jHjBof3ATB_12nitride_core6syntax5arenaNtB5_14PublishedArena7compact",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 100
+    },
+    {
+      "symbol": "_RINvMs9_NtNtCs5jHjBof3ATB_12nitride_core6syntax5arenaNtB6_12ArenaBuilder12add_preparedNtNtNtNtBa_6parser6shared8children4IterEBa_",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 98
+    },
+    {
+      "symbol": "_RNvMs_NtCs5jHjBof3ATB_12nitride_core7lexicalNtB4_14LexicalContext7literal",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 89
+    },
+    {
+      "symbol": "_RINvYNtNtNtCs1coMeGJvsuS_3std4hash6random11RandomStateNtNtCs9nEiEE0E2Vj_4core4hash11BuildHasher8hash_oneRTtmmhEECs5jHjBof3ATB_12nitride_core",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 77
+    },
+    {
+      "symbol": "DYLD-STUB$$memcmp",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 75
+    },
+    {
+      "symbol": "_RNvMs0_NtNtCs5jHjBof3ATB_12nitride_core6parser6sharedNtB5_6Parser10find_prior",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 74
+    },
+    {
+      "symbol": "_RINvXs2J_NtNtCs9nEiEE0E2Vj_4core5slice4iterINtB7_4IterReENtNtNtNtBb_4iter6traits8iterator8Iterator3anyNCNvMs_NtCs5jHjBof3ATB_12nitride_core7lexicalNtB1J_14LexicalContext8excluded0ECskxTbeMxzWLW_11nitride_cli",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 65
+    },
+    {
+      "symbol": "_RNvMs1_NtCsjPjDV110NBJ_9hashbrown3mapINtB5_7HashMapTtmmhENtNtNtCs5jHjBof3ATB_12nitride_core6parser6shared4MemoNtNtNtCs1coMeGJvsuS_3std4hash6random11RandomStateE6insertBZ_",
+      "image": "profile-symbolized",
+      "top_of_stack_samples": 62
+    }
+  ]
+}
