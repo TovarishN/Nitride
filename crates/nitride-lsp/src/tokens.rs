@@ -282,8 +282,11 @@ pub fn encode(analysis: &Analysis, palette: bool) -> Vec<u32> {
     fn outline(items: &[GrammarItem], names: &mut HashMap<u32, Name>) {
         for item in items {
             let (kind, scope) = match item.kind {
-                "module" => (NAMESPACE, "entity.name.namespace"),
-                "function" | "helper" => (FUNCTION, "entity.name.function.rule"),
+                "module" | "catalog" => (NAMESPACE, "entity.name.namespace"),
+                "function" | "helper" | "operation" | "overload" => {
+                    (FUNCTION, "entity.name.function.rule")
+                }
+                "builtin" => (VARIABLE, "variable.other.member.label"),
                 _ => (TYPE, "entity.name.function.rule"),
             };
             let span = item.name_span.map(|b| b as u32);
@@ -292,6 +295,26 @@ pub fn encode(analysis: &Analysis, palette: bool) -> Vec<u32> {
         }
     }
     outline(&analysis.outline, &mut names);
+    if matches!(tree.grammar, Grammar::Catalog) {
+        // Every name a catalog uses: modules, types and operations, rules and fields.
+        let source = nitride_prepare::Source {
+            path: String::new(),
+            text: text.to_owned(),
+        };
+        for used in nitride_prepare::catalog_references(&source).unwrap_or_default() {
+            let (kind, scope) = match used.kind {
+                "catalog" | "module" => (NAMESPACE, "entity.name.namespace"),
+                "field" => (PROPERTY, "variable.other.member.label"),
+                _ => (TYPE, "entity.name.function.rule"),
+            };
+            let span = used.span.map(|b| b as u32);
+            if span[0] < span[1] {
+                names
+                    .entry(span[0])
+                    .or_insert((span[1], kind, 0, palette::ngr(scope)));
+            }
+        }
+    }
     if grammar {
         // Rule uses (element references, extend targets) and field labels.
         for (id, node) in tree.nodes.iter().enumerate() {

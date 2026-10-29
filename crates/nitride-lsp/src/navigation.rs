@@ -21,6 +21,12 @@ fn rule_word(kind: &str) -> &'static str {
         "function" => "function",
         "helper" => "helper",
         "module" => "syntax module",
+        "catalog" => "catalog module",
+        "type" => "type",
+        "operation" => "operation",
+        "overload" => "overload",
+        "builtin" => "built-in",
+        "field" => "field",
         _ => "rule",
     }
 }
@@ -51,7 +57,7 @@ pub fn hover(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
                 let line = text[start..].lines().next().unwrap_or_default().trim();
                 let line: String = line.chars().take(200).collect();
                 let name = match rule.item.kind {
-                    "module" => rule.module.clone(),
+                    "module" | "catalog" => rule.module.clone(),
                     _ => format!("{}.{}", rule.module, rule.item.name),
                 };
                 json!({
@@ -262,8 +268,16 @@ pub fn prepare_rename(
         }
         return Ok(match rule_at(index, file, offset) {
             // Manifests name modules too (`start`), beyond what a rename edits.
-            Some((rule, _)) if rule.item.kind == "module" => {
+            Some((rule, _)) if matches!(rule.item.kind, "module" | "catalog") => {
                 return Err(refuse("modules cannot be renamed"));
+            }
+            // A label's uses in its grammar are locals there; rename it there.
+            Some((rule, _)) if rule.item.kind == "field" => {
+                return Err(refuse("rename the field at its label in the grammar"));
+            }
+            // Grammars declare built-in names in lists a rename does not see.
+            Some((rule, _)) if rule.item.kind == "builtin" => {
+                return Err(refuse("built-in names cannot be renamed"));
             }
             Some((rule, span)) => {
                 // Only the last segment of a qualified use is the rule's name.
@@ -405,9 +419,10 @@ pub fn workspace_symbols<'a>(
         .filter(|r| matches(&r.item.name, query))
     {
         let kind = match rule.item.kind {
-            "module" => 2,
-            "token" => 14,
-            "function" | "helper" => 12,
+            "module" | "catalog" => 2,
+            "token" | "builtin" => 14,
+            "function" | "helper" | "operation" => 12,
+            "overload" => 25,
             _ => 5,
         };
         found.push(json!({

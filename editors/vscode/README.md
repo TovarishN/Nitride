@@ -1,6 +1,6 @@
 # Nitride DSL for VS Code
 
-Language support for `.ngr` grammars and the languages a workspace declares,
+Language support for `.ngr` grammars, `.ncatalog` catalogs and the languages a workspace declares,
 served by `nitride lsp`, Nitride's native language server. No .NET runtime is
 needed.
 

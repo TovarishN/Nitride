@@ -68,15 +68,16 @@ pub fn items(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
     let start = word_start(text, offset as usize);
     let typed = text[start..(offset as usize).min(text.len())].to_lowercase();
     let mut names: Vec<Value> = Vec::new();
-    if let Some(GrammarAt { index, .. }) = grammar {
-        for rule in index
-            .definitions()
-            .iter()
-            .filter(|d| d.item.kind != "module")
-        {
+    if let Some(GrammarAt { index, file }) = grammar {
+        // Grammars name rules; catalogs also name their own members.
+        let catalog = crate::grammar_index::is_catalog(&index.files[file].path);
+        for rule in index.definitions().iter().filter(|d| {
+            crate::grammar_index::DEFINING.contains(&d.item.kind)
+                || catalog && matches!(d.item.kind, "type" | "operation" | "overload")
+        }) {
             let kind = match rule.item.kind {
                 "token" => CONSTANT,
-                "function" | "helper" => FUNCTION,
+                "function" | "helper" | "operation" | "overload" => FUNCTION,
                 _ => CLASS,
             };
             names.push(item(&rule.item.name, kind, Some(&rule.module)));

@@ -28,6 +28,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
   });
   const selector: DocumentSelector = [
     { scheme: 'file', language: 'ngr' },
+    { scheme: 'file', language: 'ncatalog' },
     { scheme: 'file', pattern: '**/{nitride,nitrogen}.json' },
     ...workspaceExtensions().map(extension => ({ scheme: 'file', pattern: `**/*${extension}` })),
   ];

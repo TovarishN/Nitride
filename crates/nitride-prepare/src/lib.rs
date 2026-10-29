@@ -113,7 +113,9 @@ pub struct ReferenceClause {
 /// A rule or module name used in a grammar file, and the module it is used in.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GrammarReference {
-    /// "rule" or "module".
+    /// "rule" or "module"; "member" (a catalog type, operation or overload),
+    /// "catalog" (a catalog module) or "builtin" (a built-in name a catalog
+    /// defines); in catalogs also "field", named `Rule.Field`.
     pub kind: &'static str,
     pub name: String,
     pub span: [usize; 2],
@@ -247,6 +249,24 @@ impl Catalog {
         }
         Ok(())
     }
+}
+
+/// Whether a catalog file parses as written.
+pub fn catalog_parses(source: &Source) -> bool {
+    catalog::parses(source)
+}
+
+/// The catalog modules of one file and the types, operations, overloads and
+/// built-ins they declare (kinds "catalog", "type", "operation", "overload"
+/// and "builtin").
+pub fn catalog_outline(source: &Source) -> Result<Vec<GrammarItem>, PrepareError> {
+    catalog::outline(source)
+}
+
+/// Every name a catalog file uses (kinds "catalog", "member", "rule",
+/// "module" and "field").
+pub fn catalog_references(source: &Source) -> Result<Vec<GrammarReference>, PrepareError> {
+    catalog::references(source)
 }
 
 /// The compiled catalog frontend, a syntax-only language for `.ncatalog` files.

@@ -190,6 +190,12 @@ files:
    overload and built-in entries in sorted order.
 3. Editor support: built-in `.ncatalog` language, diagnostics with spans, and
    cross-file navigation.
+   Done: catalog files join their languages' grammar index, so hover,
+   definition, references, highlights and rename cross between `.ngr` and
+   `.ncatalog` files. Fields and built-in names cannot be renamed from a
+   catalog: a field's other uses are locals of its grammar, and a grammar's
+   `builtin` lists are not edited by rename. A catalog no language lists is
+   checked alone, so its `using` modules are reported as missing.
 
 ## Decisions
 

@@ -1,5 +1,5 @@
-//! Rules across the grammar files of a language: where each is defined and
-//! every place a grammar uses it.
+//! Rules across the grammar files of a language, and the members of its
+//! catalog files: where each is defined and every place a file uses it.
 use nitride_prepare::{GrammarItem, GrammarLocal, GrammarReference, Source};
 use std::path::{Path, PathBuf};
 
@@ -34,7 +34,7 @@ pub struct RuleDef {
 }
 
 /// Rule kinds that define a name (an `extend` item names its target instead).
-const DEFINING: [&str; 6] = [
+pub const DEFINING: [&str; 6] = [
     "syntax",
     "token",
     "extensible",
@@ -42,6 +42,14 @@ const DEFINING: [&str; 6] = [
     "helper",
     "alternative",
 ];
+
+/// Catalog member kinds that define a name.
+const CATALOG: [&str; 4] = ["type", "operation", "overload", "builtin"];
+
+/// Whether `path` is a catalog file rather than a grammar.
+pub fn is_catalog(path: &Path) -> bool {
+    path.extension().is_some_and(|e| e == "ncatalog")
+}
 
 /// A `file:` URI for a path with `.` and `..` resolved lexically.
 pub fn default_uri(path: &Path) -> String {
@@ -77,17 +85,34 @@ pub fn build(
             path: path.to_string_lossy().into_owned(),
             text,
         };
-        let (Ok(outline), Ok(references)) = (
-            nitride_prepare::grammar_outline(&source),
-            nitride_prepare::grammar_references(&source),
-        ) else {
+        let catalog = is_catalog(path);
+        let (outline, references) = if catalog {
+            (
+                nitride_prepare::catalog_outline(&source),
+                nitride_prepare::catalog_references(&source),
+            )
+        } else {
+            (
+                nitride_prepare::grammar_outline(&source),
+                nitride_prepare::grammar_references(&source),
+            )
+        };
+        let (Ok(outline), Ok(references)) = (outline, references) else {
             unreadable.push(path.clone());
             continue;
         };
         files.push(GrammarFile {
             uri: uri_of(path),
-            damaged: !nitride_prepare::grammar_parses(&source),
-            locals: nitride_prepare::grammar_locals(&source).unwrap_or_default(),
+            damaged: !if catalog {
+                nitride_prepare::catalog_parses(&source)
+            } else {
+                nitride_prepare::grammar_parses(&source)
+            },
+            locals: if catalog {
+                vec![]
+            } else {
+                nitride_prepare::grammar_locals(&source).unwrap_or_default()
+            },
             path: path.clone(),
             text: source.text,
             outline,
@@ -117,7 +142,9 @@ fn definitions(files: &[GrammarFile]) -> Vec<RuleDef> {
             });
             for member in &module.children {
                 let items = std::iter::once(member).chain(&member.children);
-                for item in items.filter(|i| DEFINING.contains(&i.kind)) {
+                for item in
+                    items.filter(|i| DEFINING.contains(&i.kind) || CATALOG.contains(&i.kind))
+                {
                     found.push(RuleDef {
                         file,
                         module: module.name.clone(),
@@ -149,35 +176,87 @@ impl GrammarIndex {
             span: [0, 0],
             module: module.into(),
         })
-        .cloned()
     }
 
-    /// Resolves a name used in `module`. A module name names the first module
-    /// so called. For a rule, `M.R` names rule `R` of module `M`; a bare `R`
-    /// is the module's own, else the only `R` anywhere.
-    fn resolve(&self, used: &GrammarReference) -> Option<&RuleDef> {
+    /// Resolves a name used in `module`. A grammar or catalog module name
+    /// names the first module of that kind so called; a built-in, the catalog
+    /// built-in so called. For a rule (or catalog member), `M.R` names `R`
+    /// of module `M`; a bare `R` is the module's own, else the only `R`
+    /// anywhere. A field `Rule.F` is the label `F` in that rule.
+    fn resolve(&self, used: &GrammarReference) -> Option<RuleDef> {
         let (name, module) = (used.name.as_str(), used.module.as_str());
-        if used.kind == "module" {
-            return self
-                .definitions
+        let named = |kind: &str| {
+            self.definitions
                 .iter()
-                .find(|d| d.item.kind == "module" && d.item.name == name);
-        }
-        let definitions = self.definitions.iter().filter(|d| d.item.kind != "module");
+                .find(|d| d.item.kind == kind && d.item.name == name)
+                .cloned()
+        };
+        let kinds: &[&str] = match used.kind {
+            "module" => return named("module"),
+            "catalog" => return named("catalog"),
+            "builtin" => return named("builtin"),
+            "field" => return self.field(name, module),
+            "member" => &CATALOG[..3],
+            _ => &DEFINING,
+        };
+        let definitions = self
+            .definitions
+            .iter()
+            .filter(|d| kinds.contains(&d.item.kind));
         if let Some((qualifier, rule)) = name.rsplit_once('.') {
             return definitions
                 .clone()
-                .find(|d| d.module == qualifier && d.item.name == rule);
+                .find(|d| d.module == qualifier && d.item.name == rule)
+                .cloned();
         }
         if let Some(own) = definitions
             .clone()
             .find(|d| d.module == module && d.item.name == name)
         {
-            return Some(own);
+            return Some(own.clone());
         }
         let mut named = definitions.filter(|d| d.item.name == name);
         let only = named.next()?;
-        named.next().is_none().then_some(only)
+        named.next().is_none().then(|| only.clone())
+    }
+
+    /// The label definition `Rule.F` names, as a "field" definition.
+    fn field(&self, name: &str, module: &str) -> Option<RuleDef> {
+        let (rule, field) = name.rsplit_once('.')?;
+        let rule = self.resolve(&GrammarReference {
+            kind: "rule",
+            name: rule.into(),
+            span: [0, 0],
+            module: module.into(),
+        })?;
+        // A rule's labels lie before the next definition in its file (an
+        // alternative's item spans only its name).
+        let end = self
+            .definitions
+            .iter()
+            .filter(|d| d.file == rule.file && d.item.span[0] > rule.item.span[0])
+            .map(|d| d.item.span[0])
+            .min()
+            .unwrap_or(usize::MAX)
+            .max(rule.item.span[1]);
+        let inside = |s: &[usize; 2]| rule.item.span[0] <= s[0] && s[1] <= end;
+        let span = *self.files[rule.file]
+            .locals
+            .iter()
+            .filter(|l| l.kind == "field" && l.name == field)
+            .flat_map(|l| &l.definitions)
+            .find(|s| inside(s))?;
+        Some(RuleDef {
+            file: rule.file,
+            module: rule.module,
+            item: GrammarItem {
+                kind: "field",
+                name: field.into(),
+                span,
+                name_span: span,
+                children: vec![],
+            },
+        })
     }
 
     /// The innermost name used at `offset` of `file` (span ends included): a
@@ -202,7 +281,7 @@ impl GrammarIndex {
         {
             return Some(def.clone());
         }
-        self.resolve(self.reference_at(file, offset)?).cloned()
+        self.resolve(self.reference_at(file, offset)?)
     }
 
     /// The local defined or used at `offset` of `file` (span ends included,
@@ -227,7 +306,7 @@ impl GrammarIndex {
         let mut found = Vec::new();
         for (file, grammar) in self.files.iter().enumerate() {
             for used in &grammar.references {
-                if self.resolve(used) == Some(rule) {
+                if self.resolve(used).as_ref() == Some(rule) {
                     found.push((file, used.span.map(|b| b as u32)));
                 }
             }

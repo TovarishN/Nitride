@@ -150,6 +150,14 @@ fn syntax(source: &Source) -> Result<SyntaxTree<'static>, PrepareError> {
 /// of the error is blanked (braces kept, so blocks stay balanced) and parsing
 /// retried, so the rest of a grammar under edit still yields its structure.
 fn tolerant(source: &Source) -> Result<Source, PrepareError> {
+    tolerant_with(source, syntax)
+}
+
+/// `tolerant` for any generated frontend: `syntax` parses one attempt.
+pub(crate) fn tolerant_with(
+    source: &Source,
+    syntax: fn(&Source) -> Result<SyntaxTree<'static>, PrepareError>,
+) -> Result<Source, PrepareError> {
     let mut text = source.text.clone();
     let mut first = None;
     for _ in 0..32 {
@@ -226,17 +234,31 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
                 ("rule", [start, end - 1])
             }
             "Using" => ("module", decoder.span(decoder.field(id, "Name"))),
+            // A lowering's target is a catalog operation or overload.
+            "Call" => ("member", decoder.span(decoder.field(id, "Target"))),
+            "Builtin" => {
+                let module = module_of(&modules, decoder.span(id));
+                for name in decoder.fields(id, "Names") {
+                    let span = decoder.span(name);
+                    found.push(crate::GrammarReference {
+                        kind: "builtin",
+                        name: source.text[span[0]..span[1]].into(),
+                        span,
+                        module: module.clone(),
+                    });
+                }
+                continue;
+            }
             _ => continue,
         };
-        let module = modules
-            .iter()
-            .find(|(m, _)| m[0] <= span[0] && span[1] <= m[1])
-            .map(|(_, name)| name.clone())
-            .unwrap_or_default();
+        let module = module_of(&modules, span);
         let name = &source.text[span[0]..span[1]];
-        if let Some(dot) = name.rfind('.').filter(|_| kind == "rule") {
+        if let Some(dot) = name
+            .rfind('.')
+            .filter(|_| matches!(kind, "rule" | "member"))
+        {
             found.push(crate::GrammarReference {
-                kind: "module",
+                kind: if kind == "rule" { "module" } else { "catalog" },
                 name: name[..dot].into(),
                 span: [span[0], span[0] + dot],
                 module: module.clone(),
@@ -251,6 +273,15 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
     }
     found.sort_by_key(|r| r.span[0]);
     Ok(found)
+}
+
+/// The name of the module whose span holds `span`.
+fn module_of(modules: &[([usize; 2], String)], span: [usize; 2]) -> String {
+    modules
+        .iter()
+        .find(|(m, _)| m[0] <= span[0] && span[1] <= m[1])
+        .map(|(_, name)| name.clone())
+        .unwrap_or_default()
 }
 
 /// Helper parameters, match captures and element labels, with their uses.

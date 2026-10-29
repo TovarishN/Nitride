@@ -10,11 +10,13 @@ use std::path::Path;
 use std::sync::Arc;
 
 /// The language a tree was parsed with: a workspace language, or the
-/// compiled grammar frontend for `.ngr` files.
+/// compiled grammar frontend for `.ngr` files or catalog frontend for
+/// `.ncatalog` files.
 #[derive(Clone)]
 pub enum Grammar {
     Workspace(Arc<Loaded>),
     Frontend,
+    Catalog,
 }
 
 impl Grammar {
@@ -22,6 +24,7 @@ impl Grammar {
         match self {
             Grammar::Workspace(loaded) => loaded.language.language(),
             Grammar::Frontend => nitride_prepare::grammar_language(),
+            Grammar::Catalog => nitride_prepare::catalog_language(),
         }
     }
 }
@@ -91,14 +94,28 @@ pub struct Analysis {
     pub roles: Arc<HashMap<(u16, String), Role>>,
 }
 
+type Roles = Arc<HashMap<(u16, String), Role>>;
+
 /// The grammar frontend's literal roles, computed once.
-fn frontend_roles() -> Arc<HashMap<(u16, String), Role>> {
-    static ROLES: std::sync::OnceLock<Arc<HashMap<(u16, String), Role>>> =
-        std::sync::OnceLock::new();
+fn frontend_roles() -> Roles {
+    static ROLES: std::sync::OnceLock<Roles> = std::sync::OnceLock::new();
     ROLES
         .get_or_init(|| {
             Arc::new(crate::roles::roles(
                 nitride_prepare::grammar_language(),
+                &|_| false,
+            ))
+        })
+        .clone()
+}
+
+/// The catalog frontend's literal roles, computed once.
+fn catalog_roles() -> Roles {
+    static ROLES: std::sync::OnceLock<Roles> = std::sync::OnceLock::new();
+    ROLES
+        .get_or_init(|| {
+            Arc::new(crate::roles::roles(
+                nitride_prepare::catalog_language(),
                 &|_| false,
             ))
         })
@@ -142,6 +159,9 @@ pub fn analyze(
 ) -> Option<Analysis> {
     if path.extension().is_some_and(|e| e == "ngr") {
         return Some(grammar(registry, path, text, open));
+    }
+    if path.extension().is_some_and(|e| e == "ncatalog") {
+        return Some(catalog(registry, path, text, open));
     }
     let state = registry.for_path(path)?;
     Some(program(state, text))
@@ -282,6 +302,27 @@ fn grammar(
             Err(error) => reported.push((error, 1)),
         }
     }
+    let problems = in_file(reported, path);
+    let outline = nitride_prepare::grammar_outline(&Source {
+        path: path.to_string_lossy().into_owned(),
+        text: text.to_owned(),
+    })
+    .unwrap_or_default();
+    Analysis {
+        lines,
+        tree: Some(Tree::new(Grammar::Frontend, &parsed.tree)),
+        problems,
+        declarations: vec![],
+        outline,
+        index: SymbolIndex::default(),
+        values: vec![],
+        repairs: vec![],
+        roles: frontend_roles(),
+    }
+}
+
+/// The reported problems located in `path`, each once.
+fn in_file(reported: Vec<(PrepareError, u8)>, path: &Path) -> Vec<Problem> {
     let mut problems = Vec::new();
     for (error, severity) in reported {
         // Project errors (start rule, catalog) belong to the manifest.
@@ -298,21 +339,53 @@ fn grammar(
             problems.push(problem);
         }
     }
-    let outline = nitride_prepare::grammar_outline(&Source {
+    problems
+}
+
+/// A catalog file: problems of every language that lists it (or of the file
+/// alone), and the catalog frontend's tree for structure and colour.
+fn catalog(
+    registry: &Registry,
+    path: &Path,
+    text: &str,
+    open: &dyn Fn(&Path) -> Option<String>,
+) -> Analysis {
+    let lines = LineIndex::new(text);
+    let parsed = parse_recovering(
+        nitride_prepare::catalog_language(),
+        text,
+        Limits::default(),
+        RecoveryOptions::default(),
+    );
+    let mut reported: Vec<(PrepareError, u8)> = Vec::new();
+    let mut users = registry.using_catalog(path).peekable();
+    if users.peek().is_some() {
+        for state in users {
+            reported.extend(state.errors.iter().map(|e| (e.clone(), 1)));
+        }
+    } else {
+        let source = Source {
+            path: path.to_string_lossy().into_owned(),
+            text: open(path).unwrap_or_else(|| text.to_owned()),
+        };
+        if let Err(error) = nitride_prepare::catalog(std::slice::from_ref(&source)) {
+            reported.push((error, 1));
+        }
+    }
+    let source = Source {
         path: path.to_string_lossy().into_owned(),
         text: text.to_owned(),
-    })
-    .unwrap_or_default();
+    };
     Analysis {
         lines,
-        tree: Some(Tree::new(Grammar::Frontend, &parsed.tree)),
-        problems,
+        tree: Some(Tree::new(Grammar::Catalog, &parsed.tree)),
+        problems: in_file(reported, path),
         declarations: vec![],
-        outline,
+        outline: nitride_prepare::catalog_outline(&source).unwrap_or_default(),
         index: SymbolIndex::default(),
         values: vec![],
         repairs: vec![],
-        roles: frontend_roles(),
+        roles: catalog_roles(),
     }
 }
 

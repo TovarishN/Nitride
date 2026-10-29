@@ -149,14 +149,19 @@ impl Registry {
         })
     }
 
-    /// The grammar files navigation from `path` spans: every grammar of the
-    /// languages that use it, else the file alone.
+    /// The grammar and catalog files navigation from `path` spans: every
+    /// grammar and catalog of the languages that use it, else the file alone.
     pub fn grammar_set(&self, path: &Path) -> Vec<PathBuf> {
         let mut set: Vec<PathBuf> = Vec::new();
-        for language in self.using_grammar(path) {
-            for grammar in &language.entry.grammars {
-                if !set.iter().any(|g| same_file(g, grammar)) {
-                    set.push(grammar.clone());
+        for language in self.using_grammar(path).chain(self.using_catalog(path)) {
+            for file in language
+                .entry
+                .grammars
+                .iter()
+                .chain(&language.entry.catalogs)
+            {
+                if !set.iter().any(|g| same_file(g, file)) {
+                    set.push(file.clone());
                 }
             }
         }
@@ -171,6 +176,15 @@ impl Registry {
         self.languages
             .iter()
             .filter(move |l| l.entry.grammars.iter().any(|g| same_file(g, path)))
+    }
+}
+
+impl Registry {
+    /// Languages whose catalogs include `path`.
+    pub fn using_catalog<'a>(&'a self, path: &'a Path) -> impl Iterator<Item = &'a LanguageState> {
+        self.languages
+            .iter()
+            .filter(move |l| l.entry.catalogs.iter().any(|c| same_file(c, path)))
     }
 }
 

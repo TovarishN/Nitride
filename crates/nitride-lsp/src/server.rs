@@ -375,7 +375,8 @@ impl<W: Write> Server<W> {
                 if self.grammars.is_none() {
                     let mut paths: Vec<PathBuf> = Vec::new();
                     for language in self.registry.languages() {
-                        for grammar in &language.entry.grammars {
+                        let entry = &language.entry;
+                        for grammar in entry.grammars.iter().chain(&entry.catalogs) {
                             if !paths.iter().any(|p| crate::registry::same_file(p, grammar)) {
                                 paths.push(grammar.clone());
                             }
@@ -412,7 +413,10 @@ impl<W: Write> Server<W> {
         }
         let offset = analysis.lines.offset(line, character);
         let path = uri::to_path(uri)?;
-        let grammar = path.extension().is_some_and(|e| e == "ngr").then(|| {
+        let navigable = path
+            .extension()
+            .is_some_and(|e| e == "ngr" || e == "ncatalog");
+        let grammar = navigable.then(|| {
             let buffers = self.buffers();
             let set = self.registry.grammar_set(&path);
             let uri_of = self.uri_of();

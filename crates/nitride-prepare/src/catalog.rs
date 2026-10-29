@@ -62,9 +62,15 @@ enum Member {
 
 struct Module {
     name: Name,
+    span: [usize; 2],
     source: usize,
     usings: Vec<Name>,
     members: Vec<Member>,
+    /// The span of each member, in `members` order.
+    spans: Vec<[usize; 2]>,
+    /// Problems decoding found; lowering reports the first. Editors still
+    /// read the module's structure.
+    errors: Vec<PrepareError>,
 }
 
 /// The catalog frontend's tree of one source.
@@ -126,21 +132,25 @@ impl Decoder<'_> {
     fn handler(&self, id: u32) -> Name {
         self.named(self.field(id, "Handler"), "Name")
     }
-    fn module(&self, id: u32, source: usize) -> Result<Module, PrepareError> {
+    fn module(&self, id: u32, source: usize) -> Module {
         let mut module = Module {
             name: self.named(id, "Name"),
+            span: self.span(id),
             source,
             usings: vec![],
             members: vec![],
+            spans: vec![],
+            errors: vec![],
         };
         for member in self.fields(id, "Members") {
             let m = self.tree.children(member)[0].node;
             let decoded = match self.kind(m) {
                 "Using" => {
                     if !module.members.is_empty() {
-                        return Err(self
-                            .source
-                            .error(self.span(m), "'using' must precede the module's members"));
+                        module.errors.push(
+                            self.source
+                                .error(self.span(m), "'using' must precede the module's members"),
+                        );
                     }
                     module.usings.push(self.named(m, "Name"));
                     continue;
@@ -190,11 +200,18 @@ impl Decoder<'_> {
                 "Check" => {
                     let target = self.named(m, "Target");
                     let Some(dot) = target.text.rfind('.') else {
-                        return Err(self
-                            .source
-                            .error(target.span, "a check names its field: 'Rule.Field'"));
+                        module.errors.push(
+                            self.source
+                                .error(target.span, "a check names its field: 'Rule.Field'"),
+                        );
+                        continue;
                     };
-                    let message = self.field(m, "Message");
+                    let message = self.span(self.field(m, "Message"));
+                    let message = crate::literal::decode(self.source, message, false)
+                        .unwrap_or_else(|e| {
+                            module.errors.push(e);
+                            String::new()
+                        });
                     Member::Check {
                         rule: Name {
                             text: target.text[..dot].into(),
@@ -206,14 +223,15 @@ impl Decoder<'_> {
                         },
                         predicate: self.named(m, "Predicate"),
                         code: self.named(m, "Code"),
-                        message: crate::literal::decode(self.source, self.span(message), false)?,
+                        message,
                     }
                 }
                 other => unreachable!("catalog member {other}"),
             };
             module.members.push(decoded);
+            module.spans.push(self.span(m));
         }
-        Ok(module)
+        module
     }
 }
 
@@ -227,7 +245,7 @@ fn parse(sources: &[Source]) -> Result<Vec<Module>, PrepareError> {
             tree: &tree,
         };
         for id in decoder.fields(tree.root, "Modules") {
-            modules.push(decoder.module(id, index)?);
+            modules.push(decoder.module(id, index));
         }
     }
     Ok(modules)
@@ -342,6 +360,9 @@ pub struct Use {
 /// catalog of a syntax-only profile.
 pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
     let modules = parse(sources)?;
+    if let Some(error) = modules.iter().flat_map(|m| &m.errors).next() {
+        return Err(error.clone());
+    }
     let mut scope = Scope {
         sources,
         modules: &modules,
@@ -592,4 +613,108 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
         }
     }
     Ok((catalog, uses))
+}
+
+/// The modules of one catalog source for editors, from its undamaged lines.
+fn editor_modules(source: &Source) -> Result<Vec<Module>, PrepareError> {
+    let source = crate::parser::tolerant_with(source, syntax)?;
+    parse(std::slice::from_ref(&source))
+}
+
+/// Whether a catalog file parses as written.
+pub fn parses(source: &Source) -> bool {
+    syntax(source).is_ok()
+}
+
+/// Catalog modules and the types, operations, overloads and built-ins they declare.
+pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError> {
+    let item = |kind: &'static str, name: &Name, span: [usize; 2]| crate::GrammarItem {
+        kind,
+        name: name.text.clone(),
+        span,
+        name_span: name.span,
+        children: vec![],
+    };
+    Ok(editor_modules(source)?
+        .iter()
+        .map(|module| crate::GrammarItem {
+            children: module
+                .members
+                .iter()
+                .zip(&module.spans)
+                .filter_map(|(member, &span)| match member {
+                    Member::Type(name) => Some(item("type", name, span)),
+                    Member::Operation { name, .. } => Some(item("operation", name, span)),
+                    Member::Overload { name, .. } => Some(item("overload", name, span)),
+                    Member::Callable { name, .. } | Member::Value { name, .. } => {
+                        Some(item("builtin", name, span))
+                    }
+                    _ => None,
+                })
+                .collect(),
+            ..item("catalog", &module.name, module.span)
+        })
+        .collect())
+}
+
+/// Names a catalog file uses: catalog modules (`using`, qualifiers), catalog
+/// members ("member": types, operations and overloads), grammar rules and
+/// modules, and rule fields (named `Rule.Field` as written).
+pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, PrepareError> {
+    type Used = Vec<(&'static str, String, [usize; 2])>;
+    // A qualified name's qualifier is a module of the name's own kind.
+    fn qualified(used: &mut Used, kind: &'static str, qualifier: &'static str, name: &Name) {
+        if let Some(dot) = name.text.rfind('.') {
+            let span = [name.span[0], name.span[0] + dot];
+            used.push((qualifier, name.text[..dot].into(), span));
+        }
+        used.push((kind, name.text.clone(), name.span));
+    }
+    fn rule(used: &mut Used, rule: &Name, fields: &[&Name]) {
+        qualified(used, "rule", "module", rule);
+        for field in fields {
+            used.push(("field", format!("{}.{}", rule.text, field.text), field.span));
+        }
+    }
+    let mut found = Vec::new();
+    for module in editor_modules(source)? {
+        let mut used = Used::new();
+        for using in &module.usings {
+            qualified(&mut used, "catalog", "catalog", using);
+        }
+        let mut members: Vec<&Name> = Vec::new();
+        for member in &module.members {
+            match member {
+                Member::Type(_) => {}
+                Member::Operation { inputs, result, .. } => {
+                    members.extend(inputs);
+                    members.push(result);
+                }
+                Member::Overload { candidates, .. } | Member::Callable { candidates, .. } => {
+                    members.extend(candidates)
+                }
+                Member::Value { ty, .. } => members.push(ty),
+                Member::Statement { rule: r, field, .. } | Member::Check { rule: r, field, .. } => {
+                    rule(&mut used, r, &[field])
+                }
+                Member::Call { rule: r, args } => {
+                    rule(&mut used, r, &args.iter().collect::<Vec<_>>())
+                }
+            }
+        }
+        for name in members {
+            qualified(&mut used, "member", "catalog", name);
+        }
+        found.extend(
+            used.into_iter()
+                .map(|(kind, name, span)| crate::GrammarReference {
+                    kind,
+                    name,
+                    span,
+                    module: module.name.text.clone(),
+                }),
+        );
+    }
+    found.sort_by_key(|r| r.span[0]);
+    Ok(found)
 }

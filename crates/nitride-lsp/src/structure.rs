@@ -55,9 +55,10 @@ pub fn symbols(analysis: &Analysis) -> Value {
 
 fn grammar_symbol(item: &GrammarItem, analysis: &Analysis) -> Value {
     let kind = match item.kind {
-        "module" => 3,
-        "token" => 14,
-        "function" | "helper" => 12,
+        "module" | "catalog" => 3,
+        "token" | "builtin" => 14,
+        "function" | "helper" | "operation" => 12,
+        "overload" => 25,
         _ => 5,
     };
     json!({
