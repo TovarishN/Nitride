@@ -419,6 +419,80 @@ pub fn generate(input: &str) -> Result<String, String> {
     if (syntax_only || template_mode) && !helper_tables.is_empty() {
         return Err("quote helpers require an ordinary typed profile".into());
     }
+    // Rule checks: fields must be the rule's labels, captures syntax rules and
+    // message placeholders known names. Patterns parse when the language loads.
+    let mut rule_check_tables = Vec::new();
+    for (id, rule) in rules.iter().enumerate() {
+        let Some(list) = rule.get("checks").filter(|v| !v.is_null()) else {
+            continue;
+        };
+        let mut labels = HashSet::new();
+        collect_labels(&rule["expr"], &mut labels);
+        for check in array(list)? {
+            let code = text(&check["code"])?;
+            if code.is_empty() || !code.bytes().all(|b| b.is_ascii_alphanumeric()) {
+                return Err("invalid check code".into());
+            }
+            let field = |key: &str| -> Result<&str, String> {
+                let name = text(&check[key])?;
+                if !labels.contains(name) {
+                    return Err(format!("check field {name} is not a field of its rule"));
+                }
+                Ok(name)
+            };
+            let mut known: Vec<String> = Vec::new();
+            let test = match text(&check["kind"])? {
+                "compare" => format!(
+                    "nitride_core::RuleTest::Compare {{left:{},right:{},equal:{}}}",
+                    quoted(field("left")?),
+                    quoted(field("right")?),
+                    check["equal"].as_bool().ok_or("compare requires equal")?
+                ),
+                "match" => {
+                    let captures = array(&check["captures"])?
+                        .iter()
+                        .map(hole)
+                        .collect::<Result<Vec<_>, _>>()?;
+                    for (name, _) in &captures {
+                        if known.contains(name) {
+                            return Err("duplicate match capture".into());
+                        }
+                        known.push(name.clone());
+                    }
+                    format!(
+                        "nitride_core::RuleTest::Match {{captures:{},pattern:{}}}",
+                        emit_holes(&captures),
+                        quoted(text(&check["pattern"])?)
+                    )
+                }
+                _ => return Err("unknown rule check".into()),
+            };
+            let message = text(&check["message"])?;
+            for placeholder in nitride_core::placeholders(message) {
+                let known = match placeholder.strip_suffix(".Text") {
+                    Some(name) => labels.contains(name),
+                    None => known.iter().any(|k| k == placeholder),
+                };
+                if !known {
+                    return Err(format!("unknown message placeholder {{{placeholder}}}"));
+                }
+            }
+            let severity = match text(&check["severity"])? {
+                "error" => "Error",
+                "warning" => "Warning",
+                _ => return Err("unknown check severity".into()),
+            };
+            let at = match check.get("at").filter(|v| !v.is_null()) {
+                Some(_) => format!("Some({})", quoted(field("at")?)),
+                None => "None".into(),
+            };
+            rule_check_tables.push(format!(
+                "nitride_core::RuleCheck {{rule:{id},code:{},severity:nitride_core::Severity::{severity},test:{test},message:{},at:{at}}}",
+                quoted(code),
+                quoted(message)
+            ));
+        }
+    }
     let mut legacy_kind = None;
     for rule in rules {
         for clause in array(&rule["clauses"])? {
@@ -765,13 +839,14 @@ pub fn generate(input: &str) -> Result<String, String> {
     let lexers = lexical::generate(rules, &ids)?;
     let parser = syntax::generate(rules, &ids)?;
     Ok(format!(
-        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},helpers:{},source_hash:{},profile:Profile::{}}};\n{lexers}{parser}",
+        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},helpers:{},rule_checks:{},source_hash:{},profile:Profile::{}}};\n{lexers}{parser}",
         list(output_rules),
         list(types.into_iter().map(quoted)),
         list(signatures),
         list(handlers),
         list(check_tables),
         list(helper_tables),
+        list(rule_check_tables),
         quoted(text(&data["source_hash"])?),
         if syntax_only { "SyntaxOnly" } else { "Typed" }
     ))

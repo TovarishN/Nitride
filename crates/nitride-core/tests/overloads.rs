@@ -21,6 +21,7 @@ fn language(candidates: &'static [u16]) -> &'static Language<'static> {
         handlers: &[],
         checks: &[],
         helpers: &[],
+        rule_checks: &[],
         operations: &[
             Signature {
                 id: "A",

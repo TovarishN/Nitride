@@ -150,6 +150,44 @@ pub struct Helper<'g> {
     pub arms: &'g [Arm<'g>],
 }
 
+/// How a rule check reports.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Severity {
+    Error,
+    Warning,
+}
+
+/// What a rule check tests on each node of its rule.
+#[derive(Debug)]
+pub enum RuleTest<'g> {
+    /// Holds when the two fields' source texts are equal (or differ).
+    Compare {
+        left: &'g str,
+        right: &'g str,
+        equal: bool,
+    },
+    /// Reports when the node matches the quote, parsed as the rule. `$name`
+    /// is one node of its capture's category; `..$name` any run of siblings.
+    Match {
+        captures: &'g [Hole<'g>],
+        pattern: &'g str,
+    },
+}
+
+/// A diagnostic a syntax rule declares for its own nodes: a `check` reports
+/// when its comparison fails, a `match` when its pattern matches. The message
+/// fills `{Field.Text}` and `{capture}` from the node.
+#[derive(Debug)]
+pub struct RuleCheck<'g> {
+    pub rule: u16,
+    pub code: &'g str,
+    pub severity: Severity,
+    pub test: RuleTest<'g>,
+    pub message: &'g str,
+    /// The field the diagnostic spans; the whole node when absent.
+    pub at: Option<&'g str>,
+}
+
 #[derive(Debug)]
 pub struct Rule<'g> {
     pub name: &'g str,
@@ -190,5 +228,6 @@ pub struct Language<'g> {
     pub handlers: &'g [&'g str],
     pub checks: &'g [Check<'g>],
     pub helpers: &'g [Helper<'g>],
+    pub rule_checks: &'g [RuleCheck<'g>],
     pub source_hash: &'g str,
 }

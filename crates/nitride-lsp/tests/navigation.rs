@@ -548,3 +548,51 @@ fn modules_navigate_from_using_and_qualifiers() {
     );
     assert!(result["error"].is_object(), "{result}");
 }
+
+#[test]
+fn rule_check_names_navigate_to_their_binders() {
+    let dir = scratch("rule-check-names");
+    manifest(
+        &dir,
+        "nitride.nproj",
+        "Xml",
+        ".xml",
+        &[lang("xml/Xml.ngr")],
+        "Xml.Document",
+        None,
+    );
+    let path = lang("xml/Xml.ngr");
+    let text = std::fs::read_to_string(&path).unwrap();
+    let find = |line: &str, needle: &str| {
+        let n = text.lines().position(|l| l.contains(line)).unwrap();
+        let c = text.lines().nth(n).unwrap().find(needle).unwrap();
+        (n as u32, c as u32)
+    };
+    for (use_line, use_text, def_line, def_text) in [
+        // A capture from its pattern hole and from the warning message.
+        ("(pass:Text)", "pass</password>", "(pass:Text)", "pass:"),
+        ("=> warning XML1001", "pass}", "(pass:Text)", "pass:"),
+        // Fields from a check's comparison, message and target.
+        ("check XML0001", "Close.Text :", "syntax Paired", "Close:"),
+        ("check XML0001", "Open.Text}", "syntax Paired", "Open:"),
+        ("check XML0001", "Close;", "syntax Paired", "Close:"),
+    ] {
+        let (line, character) = find(use_line, use_text);
+        let result = at(
+            &dir,
+            &path,
+            &text,
+            "textDocument/definition",
+            line,
+            character,
+            json!({}),
+        );
+        let (line, start) = find(def_line, def_text);
+        let end = start + def_text.len() as u32 - 1;
+        assert_eq!(
+            result["result"]["range"],
+            location(line, start, end),
+            "{use_text}"
+        );
+    }
+}

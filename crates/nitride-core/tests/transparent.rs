@@ -21,6 +21,7 @@ fn language() -> &'static Language<'static> {
         handlers: &[],
         checks: &[],
         helpers: &[],
+        rule_checks: &[],
         operations: &[],
         rules: Box::leak(
             vec![

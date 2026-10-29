@@ -400,3 +400,43 @@ language Dates
     }
     assert!(!parse_project("language X { mode typed; }"));
 }
+
+#[test]
+fn rule_checks_are_kept_in_syntax_mode() {
+    let prepared = prepare(
+        "syntax module Test { token N = ['a'..'z']+; syntax Start = Open:N Close:N \
+         { check T1 Open.Text != Close.Text : $\"same '{Open.Text}'\" at Close; \
+           match (x:Start)<[ a $x ]> => warning T2 : $\"{x}\"; } }",
+    )
+    .unwrap();
+    let start = &prepared["rules"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["name"] == "Test.Start")
+        .unwrap()["checks"];
+    assert_eq!(start[0]["kind"], "compare");
+    assert_eq!(start[0]["equal"], false);
+    assert_eq!(start[0]["at"], "Close");
+    assert_eq!(start[0]["message"], "same '{Open.Text}'");
+    assert_eq!(start[1]["severity"], "warning");
+    assert_eq!(start[1]["captures"][0]["category"], "Test.Start");
+    assert_eq!(prepared["omitted_semantics"], serde_json::json!([]));
+}
+
+#[test]
+fn malformed_rule_checks_are_rejected() {
+    for text in [
+        // Not a field of the rule.
+        "syntax module Test { token N = \"n\"; syntax Start = Open:N { check T1 Open.Text == Shut.Text : $\"x\"; } }",
+        // Only equality comparisons.
+        "syntax module Test { token N = \"n\"; syntax Start = A:N B:N { check T1 A.Text < B.Text : $\"x\"; } }",
+        // Captures stand for syntax rules.
+        "syntax module Test { token N = \"n\"; syntax Start = N { match (x:N)<[ $x ]> => error T1 : $\"x\"; } }",
+        // Placeholders name fields or captures.
+        "syntax module Test { token N = \"n\"; syntax Start = A:N { check T1 A.Text == A.Text : $\"{B.Text}\"; } }",
+        "syntax module Test { syntax Start = \"s\" { match (x:Start)<[ s ]> => error T1 : $\"{y}\"; } }",
+    ] {
+        assert!(prepare(text).is_err(), "{text}");
+    }
+}

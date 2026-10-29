@@ -3,4 +3,7 @@
   <service name="worker" enabled="true">
     <endpoint url="https://example.invalid/api"/>
   </service>
+  <credentials>
+  <password>sdfsfd</password>
+  </credentials>
 </configuration>

@@ -55,6 +55,7 @@ static LANGUAGE: Language = Language {
     handlers: &[],
     checks: &[],
     helpers: &[],
+    rule_checks: &[],
     source_hash: "recovery-test",
 };
 
@@ -288,6 +289,7 @@ fn local_search_matches_exhaustive_small_repair_oracle() {
         handlers: &[],
         checks: &[],
         helpers: &[],
+        rule_checks: &[],
         source_hash: "single",
     };
     fn distance(a: &[u8], b: &[u8]) -> usize {

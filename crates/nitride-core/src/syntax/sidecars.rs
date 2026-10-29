@@ -129,6 +129,7 @@ impl DiagnosticStore {
                     category: d.category,
                     code: d.code.clone(),
                     message: d.message.to_string(),
+                    severity: crate::Severity::Error,
                 })
                 .collect()
         })

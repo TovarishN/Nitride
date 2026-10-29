@@ -210,3 +210,69 @@ fn unchanged_grammar_does_not_reanalyse() {
     let messages = Session::run(&dir, vec![open(&program, "1;"), open(&grammar, &text)]);
     assert_eq!(all_diagnostics(&messages, &program).len(), 1);
 }
+
+fn xml_workspace(name: &str) -> PathBuf {
+    let dir = scratch(name);
+    manifest(
+        &dir,
+        "nitride.nproj",
+        "Xml",
+        ".xml",
+        &[lang("xml/Xml.ngr")],
+        "Xml.Document",
+        None,
+    );
+    dir
+}
+
+fn coded(diagnostics: &serde_json::Value, code: &str) -> Vec<serde_json::Value> {
+    diagnostics
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|d| d["code"] == code)
+        .cloned()
+        .collect()
+}
+
+#[test]
+fn xml_mismatched_close_tag() {
+    let dir = xml_workspace("xml-mismatch");
+    let document = dir.join("x.xml");
+    let messages = Session::run(&dir, vec![open(&document, "<a><b></c></a>")]);
+    let diagnostics = diagnostics(&messages, &document);
+    let found = coded(&diagnostics, "XML0001");
+    assert_eq!(found.len(), 1, "{diagnostics}");
+    assert_eq!(found[0]["severity"], 1);
+    assert_eq!(found[0]["range"]["start"], json!({"line":0,"character":8}));
+    assert_eq!(found[0]["message"], "closing tag 'c' does not match 'b'");
+}
+
+#[test]
+fn xml_password_inside_credentials() {
+    let dir = xml_workspace("xml-password");
+    let document = dir.join("x.xml");
+    let sample = std::fs::read_to_string(lang("xml/sample.xml")).unwrap();
+    let messages = Session::run(&dir, vec![open(&document, &sample)]);
+    let diagnostics = diagnostics(&messages, &document);
+    let found = coded(&diagnostics, "XML1001");
+    assert_eq!(found.len(), 1, "{diagnostics}");
+    assert_eq!(found[0]["severity"], 2);
+    assert!(
+        found[0]["message"]
+            .as_str()
+            .unwrap()
+            .ends_with("secret-ref instead. sdfsfd"),
+        "{diagnostics}"
+    );
+    assert!(coded(&diagnostics, "XML0001").is_empty(), "{diagnostics}");
+}
+
+#[test]
+fn xml_checks_stay_quiet_on_clean_documents() {
+    let dir = xml_workspace("xml-clean");
+    let document = dir.join("x.xml");
+    let text = "<configuration>\n  <password>outside</password>\n  <credentials user=\"a\">\n    <secret-ref name=\"db\"/>\n  </credentials>\n</configuration>";
+    let messages = Session::run(&dir, vec![open(&document, text)]);
+    assert_eq!(diagnostics(&messages, &document), json!([]));
+}
