@@ -19,6 +19,7 @@ path = "src/bin/profile.rs"
 nitride-prepare = { path = "../nitride-prepare" }
 nitride-core = { path = "../nitride-core" }
 nitride-lsp = { path = "../nitride-lsp" }
+nitride-codegen = { path = "../nitride-codegen" }
 serde_json = "1"
 
 [build-dependencies]

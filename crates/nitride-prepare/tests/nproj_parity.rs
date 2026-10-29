@@ -162,7 +162,7 @@ fn nproj_matches_project_json() {
     // Every language folder but `signed` has a project.json (`project`'s goes
     // once bootstrap reads .nproj).
     assert!(compared >= 13, "{compared}");
-    assert_eq!(languages.len(), 14);
+    assert_eq!(languages.len(), 15);
 }
 
 #[test]

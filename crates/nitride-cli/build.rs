@@ -9,6 +9,7 @@ fn main() {
         ("calls", "calls"),
         ("functions", "functions"),
         ("dates", "dates"),
+        ("calendar", "calendar"),
         ("rewrites", "rewrites"),
         ("csharp4", "csharp4"),
         ("grammar", "grammar"),
@@ -22,11 +23,10 @@ fn main() {
         }
         let generated = nitride_codegen::generate(&prepared.data.to_string())
             .expect("validated native language");
-        std::fs::write(
-            std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap())
-                .join(format!("{output}.rs")),
-            generated,
-        )
-        .unwrap();
+        let interfaces = nitride_codegen::interfaces(&prepared.data.to_string())
+            .expect("validated catalog interfaces");
+        let out = std::path::PathBuf::from(std::env::var_os("OUT_DIR").unwrap());
+        std::fs::write(out.join(format!("{output}.rs")), generated).unwrap();
+        std::fs::write(out.join(format!("{output}_interfaces.rs")), interfaces).unwrap();
     }
 }

@@ -4,16 +4,82 @@ use std::borrow::Cow;
 pub type Handler = dyn Fn(&[f64]) -> Result<f64, String> + Send + Sync;
 pub type TextHandler = dyn Fn(&str) -> Result<f64, String> + Send + Sync;
 pub type ValueProvider = dyn Fn() -> Result<f64, String> + Send + Sync;
+pub type ContractHandler = dyn Fn(Inputs<'_>) -> Result<f64, Failure> + Send + Sync;
+
+/// An interface operation's inputs: scalars, or the exact source spelling of
+/// its single `Core.Text` input.
+#[derive(Debug, Clone, Copy)]
+pub enum Inputs<'a> {
+    Numbers(&'a [f64]),
+    Text(&'a str),
+}
+
+/// A failure an interface operation declares, by catalog id (`Calendar.InvalidDate`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Failure {
+    pub id: Cow<'static, str>,
+    pub message: Cow<'static, str>,
+}
+
 pub enum HostHandler {
     Numbers(Box<Handler>),
     /// Receives the exact source spelling of the operation's single `Core.Text` input.
     Text(Box<TextHandler>),
+    /// Implements an interface operation of the contract `M.I@hash`, which
+    /// must be the one the language's catalog declares.
+    Contract {
+        contract: Cow<'static, str>,
+        run: Box<ContractHandler>,
+    },
 }
 pub struct HostBinding<'g> {
     pub signature: Signature<'g>,
     pub handler: HostHandler,
 }
+
+/// Why a host call returned no value.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CallError {
+    pub message: String,
+    /// The declared failure, for interface operations.
+    pub failure: Option<Box<str>>,
+}
+
 impl<'g> HostBinding<'g> {
+    pub fn contract(
+        signature: Signature<'g>,
+        contract: impl Into<Cow<'static, str>>,
+        run: impl Fn(Inputs<'_>) -> Result<f64, Failure> + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            signature,
+            handler: HostHandler::Contract {
+                contract: contract.into(),
+                run: Box::new(run),
+            },
+        }
+    }
+
+    /// Calls the handler. A text handler or text contract receives `text`;
+    /// any other receives `numbers`.
+    pub fn call(&self, numbers: &[f64], text: Option<&str>) -> Result<f64, CallError> {
+        let plain = |message: String| CallError {
+            message,
+            failure: None,
+        };
+        match (&self.handler, text) {
+            (HostHandler::Numbers(handler), _) => handler(numbers).map_err(plain),
+            (HostHandler::Text(handler), Some(text)) => handler(text).map_err(plain),
+            (HostHandler::Text(_), None) => Err(plain("text handler without text".into())),
+            (HostHandler::Contract { run, .. }, _) => {
+                let inputs = text.map_or(Inputs::Numbers(numbers), Inputs::Text);
+                run(inputs).map_err(|failure| CallError {
+                    message: failure.message.into_owned(),
+                    failure: Some(failure.id.into()),
+                })
+            }
+        }
+    }
     pub fn new(
         signature: Signature<'g>,
         handler: impl Fn(&[f64]) -> Result<f64, String> + Send + Sync + 'static,
@@ -155,15 +221,39 @@ pub fn preflight_with_values(
                         .filter(|b| b.signature.id == signature.id)
                         .collect();
                     let text_input = signature.inputs.contains(&TEXT);
+                    // `M.I@hash` for an interface operation, else a host handler name.
+                    let declared = program
+                        .language
+                        .handlers
+                        .get(*operation as usize)
+                        .filter(|h| h.contains('@'));
+                    let compatible = |handler: &HostHandler| match (handler, declared) {
+                        (HostHandler::Contract { .. }, declared) => declared.is_some(),
+                        (_, Some(_)) => false,
+                        (HostHandler::Text(_), None) => text_input,
+                        (HostHandler::Numbers(_), None) => !text_input,
+                    };
                     if matches.len() != 1
                         || matches[0].signature != *signature
-                        || text_input != matches!(matches[0].handler, HostHandler::Text(_))
+                        || !compatible(&matches[0].handler)
                         || (text_input && signature.inputs.len() != 1)
                     {
                         errors.push(Diagnostic::new(
                             "host",
                             node.span,
                             "missing, duplicate or incompatible host binding",
+                        ));
+                    } else if let (HostHandler::Contract { contract, .. }, Some(declared)) =
+                        (&matches[0].handler, declared)
+                        && contract != declared
+                    {
+                        errors.push(Diagnostic::new(
+                            "host",
+                            node.span,
+                            format!(
+                                "binding for '{}' implements contract {contract}, the catalog declares {declared}",
+                                signature.id
+                            ),
                         ));
                     }
                     let operands = program.args.get(args.start as usize..args.end as usize);
@@ -268,7 +358,7 @@ pub fn execute_with_values<'g>(
         while values.len() <= statement.value as usize {
             let node = &program.nodes[values.len()];
             let result = match &node.kind {
-                HirKind::Error => Err("damaged value cannot execute".into()),
+                HirKind::Error => Err(("damaged value cannot execute".into(), None)),
                 HirKind::Constant(n) => Ok(*n),
                 HirKind::Reference(symbol) => Ok(symbols[symbol]),
                 // Text is consumed only by its operation's text handler.
@@ -281,7 +371,7 @@ pub fn execute_with_values<'g>(
                             if let Ok(value) = read {
                                 builtins.push((builtin, value));
                             }
-                            read
+                            read.map_err(|e| (e, None))
                         }
                     }
                 }
@@ -293,32 +383,32 @@ pub fn execute_with_values<'g>(
                         .unwrap();
                     let operands = &program.args[args.start as usize..args.end as usize];
                     report.trace.push(signature.id);
-                    match &binding.handler {
-                        HostHandler::Numbers(handler) => {
-                            args_buffer.clear();
-                            args_buffer.extend(operands.iter().map(|id| values[*id as usize]));
-                            handler(&args_buffer)
+                    // Preflight admits a text argument only as an operation's single input.
+                    let text = match operands.first().map(|id| &program.nodes[*id as usize].kind) {
+                        Some(HirKind::Text { start, end }) => {
+                            Some(&program.text[*start as usize..*end as usize])
                         }
-                        HostHandler::Text(handler) => {
-                            let HirKind::Text { start, end } =
-                                program.nodes[operands[0] as usize].kind
-                            else {
-                                unreachable!("preflight admits only text arguments here")
-                            };
-                            handler(&program.text[start as usize..end as usize])
-                        }
+                        _ => None,
+                    };
+                    args_buffer.clear();
+                    if text.is_none() {
+                        args_buffer.extend(operands.iter().map(|id| values[*id as usize]));
                     }
+                    binding
+                        .call(&args_buffer, text)
+                        .map_err(|e| (e.message, e.failure))
                 }
             };
             let number = match result {
                 Ok(n) if n.is_finite() => n,
                 other => {
+                    let (message, failure) = other
+                        .err()
+                        .unwrap_or_else(|| ("nonfinite result".into(), None));
+                    let mut diagnostic = Diagnostic::new("execution", node.span, message);
+                    diagnostic.code = failure;
                     return Err(ExecutionFailure {
-                        diagnostic: Diagnostic::new(
-                            "execution",
-                            node.span,
-                            other.err().unwrap_or_else(|| "nonfinite result".into()),
-                        ),
+                        diagnostic,
                         trace: report.trace,
                     });
                 }

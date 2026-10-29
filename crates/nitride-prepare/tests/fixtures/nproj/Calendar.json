@@ -1,0 +1,15 @@
+{
+  "catalogs": [
+    "languages/calendar/Calendar.ncatalog"
+  ],
+  "extensions": [
+    ".calendar"
+  ],
+  "grammars": [
+    "languages/calendar/Calendar.ngr"
+  ],
+  "name": "Calendar",
+  "nitrogen": null,
+  "start": "Calendar.Program",
+  "typed": true
+}

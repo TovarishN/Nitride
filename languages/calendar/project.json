@@ -1,0 +1,8 @@
+{
+  "mode": "typed",
+  "start": "Calendar.Program",
+  "grammars": [
+    "Calendar.ngr"
+  ],
+  "catalogs": ["Calendar.ncatalog"]
+}

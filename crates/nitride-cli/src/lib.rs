@@ -10,6 +10,42 @@ pub mod rewrites {
 pub mod dates {
     include!(concat!(env!("OUT_DIR"), "/dates.rs"));
 }
+pub mod calendar {
+    include!(concat!(env!("OUT_DIR"), "/calendar.rs"));
+    include!(concat!(env!("OUT_DIR"), "/calendar_interfaces.rs"));
+
+    /// The fixture's `Gregorian`: proleptic Gregorian day numbers from
+    /// 0001-01-01 through 9999-12-31.
+    pub struct FixtureCalendar;
+
+    /// 9999-12-31.
+    const LAST: f64 = 3_652_058.0;
+
+    fn in_range(day: f64) -> Result<f64, gregorian::GregorianFailure> {
+        if (0.0..=LAST).contains(&day) {
+            Ok(day)
+        } else {
+            Err(gregorian::GregorianFailure::OutOfRange)
+        }
+    }
+
+    impl gregorian::Gregorian for FixtureCalendar {
+        fn parse_date(&self, text: &str) -> Result<f64, gregorian::GregorianFailure> {
+            nitride_core::iso_date_day_number(text)
+                .map(|day| day as f64)
+                .ok_or(gregorian::GregorianFailure::InvalidDate)
+        }
+        fn later(&self, date: f64, duration: f64) -> Result<f64, gregorian::GregorianFailure> {
+            in_range(date + duration)
+        }
+        fn earlier(&self, date: f64, duration: f64) -> Result<f64, gregorian::GregorianFailure> {
+            in_range(date - duration)
+        }
+        fn between(&self, date_1: f64, date_2: f64) -> Result<f64, gregorian::GregorianFailure> {
+            Ok(date_1 - date_2)
+        }
+    }
+}
 pub mod calls {
     include!(concat!(env!("OUT_DIR"), "/calls.rs"));
 }
@@ -106,45 +142,17 @@ pub fn fixture_bindings() -> Vec<HostBinding<'static>> {
 }
 
 pub fn fixture_bindings_for(language: &'static Language<'static>) -> Vec<HostBinding<'static>> {
-    language
-        .operations
-        .iter()
-        .zip(language.handlers)
-        .map(|(signature, handler)| {
-            if *handler == "iso-date" {
-                return HostBinding::text(*signature, |text| {
-                    iso_date_day_number(text)
-                        .map(|day| day as f64)
-                        .ok_or_else(|| "not a calendar date".into())
-                });
-            }
-            HostBinding::new(*signature, move |a| {
-                Ok(match *handler {
-                    "zero" => 0.0,
-                    "identity" => a[0],
-                    "neg" => -a[0],
-                    "add" => a[0] + a[1],
-                    "sub" => a[0] - a[1],
-                    "mul" => a[0] * a[1],
-                    "div" => a[0] / a[1],
-                    "pow" => a[0].powf(a[1]),
-                    _ => return Err("unknown native handler".into()),
-                })
-            })
-        })
-        .collect()
+    host::bindings(language)
 }
 
 /// Days since 0001-01-01 for the current UTC date; the fixture has no time-zone policy.
 pub fn utc_today() -> f64 {
-    let seconds = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .map_or(0, |d| d.as_secs());
-    (719_162 + seconds / 86_400) as f64
+    host::utc_today()
 }
 
-/// The fixture host's built-in values for `language`, by catalog handler:
-/// the constants `pi`, `e` and `tau`, and `today` as the given day number.
+/// The fixture host's built-in values for `language`, by catalog handler,
+/// with `today` as the given day number. Names stay borrowed from the
+/// static language, unlike `host::host_values`.
 pub fn fixture_values_for(language: &'static Language<'static>, today: f64) -> Vec<HostValue> {
     let mut values: Vec<HostValue> = Vec::new();
     let declared = language.rules.iter().flat_map(|r| match r.action {
@@ -158,12 +166,10 @@ pub fn fixture_values_for(language: &'static Language<'static>, today: f64) -> V
         {
             continue;
         }
-        let constant = match value.handler {
-            "pi" => std::f64::consts::PI,
-            "e" => std::f64::consts::E,
-            "tau" => std::f64::consts::TAU,
-            "today" => today,
-            _ => continue,
+        let constant = match host::value(value.handler).map(|h| h.read) {
+            Some(host::Read::Constant(number)) => number,
+            Some(host::Read::Today) => today,
+            None => continue,
         };
         values.push(HostValue::new(
             value.kind,
@@ -182,6 +188,20 @@ pub fn observe_dates(source: &str, today: f64) -> Value {
         true,
         &fixture_values_for(&dates::LANGUAGE, today),
     )
+}
+
+/// Runs Calendar with the built-in handlers and `implementation` of its
+/// `Gregorian` interface.
+pub fn observe_calendar(
+    source: &str,
+    implementation: std::sync::Arc<dyn calendar::gregorian::Gregorian>,
+) -> Value {
+    let mut bindings = fixture_bindings_for(&calendar::LANGUAGE);
+    bindings.extend(calendar::gregorian::bindings(
+        &calendar::LANGUAGE,
+        implementation,
+    ));
+    observe_with(&calendar::LANGUAGE, source, true, &[], &bindings)
 }
 
 pub fn observe_rewrites(source: &str, today: f64) -> Value {
@@ -231,6 +251,22 @@ fn observe_with_values(
     include_kinds: bool,
     values: &[HostValue],
 ) -> Value {
+    observe_with(
+        language,
+        source,
+        include_kinds,
+        values,
+        &fixture_bindings_for(language),
+    )
+}
+
+fn observe_with(
+    language: &'static Language<'static>,
+    source: &str,
+    include_kinds: bool,
+    values: &[HostValue],
+    bindings: &[HostBinding<'static>],
+) -> Value {
     let error = |e: Diagnostic| {
         let mut observation =
             json!({"ok":false,"error":e.category,"span":e.span,"message":e.message,"trace":[]});
@@ -247,15 +283,14 @@ fn observe_with_values(
         Ok(p) => p,
         Err(e) => return error(e.into_iter().next().unwrap()),
     };
-    let report = match execute_with_values(
-        &program,
-        &fixture_bindings_for(language),
-        values,
-        Limits::default(),
-    ) {
+    let report = match execute_with_values(&program, bindings, values, Limits::default()) {
         Ok(r) => r,
         Err(failure) => {
-            return json!({"ok":false,"error":failure.diagnostic.category,"message":failure.diagnostic.message,"trace":failure.trace});
+            let mut observation = json!({"ok":false,"error":failure.diagnostic.category,"message":failure.diagnostic.message,"trace":failure.trace});
+            if let Some(code) = failure.diagnostic.code {
+                observation["code"] = json!(code);
+            }
+            return observation;
         }
     };
     let mut syntax = Vec::new();
@@ -270,6 +305,7 @@ fn observe_with_values(
             || rule.name == "Calls.Paren"
             || rule.name == "Functions.Paren"
             || rule.name == "Dates.Paren"
+            || rule.name == "Calendar.Paren"
         {
             syntax.push(json!({"kind":rule.name,"span":node.span}));
         }

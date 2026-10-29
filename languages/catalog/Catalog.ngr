@@ -11,12 +11,27 @@ syntax module NitrideCatalog
   token Hex = ['0'..'9' 'a'..'f' 'A'..'F'];
   token Escape = "\\" (['n' 'r' 't' '0' '\\' '"' '\''] / "u" Hex Hex Hex Hex);
   token String = "\"" (Escape / [^ '"' '\\' '\n'])* "\"";
+  token Digit = ['0'..'9'];
+  token Number = "-"? Digit+ ("." Digit+)?;
 
   syntax File = Modules:Module*;
   syntax Module = "catalog" "module" Name:QualifiedName "{" Members:Member* "}";
-  syntax Member = Using / Type / Operation / Overload / Builtin / Let / Show / Call / Check;
+  syntax Member = Using / Type / Failure / Interface / Operation / Overload / Builtin / Let / Show / Call / Check;
   syntax Using = "using" Name:QualifiedName ";";
   syntax Type = "type" Name:Identifier ";";
+  syntax Failure = "failure" Name:Identifier Message:String ";";
+  // Operations a binding implements together, and examples every binding must satisfy.
+  syntax Interface = "interface" Name:Identifier "version" Version:Number "{" Members:InterfaceMember* "}";
+  syntax InterfaceMember = Contract / Example;
+  syntax Contract = "operation" Name:Identifier "(" Inputs:(QualifiedName; ",")* ")" ":" Result:QualifiedName Fails:Fails? ";";
+  syntax Fails = "fails" Failures:(QualifiedName; ",")+;
+  syntax Example = "example" Value:ExampleExpr Outcome:(Equals / Raises) ";";
+  syntax Equals = "==" Expected:ExampleExpr;
+  syntax Raises = "fails" Failure:QualifiedName;
+  syntax ExampleExpr = ExampleCall / ExampleNumber / ExampleText;
+  syntax ExampleCall = Operation:QualifiedName "(" Args:(ExampleExpr; ",")* ")";
+  syntax ExampleNumber = Value:Number;
+  syntax ExampleText = Value:String;
   syntax Operation = "operation" Name:Identifier "(" Inputs:(QualifiedName; ",")* ")" ":" Result:QualifiedName "=" Handler:Handler ";";
   syntax Handler = "host" Name:HandlerName;
   syntax Overload = "overload" Name:Identifier "=" Candidates:(QualifiedName; "|")+ ";";

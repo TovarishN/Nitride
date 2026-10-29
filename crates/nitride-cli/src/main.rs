@@ -86,6 +86,51 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         println!("{}", nitride_prepare::catalog(&sources)?.json);
         return Ok(true);
     }
+    if args.first().is_some_and(|a| a == "interface") {
+        // Rust for the project's catalog interfaces: the traits an
+        // implementation fills in, binders and conformance runs.
+        let [_, manifest] = args.as_slice() else {
+            return Err("usage: nitride interface <project.nproj|project.json>".into());
+        };
+        let prepared = nitride_prepare::prepare_project(std::path::Path::new(manifest))?;
+        print!(
+            "{}",
+            nitride_codegen::interfaces(&prepared.data.to_string())?
+        );
+        return Ok(true);
+    }
+    if args.first().is_some_and(|a| a == "conform") {
+        // The interface examples, run through the implementations this
+        // executable links.
+        if args.len() != 2 || args[1] != "calendar" {
+            return Err("usage: nitride conform calendar".into());
+        }
+        let failed = nitride_cli::calendar::gregorian::conform(
+            &nitride_cli::calendar::LANGUAGE,
+            std::sync::Arc::new(nitride_cli::calendar::FixtureCalendar),
+        );
+        let examples = nitride_cli::calendar::gregorian::EXAMPLES.len();
+        let report = serde_json::json!({
+            "interface": nitride_cli::calendar::gregorian::CONTRACT,
+            "examples": examples,
+            "failed": failed
+                .iter()
+                .map(|(example, why)| serde_json::json!({"example": example, "why": why}))
+                .collect::<Vec<_>>(),
+        });
+        println!("{report}");
+        return Ok(failed.is_empty());
+    }
+    if let [flag, path] = args.as_slice()
+        && flag == "--calendar"
+    {
+        let result = nitride_cli::observe_calendar(
+            &std::fs::read_to_string(path)?,
+            std::sync::Arc::new(nitride_cli::calendar::FixtureCalendar),
+        );
+        println!("{result}");
+        return Ok(result["ok"] == true);
+    }
     if args.len() == 1 && args[0] == "--version" {
         println!("Nitride {}", env!("CARGO_PKG_VERSION"));
         return Ok(true);
@@ -179,7 +224,7 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         );
         return Ok(true);
     }
-    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.nproj|project.json> [--output <language.json>] | catalog [<file.ncatalog>...] | <source.portable> | --observe <source> | --functions <source> | --calls <source> | --dates <source> [--today yyyy-MM-dd] | --rewrites <source> [--today yyyy-MM-dd] | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --parse-csharp4 <source> | --bench <source> <iterations> | --recover <profile> <source> | --recover-batch | lsp | --version".into()) };
+    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.nproj|project.json> [--output <language.json>] | catalog [<file.ncatalog>...] | interface <project.nproj|project.json> | conform calendar | --calendar <source> | <source.portable> | --observe <source> | --functions <source> | --calls <source> | --dates <source> [--today yyyy-MM-dd] | --rewrites <source> [--today yyyy-MM-dd] | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --parse-csharp4 <source> | --bench <source> <iterations> | --recover <profile> <source> | --recover-batch | lsp | --version".into()) };
     let result = nitride_cli::observe(&std::fs::read_to_string(path)?);
     println!("{result}");
     Ok(result["ok"] == true)

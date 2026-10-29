@@ -1,7 +1,9 @@
+mod interfaces;
 mod lexical;
 mod syntax;
 use serde_json::Value;
 mod runtime;
+pub use interfaces::interfaces;
 pub use runtime::LoadedLanguage;
 use std::collections::{HashMap, HashSet};
 
@@ -92,18 +94,26 @@ pub fn generate(input: &str) -> Result<String, String> {
             list(inputs.iter().copied().map(quoted)),
             quoted(result)
         ));
+        if let Some(interface) = op.get("interface") {
+            // Any conforming binding implements it: the handler names the contract.
+            let interface = text(interface)?;
+            let declared = &data["catalog"]["interfaces"][interface];
+            if !strings(&declared["operations"])?.contains(&id) {
+                return Err("interface operation is not in its interface".into());
+            }
+            if result == TEXT || (inputs.contains(&TEXT) && inputs.len() != 1) {
+                return Err("a text interface operation takes one text input".into());
+            }
+            handlers.push(quoted(&format!("{interface}@{}", text(&declared["hash"])?)));
+            continue;
+        }
         let handler = text(&op["handler"])?;
-        let arity = match handler {
-            "zero" => 0,
-            "identity" | "neg" | "iso-date" => 1,
-            "add" | "sub" | "mul" | "div" | "pow" => 2,
-            _ => return Err("unknown fixture host handler".into()),
-        };
-        if array(&op["inputs"])?.len() != arity {
+        let host = nitride_core::host::operation(handler).ok_or("unknown fixture host handler")?;
+        if array(&op["inputs"])?.len() != host.arity() {
             return Err("fixture host handler arity mismatch".into());
         }
         // Text is only an operation input fed directly by source spelling.
-        if result == TEXT || (handler == "iso-date") != inputs.contains(&TEXT) {
+        if result == TEXT || host.takes_text() != inputs.contains(&TEXT) {
             return Err("text operations require a text host handler".into());
         }
         handlers.push(quoted(handler));
@@ -213,7 +223,7 @@ pub fn generate(input: &str) -> Result<String, String> {
             for (name, value) in names.as_object().ok_or("value names must be an object")? {
                 let ty = text(&value["type"])?;
                 let handler = text(&value["handler"])?;
-                if !matches!(handler, "pi" | "e" | "tau" | "today") {
+                if nitride_core::host::value(handler).is_none() {
                     return Err("unknown fixture host value handler".into());
                 }
                 if !builtin_declarations.contains(&(kind.as_str(), name.as_str())) {
@@ -299,12 +309,11 @@ pub fn generate(input: &str) -> Result<String, String> {
             if message.is_empty() || !labels.contains(field) {
                 return Err("check requires a rule field and message".into());
             }
-            let predicate = match text(&check["predicate"])? {
-                "iso-date" => "IsoDate",
-                _ => return Err("unknown check predicate".into()),
-            };
+            let predicate = nitride_core::host::predicate(text(&check["predicate"])?)
+                .ok_or("unknown check predicate")?
+                .predicate;
             check_tables.push(format!(
-                "nitride_core::Check {{rule:{id},field:{},predicate:nitride_core::Predicate::{predicate},code:{},message:{}}}",
+                "nitride_core::Check {{rule:{id},field:{},predicate:nitride_core::Predicate::{predicate:?},code:{},message:{}}}",
                 quoted(field),
                 quoted(code),
                 quoted(message)
@@ -327,7 +336,12 @@ pub fn generate(input: &str) -> Result<String, String> {
             || calls.is_some_and(|m| !m.is_empty())
             || !groups.is_empty()
             || !check_tables.is_empty()
-            || operations.iter().any(|op| op["handler"] == "iso-date"))
+            || operations.iter().any(|op| {
+                op["handler"]
+                    .as_str()
+                    .and_then(nitride_core::host::operation)
+                    .is_some_and(|h| h.takes_text())
+            }))
     {
         return Err("template profile cannot mix builtin calls or overload policies".into());
     }

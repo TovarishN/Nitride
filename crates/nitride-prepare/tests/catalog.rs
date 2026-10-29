@@ -288,3 +288,115 @@ fn catalog_frontend_reproduces_its_seed() {
         "run bootstrap regeneration after changing the catalog grammar"
     );
 }
+
+const CONTRACT: &str = "catalog module C {
+  type Date;
+  failure Invalid \"not a date\";
+  interface Cal version 2
+  {
+    operation Parse(Text) : Date fails Invalid;
+    operation Next(Date) : Date;
+    example Next(Parse(\"1\")) == Parse(\"2\");
+    example Parse(\"x\") fails Invalid;
+  }
+  operation Days(Scalar) : Scalar = host identity;
+}";
+
+#[test]
+fn interfaces_lower_with_their_contract_hash_and_examples() {
+    let lowered = lower(&[("C.ncatalog", CONTRACT)]).unwrap();
+    assert_eq!(
+        lowered["operations"][0],
+        json!({"id":"C.Parse","inputs":["Core.Text"],"result":"C.Date","interface":"C.Cal","fails":["C.Invalid"]})
+    );
+    assert_eq!(lowered["operations"][2]["handler"], "identity");
+    assert_eq!(lowered["failures"], json!({"C.Invalid":"not a date"}));
+    let interface = &lowered["interfaces"]["C.Cal"];
+    assert_eq!(interface["version"], 2);
+    assert_eq!(interface["operations"], json!(["C.Parse", "C.Next"]));
+    assert_eq!(interface["hash"].as_str().unwrap().len(), 64);
+    assert_eq!(
+        interface["examples"][0],
+        json!({"source":"example Next(Parse(\"1\")) == Parse(\"2\");",
+            "value":{"call":"C.Next","args":[{"call":"C.Parse","args":[{"text":"1"}]}]},
+            "equals":{"call":"C.Parse","args":[{"text":"2"}]}})
+    );
+    assert_eq!(interface["examples"][1]["fails"], "C.Invalid");
+
+    // Examples are not part of the contract; signatures are.
+    let fewer = CONTRACT.replace("    example Parse(\"x\") fails Invalid;\n", "");
+    let same = lower(&[("C.ncatalog", &fewer)]).unwrap();
+    assert_eq!(same["interfaces"]["C.Cal"]["hash"], interface["hash"]);
+    let wider = CONTRACT.replace("Next(Date) : Date;", "Next(Date) : Date fails Invalid;");
+    let other = lower(&[("C.ncatalog", &wider)]).unwrap();
+    assert_ne!(other["interfaces"]["C.Cal"]["hash"], interface["hash"]);
+}
+
+#[test]
+fn interface_errors_carry_the_catalog_span() {
+    for (from, to, message, at) in [
+        (
+            "fails Invalid;",
+            "fails Missing;",
+            "unknown failure 'Missing'",
+            "Missing",
+        ),
+        (
+            "Next(Parse(\"1\")) ==",
+            "Next(Parse(\"1\"), 1) ==",
+            "'Next' takes 1 inputs, not 2",
+            "Next",
+        ),
+        (
+            "== Parse(\"2\");",
+            "== Days(2);",
+            "the two sides of an example are 'C.Date' and 'Core.Scalar'",
+            "example Next(Parse(\"1\")) == Days(2);",
+        ),
+        (
+            "example Parse(\"x\") fails Invalid;",
+            "example Next(Parse(\"x\")) fails Nope;",
+            "unknown failure 'Nope'",
+            "Nope",
+        ),
+        (
+            "Next(Parse(\"1\"))",
+            "Next(1)",
+            "input 1 of 'Next' is 'C.Date', not 'Core.Scalar'",
+            "Next",
+        ),
+        (
+            "version 2",
+            "version 0",
+            "an interface version is a positive integer",
+            "0",
+        ),
+        (
+            "type Date;",
+            "type Date; failure Invalid \"again\";",
+            "'Invalid' is already declared at C.ncatalog:2",
+            "Invalid",
+        ),
+    ] {
+        let text = CONTRACT.replace(from, to);
+        assert_ne!(text, CONTRACT, "{from}");
+        let error = catalogs(&sources(&[("C.ncatalog", &text)])).unwrap_err();
+        assert_eq!(error.message, message, "{to}");
+        assert_eq!(&text[error.span[0]..error.span[1]], at, "{to}");
+    }
+
+    let unreported = CONTRACT.replace(
+        "example Parse(\"x\") fails Invalid;",
+        "example Days(1) fails Invalid;",
+    );
+    let error = catalogs(&sources(&[("C.ncatalog", &unreported)])).unwrap_err();
+    assert_eq!(
+        error.message,
+        "no operation in this example reports 'Invalid'"
+    );
+
+    let empty = "catalog module C { interface Cal version 1 { } }";
+    let error = catalogs(&sources(&[("C.ncatalog", empty)])).unwrap_err();
+    assert_eq!(error.message, "interface 'C.Cal' declares no operations");
+    assert_eq!(&empty[error.span[0]..error.span[1]], "Cal");
+}
