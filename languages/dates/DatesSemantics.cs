@@ -26,16 +26,16 @@ public static class DatesLanguage
     static readonly OperationSignature O11 = new("Dates.Scale", T3, T0, T3);
     public static OperationSignature? Select(string group, SemanticType? left, SemanticType? right)
     {
-        if (group == "Dates.Plus") {
-            if (Equals(left,O3.Inputs[0]) && Equals(right,O3.Inputs[1])) return O3;
-            if (Equals(left,O4.Inputs[0]) && Equals(right,O4.Inputs[1])) return O4;
-            if (Equals(left,O5.Inputs[0]) && Equals(right,O5.Inputs[1])) return O5;
-        }
         if (group == "Dates.Minus") {
             if (Equals(left,O6.Inputs[0]) && Equals(right,O6.Inputs[1])) return O6;
             if (Equals(left,O7.Inputs[0]) && Equals(right,O7.Inputs[1])) return O7;
             if (Equals(left,O8.Inputs[0]) && Equals(right,O8.Inputs[1])) return O8;
             if (Equals(left,O9.Inputs[0]) && Equals(right,O9.Inputs[1])) return O9;
+        }
+        if (group == "Dates.Plus") {
+            if (Equals(left,O3.Inputs[0]) && Equals(right,O3.Inputs[1])) return O3;
+            if (Equals(left,O4.Inputs[0]) && Equals(right,O4.Inputs[1])) return O4;
+            if (Equals(left,O5.Inputs[0]) && Equals(right,O5.Inputs[1])) return O5;
         }
         if (group == "Dates.Times") {
             if (Equals(left,O10.Inputs[0]) && Equals(right,O10.Inputs[1])) return O10;

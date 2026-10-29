@@ -33,12 +33,7 @@ fn invalid_preparation_keeps_previous_output_and_reports_source() {
     std::fs::create_dir_all(&root).unwrap();
     std::fs::write(
         root.join("project.json"),
-        r#"{"mode":"syntax","start":"Bad.Start","grammars":["Bad.ngr"],"catalog":"catalog.json"}"#,
-    )
-    .unwrap();
-    std::fs::write(
-        root.join("catalog.json"),
-        r#"{"types":[],"operations":[],"statements":{}}"#,
+        r#"{"mode":"syntax","start":"Bad.Start","grammars":["Bad.ngr"]}"#,
     )
     .unwrap();
     std::fs::write(

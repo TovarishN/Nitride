@@ -4,6 +4,5 @@
   "grammars": [
     "Base.ngr",
     "Uses.ngr"
-  ],
-  "catalog": "catalog.json"
+  ]
 }

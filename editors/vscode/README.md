@@ -12,11 +12,11 @@ The extension reads `nitride.json` at each workspace folder root, else
 ```json
 { "languages": [ { "name": "Calls", "extensions": [".calls"],
   "grammars": ["languages/calls/Calls.ngr"], "start": "Calls.Program",
-  "catalog": "languages/calls/catalog.json", "mode": "typed" } ] }
+  "catalogs": ["languages/calls/Calls.ncatalog"], "mode": "typed" } ] }
 ```
 
-`catalog` and `mode` are read from `nitride.json` only. A language with a
-catalog is checked in typed mode; without one (and every `nitrogen.json`
+`catalogs` and `mode` are read from `nitride.json` only. A language with
+catalogs (`.ncatalog` files, see `docs/catalog-language.md`) is checked in typed mode; without one (and every `nitrogen.json`
 language) it is syntax-only, and Nitrogen's C# semantic members in its grammar
 are skipped with a warning.
 

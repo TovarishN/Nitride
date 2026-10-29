@@ -13,7 +13,7 @@ import time
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 NATIVE = ROOT / "target/release/nitride"
 REFERENCE = ROOT / "tools/Nitride.Reference/bin/Release/net10.0/Nitride.Reference.dll"
-CATALOG = ROOT / "languages/portable/catalog.json"
+CATALOG = ROOT / "languages/portable/Portable.ncatalog"
 
 
 def measure(command, count=5, env=None):
@@ -48,10 +48,13 @@ def main():
         "reference_output_directory_bytes_excluding_symbols": sum(p.stat().st_size for p in REFERENCE.parent.iterdir() if p.is_file() and p.suffix != ".pdb"),
         "measurements": {}, "limitations": ["Peak RSS, not retained engine bytes or an idle-process baseline.", "Wall time includes process spawn, initialization, pipeline, JSON observation formatting and output; it is not a warm parser benchmark.", "Reference is a development adapter over real Nitrogen APIs, not an optimized production deployment.", "Reference output size excludes the separately installed .NET runtime; native executable still uses normal OS libraries.", ".NET HIR constants are f32; native constants are f64. The measured corpus uses exactly representable integers.", "Allocator high-water instrumentation and stack measurement are not available in this report.", "Warm OS caches; process-cold runs; no cold disk-cache claim."]}
     with tempfile.TemporaryDirectory() as tmp:
+        # The reference reads catalog JSON; lowering it is not part of the measurement.
+        catalog = pathlib.Path(tmp) / "catalog.json"
+        catalog.write_text(subprocess.check_output([NATIVE, "catalog", CATALOG], text=True))
         for name, source in cases.items():
             path = pathlib.Path(tmp) / (name + ".portable")
             path.write_text(source)
-            report["measurements"][name] = {"source_bytes": len(source.encode()), "native": measure([NATIVE, path], env=env), "dotnet_reference": measure([dotnet, REFERENCE, "oracle", path, CATALOG])}
+            report["measurements"][name] = {"source_bytes": len(source.encode()), "native": measure([NATIVE, path], env=env), "dotnet_reference": measure([dotnet, REFERENCE, "oracle", path, catalog])}
         path = pathlib.Path(tmp) / "small.portable"
         report["native_warm_pipeline"] = json.loads(subprocess.check_output([NATIVE, "--bench", path, "1000"], text=True))
     (ROOT / "docs/footprint.json").write_text(json.dumps(report, indent=2) + "\n")

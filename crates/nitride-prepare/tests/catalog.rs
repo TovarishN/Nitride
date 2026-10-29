@@ -20,38 +20,34 @@ fn lower(files: &[(&str, &str)]) -> Result<Value, String> {
     catalogs(&sources(files)).map_err(|e| e.message)
 }
 
+/// The catalog.json files these catalogs replaced, lowered byte-for-byte equal
+/// before the JSON was deleted; Dates and Calls together use every section.
+const DATES_JSON: &str = r#"{"types":["Core.Scalar","Core.Text","Dates.Date","Dates.Duration"],"operations":[{"id":"Dates.ParseDate","inputs":["Core.Text"],"result":"Dates.Date","handler":"iso-date"},{"id":"Dates.Days","inputs":["Core.Scalar"],"result":"Dates.Duration","handler":"identity"},{"id":"Dates.InDays","inputs":["Dates.Duration"],"result":"Core.Scalar","handler":"identity"},{"id":"Dates.AddScalar","inputs":["Core.Scalar","Core.Scalar"],"result":"Core.Scalar","handler":"add"},{"id":"Dates.Later","inputs":["Dates.Date","Dates.Duration"],"result":"Dates.Date","handler":"add"},{"id":"Dates.AddDurations","inputs":["Dates.Duration","Dates.Duration"],"result":"Dates.Duration","handler":"add"},{"id":"Dates.SubScalar","inputs":["Core.Scalar","Core.Scalar"],"result":"Core.Scalar","handler":"sub"},{"id":"Dates.Earlier","inputs":["Dates.Date","Dates.Duration"],"result":"Dates.Date","handler":"sub"},{"id":"Dates.Between","inputs":["Dates.Date","Dates.Date"],"result":"Dates.Duration","handler":"sub"},{"id":"Dates.SubDurations","inputs":["Dates.Duration","Dates.Duration"],"result":"Dates.Duration","handler":"sub"},{"id":"Dates.MulScalar","inputs":["Core.Scalar","Core.Scalar"],"result":"Core.Scalar","handler":"mul"},{"id":"Dates.Scale","inputs":["Core.Scalar","Dates.Duration"],"result":"Dates.Duration","handler":"mul"}],"overloads":{"Dates.Plus":["Dates.AddScalar","Dates.Later","Dates.AddDurations"],"Dates.Minus":["Dates.SubScalar","Dates.Earlier","Dates.Between","Dates.SubDurations"],"Dates.Times":["Dates.MulScalar","Dates.Scale"]},"statements":{"Dates.Let":{"kind":"let","value":"Value","infer":true},"Dates.Show":{"kind":"show","value":"Value"}},"values":{"value":{"pi":{"type":"Core.Scalar","handler":"pi"},"today":{"type":"Dates.Date","handler":"today"}}},"checks":{"Dates.Day":[{"code":"DATE0001","field":"Value","predicate":"iso-date","message":"not a calendar date"}]}}"#;
+const CALLS_JSON: &str = r#"{"types":["Core.Scalar","Calls.Time"],"operations":[{"id":"Calls.Duration","inputs":["Core.Scalar"],"result":"Calls.Time","handler":"identity"},{"id":"Calls.NegScalar","inputs":["Core.Scalar"],"result":"Core.Scalar","handler":"neg"},{"id":"Calls.NegTime","inputs":["Calls.Time"],"result":"Calls.Time","handler":"neg"},{"id":"Calls.SumScalar","inputs":["Core.Scalar","Core.Scalar"],"result":"Core.Scalar","handler":"add"},{"id":"Calls.SumTime","inputs":["Calls.Time","Calls.Time"],"result":"Calls.Time","handler":"add"},{"id":"Calls.Zero","inputs":[],"result":"Core.Scalar","handler":"zero"}],"statements":{"Calls.Let":{"kind":"let","value":"Value","infer":true},"Calls.Local":{"kind":"let","value":"Value","infer":true},"Calls.Show":{"kind":"show","value":"Value"}},"builtins":{"function":{"neg":["Calls.NegScalar","Calls.NegTime"],"sys.neg":["Calls.NegScalar","Calls.NegTime"],"sum":["Calls.SumScalar","Calls.SumTime"],"duration":["Calls.Duration"],"zero":["Calls.Zero"],"calc":["Calls.Zero","Calls.NegScalar","Calls.SumScalar"]}},"calls":{"Calls.Call0":{"args":[]},"Calls.Call1":{"args":["Arg"]},"Calls.Call2":{"args":["Left","Right"]},"Calls.AnyCall":{"args":["Arg"]},"Calls.FallbackCall":{"args":["Arg"]}}}"#;
+
 #[test]
-fn every_catalog_lowers_to_its_json() {
-    for (project, file) in [
-        ("calls", "Calls.ncatalog"),
-        ("dates", "Dates.ncatalog"),
-        ("functions", "Functions.ncatalog"),
-        ("inference", "Inference.ncatalog"),
-        ("namespaces", "Namespaces.ncatalog"),
-        ("portable", "Portable.ncatalog"),
-        ("power", "Power.ncatalog"),
+fn catalogs_lower_to_the_json_they_replaced() {
+    for (project, file, expected) in [
+        ("dates", "Dates.ncatalog", DATES_JSON),
+        ("calls", "Calls.ncatalog", CALLS_JSON),
     ] {
-        let dir = root().join("languages").join(project);
-        let path = dir.join(file);
+        let path = root().join("languages").join(project).join(file);
         let source = Source {
             path: path.display().to_string(),
             text: std::fs::read_to_string(&path).unwrap(),
         };
         let lowered = catalogs(&[source]).unwrap_or_else(|e| panic!("{e}"));
-        let expected: Value =
-            serde_json::from_str(&std::fs::read_to_string(dir.join("catalog.json")).unwrap())
-                .unwrap();
+        let expected: Value = serde_json::from_str(expected).unwrap();
         assert_eq!(lowered, expected, "{project}");
     }
 }
 
 #[test]
 fn no_catalogs_are_the_empty_syntax_only_catalog() {
-    let empty: Value = serde_json::from_str(
-        &std::fs::read_to_string(root().join("languages/grammar/catalog.json")).unwrap(),
-    )
-    .unwrap();
-    assert_eq!(catalogs(&[]).unwrap(), empty);
+    assert_eq!(
+        catalogs(&[]).unwrap(),
+        json!({"types":[],"operations":[],"statements":{}})
+    );
 }
 
 const DATES: &str = "catalog module Dates {

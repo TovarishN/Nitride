@@ -34,8 +34,8 @@ fn table(prepared: &Prepared) -> HashMap<(String, String), Role> {
 
 fn typed(grammars: &[&str], catalog: &str, start: &str) -> HashMap<(String, String), Role> {
     let sources: Vec<_> = grammars.iter().map(|g| read(g)).collect();
-    let catalog = read(catalog).text;
-    table(&prepare_sources_detailed(&sources, &catalog, start, "typed").unwrap())
+    let catalog = nitride_prepare::catalog(&[read(catalog)]).unwrap();
+    table(&prepare_sources_detailed(&sources, &catalog.json, start, "typed").unwrap())
 }
 
 fn inline(text: &str, start: &str) -> HashMap<(String, String), Role> {
@@ -53,7 +53,11 @@ fn role(table: &HashMap<(String, String), Role>, rule: &str, literal: &str) -> R
 }
 
 fn calls() -> HashMap<(String, String), Role> {
-    typed(&["calls/Calls.ngr"], "calls/catalog.json", "Calls.Program")
+    typed(
+        &["calls/Calls.ngr"],
+        "calls/Calls.ncatalog",
+        "Calls.Program",
+    )
 }
 
 #[test]
@@ -73,7 +77,7 @@ fn call_is_section_keyword() {
 fn duration_is_operation_word() {
     let portable = typed(
         &["portable/Portable.ngr"],
-        "portable/catalog.json",
+        "portable/Portable.ncatalog",
         "Portable.Program",
     );
     assert_eq!(

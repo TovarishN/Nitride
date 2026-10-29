@@ -5,5 +5,5 @@
     "../portable/Portable.ngr",
     "Power.ngr"
   ],
-  "catalog": "catalog.json"
+  "catalogs": ["Power.ncatalog"]
 }

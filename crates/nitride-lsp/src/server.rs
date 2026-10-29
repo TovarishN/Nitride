@@ -628,7 +628,10 @@ fn canonical(path: &Path) -> PathBuf {
 /// Whether a document is an input of workspace languages.
 fn language_input(uri: &str) -> bool {
     let name = uri.rsplit('/').next().unwrap_or_default();
-    manifest::NAMES.contains(&name) || name.ends_with(".ngr") || name.ends_with(".json")
+    manifest::NAMES.contains(&name)
+        || name.ends_with(".ngr")
+        || name.ends_with(".ncatalog")
+        || name.ends_with(".json")
 }
 
 pub fn range(lines: &LineIndex, span: [u32; 2]) -> Value {

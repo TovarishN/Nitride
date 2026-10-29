@@ -5,5 +5,5 @@
     "../dates/Dates.ngr",
     "Rewrites.ngr"
   ],
-  "catalog": "../dates/catalog.json"
+  "catalogs": ["../dates/Dates.ncatalog"]
 }

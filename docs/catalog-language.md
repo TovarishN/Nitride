@@ -180,7 +180,14 @@ files:
    Portable` with its extra operation, because its ids are `Portable.*` and a
    module cannot span files.
 2. Convert each language's catalog, switch the manifests and readers, add
-   `nitride catalog`, and delete the JSON files and the empty catalogs.
+   `nitride catalog`, and delete the JSON files and the empty catalogs. Done:
+   manifests list `catalogs`, and the old `catalog` key is an error that names
+   its replacement. Rule and field names are checked, at their catalog spans,
+   just before profile validation. `catalog_hash` hashes the lowered compact
+   JSON, which `nitride catalog` prints with sorted keys. The .NET exporter and
+   oracles accept `.ncatalog` paths by running `nitride catalog` (`NITRIDE`
+   names the executable), so the reference C# files the scripts regenerate list
+   overload and built-in entries in sorted order.
 3. Editor support: built-in `.ncatalog` language, diagnostics with spans, and
    cross-file navigation.
 

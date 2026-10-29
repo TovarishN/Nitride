@@ -2,5 +2,5 @@
   "mode": "typed",
   "start": "Namespaces.Program",
   "grammars": ["Namespaces.ngr"],
-  "catalog": "catalog.json"
+  "catalogs": ["Namespaces.ncatalog"]
 }

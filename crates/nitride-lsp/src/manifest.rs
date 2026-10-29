@@ -14,7 +14,8 @@ pub struct Entry {
     pub extensions: Vec<String>,
     pub grammars: Vec<PathBuf>,
     pub start: String,
-    pub catalog: Option<PathBuf>,
+    /// The `.ncatalog` files of a typed language, in merge order.
+    pub catalogs: Vec<PathBuf>,
     pub mode: Mode,
 }
 
@@ -32,7 +33,7 @@ pub const NAMES: [&str; 2] = ["nitride.json", "nitrogen.json"];
 pub type Parsed = Result<(Vec<Entry>, Vec<ManifestError>), ManifestError>;
 
 /// The manifest at a workspace folder root and its languages. Nitride's own
-/// `catalog` and `mode` are read only from `nitride.json`; a `nitrogen.json`
+/// `catalogs` and `mode` are read only from `nitride.json`; a `nitrogen.json`
 /// language is syntax-only.
 pub fn read(folder: &Path) -> (Option<PathBuf>, Parsed) {
     for name in NAMES {
@@ -75,16 +76,24 @@ pub fn parse(text: &str, folder: &Path, nitride: bool) -> Parsed {
                 .and_then(|a| a.iter().map(|v| v.as_str().map(str::to_owned)).collect())
                 .ok_or_else(|| invalid(format!("language {i} needs a string array \"{key}\"")))
         };
-        let catalog = if nitride {
-            language["catalog"].as_str().map(|c| folder.join(c))
+        if nitride && language.get("catalog").is_some() {
+            return Err(invalid(format!(
+                "language {i}: \"catalog\" is replaced by \"catalogs\", a list of .ncatalog files"
+            )));
+        }
+        let catalogs = if nitride && language.get("catalogs").is_some() {
+            strings("catalogs")?
+                .iter()
+                .map(|c| folder.join(c))
+                .collect()
         } else {
-            None
+            vec![]
         };
         let mode = match (nitride, language["mode"].as_str()) {
             (false, _) => Mode::Syntax,
             (true, Some("typed")) => Mode::Typed,
             (true, Some("syntax")) => Mode::Syntax,
-            (true, None) if catalog.is_some() => Mode::Typed,
+            (true, None) if !catalogs.is_empty() => Mode::Typed,
             (true, None) => Mode::Syntax,
             (true, Some(other)) => {
                 return Err(invalid(format!(
@@ -100,7 +109,7 @@ pub fn parse(text: &str, folder: &Path, nitride: bool) -> Parsed {
                 .map(|g| folder.join(g))
                 .collect(),
             start: string("start")?,
-            catalog,
+            catalogs,
             mode,
         })
     });

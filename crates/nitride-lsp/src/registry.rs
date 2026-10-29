@@ -224,42 +224,40 @@ fn prepare(
             }
         }
     }
-    let catalog = match &state.entry.catalog {
-        Some(path) => match read(path, open) {
-            Ok(text) => text,
+    let mut catalogs = Vec::new();
+    for path in &state.entry.catalogs {
+        match read(path, open) {
+            Ok(text) => catalogs.push(Source {
+                path: path.to_string_lossy().into_owned(),
+                text,
+            }),
             Err(message) => {
                 state.errors.push(manifest_error(message));
                 return state;
             }
-        },
-        None => EMPTY_CATALOG.to_owned(),
-    };
+        }
+    }
     let mut hasher = DefaultHasher::new();
-    for source in &sources {
+    for source in sources.iter().chain(&catalogs) {
         source.text.hash(&mut hasher);
     }
-    (
-        &catalog,
-        &state.entry.start,
-        state.entry.mode == Mode::Typed,
-    )
-        .hash(&mut hasher);
+    (&state.entry.start, state.entry.mode == Mode::Typed).hash(&mut hasher);
     state.inputs = hasher.finish();
     if let Some(old) = old.filter(|o| o.inputs == state.inputs) {
         state.errors = old.errors;
         state.warnings = old.warnings;
         return state;
     }
-    let prepared = match state.entry.mode {
-        Mode::Typed => nitride_prepare::prepare_sources_detailed(
-            &sources,
-            &catalog,
-            &state.entry.start,
-            "typed",
-        ),
-        Mode::Syntax => {
-            nitride_prepare::prepare_sources_tolerant(&sources, &catalog, &state.entry.start)
+    let catalog = match nitride_prepare::catalog(&catalogs) {
+        Ok(catalog) => catalog,
+        Err(error) => {
+            state.errors.push(error);
+            return state;
         }
+    };
+    let prepared = match state.entry.mode {
+        Mode::Typed => catalog.prepare(&sources, &state.entry.start, "typed"),
+        Mode::Syntax => catalog.prepare_tolerant(&sources, &state.entry.start),
     };
     match prepared {
         Ok(prepared) => match LoadedLanguage::load(&prepared.data.to_string()) {

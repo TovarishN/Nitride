@@ -36,11 +36,23 @@ fn existing_exports_match_native_frontend() {
                 }
             })
             .collect();
-        let catalog =
-            std::fs::read_to_string(directory.join(manifest["catalog"].as_str().unwrap())).unwrap();
+        let catalogs: Vec<_> = manifest["catalogs"]
+            .as_array()
+            .map(Vec::as_slice)
+            .unwrap_or(&[])
+            .iter()
+            .map(|p| {
+                let path = directory.join(p.as_str().unwrap());
+                Source {
+                    path: path.display().to_string(),
+                    text: std::fs::read_to_string(path).unwrap(),
+                }
+            })
+            .collect();
+        let catalog = nitride_prepare::catalog(&catalogs).unwrap();
         let result = prepare_sources(
             &sources,
-            &catalog,
+            &catalog.json,
             manifest["start"].as_str().unwrap(),
             manifest["mode"].as_str().unwrap(),
         )

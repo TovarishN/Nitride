@@ -1,5 +1,6 @@
 """Behavioral contract tests for the development-only reference exporter."""
 import json
+import os
 import pathlib
 import subprocess
 import tempfile
@@ -13,11 +14,19 @@ def run(*args):
     return subprocess.run(["dotnet", str(DLL), *map(str, args)], capture_output=True, text=True)
 
 
+def catalog_json(*paths):
+    """The catalog JSON that `nitride catalog` lowers .ncatalog files to; NITRIDE names the executable."""
+    nitride = os.environ.get("NITRIDE")
+    command = [nitride] if nitride else ["cargo", "run", "-q", "-p", "nitride-cli", "--bin", "nitride", "--"]
+    result = subprocess.run(command + ["catalog", *map(str, paths)], capture_output=True, text=True, cwd=ROOT, check=True)
+    return json.loads(result.stdout)
+
+
 class ExportTests(unittest.TestCase):
     def test_export_is_path_independent_and_has_identity(self):
         with tempfile.TemporaryDirectory() as tmp:
             grammar = ROOT / "languages/portable/Portable.ngr"
-            catalog = ROOT / "languages/portable/catalog.json"
+            catalog = ROOT / "languages/portable/Portable.ncatalog"
             copy = pathlib.Path(tmp) / "other.ngr"
             copy.write_bytes(grammar.read_bytes())
             a, b = pathlib.Path(tmp) / "a.json", pathlib.Path(tmp) / "b.json"
@@ -34,7 +43,7 @@ class ExportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             root=pathlib.Path(tmp); grammar=root/'test.ngr';output=root/'out.json'
             grammar.write_text('syntax module B { symbols { function } builtin function { neg sys.neg } syntax Start = "x"; }')
-            result=run('export',grammar,ROOT/'languages/portable/catalog.json',output)
+            result=run('export',grammar,ROOT/'languages/portable/Portable.ncatalog',output)
             self.assertEqual(result.returncode,0,result.stderr)
             self.assertEqual(json.loads(output.read_text())['builtins'],[dict(kind='function',name='neg'),dict(kind='function',name='sys.neg')])
 
@@ -76,7 +85,7 @@ class ExportTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as tmp:
             grammar, output = pathlib.Path(tmp) / "bad.ngr", pathlib.Path(tmp) / "out.json"
             grammar.write_text(source)
-            result = run("export", grammar, ROOT / "languages/portable/catalog.json", output)
+            result = run("export", grammar, ROOT / "languages/portable/Portable.ncatalog", output)
             self.assertNotEqual(result.returncode, 0)
             self.assertIn("unsupported", result.stderr.lower())
             self.assertFalse(output.exists())

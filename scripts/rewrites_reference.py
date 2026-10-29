@@ -13,7 +13,7 @@ def observe(source):
     with tempfile.TemporaryDirectory() as folder:
         path = pathlib.Path(folder) / "input.dates"
         path.write_text(source)
-        result = run("oracle-rewrites", path, ROOT / "languages/dates/catalog.json", TODAY)
+        result = run("oracle-rewrites", path, ROOT / "languages/dates/Dates.ncatalog", TODAY)
         assert result.returncode == 0, result.stderr
         return json.loads(result.stdout)
 

@@ -4,5 +4,5 @@
   "grammars": [
     "Functions.ngr"
   ],
-  "catalog": "catalog.json"
+  "catalogs": ["Functions.ncatalog"]
 }

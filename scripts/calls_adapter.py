@@ -1,7 +1,7 @@
 """Generate explicit development-only Nitrogen call semantics and provenance."""
 import hashlib
 import json
-from test_reference import ROOT
+from test_reference import ROOT, catalog_json
 
 
 def main():
@@ -15,7 +15,7 @@ def main():
         old=next(l for l in source.splitlines() if f'| {name} =' in l)
         extra=' lowers reference type Type' if name=='Ref' else ''
         source=source.replace(old,old+extra+' { '+body+' }')
-    catalog=json.loads((folder/'catalog.json').read_text())
+    catalog=catalog_json(folder/'Calls.ncatalog')
     for rule,policy in catalog['calls'].items():
         name=rule.split('.')[-1];args=policy['args'];old=next(l for l in source.splitlines() if f'| {name} =' in l)
         source=source.replace(old,old+' lowers operation? Selected('+', '.join(args)+')\n      {\n        Selected = Symbol?.IsBuiltin == true ? CallsLanguage.Select(Function.Text, ['+', '.join(a+'.Type' for a in args)+']) : null;\n        Type = Selected?.Result;\n        check CALL0001 Symbol is null || Selected != null : "no exact callable signature";\n      }')
@@ -36,7 +36,7 @@ def main():
         lines.append('        }')
     lines+=['        return null;','    }',f'    public static readonly SemanticModule Semantics = new("Calls", [], [{", ".join(ids.values())}], [{", ".join(opids.values())}]);','}']
     (folder/'CallsSemantics.cs').write_text('\n'.join(lines)+'\n')
-    provenance={n:hashlib.sha256((folder/n).read_bytes()).hexdigest() for n in ['Calls.ngr','catalog.json','Calls.Reference.ngr','CallsSemantics.cs']}
+    provenance={n:hashlib.sha256((folder/n).read_bytes()).hexdigest() for n in ['Calls.ngr','Calls.ncatalog','Calls.Reference.ngr','CallsSemantics.cs']}
     (folder/'reference-provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')
 
 

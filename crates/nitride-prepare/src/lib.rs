@@ -71,7 +71,7 @@ pub fn prepare_sources(
     start: &str,
     mode: &str,
 ) -> Result<Value, PrepareError> {
-    normalize::prepare(sources, catalog, start, mode, false).map(|p| p.data)
+    normalize::prepare(sources, catalog, start, mode, false, &|_| Ok(())).map(|p| p.data)
 }
 
 /// A prepared language with what tolerant preparation skipped and the
@@ -99,7 +99,7 @@ pub fn prepare_sources_detailed(
     start: &str,
     mode: &str,
 ) -> Result<Prepared, PrepareError> {
-    normalize::prepare(sources, catalog, start, mode, false)
+    normalize::prepare(sources, catalog, start, mode, false, &|_| Ok(()))
 }
 
 /// One `references` clause: the qualified rule, its name field and symbol kinds.
@@ -159,7 +159,7 @@ pub fn prepare_sources_tolerant(
     catalog: &str,
     start: &str,
 ) -> Result<Prepared, PrepareError> {
-    normalize::prepare(sources, catalog, start, "syntax", true)
+    normalize::prepare(sources, catalog, start, "syntax", true, &|_| Ok(()))
 }
 
 /// The compiled grammar frontend, a syntax-only language for `.ngr` files.
@@ -171,7 +171,82 @@ pub fn grammar_language() -> &'static nitride_core::Language<'static> {
 /// resolved against each other (`using`) and merged in source order. No
 /// sources give the empty catalog of a syntax-only profile.
 pub fn catalogs(sources: &[Source]) -> Result<Value, PrepareError> {
-    catalog::lower(sources)
+    catalog(sources).map(|c| c.value)
+}
+
+/// A project's lowered catalogs: the JSON value codegen reads, its compact
+/// text (what `catalog_hash` hashes), and the grammar names it uses.
+pub struct Catalog {
+    pub value: Value,
+    pub json: String,
+    sources: Vec<Source>,
+    uses: Vec<catalog::Use>,
+}
+
+/// Parses, resolves and merges a project's `.ncatalog` sources.
+pub fn catalog(sources: &[Source]) -> Result<Catalog, PrepareError> {
+    let (value, uses) = catalog::lower(sources)?;
+    Ok(Catalog {
+        json: value.to_string(),
+        value,
+        sources: sources.to_vec(),
+        uses,
+    })
+}
+
+impl Catalog {
+    /// Strict preparation of `sources` with this catalog.
+    pub fn prepare(
+        &self,
+        sources: &[Source],
+        start: &str,
+        mode: &str,
+    ) -> Result<Prepared, PrepareError> {
+        normalize::prepare(sources, &self.json, start, mode, false, &|d| self.check(d))
+    }
+    /// Tolerant syntax-mode preparation of `sources` with this catalog.
+    pub fn prepare_tolerant(
+        &self,
+        sources: &[Source],
+        start: &str,
+    ) -> Result<Prepared, PrepareError> {
+        normalize::prepare(sources, &self.json, start, "syntax", true, &|d| {
+            self.check(d)
+        })
+    }
+    /// Every grammar rule and field the catalog names exists in the prepared
+    /// language `data`; an error points at the catalog.
+    fn check(&self, data: &Value) -> Result<(), PrepareError> {
+        fn labels<'a>(e: &'a Value, found: &mut Vec<&'a str>) {
+            if let Some(label) = e["label"].as_str() {
+                found.push(label);
+            }
+            match e {
+                Value::Array(items) => items.iter().for_each(|i| labels(i, found)),
+                Value::Object(map) => map.values().for_each(|v| labels(v, found)),
+                _ => {}
+            }
+        }
+        let rules = data["rules"].as_array().map(Vec::as_slice).unwrap_or(&[]);
+        for used in &self.uses {
+            let source = &self.sources[used.source];
+            let Some(rule) = rules.iter().find(|r| r["name"] == used.rule.as_str()) else {
+                return Err(
+                    source.error(used.span, format!("unknown grammar rule '{}'", used.rule))
+                );
+            };
+            if let Some(field) = &used.field {
+                let mut found = Vec::new();
+                labels(&rule["expr"], &mut found);
+                if !found.contains(&field.as_str()) {
+                    return Err(
+                        source.error(used.span, format!("'{}' has no field '{field}'", used.rule))
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
 }
 
 /// The compiled catalog frontend, a syntax-only language for `.ncatalog` files.

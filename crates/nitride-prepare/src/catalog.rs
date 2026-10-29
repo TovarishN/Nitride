@@ -329,9 +329,18 @@ fn vocabulary(
     }
 }
 
-/// The catalog JSON of a project's catalog sources, merged in source order.
-/// No sources give the empty catalog of a syntax-only profile.
-pub fn lower(sources: &[Source]) -> Result<Value, PrepareError> {
+/// A grammar rule, or one of its fields, named by a catalog member.
+pub struct Use {
+    pub rule: String,
+    pub field: Option<String>,
+    pub source: usize,
+    pub span: [usize; 2],
+}
+
+/// The catalog JSON of a project's catalog sources, merged in source order,
+/// and the grammar rules and fields it names. No sources give the empty
+/// catalog of a syntax-only profile.
+pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
     let modules = parse(sources)?;
     let mut scope = Scope {
         sources,
@@ -409,6 +418,7 @@ pub fn lower(sources: &[Source]) -> Result<Value, PrepareError> {
     let mut checks = Map::new();
     // The first declaration of each keyed entry, for conflict messages.
     let mut keyed: HashMap<String, (usize, [usize; 2])> = HashMap::new();
+    let mut uses = Vec::new();
     let mut claim = |key: String, index: usize, at: &Name, what: &str| {
         if let Some(&(other, span)) = keyed.get(&key) {
             return Err(scope.error(
@@ -430,6 +440,14 @@ pub fn lower(sources: &[Source]) -> Result<Value, PrepareError> {
             Ok::<_, PrepareError>(resolved)
         };
         let qualify = |name: &Name| format!("{}.{}", module.name.text, name.text);
+        let mut used = |rule: &str, field: Option<&Name>, at: &Name| {
+            uses.push(Use {
+                rule: rule.into(),
+                field: field.map(|f| f.text.clone()),
+                source: module.source,
+                span: at.span,
+            })
+        };
         for member in &module.members {
             match member {
                 Member::Type(name) => types.push(qualify(name)),
@@ -504,6 +522,8 @@ pub fn lower(sources: &[Source]) -> Result<Value, PrepareError> {
                         rule,
                         &format!("a statement policy for '{rule_name}'"),
                     )?;
+                    used(&rule_name, None, rule);
+                    used(&rule_name, Some(field), field);
                     let mut policy =
                         json!({"kind":if *show {"show"} else {"let"},"value":field.text});
                     if *infer {
@@ -519,6 +539,10 @@ pub fn lower(sources: &[Source]) -> Result<Value, PrepareError> {
                         rule,
                         &format!("a call for '{rule_name}'"),
                     )?;
+                    used(&rule_name, None, rule);
+                    for arg in args {
+                        used(&rule_name, Some(arg), arg);
+                    }
                     calls.insert(
                         rule_name,
                         json!({"args":args.iter().map(|a| &a.text).collect::<Vec<_>>()}),
@@ -539,6 +563,8 @@ pub fn lower(sources: &[Source]) -> Result<Value, PrepareError> {
                         &format!("a check on '{rule_name}.{}'", field.text),
                     )?;
                     vocabulary(&scope, module, predicate, PREDICATES, "check predicate")?;
+                    used(&rule_name, None, rule);
+                    used(&rule_name, Some(field), field);
                     checks
                         .entry(rule_name)
                         .or_insert_with(|| json!([]))
@@ -565,5 +591,5 @@ pub fn lower(sources: &[Source]) -> Result<Value, PrepareError> {
             catalog[key] = Value::Object(section);
         }
     }
-    Ok(catalog)
+    Ok((catalog, uses))
 }

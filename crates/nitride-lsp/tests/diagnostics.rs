@@ -16,7 +16,7 @@ fn power_workspace(name: &str) -> PathBuf {
         ".powercalc",
         &[lang("portable/Portable.ngr"), lang("power/Power.ngr")],
         "Portable.Program",
-        Some(&lang("power/catalog.json")),
+        Some(&lang("power/Power.ncatalog")),
     );
     dir
 }
@@ -51,7 +51,7 @@ fn typed_semantic_error() {
         ".calls",
         &[lang("calls/Calls.ngr")],
         "Calls.Program",
-        Some(&lang("calls/catalog.json")),
+        Some(&lang("calls/Calls.ncatalog")),
     );
     let program = dir.join("x.calls");
     let messages = Session::run(&dir, vec![open(&program, "nope(1);")]);
@@ -106,7 +106,7 @@ fn broken_grammar_keeps_last_language() {
         ".powercalc",
         &[lang("portable/Portable.ngr"), power.clone()],
         "Portable.Program",
-        Some(&lang("power/catalog.json")),
+        Some(&lang("power/Power.ncatalog")),
     );
     let program = dir.join("x.powercalc");
     let messages = Session::run(
@@ -192,7 +192,7 @@ fn grammar_buffer_found_by_equivalent_path() {
         ".powercalc",
         &[lang("portable/Portable.ngr"), dir.join("sub/../Power.ngr")],
         "Portable.Program",
-        Some(&lang("power/catalog.json")),
+        Some(&lang("power/Power.ncatalog")),
     );
     let messages = Session::run(&dir, vec![open(&power, "syntax module Portable.Power {")]);
     let errors = diagnostics(&messages, &power);

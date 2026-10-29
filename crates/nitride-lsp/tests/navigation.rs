@@ -16,7 +16,7 @@ pub fn calls(name: &str) -> PathBuf {
         ".calls",
         &[lang("calls/Calls.ngr")],
         "Calls.Program",
-        Some(&lang("calls/catalog.json")),
+        Some(&lang("calls/Calls.ncatalog")),
     );
     dir
 }
@@ -30,7 +30,7 @@ pub fn power(name: &str) -> PathBuf {
         ".powercalc",
         &[lang("portable/Portable.ngr"), lang("power/Power.ngr")],
         "Portable.Program",
-        Some(&lang("power/catalog.json")),
+        Some(&lang("power/Power.ncatalog")),
     );
     dir
 }
@@ -332,7 +332,7 @@ fn locations_use_canonical_paths() {
         ".portable",
         &[dir.join("sub/../g/Portable.ngr")],
         "Portable.Program",
-        Some(&lang("portable/catalog.json")),
+        Some(&lang("portable/Portable.ncatalog")),
     );
     let path = dir.join("g/Portable.ngr");
     let text = std::fs::read_to_string(&path).unwrap();
@@ -424,7 +424,7 @@ pub fn rewrites(name: &str) -> PathBuf {
         ".rewrites",
         &[lang("dates/Dates.ngr"), lang("rewrites/Rewrites.ngr")],
         "Dates.Program",
-        Some(&lang("dates/catalog.json")),
+        Some(&lang("dates/Dates.ncatalog")),
     );
     dir
 }

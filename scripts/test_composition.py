@@ -57,12 +57,11 @@ class CompositionTests(unittest.TestCase):
     def test_missing_and_ambiguous_imports_fail_without_output(self):
         with tempfile.TemporaryDirectory() as tmp:
             root = pathlib.Path(tmp)
-            (root / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
             (root / "Base.ngr").write_text('syntax module Base { token Word = [\'a\'..\'z\']+; }')
             (root / "Extra.ngr").write_text('syntax module Extra { token Word = [\'a\'..\'z\']+; }')
             for imports in ["using Missing;", "using Base; using Extra;"]:
                 (root / "Main.ngr").write_text('syntax module Main { ' + imports + ' syntax Start = Word; }')
-                manifest = {"mode":"syntax","start":"Main.Start","grammars":["Base.ngr","Extra.ngr","Main.ngr"],"catalog":"catalog.json"}
+                manifest = {"mode":"syntax","start":"Main.Start","grammars":["Base.ngr","Extra.ngr","Main.ngr"]}
                 (root / "project.json").write_text(json.dumps(manifest))
                 output = root / "out.json"
                 result = export(root / "project.json", output)
@@ -86,8 +85,7 @@ class CompositionTests(unittest.TestCase):
             (root / "Base.ngr").write_text('syntax module Base { token N = [\'0\'..\'9\']+; syntax Start = E; extensible syntax E { | Num = N } }')
             for name in ["One", "Two"]:
                 (root / f"{name}.ngr").write_text(f'syntax module {name} {{ extend syntax Base.E {{ | Add{name} = E "+" E precedence 10 left }} }}')
-            (root / "catalog.json").write_text('{"types":[],"operations":[],"statements":{}}')
-            (root / "project.json").write_text(json.dumps({"mode":"syntax","start":"Base.Start","grammars":["Base.ngr","One.ngr","Two.ngr"],"catalog":"catalog.json"}))
+            (root / "project.json").write_text(json.dumps({"mode":"syntax","start":"Base.Start","grammars":["Base.ngr","One.ngr","Two.ngr"]}))
             output = root / "out.json"
             self.assertEqual(export(root / "project.json", output).returncode, 0)
             native = subprocess.run([ROOT / "target/release/nitride", "prepare", root / "project.json"], capture_output=True, text=True)

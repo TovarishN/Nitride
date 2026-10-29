@@ -71,6 +71,21 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         }
         return Ok(true);
     }
+    if args.first().is_some_and(|a| a == "catalog") {
+        // The lowered catalog JSON, for tools that read catalogs as JSON; no
+        // files give the empty catalog of a syntax-only profile.
+        let sources = args[1..]
+            .iter()
+            .map(|path| {
+                Ok(nitride_prepare::Source {
+                    text: std::fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))?,
+                    path: path.clone(),
+                })
+            })
+            .collect::<Result<Vec<_>, String>>()?;
+        println!("{}", nitride_prepare::catalog(&sources)?.json);
+        return Ok(true);
+    }
     if args.len() == 1 && args[0] == "--version" {
         println!("Nitride {}", env!("CARGO_PKG_VERSION"));
         return Ok(true);
@@ -164,7 +179,7 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         );
         return Ok(true);
     }
-    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.json> [--output <language.json>] | <source.portable> | --observe <source> | --functions <source> | --calls <source> | --dates <source> [--today yyyy-MM-dd] | --rewrites <source> [--today yyyy-MM-dd] | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --parse-csharp4 <source> | --bench <source> <iterations> | --recover <profile> <source> | --recover-batch | lsp | --version".into()) };
+    let path = match args.as_slice() { [path] => path, [flag, path] if flag == "--observe" => path, _ => return Err("usage: nitride prepare <project.json> [--output <language.json>] | catalog [<file.ncatalog>...] | <source.portable> | --observe <source> | --functions <source> | --calls <source> | --dates <source> [--today yyyy-MM-dd] | --rewrites <source> [--today yyyy-MM-dd] | --inference <source> | --namespaces <source> | --power <source> | --parse-xml <source> | --parse-composition <source> | --parse-csharp4 <source> | --bench <source> <iterations> | --recover <profile> <source> | --recover-batch | lsp | --version".into()) };
     let result = nitride_cli::observe(&std::fs::read_to_string(path)?);
     println!("{result}");
     Ok(result["ok"] == true)

@@ -55,7 +55,7 @@ fn portable(name: &str) -> PathBuf {
         ".portable",
         &["portable/Portable.ngr"],
         "Portable.Program",
-        "portable/catalog.json",
+        "portable/Portable.ncatalog",
     )
 }
 
@@ -82,7 +82,7 @@ fn date_value_hint() {
         ".dates",
         &["dates/Dates.ngr"],
         "Dates.Program",
-        "dates/catalog.json",
+        "dates/Dates.ncatalog",
     );
     let result = hints(
         &dir,

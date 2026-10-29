@@ -12,6 +12,8 @@ pub fn prepare(
     start: &str,
     mode: &str,
     tolerant: bool,
+    // Checks the catalog against the prepared rules before profile validation.
+    check: &dyn Fn(&Value) -> Result<(), PrepareError>,
 ) -> Result<crate::Prepared, PrepareError> {
     let fallback = Source {
         path: "<project>".into(),
@@ -403,6 +405,7 @@ pub fn prepare(
     if !helpers.is_empty() && mode == "typed" {
         output["helpers"] = json!(helpers);
     }
+    check(&output)?;
     nitride_codegen::generate(&output.to_string())
         .map_err(|e| first.project_error(format!("profile validation: {e}")))?;
     Ok(crate::Prepared {

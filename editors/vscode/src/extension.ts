@@ -31,7 +31,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
     { scheme: 'file', pattern: '**/{nitride,nitrogen}.json' },
     ...workspaceExtensions().map(extension => ({ scheme: 'file', pattern: `**/*${extension}` })),
   ];
-  const watcher = workspace.createFileSystemWatcher('**/{nitride.json,nitrogen.json,*.ngr,*.json}');
+  const watcher = workspace.createFileSystemWatcher('**/{nitride.json,nitrogen.json,*.ngr,*.ncatalog,*.json}');
   context.subscriptions.push(watcher);
   const options: LanguageClientOptions = {
     documentSelector: selector,

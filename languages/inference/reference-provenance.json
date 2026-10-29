@@ -1,6 +1,6 @@
 {
   "Inference.ngr": "112c2d861c3c6843d73a1d1dda67b888763cccd303099d33395af56ceef2ee01",
-  "catalog.json": "795358f207e397a64bcbd8d6e7ae22370e9fe78478b88ed10fd5fc72eeaee31e",
+  "Inference.ncatalog": "9cd26c973e3faa272fa5dc7ade727b8bd444cb6854d3771a2729ebaba357310f",
   "Inference.Reference.ngr": "86db07ae85601be7948c8f93064420866f76eabcd1a0226d26ce4467ced89c18",
   "InferenceSemantics.cs": "2caba47c0cba1abc949ca9d31148de4f0911b9ad37dac5d91a837e9d5f81f5ab"
 }
