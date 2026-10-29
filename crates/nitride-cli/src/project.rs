@@ -20,8 +20,8 @@ fn load(manifest: &Path) -> Result<Loaded, String> {
     Ok(Loaded { prepared, language })
 }
 
-/// The engine's handlers and, per binding, its component's: `(interface,
-/// component path, bindings)`.
+/// Per binding, its implementation's bindings: `(interface, what implements
+/// it, bindings)`, where the implementation is a component path or a program.
 fn bind<'g>(
     loaded: &Loaded,
     language: &'g Language<'g>,
@@ -42,14 +42,29 @@ fn bind<'g>(
     };
     let mut bound = Vec::new();
     for binding in loaded.prepared["bindings"].as_array().into_iter().flatten() {
-        let component = binding["component"].as_str().unwrap_or_default();
-        let bindings =
-            nitride_wasm::bindings(language, &loaded.prepared, binding, &folder.join(component))?;
-        let bindings = host::grant(bindings, &needs, granted);
+        let (implementation, bindings) = match binding["target"].as_str() {
+            Some("process") => {
+                let directory = folder.join(binding["directory"].as_str().unwrap_or_default());
+                let program = binding["program"].as_str().unwrap_or_default();
+                let bindings =
+                    nitride_process::bindings(language, &loaded.prepared, binding, &directory)?;
+                (program, bindings)
+            }
+            _ => {
+                let component = binding["component"].as_str().unwrap_or_default();
+                let bindings = nitride_wasm::bindings(
+                    language,
+                    &loaded.prepared,
+                    binding,
+                    &folder.join(component),
+                )?;
+                (component, bindings)
+            }
+        };
         bound.push((
             binding["interface"].as_str().unwrap_or_default().to_owned(),
-            component.to_owned(),
-            bindings,
+            implementation.to_owned(),
+            host::grant(bindings, &needs, granted),
         ));
     }
     Ok(bound)
@@ -153,7 +168,7 @@ pub fn conform_project(manifest: &Path, granted: &[String]) -> Result<Value, Str
         let outcome = host::conformance(language, &all, examples);
         reports.push(json!({
             "interface": interface,
-            "component": component,
+            "implementation": component,
             "examples": examples.len(),
             "skipped": outcome.skipped,
             "failed": outcome.failed

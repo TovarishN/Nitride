@@ -1,0 +1,2 @@
+// Calendar.Clock as a Python process speaking JSON-RPC on stdin and stdout.
+binding Calendar.Clock version 1 for process "python3" "clock.py";

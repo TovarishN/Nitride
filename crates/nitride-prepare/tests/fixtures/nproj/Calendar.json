@@ -1,6 +1,7 @@
 {
   "bindings": [
-    "languages/calendar/gregorian.nbind"
+    "languages/calendar/gregorian.nbind",
+    "languages/calendar/clock.nbind"
   ],
   "catalogs": [
     "languages/calendar/Calendar.ncatalog"

@@ -43,13 +43,67 @@ fn the_component_conforms() {
     let reports = nitride_cli::conform_project(&manifest(), &[]).unwrap();
     assert_eq!(
         reports,
-        serde_json::json!([{
-            "interface": "Calendar.Gregorian",
-            "component": "gregorian.wasm",
-            "examples": 13,
-            "skipped": [],
-            "failed": [],
-        }])
+        serde_json::json!([
+            {
+                "interface": "Calendar.Gregorian",
+                "implementation": "gregorian.wasm",
+                "examples": 13,
+                "skipped": [],
+                "failed": [],
+            },
+            {
+                // Bound to a process; its one example needs the Clock effect.
+                "interface": "Calendar.Clock",
+                "implementation": "python3",
+                "examples": 1,
+                "skipped": ["example Today() == Today();"],
+                "failed": [],
+            }
+        ])
+    );
+}
+
+#[test]
+fn bindings_are_drafted_from_what_a_component_exports() {
+    let prepared = prepared();
+    let component = calendar().join("gregorian.wasm");
+    // ParseDate is exported as parse-iso, the one export of its shape.
+    let draft = nitride_wasm::draft(
+        &prepared,
+        "Calendar.Gregorian",
+        &component,
+        "gregorian.wasm",
+    )
+    .unwrap();
+    assert!(
+        draft.ends_with(
+            "binding Calendar.Gregorian version 3 for wasm component \"gregorian.wasm\"\n{\n  ParseDate = parse-iso;\n}\n"
+        ),
+        "{draft}"
+    );
+    // The draft is a binding that checks against the catalog.
+    let checked = nitride_prepare::bindings(
+        &[nitride_prepare::Source {
+            path: "drafted.nbind".into(),
+            text: draft,
+        }],
+        &prepared["catalog"],
+    )
+    .unwrap();
+    assert_eq!(checked[0]["exports"], prepared["bindings"][0]["exports"]);
+
+    // Against another interface, the component's one instance is named, and
+    // what has no export of its shape is left to resolve.
+    let draft = nitride_wasm::draft(&prepared, "Calendar.Clock", &component, "x.wasm").unwrap();
+    assert!(
+        draft.contains(
+            "export \"nitride:calendar/gregorian@3.0.0\"\n{\n  // Today: no export of its shape\n}"
+        ),
+        "{draft}"
+    );
+    assert_eq!(
+        nitride_wasm::draft(&prepared, "Calendar.Week", &component, "x.wasm").unwrap_err(),
+        "unknown interface 'Calendar.Week'"
     );
 }
 

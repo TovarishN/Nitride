@@ -21,6 +21,7 @@ nitride-core = { path = "../nitride-core" }
 nitride-lsp = { path = "../nitride-lsp" }
 nitride-codegen = { path = "../nitride-codegen" }
 nitride-wasm = { path = "../nitride-wasm" }
+nitride-process = { path = "../nitride-process" }
 serde_json = "1"
 
 [build-dependencies]

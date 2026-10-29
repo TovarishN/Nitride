@@ -562,6 +562,7 @@ dependencies = [
  "nitride-core",
  "nitride-lsp",
  "nitride-prepare",
+ "nitride-process",
  "nitride-wasm",
  "serde_json",
 ]
@@ -598,6 +599,14 @@ dependencies = [
  "nitride-core",
  "serde_json",
  "sha2",
+]
+
+[[package]]
+name = "nitride-process"
+version = "0.1.0"
+dependencies = [
+ "nitride-core",
+ "serde_json",
 ]
 
 [[package]]

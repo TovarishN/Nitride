@@ -15,6 +15,8 @@ fn calendar(name: &str) -> PathBuf {
         "Calendar.ncatalog",
         "Calendar.nproj",
         "gregorian.nbind",
+        "clock.nbind",
+        "clock.py",
     ] {
         std::fs::copy(
             repo().join("languages/calendar").join(file),

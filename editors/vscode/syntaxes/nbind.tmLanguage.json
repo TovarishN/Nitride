@@ -49,7 +49,7 @@
         },
         {
           "name": "keyword.other.nbind",
-          "match": "\\b(version|for|wasm|component)\\b"
+          "match": "\\b(version|for|wasm|component|export|process)\\b"
         }
       ]
     },

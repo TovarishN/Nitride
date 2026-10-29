@@ -89,6 +89,171 @@ fn wit(name: &str) -> String {
     out
 }
 
+/// Whether a component type can carry values of catalog type `ty`.
+fn fits(catalog: &Value, ty: &str, wit: &wasmtime::component::Type) -> bool {
+    use wasmtime::component::Type;
+    if ty == "Core.Text" {
+        return matches!(wit, Type::String);
+    }
+    let representation = &catalog["representations"][ty];
+    match (representation.as_str(), wit) {
+        (Some("i64"), Type::S64) | (Some("bool"), Type::Bool) | (Some("text"), Type::String) => {
+            true
+        }
+        (Some(_), _) => false,
+        (None, Type::Float64) => representation.is_null(),
+        (None, Type::List(list)) => representation["list"]
+            .as_str()
+            .is_some_and(|e| fits(catalog, e, &list.ty())),
+        (None, Type::Record(record)) => {
+            let fields = representation["record"].as_array();
+            fields.is_some_and(|fields| {
+                fields.len() == record.fields().len()
+                    && fields.iter().zip(record.fields()).all(|(field, wit)| {
+                        fits(catalog, field[1].as_str().unwrap_or_default(), &wit.ty)
+                    })
+            })
+        }
+        _ => false,
+    }
+}
+
+/// Drafts a `.nbind` binding `interface` (from prepared data) to
+/// `component`, written as `path` in the draft: each operation goes to the
+/// export of its WIT name, else to the one export of the same shape; what
+/// stays unmatched is left as a comment to resolve by hand.
+pub fn draft(
+    prepared: &Value,
+    interface: &str,
+    component: &Path,
+    path: &str,
+) -> Result<String, String> {
+    use wasmtime::component::types::ComponentItem;
+    let catalog = &prepared["catalog"];
+    let declared = &catalog["interfaces"][interface];
+    if declared.is_null() {
+        return Err(format!("unknown interface '{interface}'"));
+    }
+    let engine = Engine::default();
+    let loaded = Component::from_file(&engine, component)
+        .map_err(|e| format!("{}: {e:#}", component.display()))?;
+    let ty = loaded.component_type();
+    let module = interface.rsplit_once('.').map_or("", |(m, _)| m);
+    let version = &declared["version"];
+    let nitride = format!(
+        "nitride:{}/{}@{version}.0.0",
+        wit(&module.replace('.', "")),
+        wit(interface.rsplit('.').next().unwrap_or(interface))
+    );
+    let instances: Vec<_> = ty
+        .exports(&engine)
+        .filter_map(|(name, item)| match item.ty {
+            ComponentItem::ComponentInstance(instance) => Some((name, instance)),
+            _ => None,
+        })
+        .collect();
+    let (instance_name, instance) = match instances.iter().find(|(name, _)| *name == nitride) {
+        Some(found) => found,
+        None => match instances.as_slice() {
+            [only] => only,
+            _ => {
+                return Err(format!(
+                    "{} exports instances {}; none is {nitride}",
+                    component.display(),
+                    instances
+                        .iter()
+                        .map(|(n, _)| *n)
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ));
+            }
+        },
+    };
+    let functions: Vec<_> = instance
+        .exports(&engine)
+        .filter_map(|(name, item)| match item.ty {
+            ComponentItem::ComponentFunc(func) => Some((name, func)),
+            _ => None,
+        })
+        .collect();
+    let failures = catalog["operations"]
+        .as_array()
+        .into_iter()
+        .flatten()
+        .filter(|o| o["interface"] == interface)
+        .any(|o| o["fails"].as_array().is_some_and(|f| !f.is_empty()));
+    let mut taken: Vec<&str> = Vec::new();
+    let mut lines = Vec::new();
+    for op in declared["operations"].as_array().into_iter().flatten() {
+        let id = op.as_str().unwrap_or_default();
+        let operation = catalog["operations"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .find(|o| o["id"] == id)
+            .ok_or_else(|| format!("unknown operation {id}"))?;
+        let inputs: Vec<&str> = operation["inputs"]
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter_map(Value::as_str)
+            .collect();
+        let result = operation["result"].as_str().unwrap_or_default();
+        let shaped = |func: &wasmtime::component::types::ComponentFunc| {
+            let returns = func.results().next();
+            let returns = match (failures, returns) {
+                (true, Some(wasmtime::component::Type::Result(r))) => r.ok(),
+                (false, returns) => returns,
+                _ => None,
+            };
+            func.params().len() == inputs.len()
+                && func
+                    .params()
+                    .zip(&inputs)
+                    .all(|((_, wit), ty)| fits(catalog, ty, &wit))
+                && returns.is_some_and(|r| fits(catalog, result, &r))
+        };
+        let tail = id.rsplit('.').next().unwrap_or(id);
+        let own = wit(tail);
+        if functions
+            .iter()
+            .any(|(name, func)| *name == own && shaped(func))
+        {
+            taken.push(functions.iter().find(|(n, _)| *n == own).unwrap().0);
+            continue;
+        }
+        let candidates: Vec<&str> = functions
+            .iter()
+            .filter(|(name, func)| !taken.contains(name) && shaped(func))
+            .map(|(name, _)| *name)
+            .collect();
+        match candidates.as_slice() {
+            [one] => {
+                taken.push(one);
+                lines.push(format!("  {tail} = {one};"));
+            }
+            [] => lines.push(format!("  // {tail}: no export of its shape")),
+            several => lines.push(format!(
+                "  // {tail}: one of {} (write `{tail} = <export>;`)",
+                several.join(", ")
+            )),
+        }
+    }
+    let mut draft = format!(
+        "// Drafted by `nitride binding draft` from {}; review before use.\nbinding {interface} version {version} for wasm component {path:?}",
+        component.display()
+    );
+    if *instance_name != nitride {
+        draft += &format!(" export {instance_name:?}");
+    }
+    if lines.is_empty() {
+        draft += ";\n";
+    } else {
+        draft += &format!("\n{{\n{}\n}}\n", lines.join("\n"));
+    }
+    Ok(draft)
+}
+
 /// The store and the functions of one instantiated component; calls take
 /// turns on the store.
 struct Instance {

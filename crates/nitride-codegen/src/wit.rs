@@ -119,7 +119,7 @@ pub fn wit(input: &str) -> Result<Vec<(String, String)>, String> {
         .collect()
 }
 
-/// WIT for each of a prepared project's bindings, as `(component path,
+/// WIT for each of a prepared project's component bindings, as `(component path,
 /// document)`: the interface's world with the binding's export names, which
 /// is what the component must export.
 pub fn binding_wit(input: &str) -> Result<Vec<(String, String)>, String> {
@@ -130,6 +130,7 @@ pub fn binding_wit(input: &str) -> Result<Vec<(String, String)>, String> {
     };
     bindings
         .iter()
+        .filter(|binding| binding["target"] == "wasm-component")
         .map(|binding| {
             let id = text(&binding["interface"])?;
             let interface = &catalog["interfaces"][id];

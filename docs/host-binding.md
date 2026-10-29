@@ -3,7 +3,8 @@
 Status: draft for review. Adds interfaces to `.ncatalog`, a binding language
 (`.nbind`) that maps an interface onto a concrete implementation, and
 conformance examples that check every implementation against its interface.
-Phases 1 to 5 are implemented (see Phases); the rest is not.
+Phases 1 to 6 are implemented (see Phases), with what each leaves undone
+noted there.
 
 ## Why
 
@@ -428,7 +429,34 @@ lists its bindings and their last conformance result.
      Rust fixture (no component: `wasm32-unknown-unknown` has no clock).
    - Effects apply to interface operations only. The built-in host value
      `today` reads the clock without an effect.
-6. `process` bindings, and drafting bindings from library metadata.
+6. Process bindings, and drafting bindings from component metadata. Done:
+   - `binding M.I version n for process "program" "arg"…;` binds an
+     interface to an executable that answers JSON-RPC 2.0, one object per
+     line on stdin and stdout (`crates/nitride-process`; protocol in its
+     crate docs). Methods are the export names; values are JSON by
+     representation (records as objects by field name, lists as arrays); a
+     declared failure is an error with `data.failure` set to its WIT name.
+     The program runs in its binding file's folder; one without a `/` is found
+     on PATH. Prepared bindings record `program`, `args` and `directory`.
+   - The process starts when the host binds it, even if every operation is
+     then denied for want of an effect; denied operations are never called.
+   - `nitride run` and `nitride conform` bind processes as they do
+     components; conformance reports name the `implementation`.
+   - A component target may name its instance:
+     `for wasm component "x.wasm" export "acme:cal/days@1.2.0"`, for a
+     component not built from Nitride's WIT.
+   - `nitride binding draft <manifest> <interface> <component.wasm>`
+     (`nitride_wasm::draft`) reads the component's exported instance and
+     functions with wasmtime and drafts a `.nbind`: an operation goes to the
+     export of its own WIT name, else to the one unused export whose
+     parameter and result types fit, else stays a comment to resolve. It
+     names the instance when it is not Nitride's. On Calendar's component it
+     recovers `ParseDate = parse-iso` from the types alone.
+   - Calendar binds `Calendar.Clock` to `clock.py` (`clock.nbind`). Tests
+     that start Python skip themselves where `python3` is missing.
+   - Not done: drafting from library metadata other than components
+     (rustdoc JSON, .NET reflection, OpenAPI). Components are the one format
+     whose types Nitride already maps.
 
 ## Open questions
 
@@ -436,7 +464,10 @@ lists its bindings and their last conformance result.
   catalog is enough.
 - Whether a binding may implement several interfaces, or several bindings of
   one interface may coexist in a project (selected by the host at run time).
-- How effects are granted: by the manifest, by the host application, or both.
+- How effects are granted: today by the host application only (`--grant`
+  in the CLI); whether a manifest may also grant them.
+- Examples run against one interface's binding (plus the engine's
+  handlers), so an example cannot mix operations of two interfaces.
 - Whether `example` may use grammar syntax (`2024-01-01 + 3 days`) rather than
   catalog calls. Grammar syntax ties the interface to one language.
 - Versioning: whether a `version 2` interface may declare which `version 1`

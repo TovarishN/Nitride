@@ -5,5 +5,5 @@
     "Calendar.ngr"
   ],
   "catalogs": ["Calendar.ncatalog"],
-  "bindings": ["gregorian.nbind"]
+  "bindings": ["gregorian.nbind", "clock.nbind"]
 }

@@ -119,12 +119,23 @@ pub fn lower_from(
                     ),
                 ));
             }
-            let target = d.concrete(d.node(binding, "Target"), &["WasmComponent"]);
+            let target = d.concrete(d.node(binding, "Target"), &["WasmComponent", "Process"]);
             let path = d.node(target, "Path");
-            let component = crate::literal::decode(source, d.span(path), false)?;
-            if component.is_empty() {
-                return Err(source.error(d.span(path), "a component path is not empty"));
+            let written = crate::literal::decode(source, d.span(path), false)?;
+            let process = d.kind(target) == "Process";
+            if written.is_empty() {
+                let what = if process {
+                    "a program"
+                } else {
+                    "a component path"
+                };
+                return Err(source.error(d.span(path), format!("{what} is not empty")));
             }
+            let args = d
+                .nodes(target, "Args")
+                .into_iter()
+                .map(|a| crate::literal::decode(source, d.span(a), false))
+                .collect::<Result<Vec<_>, _>>()?;
             // Every operation is exported under its WIT name unless renamed.
             let module = interface.text.rsplit_once('.').map_or("", |(m, _)| m);
             let operations: Vec<&str> = declared["operations"]
@@ -174,14 +185,31 @@ pub fn lower_from(
                 wit(interface.text.rsplit('.').next().unwrap()),
                 declared["version"]
             );
-            lowered.push((index, json!({
+            let mut lowered_binding = json!({
                 "interface": interface.text,
                 "contract": format!("{}@{}", interface.text, declared["hash"].as_str().unwrap()),
                 "export": export,
-                "target": "wasm-component",
-                "component": component,
                 "exports": exports,
-            })));
+            });
+            if process {
+                // Runs in its binding file's folder; a program without a '/'
+                // is found on PATH.
+                lowered_binding["target"] = json!("process");
+                lowered_binding["program"] = json!(written);
+                lowered_binding["args"] = json!(args);
+            } else {
+                lowered_binding["target"] = json!("wasm-component");
+                lowered_binding["component"] = json!(written);
+                if let Some(instance) = d.tree.field(target, "Instance") {
+                    let name = d.node(instance, "Name");
+                    let export = crate::literal::decode(source, d.span(name), false)?;
+                    if export.is_empty() {
+                        return Err(source.error(d.span(name), "an export name is not empty"));
+                    }
+                    lowered_binding["export"] = json!(export);
+                }
+            }
+            lowered.push((index, lowered_binding));
         }
     }
     Ok(lowered)

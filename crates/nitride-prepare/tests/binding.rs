@@ -127,14 +127,40 @@ fn binding_frontend_reproduces_its_seed() {
 }
 
 #[test]
+fn targets_are_components_or_processes() {
+    let catalog = catalog();
+    let named =
+        "binding C.Cal version 2 for wasm component \"cal.wasm\" export \"acme:cal/days@1.2.0\";";
+    let lowered = bindings(&[source("cal.nbind", named)], &catalog).unwrap();
+    assert_eq!(lowered[0]["export"], "acme:cal/days@1.2.0");
+
+    let process = "binding C.Cal version 2 for process \"./cal\" \"--fast\" \"-v\";";
+    let lowered = bindings(&[source("cal.nbind", process)], &catalog).unwrap();
+    assert_eq!(lowered[0]["target"], "process");
+    assert_eq!(lowered[0]["program"], "./cal");
+    assert_eq!(lowered[0]["args"], json!(["--fast", "-v"]));
+    assert!(lowered[0].get("component").is_none());
+
+    let empty = "binding C.Cal version 2 for process \"\";";
+    let error = bindings(&[source("cal.nbind", empty)], &catalog).unwrap_err();
+    assert_eq!(error.message, "a program is not empty");
+}
+
+#[test]
 fn projects_record_their_checked_bindings() {
     for manifest in ["Calendar.nproj", "project.json"] {
         let prepared =
             nitride_prepare::prepare_project(&root().join("languages/calendar").join(manifest))
                 .unwrap();
         let bindings = prepared.data["bindings"].as_array().unwrap();
-        assert_eq!(bindings.len(), 1, "{manifest}");
+        assert_eq!(bindings.len(), 2, "{manifest}");
         assert_eq!(bindings[0]["exports"]["Calendar.ParseDate"], "parse-iso");
+        // A process runs in its binding file's folder, relative to the manifest's.
+        assert_eq!(bindings[1]["target"], "process", "{manifest}");
+        assert_eq!(bindings[1]["program"], "python3");
+        assert_eq!(bindings[1]["args"], json!(["clock.py"]));
+        assert_eq!(bindings[1]["directory"], "");
+        assert_eq!(bindings[1]["exports"], json!({"Calendar.Today": "today"}));
         assert!(
             prepared
                 .inputs

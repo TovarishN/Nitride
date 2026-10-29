@@ -151,24 +151,30 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
     Ok(PreparedProject { data, inputs })
 }
 
-/// Checked bindings, each component path made relative to the manifest's
-/// folder (it is written relative to its `.nbind`). A component outside that
-/// folder keeps the path its binding file's folder gives it.
+/// Checked bindings, with paths made relative to the manifest's folder
+/// (they are written relative to their `.nbind`): a component's path, and the
+/// folder a process runs in. A path outside the manifest's folder stays as
+/// its binding file's folder gives it.
 fn located(sources: &[Source], catalog: &Value, manifest: &Path) -> Result<Value, PrepareError> {
     let folder = manifest.parent().unwrap_or(Path::new(""));
-    let mut bindings = Vec::new();
-    for (index, mut binding) in crate::binding::lower_from(sources, catalog)? {
-        let file = Path::new(&sources[index].path);
-        let component = file
-            .parent()
-            .unwrap_or(Path::new(""))
-            .join(binding["component"].as_str().unwrap());
-        let component = component.strip_prefix(folder).unwrap_or(&component);
-        let parts: Vec<_> = component
+    let relative = |path: &Path| {
+        let path = path.strip_prefix(folder).unwrap_or(path);
+        let parts: Vec<_> = path
             .components()
             .map(|c| c.as_os_str().to_string_lossy().into_owned())
             .collect();
-        binding["component"] = Value::String(parts.join("/"));
+        Value::String(parts.join("/"))
+    };
+    let mut bindings = Vec::new();
+    for (index, mut binding) in crate::binding::lower_from(sources, catalog)? {
+        let home = Path::new(&sources[index].path)
+            .parent()
+            .unwrap_or(Path::new(""));
+        if let Some(component) = binding["component"].as_str() {
+            binding["component"] = relative(&home.join(component));
+        } else {
+            binding["directory"] = relative(home);
+        }
         bindings.push(binding);
     }
     Ok(Value::Array(bindings))
