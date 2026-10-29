@@ -1,0 +1,14 @@
+language Calls
+{
+  extensions .calls;
+  grammar Calls.ngr;
+  start Calls.Program;
+  catalog Calls.ncatalog;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.Calls;
+    grammar Calls.Reference.ngr;
+    source CallsSemantics.cs;
+  }
+}

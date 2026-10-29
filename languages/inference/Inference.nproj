@@ -1,0 +1,14 @@
+language Inference
+{
+  extensions .inferred;
+  grammar Inference.ngr;
+  start Inference.Program;
+  catalog Inference.ncatalog;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.Inference;
+    grammar Inference.Reference.ngr;
+    source InferenceSemantics.cs;
+  }
+}

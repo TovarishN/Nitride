@@ -1,0 +1,25 @@
+{
+  "catalogs": [
+    "languages/power/Power.ncatalog"
+  ],
+  "extensions": [
+    ".powercalc"
+  ],
+  "grammars": [
+    "languages/portable/Portable.ngr",
+    "languages/power/Power.ngr"
+  ],
+  "name": "PortablePower",
+  "nitrogen": {
+    "grammars": [
+      "languages/portable/Portable.ngr",
+      "languages/power/Power.ngr"
+    ],
+    "namespace": "Nitride.Reference.Syntax",
+    "sources": [
+      "languages/power/PowerSemantics.cs"
+    ]
+  },
+  "start": "Portable.Program",
+  "typed": true
+}

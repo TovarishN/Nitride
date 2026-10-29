@@ -1,0 +1,14 @@
+language Rewrites
+{
+  extensions .rewrites;
+  grammar ../dates/Dates.ngr, Rewrites.ngr;
+  start Dates.Program;
+  catalog ../dates/Dates.ncatalog;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.Dates;
+    grammar ../dates/Dates.Reference.ngr, Rewrites.ngr;
+    source ../dates/DatesSemantics.cs;
+  }
+}

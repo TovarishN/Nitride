@@ -1,0 +1,19 @@
+{
+  "catalogs": [],
+  "extensions": [
+    ".nitridegrammar"
+  ],
+  "grammars": [
+    "languages/grammar/Grammar.ngr"
+  ],
+  "name": "NitrideGrammar",
+  "nitrogen": {
+    "grammars": [
+      "languages/grammar/Grammar.ngr"
+    ],
+    "namespace": "Nitride.Grammar.Syntax",
+    "sources": []
+  },
+  "start": "NitrideGrammar.File",
+  "typed": false
+}

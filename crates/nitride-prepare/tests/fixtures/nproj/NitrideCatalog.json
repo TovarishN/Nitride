@@ -1,0 +1,11 @@
+{
+  "catalogs": [],
+  "extensions": [],
+  "grammars": [
+    "languages/catalog/Catalog.ngr"
+  ],
+  "name": "NitrideCatalog",
+  "nitrogen": null,
+  "start": "NitrideCatalog.File",
+  "typed": false
+}

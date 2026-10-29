@@ -1,0 +1,23 @@
+{
+  "catalogs": [
+    "languages/namespaces/Namespaces.ncatalog"
+  ],
+  "extensions": [
+    ".namespaces"
+  ],
+  "grammars": [
+    "languages/namespaces/Namespaces.ngr"
+  ],
+  "name": "Namespaces",
+  "nitrogen": {
+    "grammars": [
+      "languages/namespaces/Namespaces.ngr"
+    ],
+    "namespace": "Nitride.Reference.Syntax",
+    "sources": [
+      "languages/namespaces/NamespacesSemantics.cs"
+    ]
+  },
+  "start": "Namespaces.Program",
+  "typed": true
+}

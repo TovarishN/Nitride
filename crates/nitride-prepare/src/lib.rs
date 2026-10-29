@@ -12,7 +12,7 @@ mod nproj;
 mod parser;
 mod project;
 pub use nproj::{
-    NitrogenSection, ProjectLanguage, ProjectWorkspace, read_language, read_workspace,
+    NitrogenSection, ProjectLanguage, ProjectWorkspace, read_language, read_workspace, snapshot,
 };
 pub use project::{PreparedProject, prepare_project, write_prepared};
 

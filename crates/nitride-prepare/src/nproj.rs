@@ -338,3 +338,37 @@ pub fn read_workspace(
     }
     workspace
 }
+
+/// A language resolved for comparison across implementations: paths relative
+/// to `root`, with `/` and without `.` or `..`. Nitrogen's own resolution of
+/// the same `.nproj` must give this value.
+pub fn snapshot(language: &ProjectLanguage, root: &Path) -> serde_json::Value {
+    let relative = |path: &PathBuf| {
+        let mut parts: Vec<String> = Vec::new();
+        let path = path.strip_prefix(root).unwrap_or(path);
+        for component in path.components() {
+            match component {
+                std::path::Component::CurDir => {}
+                std::path::Component::ParentDir => {
+                    parts.pop();
+                }
+                other => parts.push(other.as_os_str().to_string_lossy().into_owned()),
+            }
+        }
+        parts.join("/")
+    };
+    let all = |paths: &[PathBuf]| paths.iter().map(relative).collect::<Vec<_>>();
+    serde_json::json!({
+        "name": language.name,
+        "extensions": language.extensions,
+        "grammars": all(&language.grammars),
+        "start": language.start,
+        "typed": language.typed(),
+        "catalogs": all(&language.catalogs),
+        "nitrogen": language.nitrogen.as_ref().map(|n| serde_json::json!({
+            "namespace": n.namespace,
+            "grammars": all(&n.grammars),
+            "sources": all(&n.sources),
+        })),
+    })
+}

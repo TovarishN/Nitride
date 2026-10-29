@@ -1,0 +1,16 @@
+// The languages of this repository, one folder each.
+workspace
+{
+  include languages/portable;
+  include languages/power;
+  include languages/composition;
+  include languages/xml;
+  include languages/namespaces;
+  include languages/inference;
+  include languages/calls;
+  include languages/functions;
+  include languages/dates;
+  include languages/rewrites;
+  include languages/grammar;
+  include languages/csharp4;
+}

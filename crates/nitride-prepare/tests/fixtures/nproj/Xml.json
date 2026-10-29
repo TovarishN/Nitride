@@ -1,0 +1,19 @@
+{
+  "catalogs": [],
+  "extensions": [
+    ".xml"
+  ],
+  "grammars": [
+    "languages/xml/Xml.ngr"
+  ],
+  "name": "Xml",
+  "nitrogen": {
+    "grammars": [
+      "languages/xml/Xml.ngr"
+    ],
+    "namespace": "Nitride.Xml.Syntax",
+    "sources": []
+  },
+  "start": "Xml.Document",
+  "typed": false
+}

@@ -1,0 +1,23 @@
+{
+  "catalogs": [
+    "languages/inference/Inference.ncatalog"
+  ],
+  "extensions": [
+    ".inferred"
+  ],
+  "grammars": [
+    "languages/inference/Inference.ngr"
+  ],
+  "name": "Inference",
+  "nitrogen": {
+    "grammars": [
+      "languages/inference/Inference.Reference.ngr"
+    ],
+    "namespace": "Nitride.Reference.Inference",
+    "sources": [
+      "languages/inference/InferenceSemantics.cs"
+    ]
+  },
+  "start": "Inference.Program",
+  "typed": true
+}

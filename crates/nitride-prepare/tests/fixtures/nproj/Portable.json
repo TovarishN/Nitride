@@ -1,0 +1,23 @@
+{
+  "catalogs": [
+    "languages/portable/Portable.ncatalog"
+  ],
+  "extensions": [
+    ".portable"
+  ],
+  "grammars": [
+    "languages/portable/Portable.ngr"
+  ],
+  "name": "Portable",
+  "nitrogen": {
+    "grammars": [
+      "languages/portable/Portable.ngr"
+    ],
+    "namespace": "Nitride.Reference.Syntax",
+    "sources": [
+      "languages/portable/PortableSemantics.cs"
+    ]
+  },
+  "start": "Portable.Program",
+  "typed": true
+}

@@ -1,0 +1,11 @@
+language NitrideGrammar
+{
+  extensions .nitridegrammar;
+  grammar Grammar.ngr;
+  start NitrideGrammar.File;
+
+  nitrogen
+  {
+    namespace Nitride.Grammar.Syntax;
+  }
+}

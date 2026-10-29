@@ -1,0 +1,13 @@
+language Functions
+{
+  extensions .functions;
+  grammar Functions.ngr;
+  start Functions.Program;
+  catalog Functions.ncatalog;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.Functions;
+    source FunctionsSemantics.cs;
+  }
+}

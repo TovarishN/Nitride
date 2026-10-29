@@ -1,0 +1,40 @@
+language CSharp4
+{
+  extensions .csharp4;
+  grammar Grammars/Core.ngr;
+  grammar Grammars/Lexical.ngr;
+  grammar Grammars/NamesTypes.ngr;
+  grammar Grammars/Expressions.ngr;
+  grammar Grammars/Statements.ngr;
+  grammar Grammars/Attributes.ngr;
+  grammar Grammars/Declarations.ngr;
+  grammar Grammars/CompilationUnits.ngr;
+  grammar Grammars/Unsafe.ngr;
+  grammar Grammars/GlobalTargetsThird.ngr;
+  grammar Grammars/Generics.ngr;
+  grammar Grammars/NullableValues.ngr;
+  grammar Grammars/AnonymousMethods.ngr;
+  grammar Grammars/Iterators.ngr;
+  grammar Grammars/DefaultValues.ngr;
+  grammar Grammars/DeclarationForms.ngr;
+  grammar Grammars/AliasQualification.ngr;
+  grammar Grammars/GenericUnsafe.ngr;
+  grammar Grammars/FixedBuffers.ngr;
+  grammar Grammars/Lambdas.ngr;
+  grammar Grammars/Queries.ngr;
+  grammar Grammars/ObjectInitializers.ngr;
+  grammar Grammars/AnonymousTypes.ngr;
+  grammar Grammars/ImplicitArrays.ngr;
+  grammar Grammars/ExtensionReceivers.ngr;
+  grammar Grammars/GenericFollowersThird.ngr;
+  grammar Grammars/NamedArguments.ngr;
+  grammar Grammars/OptionalParameters.ngr;
+  grammar Grammars/Variance.ngr;
+  grammar Grammars/GenericFollowersFourth.ngr;
+  start CSharp.CompilationUnits.CompilationUnit;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.CSharp4;
+  }
+}
