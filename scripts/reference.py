@@ -6,7 +6,7 @@ import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 DLL = ROOT / "tools/Nitride.Reference/bin/Debug/net10.0/Nitride.Reference.dll"
-CATALOG = ROOT / "languages/portable/catalog.json"
+CATALOG = ROOT / "languages/portable/Portable.ncatalog"
 
 
 def observe(source):

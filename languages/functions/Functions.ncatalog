@@ -1,0 +1,12 @@
+// Semantic contract of the Functions profile.
+catalog module Functions
+{
+  type Time;
+
+  operation Add(Scalar, Scalar) : Scalar = host add;
+  operation AddTime(Time, Time) : Time = host add;
+  operation Duration(Scalar) : Time = host identity;
+  operation Neg(Scalar) : Scalar = host neg;
+
+  show Show(Body);
+}

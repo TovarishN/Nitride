@@ -18,11 +18,10 @@ fn fixture(path: &std::path::Path) {
     )
     .unwrap();
     std::fs::write(
-        path.join("catalog.json"),
-        r#"{"types":[],"operations":[],"statements":{}}"#,
+        path.join("project.json"),
+        r#"{"mode":"syntax","start":"Test.Start","grammars":["Test.ngr"]}"#,
     )
     .unwrap();
-    std::fs::write(path.join("project.json"),r#"{"mode":"syntax","start":"Test.Start","grammars":["Test.ngr"],"catalog":"catalog.json"}"#).unwrap();
 }
 #[test]
 fn project_is_relocatable_and_output_is_validated_before_replacement() {
@@ -35,7 +34,7 @@ fn project_is_relocatable_and_output_is_validated_before_replacement() {
         first.data,
         prepare_project(&b.join("project.json")).unwrap().data
     );
-    assert_eq!(first.inputs.len(), 3);
+    assert_eq!(first.inputs.len(), 2);
     let output = a.join("language.json");
     std::fs::write(&output, "previous").unwrap();
     write_prepared(&first, &output).unwrap();
@@ -66,8 +65,8 @@ fn invalid_manifest_and_missing_files_report_paths() {
     );
     for text in [
         "{",
-        r#"{"grammars":[],"start":"Test.Start","catalog":"catalog.json"}"#,
-        r#"{"grammars":[3],"start":"Test.Start","catalog":"catalog.json"}"#,
+        r#"{"grammars":[],"start":"Test.Start"}"#,
+        r#"{"grammars":[3],"start":"Test.Start"}"#,
     ] {
         std::fs::write(path.join("project.json"), text).unwrap();
         assert!(
@@ -77,5 +76,52 @@ fn invalid_manifest_and_missing_files_report_paths() {
                 .ends_with("project.json")
         );
     }
+    std::fs::remove_dir_all(path).unwrap();
+}
+
+#[test]
+fn catalogs_are_inputs_and_their_grammar_names_are_checked() {
+    let path = directory();
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../languages/portable");
+    std::fs::copy(root.join("Portable.ngr"), path.join("Portable.ngr")).unwrap();
+    let catalog = std::fs::read_to_string(root.join("Portable.ncatalog")).unwrap();
+    std::fs::write(path.join("project.json"), r#"{"mode":"typed","start":"Portable.Program","grammars":["Portable.ngr"],"catalogs":["Portable.ncatalog"]}"#).unwrap();
+    for (text, message) in [
+        (
+            catalog.replace("show Show(Value)", "show Show(Missing)"),
+            "'Portable.Show' has no field 'Missing'",
+        ),
+        (
+            catalog.replace("show Show(Value)", "show Shown(Value)"),
+            "unknown grammar rule 'Portable.Shown'",
+        ),
+    ] {
+        std::fs::write(path.join("Portable.ncatalog"), &text).unwrap();
+        let error = prepare_project(&path.join("project.json")).unwrap_err();
+        assert_eq!(error.message, message);
+        assert!(error.path.ends_with("Portable.ncatalog"), "{}", error.path);
+        assert_eq!(
+            &text[error.span[0]..error.span[1]],
+            if message.contains("field") {
+                "Missing"
+            } else {
+                "Shown"
+            }
+        );
+    }
+    std::fs::write(path.join("Portable.ncatalog"), &catalog).unwrap();
+    let prepared = prepare_project(&path.join("project.json")).unwrap();
+    assert_eq!(prepared.inputs.len(), 3);
+    std::fs::write(
+        path.join("project.json"),
+        r#"{"start":"Portable.Program","grammars":["Portable.ngr"],"catalog":"catalog.json"}"#,
+    )
+    .unwrap();
+    assert_eq!(
+        prepare_project(&path.join("project.json"))
+            .unwrap_err()
+            .message,
+        "'catalog' is replaced by 'catalogs', a list of .ncatalog files"
+    );
     std::fs::remove_dir_all(path).unwrap();
 }

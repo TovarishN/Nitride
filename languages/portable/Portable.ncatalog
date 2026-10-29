@@ -1,0 +1,15 @@
+// Semantic contract of the Portable profile: scalar arithmetic and times.
+catalog module Portable
+{
+  type Time;
+
+  operation Duration(Scalar) : Time = host identity;
+  operation Neg(Scalar) : Scalar = host neg;
+  operation Add(Scalar, Scalar) : Scalar = host add;
+  operation Sub(Scalar, Scalar) : Scalar = host sub;
+  operation Mul(Scalar, Scalar) : Scalar = host mul;
+  operation Div(Scalar, Scalar) : Scalar = host div;
+
+  let Let(Value);
+  show Show(Value);
+}

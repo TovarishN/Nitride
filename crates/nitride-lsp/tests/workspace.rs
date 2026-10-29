@@ -44,7 +44,7 @@ fn falls_back_to_nitrogen_json() {
     assert_eq!(path.unwrap(), dir.join("nitrogen.json"));
     let entry = &entries.unwrap().0[0];
     assert_eq!(entry.mode, Mode::Syntax);
-    assert_eq!(entry.catalog, None);
+    assert!(entry.catalogs.is_empty());
     assert_eq!(entry.grammars, [dir.join("m.ngr")]);
 }
 
@@ -55,14 +55,20 @@ fn mode_defaults_from_catalog() {
         &dir,
         "nitride.json",
         r#"{"languages":[
-        {"name":"T","extensions":[".t"],"grammars":["m.ngr"],"start":"M.Program","catalog":"c.json"},
+        {"name":"T","extensions":[".t"],"grammars":["m.ngr"],"start":"M.Program","catalogs":["c.ncatalog"]},
         {"name":"S","extensions":[".s"],"grammars":["m.ngr"],"start":"M.Program"},
-        {"name":"E","extensions":[".e"],"grammars":["m.ngr"],"start":"M.Program","catalog":"c.json","mode":"syntax"}]}"#,
+        {"name":"E","extensions":[".e"],"grammars":["m.ngr"],"start":"M.Program","catalogs":["c.ncatalog"],"mode":"syntax"},
+        {"name":"O","extensions":[".o"],"grammars":["m.ngr"],"start":"M.Program","catalog":"c.json"}]}"#,
     );
-    let entries = manifest::read(&dir).1.unwrap().0;
+    let (entries, problems) = manifest::read(&dir).1.unwrap();
     let modes: Vec<_> = entries.iter().map(|e| e.mode).collect();
     assert_eq!(modes, [Mode::Typed, Mode::Syntax, Mode::Syntax]);
-    assert_eq!(entries[0].catalog, Some(dir.join("c.json")));
+    assert_eq!(entries[0].catalogs, [dir.join("c.ncatalog")]);
+    // The JSON catalog of earlier manifests is reported, not ignored.
+    assert_eq!(
+        problems[0].message,
+        "language 3: \"catalog\" is replaced by \"catalogs\", a list of .ncatalog files"
+    );
 }
 
 #[test]

@@ -1,0 +1,33 @@
+// Nitride catalogs, the semantic contract between a grammar and its host,
+// described in itself. Names are resolved and lowered by nitride-prepare.
+syntax module NitrideCatalog
+{
+  token IdStart = ['a'..'z' 'A'..'Z' '_'];
+  token IdPart = ['a'..'z' 'A'..'Z' '0'..'9' '_'];
+  token Identifier = IdStart IdPart*;
+  token QualifiedName = Identifier ("." Identifier)*;
+  // Host handler and predicate names, such as `iso-date`.
+  token HandlerName = Identifier ("-" Identifier)*;
+  token Hex = ['0'..'9' 'a'..'f' 'A'..'F'];
+  token Escape = "\\" (['n' 'r' 't' '0' '\\' '"' '\''] / "u" Hex Hex Hex Hex);
+  token String = "\"" (Escape / [^ '"' '\\' '\n'])* "\"";
+
+  syntax File = Modules:Module*;
+  syntax Module = "catalog" "module" Name:QualifiedName "{" Members:Member* "}";
+  syntax Member = Using / Type / Operation / Overload / Builtin / Let / Show / Call / Check;
+  syntax Using = "using" Name:QualifiedName ";";
+  syntax Type = "type" Name:Identifier ";";
+  syntax Operation = "operation" Name:Identifier "(" Inputs:(QualifiedName; ",")* ")" ":" Result:QualifiedName "=" Handler:Handler ";";
+  syntax Handler = "host" Name:HandlerName;
+  syntax Overload = "overload" Name:Identifier "=" Candidates:(QualifiedName; "|")+ ";";
+  // A callable built-in names its candidate operations; a value has a type and a handler.
+  syntax Builtin = "builtin" Kind:Identifier Name:QualifiedName Body:(BuiltinValue / BuiltinCall) ";";
+  syntax BuiltinValue = ":" Type:QualifiedName "=" Handler:Handler;
+  syntax BuiltinCall = "=" Candidates:(QualifiedName; "|")+;
+  syntax Let = "let" Rule:QualifiedName "(" Field:Identifier ")" Infer:Infer? ";";
+  syntax Infer = "infer";
+  syntax Show = "show" Rule:QualifiedName "(" Field:Identifier ")" ";";
+  syntax Call = "call" Rule:QualifiedName "(" Args:(Identifier; ",")* ")" ";";
+  // `Rule.Field`: the last segment is the field.
+  syntax Check = "check" Target:QualifiedName "is" Predicate:HandlerName "else" Code:Identifier Message:String ";";
+}

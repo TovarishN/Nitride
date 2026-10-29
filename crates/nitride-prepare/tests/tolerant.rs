@@ -122,3 +122,75 @@ fn grammar_references_found() {
     let first = &references[0];
     assert_eq!(&grammar.text[first.span[0]..first.span[1]], first.name);
 }
+
+#[test]
+fn grammar_locals_bind_quote_placeholders() {
+    let grammar = source("languages/rewrites/Rewrites.ngr");
+    let locals = grammar_locals(&grammar).unwrap();
+    let text = |span: [usize; 2]| &grammar.text[span[0]..span[1]];
+    let local = |kind: &str, name: &str, line: &str| {
+        let at = grammar.text.find(line).unwrap();
+        locals
+            .iter()
+            .find(|l| l.kind == kind && l.name == name && l.definitions[0][0] >= at)
+            .unwrap_or_else(|| panic!("{kind} {name}: {locals:?}"))
+    };
+    // A parameter used by a quote placeholder.
+    let count = local("parameter", "Count", "syntax function FortnightDuration");
+    assert_eq!(count.detail, "Count: Expr");
+    assert_eq!(count.uses.len(), 1);
+    assert_eq!(text(count.uses[0]), "Count");
+    // A parameter used by the selector and the fallback; a capture used by its own arm.
+    let value = local("parameter", "Value", "syntax function SwapAddition");
+    assert_eq!(value.uses.len(), 2);
+    let right = local("capture", "Right", "(Left: Expr, Right: Expr)");
+    assert_eq!(right.uses.len(), 2);
+    // A label used by a quote and by a helper argument.
+    let amount = local("field", "Amount", "| Soon");
+    assert_eq!(text(amount.uses[0]), "Amount");
+    let inner = local("field", "Inner", "| Twice");
+    assert_eq!(inner.uses.len(), 2);
+    let value = local("field", "Value", "| Swapped");
+    assert_eq!(value.uses.len(), 1);
+}
+
+#[test]
+fn grammar_locals_of_every_language() {
+    let languages = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../languages");
+    for language in std::fs::read_dir(languages).unwrap() {
+        for file in std::fs::read_dir(language.unwrap().path()).unwrap() {
+            let path = file.unwrap().path();
+            if path.extension().is_some_and(|e| e == "ngr") {
+                let grammar = Source {
+                    path: path.display().to_string(),
+                    text: std::fs::read_to_string(&path).unwrap(),
+                };
+                for local in grammar_locals(&grammar).unwrap_or_default() {
+                    for span in local.uses {
+                        assert_eq!(&grammar.text[span[0]..span[1]], local.name, "{path:?}");
+                    }
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn grammar_references_include_function_calls() {
+    let grammar = Source {
+        path: "Calls.ngr".into(),
+        text: "syntax module M\n{\n  function Twice(r: Grammar.Rule) : Grammar.Rule = r r;\n  \
+               syntax function Same(Value: Expr) : Expr = <[ $Value ]>;\n  token N = ['0'..'9'];\n  \
+               syntax Expr = Value:Twice(N) rewrites Same(Value);\n}\n"
+            .into(),
+    };
+    let references = grammar_references(&grammar).unwrap();
+    for name in ["Twice", "Same"] {
+        let used = references.iter().find(|r| r.name == name).unwrap();
+        assert_eq!(&grammar.text[used.span[0]..used.span[1]], name);
+        assert_eq!(used.module, "M");
+    }
+    // `Same(Value: Expr) : Expr` uses Expr as its parameter and result type.
+    let types = references.iter().filter(|r| r.name == "Expr").count();
+    assert_eq!(types, 2, "{references:?}");
+}

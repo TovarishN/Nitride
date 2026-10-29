@@ -210,8 +210,12 @@ pub fn generate(input: &str) -> Result<String, String> {
             {
                 return Err("unknown builtin value namespace".into());
             }
-            for (name, ty) in names.as_object().ok_or("value names must be an object")? {
-                let ty = text(ty)?;
+            for (name, value) in names.as_object().ok_or("value names must be an object")? {
+                let ty = text(&value["type"])?;
+                let handler = text(&value["handler"])?;
+                if !matches!(handler, "pi" | "e" | "tau" | "today") {
+                    return Err("unknown fixture host value handler".into());
+                }
                 if !builtin_declarations.contains(&(kind.as_str(), name.as_str())) {
                     return Err("undeclared builtin value mapping".into());
                 }
@@ -224,10 +228,11 @@ pub fn generate(input: &str) -> Result<String, String> {
                 values.push((
                     kind.as_str(),
                     format!(
-                        "nitride_core::BuiltinValue {{kind:{},name:{},ty:{}}}",
+                        "nitride_core::BuiltinValue {{kind:{},name:{},ty:{},handler:{}}}",
                         quoted(kind),
                         quoted(name),
-                        quoted(ty)
+                        quoted(ty),
+                        quoted(handler)
                     ),
                 ));
             }

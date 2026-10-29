@@ -20,6 +20,13 @@ fn rule_word(kind: &str) -> &'static str {
         "alternative" => "alternative",
         "function" => "function",
         "helper" => "helper",
+        "module" => "syntax module",
+        "catalog" => "catalog module",
+        "type" => "type",
+        "operation" => "operation",
+        "overload" => "overload",
+        "builtin" => "built-in",
+        "field" => "field",
         _ => "rule",
     }
 }
@@ -36,16 +43,26 @@ pub fn hover(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
         return Value::Null;
     }
     if let Some(GrammarAt { index, file }) = grammar {
+        if let Some((local, span)) = index.local_at(file, offset) {
+            return json!({
+                "contents": {"kind": "markdown",
+                    "value": format!("```ngr\n{}\n```\n*{}*", local.detail, local.kind)},
+                "range": range(&analysis.lines, span),
+            });
+        }
         return match rule_at(index, file, offset) {
             Some((rule, span)) => {
                 let text = &index.files[rule.file].text;
                 let start = rule.item.span[0];
                 let line = text[start..].lines().next().unwrap_or_default().trim();
                 let line: String = line.chars().take(200).collect();
+                let name = match rule.item.kind {
+                    "module" | "catalog" => rule.module.clone(),
+                    _ => format!("{}.{}", rule.module, rule.item.name),
+                };
                 json!({
                     "contents": {"kind": "markdown", "value": format!(
-                        "```ngr\n{line}\n```\n*{}* `{}.{}`",
-                        rule_word(rule.item.kind), rule.module, rule.item.name)},
+                        "```ngr\n{line}\n```\n*{}* `{name}`", rule_word(rule.item.kind))},
                     "range": range(&analysis.lines, span),
                 })
             }
@@ -101,11 +118,7 @@ pub fn rule_at(index: &GrammarIndex, file: usize, offset: u32) -> Option<(RuleDe
     let span = if rule.file == file && inside(name) {
         name
     } else {
-        index.files[file]
-            .references
-            .iter()
-            .map(|r| r.span.map(|b| b as u32))
-            .find(|s| inside(*s))?
+        index.reference_at(file, offset)?.span.map(|b| b as u32)
     };
     Some((rule, span))
 }
@@ -126,6 +139,15 @@ fn occurrences(
     grammar: Option<&GrammarAt<'_>>,
 ) -> Option<Vec<(Value, bool)>> {
     if let Some(GrammarAt { index, file }) = grammar {
+        if let Some((local, _)) = index.local_at(*file, offset) {
+            let at = |span: &[usize; 2]| grammar_location(index, *file, span.map(|b| b as u32));
+            let definitions = local.definitions.iter().map(|s| (at(s), true));
+            return Some(
+                definitions
+                    .chain(local.uses.iter().map(|s| (at(s), false)))
+                    .collect(),
+            );
+        }
         let (rule, _) = rule_at(index, *file, offset)?;
         let mut found = vec![(
             grammar_location(index, rule.file, rule.item.name_span.map(|b| b as u32)),
@@ -241,7 +263,22 @@ pub fn prepare_rename(
         return Ok(Value::Null);
     }
     if let Some(GrammarAt { index, file }) = grammar {
+        if let Some((local, span)) = index.local_at(file, offset) {
+            return Ok(json!({"range": range(&analysis.lines, span), "placeholder": local.name}));
+        }
         return Ok(match rule_at(index, file, offset) {
+            // Manifests name modules too (`start`), beyond what a rename edits.
+            Some((rule, _)) if matches!(rule.item.kind, "module" | "catalog") => {
+                return Err(refuse("modules cannot be renamed"));
+            }
+            // A label's uses in its grammar are locals there; rename it there.
+            Some((rule, _)) if rule.item.kind == "field" => {
+                return Err(refuse("rename the field at its label in the grammar"));
+            }
+            // Grammars declare built-in names in lists a rename does not see.
+            Some((rule, _)) if rule.item.kind == "builtin" => {
+                return Err(refuse("built-in names cannot be renamed"));
+            }
             Some((rule, span)) => {
                 // Only the last segment of a qualified use is the rule's name.
                 let text = &index.files[file].text[span[0] as usize..span[1] as usize];
@@ -309,6 +346,16 @@ pub fn rename(
             .push(json!({"range": range(lines, span), "newText": new_name}));
     };
     if let Some(GrammarAt { index, file }) = grammar {
+        if let Some((local, _)) = index.local_at(file, offset) {
+            let grammar = &index.files[file];
+            if grammar.damaged {
+                return Err(refuse("fix the syntax errors in this file before renaming"));
+            }
+            for span in local.definitions.iter().chain(&local.uses) {
+                edit(grammar.uri.clone(), &analysis.lines, span.map(|b| b as u32));
+            }
+            return Ok(json!({ "changes": changes }));
+        }
         let Some((rule, _)) = rule_at(index, file, offset) else {
             return Ok(Value::Null);
         };
@@ -372,8 +419,10 @@ pub fn workspace_symbols<'a>(
         .filter(|r| matches(&r.item.name, query))
     {
         let kind = match rule.item.kind {
-            "token" => 14,
-            "function" | "helper" => 12,
+            "module" | "catalog" => 2,
+            "token" | "builtin" => 14,
+            "function" | "helper" | "operation" => 12,
+            "overload" => 25,
             _ => 5,
         };
         found.push(json!({

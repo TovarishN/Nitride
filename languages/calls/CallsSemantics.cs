@@ -14,11 +14,15 @@ public static class CallsLanguage
     static readonly OperationSignature O5 = new("Calls.Zero", T0);
     public static OperationSignature? Select(string name, SemanticType?[] args)
     {
-        if (name == "neg") {
+        if (name == "calc") {
+            if (args.Length == O5.Inputs.Count && args.Select((a,i) => Equals(a,O5.Inputs[i])).All(x=>x)) return O5;
             if (args.Length == O1.Inputs.Count && args.Select((a,i) => Equals(a,O1.Inputs[i])).All(x=>x)) return O1;
-            if (args.Length == O2.Inputs.Count && args.Select((a,i) => Equals(a,O2.Inputs[i])).All(x=>x)) return O2;
+            if (args.Length == O3.Inputs.Count && args.Select((a,i) => Equals(a,O3.Inputs[i])).All(x=>x)) return O3;
         }
-        if (name == "sys.neg") {
+        if (name == "duration") {
+            if (args.Length == O0.Inputs.Count && args.Select((a,i) => Equals(a,O0.Inputs[i])).All(x=>x)) return O0;
+        }
+        if (name == "neg") {
             if (args.Length == O1.Inputs.Count && args.Select((a,i) => Equals(a,O1.Inputs[i])).All(x=>x)) return O1;
             if (args.Length == O2.Inputs.Count && args.Select((a,i) => Equals(a,O2.Inputs[i])).All(x=>x)) return O2;
         }
@@ -26,16 +30,12 @@ public static class CallsLanguage
             if (args.Length == O3.Inputs.Count && args.Select((a,i) => Equals(a,O3.Inputs[i])).All(x=>x)) return O3;
             if (args.Length == O4.Inputs.Count && args.Select((a,i) => Equals(a,O4.Inputs[i])).All(x=>x)) return O4;
         }
-        if (name == "duration") {
-            if (args.Length == O0.Inputs.Count && args.Select((a,i) => Equals(a,O0.Inputs[i])).All(x=>x)) return O0;
+        if (name == "sys.neg") {
+            if (args.Length == O1.Inputs.Count && args.Select((a,i) => Equals(a,O1.Inputs[i])).All(x=>x)) return O1;
+            if (args.Length == O2.Inputs.Count && args.Select((a,i) => Equals(a,O2.Inputs[i])).All(x=>x)) return O2;
         }
         if (name == "zero") {
             if (args.Length == O5.Inputs.Count && args.Select((a,i) => Equals(a,O5.Inputs[i])).All(x=>x)) return O5;
-        }
-        if (name == "calc") {
-            if (args.Length == O5.Inputs.Count && args.Select((a,i) => Equals(a,O5.Inputs[i])).All(x=>x)) return O5;
-            if (args.Length == O1.Inputs.Count && args.Select((a,i) => Equals(a,O1.Inputs[i])).All(x=>x)) return O1;
-            if (args.Length == O3.Inputs.Count && args.Select((a,i) => Equals(a,O3.Inputs[i])).All(x=>x)) return O3;
         }
         return null;
     }

@@ -11,7 +11,7 @@ def observe(source):
     with tempfile.TemporaryDirectory() as folder:
         path=pathlib.Path(folder)/"input.inference"
         path.write_text(source)
-        result=run("oracle-inference",path,ROOT/"languages/inference/catalog.json")
+        result=run("oracle-inference",path,ROOT/"languages/inference/Inference.ncatalog")
         assert result.returncode==0,result.stderr
         return json.loads(result.stdout)
 

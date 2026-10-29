@@ -1,0 +1,29 @@
+// Semantic contract of the Calls profile: built-in functions over scalars and times.
+catalog module Calls
+{
+  type Time;
+
+  operation Duration(Scalar) : Time = host identity;
+  operation NegScalar(Scalar) : Scalar = host neg;
+  operation NegTime(Time) : Time = host neg;
+  operation SumScalar(Scalar, Scalar) : Scalar = host add;
+  operation SumTime(Time, Time) : Time = host add;
+  operation Zero() : Scalar = host zero;
+
+  builtin function neg = NegScalar | NegTime;
+  builtin function sys.neg = NegScalar | NegTime;
+  builtin function sum = SumScalar | SumTime;
+  builtin function duration = Duration;
+  builtin function zero = Zero;
+  builtin function calc = Zero | NegScalar | SumScalar;
+
+  let Let(Value) infer;
+  let Local(Value) infer;
+  show Show(Value);
+
+  call Call0();
+  call Call1(Arg);
+  call Call2(Left, Right);
+  call AnyCall(Arg);
+  call FallbackCall(Arg);
+}

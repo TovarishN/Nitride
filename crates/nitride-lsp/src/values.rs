@@ -47,8 +47,8 @@ fn today() -> f64 {
     (719_162 + seconds / 86_400) as f64
 }
 
-/// Host values for the built-in values the language declares that have a
-/// known meaning; others get none, so the program will not run.
+/// Host values for every built-in value the language declares, by its
+/// catalog handler name.
 pub fn host_values(language: &Language<'_>) -> Vec<HostValue> {
     let mut values: Vec<HostValue> = Vec::new();
     let declared = language.rules.iter().flat_map(|r| match r.action {
@@ -56,23 +56,23 @@ pub fn host_values(language: &Language<'_>) -> Vec<HostValue> {
         _ => &[],
     });
     for value in declared {
-        let known = match (value.kind, value.name, value.ty) {
-            ("value", "pi", "Core.Scalar") => {
-                HostValue::new("value", "pi", "Core.Scalar", || Ok(std::f64::consts::PI))
-            }
-            ("value", "e", "Core.Scalar") => {
-                HostValue::new("value", "e", "Core.Scalar", || Ok(std::f64::consts::E))
-            }
-            ("value", "tau", "Core.Scalar") => {
-                HostValue::new("value", "tau", "Core.Scalar", || Ok(std::f64::consts::TAU))
-            }
-            ("value", "today", "Dates.Date") => {
-                HostValue::new("value", "today", "Dates.Date", || Ok(today()))
-            }
+        let provider: fn() -> Result<f64, String> = match value.handler {
+            "pi" => || Ok(std::f64::consts::PI),
+            "e" => || Ok(std::f64::consts::E),
+            "tau" => || Ok(std::f64::consts::TAU),
+            "today" => || Ok(today()),
             _ => continue,
         };
-        if !values.iter().any(|v| v.name == known.name) {
-            values.push(known);
+        if !values
+            .iter()
+            .any(|v| v.kind == value.kind && v.name == value.name)
+        {
+            values.push(HostValue::new(
+                value.kind.to_owned(),
+                value.name.to_owned(),
+                value.ty.to_owned(),
+                provider,
+            ));
         }
     }
     values

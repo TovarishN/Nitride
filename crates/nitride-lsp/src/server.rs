@@ -392,7 +392,8 @@ impl<W: Write> Server<W> {
                 if self.grammars.is_none() {
                     let mut paths: Vec<PathBuf> = Vec::new();
                     for language in self.registry.languages() {
-                        for grammar in &language.entry.grammars {
+                        let entry = &language.entry;
+                        for grammar in entry.grammars.iter().chain(&entry.catalogs) {
                             if !paths.iter().any(|p| crate::registry::same_file(p, grammar)) {
                                 paths.push(grammar.clone());
                             }
@@ -429,8 +430,11 @@ impl<W: Write> Server<W> {
         }
         let offset = analysis.lines.offset(line, character);
         let path = uri::to_path(uri)?;
-        // A grammar by name, by signature, or as a signed grammar's declaring file.
-        let is_grammar = path.extension().is_some_and(|e| e == "ngr")
+        // A grammar or catalog by name, a grammar by signature, or a signed
+        // grammar's declaring file.
+        let is_grammar = path
+            .extension()
+            .is_some_and(|e| e == "ngr" || e == "ncatalog")
             || !analysis.outline.is_empty()
             || self.registry.signed_at(&path).is_some();
         let grammar = is_grammar.then(|| {
@@ -670,7 +674,10 @@ fn canonical(path: &Path) -> PathBuf {
 /// Whether a document is an input of workspace languages.
 fn language_input(uri: &str) -> bool {
     let name = uri.rsplit('/').next().unwrap_or_default();
-    manifest::NAMES.contains(&name) || name.ends_with(".ngr") || name.ends_with(".json")
+    manifest::NAMES.contains(&name)
+        || name.ends_with(".ngr")
+        || name.ends_with(".ncatalog")
+        || name.ends_with(".json")
 }
 
 pub fn range(lines: &LineIndex, span: [u32; 2]) -> Value {

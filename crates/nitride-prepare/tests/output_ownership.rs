@@ -11,11 +11,10 @@ fn colliding_temporary_file_is_never_deleted() {
     )
     .unwrap();
     std::fs::write(
-        path.join("catalog.json"),
-        r#"{"types":[],"operations":[],"statements":{}}"#,
+        path.join("project.json"),
+        r#"{"mode":"syntax","start":"Test.Start","grammars":["Test.ngr"]}"#,
     )
     .unwrap();
-    std::fs::write(path.join("project.json"),r#"{"mode":"syntax","start":"Test.Start","grammars":["Test.ngr"],"catalog":"catalog.json"}"#).unwrap();
     let project = prepare_project(&path.join("project.json")).unwrap();
     // This integration-test process has made no previous write_prepared call.
     let occupied = path.join(format!(".nitride-prepare-{}-0.tmp", std::process::id()));

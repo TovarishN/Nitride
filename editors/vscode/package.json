@@ -1,7 +1,7 @@
 {
   "name": "nitride",
   "displayName": "Nitride DSL",
-  "description": ".ngr grammars and nitride.json/nitrogen.json workspace languages through nitride lsp.",
+  "description": ".ngr grammars, .ncatalog catalogs and nitride.json/nitrogen.json workspace languages through nitride lsp.",
   "version": "0.1.0",
   "publisher": "nitride",
   "license": "MIT",
@@ -26,6 +26,16 @@
         "configuration": "./language-configuration.json"
       },
       {
+        "id": "ncatalog",
+        "aliases": [
+          "Nitride catalog"
+        ],
+        "extensions": [
+          ".ncatalog"
+        ],
+        "configuration": "./language-configuration.json"
+      },
+      {
         "id": "nitride-signed",
         "aliases": [
           "Nitride signed program"
@@ -38,6 +48,11 @@
         "language": "ngr",
         "scopeName": "source.ngr",
         "path": "./syntaxes/ngr.tmLanguage.json"
+      },
+      {
+        "language": "ncatalog",
+        "scopeName": "source.ncatalog",
+        "path": "./syntaxes/ncatalog.tmLanguage.json"
       }
     ],
     "configuration": {

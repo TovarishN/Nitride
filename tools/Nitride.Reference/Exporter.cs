@@ -15,7 +15,9 @@ static class Exporter
         var manifest = JsonNode.Parse(File.ReadAllText(manifestPath))!;
         var directory = Path.GetDirectoryName(Path.GetFullPath(manifestPath))!;
         var files = manifest["grammars"]!.AsArray().Select(p => File.ReadAllText(Path.Combine(directory, (string)p!))).ToArray();
-        string catalog = File.ReadAllText(Path.Combine(directory, (string)manifest["catalog"]!));
+        if (manifest["catalog"] is not null) throw new InvalidOperationException("'catalog' is replaced by 'catalogs', a list of .ncatalog files");
+        var catalogs = manifest["catalogs"]?.AsArray().Select(p => Path.Combine(directory, (string)p!)).ToArray() ?? [];
+        string catalog = Catalogs.Lower(catalogs);
         return ExportSources(files, catalog, (string?)manifest["start"], (string?)manifest["mode"] ?? "typed");
     }
 

@@ -1,7 +1,7 @@
 """Generate the explicit .NET reference semantics for Dates; never used by native builds."""
 import hashlib
 import json
-from test_reference import ROOT
+from test_reference import ROOT, catalog_json
 
 
 def line(source, marker):
@@ -10,7 +10,7 @@ def line(source, marker):
 
 def main():
     folder=ROOT/'languages/dates'; source=(folder/'Dates.ngr').read_text()
-    catalog=json.loads((folder/'catalog.json').read_text())
+    catalog=catalog_json(folder/'Dates.ncatalog')
     source=source.replace('symbols { value }','symbols { value }\n  symbol property Type for value : Nitrogen.Semantic.SemanticType? = DatesLanguage.Builtin(name);')
     old=line(source,'syntax Let =');source=source.replace(old,old[:-1]+' { symbol.Type = Value.Type; }')
     source=source.replace('extensible syntax Expr\n  {','extensible syntax Expr\n  {\n    out Type : Nitrogen.Semantic.SemanticType? = null;\n    out Selected : Nitrogen.Semantic.OperationSignature? = null;')
@@ -46,7 +46,7 @@ def main():
     lines.append(f'    public static SemanticType Scalar => {ids["Core.Scalar"]};')
     lines.append('    public static SemanticType? Type(string id) => id switch { '+' '.join(f'{json.dumps(t)} => {v},' for t,v in ids.items())+' _ => null };')
     builtins=[(n,t) for names in catalog['values'].values() for n,t in names.items()]
-    lines.append('    public static SemanticType? Builtin(string name) => name switch { '+' '.join(f'{json.dumps(n)} => {ids[t]},' for n,t in builtins)+' _ => null };')
+    lines.append('    public static SemanticType? Builtin(string name) => name switch { '+' '.join(f'{json.dumps(n)} => {ids[t["type"]]},' for n,t in builtins)+' _ => null };')
     lines.append('    public static bool Check(string predicate, string text) => predicate == "iso-date" && DateOnly.TryParseExact(text, "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out _);')
     for i,op in enumerate(catalog['operations']):
         args=', '.join([json.dumps(op['id']),ids[op['result']]]+[ids[t] for t in op['inputs']]);lines.append(f'    static readonly OperationSignature O{i} = new({args});')
@@ -59,7 +59,7 @@ def main():
         lines.append('        }')
     lines+=['        return null;','    }',f'    public static readonly SemanticModule Semantics = new("Dates", [], [{", ".join(ids.values())}], [{", ".join(opids.values())}]);','}']
     (folder/'DatesSemantics.cs').write_text('\n'.join(lines)+'\n')
-    provenance={n:hashlib.sha256((folder/n).read_bytes()).hexdigest() for n in ['Dates.ngr','catalog.json','Dates.Reference.ngr','DatesSemantics.cs']}
+    provenance={n:hashlib.sha256((folder/n).read_bytes()).hexdigest() for n in ['Dates.ngr','Dates.ncatalog','Dates.Reference.ngr','DatesSemantics.cs']}
     (folder/'reference-provenance.json').write_text(json.dumps(provenance,indent=2)+'\n')
 
 

@@ -32,6 +32,5 @@
     "Grammars/OptionalParameters.ngr",
     "Grammars/Variance.ngr",
     "Grammars/GenericFollowersFourth.ngr"
-  ],
-  "catalog": "catalog.json"
+  ]
 }

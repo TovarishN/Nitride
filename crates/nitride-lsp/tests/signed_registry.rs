@@ -42,17 +42,14 @@ fn sidecar_catalog_makes_typed() {
         registry.signed("Calc")[0].errors
     );
     std::fs::copy(
-        repo().join("languages/portable/catalog.json"),
-        dir.join("Calc.catalog.json"),
+        repo().join("languages/portable/Portable.ncatalog"),
+        dir.join("Calc.ncatalog"),
     )
     .unwrap();
     registry.reload(std::slice::from_ref(&dir), &|_| None);
     let calc = registry.signed("Calc")[0];
     assert_eq!(calc.entry.mode, Mode::Typed);
-    assert_eq!(
-        calc.entry.catalog.as_deref(),
-        Some(dir.join("Calc.catalog.json").as_path())
-    );
+    assert_eq!(calc.entry.catalogs, [dir.join("Calc.ncatalog")]);
 }
 
 #[test]

@@ -411,6 +411,7 @@ impl Builder {
             kind: self.str(f.get("kind")?)?,
             name: self.str(f.get("name")?)?,
             ty: self.str(f.get("ty")?)?,
+            handler: self.str(f.get("handler")?)?,
         })
     }
     fn rule(&mut self, node: &Node) -> Result<Rule<'static>, String> {

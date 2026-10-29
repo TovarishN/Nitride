@@ -152,12 +152,12 @@ pub fn manifest(
     extension: &str,
     grammars: &[PathBuf],
     start: &str,
-    catalog: Option<&Path>,
+    catalogs: Option<&Path>,
 ) {
     let mut language = json!({"name":name,"extensions":[extension],
         "grammars":grammars.iter().map(|g| g.to_string_lossy()).collect::<Vec<_>>(),"start":start});
-    if let Some(catalog) = catalog {
-        language["catalog"] = json!(catalog.to_string_lossy());
+    if let Some(catalog) = catalogs {
+        language["catalogs"] = json!([catalog.to_string_lossy()]);
     }
     std::fs::write(dir.join(file), json!({"languages":[language]}).to_string()).unwrap();
 }

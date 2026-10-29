@@ -97,12 +97,15 @@ pub struct Builtin<'g> {
     pub candidates: &'g [u16],
 }
 
-/// A host-supplied built-in value, typed by the catalog.
+/// A host-supplied built-in value, typed by the catalog. The handler names
+/// what the value is in the host vocabulary (`pi`, `today`), as an
+/// operation's handler does, so hosts need not know the language's names.
 #[derive(Debug, PartialEq, Eq)]
 pub struct BuiltinValue<'g> {
     pub kind: &'g str,
     pub name: &'g str,
     pub ty: &'g str,
+    pub handler: &'g str,
 }
 
 /// A fixed engine predicate over a field's source spelling; never translated C#.

@@ -121,8 +121,8 @@ impl Registry {
             .file_stem()
             .map(|s| s.to_string_lossy().into_owned())
             .unwrap_or_default();
-        let sidecar = folder.join(format!("{stem}.catalog.json"));
-        let catalog = sidecar.exists().then_some(sidecar);
+        let sidecar = folder.join(format!("{stem}.ncatalog"));
+        let catalogs: Vec<_> = sidecar.exists().then_some(sidecar).into_iter().collect();
         let entry = Entry {
             name: declaration.name.clone(),
             extensions: declaration.extensions.clone(),
@@ -130,12 +130,12 @@ impl Registry {
                 .chain(declaration.grammars.iter().map(|g| folder.join(g)))
                 .collect(),
             start: declaration.start.clone().unwrap_or_default(),
-            mode: if catalog.is_some() {
-                Mode::Typed
-            } else {
+            mode: if catalogs.is_empty() {
                 Mode::Syntax
+            } else {
+                Mode::Typed
             },
-            catalog,
+            catalogs,
         };
         let at_name = |message: String| located(path, &source.text, declaration.name_span, message);
         let mut state = if declaration.start.is_none() {
@@ -255,14 +255,19 @@ impl Registry {
         })
     }
 
-    /// The grammar files navigation from `path` spans: every grammar of the
-    /// languages that use it, else the file alone.
+    /// The grammar and catalog files navigation from `path` spans: every
+    /// grammar and catalog of the languages that use it, else the file alone.
     pub fn grammar_set(&self, path: &Path) -> Vec<PathBuf> {
         let mut set: Vec<PathBuf> = Vec::new();
-        for language in self.using_grammar(path) {
-            for grammar in &language.entry.grammars {
-                if !set.iter().any(|g| same_file(g, grammar)) {
-                    set.push(grammar.clone());
+        for language in self.using_grammar(path).chain(self.using_catalog(path)) {
+            for file in language
+                .entry
+                .grammars
+                .iter()
+                .chain(&language.entry.catalogs)
+            {
+                if !set.iter().any(|g| same_file(g, file)) {
+                    set.push(file.clone());
                 }
             }
         }
@@ -277,6 +282,15 @@ impl Registry {
         self.languages
             .iter()
             .filter(move |l| l.entry.grammars.iter().any(|g| same_file(g, path)))
+    }
+}
+
+impl Registry {
+    /// Languages whose catalogs include `path`.
+    pub fn using_catalog<'a>(&'a self, path: &'a Path) -> impl Iterator<Item = &'a LanguageState> {
+        self.languages
+            .iter()
+            .filter(move |l| l.entry.catalogs.iter().any(|c| same_file(c, path)))
     }
 }
 
@@ -460,42 +474,40 @@ fn prepare(
             }
         }
     }
-    let catalog = match &state.entry.catalog {
-        Some(path) => match read(path, open) {
-            Ok(text) => text,
+    let mut catalogs = Vec::new();
+    for path in &state.entry.catalogs {
+        match read(path, open) {
+            Ok(text) => catalogs.push(Source {
+                path: path.to_string_lossy().into_owned(),
+                text,
+            }),
             Err(message) => {
                 state.errors.push(manifest_error(message));
                 return state;
             }
-        },
-        None => EMPTY_CATALOG.to_owned(),
-    };
+        }
+    }
     let mut hasher = DefaultHasher::new();
-    for source in &sources {
+    for source in sources.iter().chain(&catalogs) {
         source.text.hash(&mut hasher);
     }
-    (
-        &catalog,
-        &state.entry.start,
-        state.entry.mode == Mode::Typed,
-    )
-        .hash(&mut hasher);
+    (&state.entry.start, state.entry.mode == Mode::Typed).hash(&mut hasher);
     state.inputs = hasher.finish();
     if let Some(old) = old.filter(|o| o.inputs == state.inputs) {
         state.errors = old.errors;
         state.warnings = old.warnings;
         return state;
     }
-    let prepared = match state.entry.mode {
-        Mode::Typed => nitride_prepare::prepare_sources_detailed(
-            &sources,
-            &catalog,
-            &state.entry.start,
-            "typed",
-        ),
-        Mode::Syntax => {
-            nitride_prepare::prepare_sources_tolerant(&sources, &catalog, &state.entry.start)
+    let catalog = match nitride_prepare::catalog(&catalogs) {
+        Ok(catalog) => catalog,
+        Err(error) => {
+            state.errors.push(error);
+            return state;
         }
+    };
+    let prepared = match state.entry.mode {
+        Mode::Typed => catalog.prepare(&sources, &state.entry.start, "typed"),
+        Mode::Syntax => catalog.prepare_tolerant(&sources, &state.entry.start),
     };
     match prepared {
         Ok(prepared) => match LoadedLanguage::load(&prepared.data.to_string()) {

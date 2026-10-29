@@ -1,0 +1,62 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Nitride catalog",
+  "scopeName": "source.ncatalog",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#keywords"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.ncatalog",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.ncatalog",
+          "begin": "/*",
+          "end": "*/"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.ncatalog",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.ncatalog",
+          "match": "\\(u[0-9a-fA-F]{4}|.)"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "storage.type.module.ncatalog",
+          "match": "\b(catalog|module)\b"
+        },
+        {
+          "name": "keyword.other.using.ncatalog",
+          "match": "\busing\b"
+        },
+        {
+          "name": "storage.type.ncatalog",
+          "match": "\b(type|operation|overload|builtin)\b"
+        },
+        {
+          "name": "keyword.other.ncatalog",
+          "match": "\b(let|show|call|check|infer|host|is|else)\b"
+        }
+      ]
+    }
+  }
+}

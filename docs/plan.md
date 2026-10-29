@@ -38,7 +38,7 @@ All following paths are relative to the new Nitride repository.
 - `crates/nitride-cli/{Cargo.toml,build.rs,src/main.rs}`: build-time language generation and small native executable.
 - `crates/nitride-codegen/src/lib.rs`: strict normalized-format validation and static Rust table emission.
 - `tools/Nitride.Reference/`: .NET frontend exporter and reference runner; references the Nitrogen source checkout through a configurable project property.
-- `languages/portable/{Portable.ngr,catalog.json,language.json}`: authoritative fixture grammar, semantic contract, and exported build input.
+- `languages/portable/{Portable.ngr,Portable.ncatalog,language.json}`: authoritative fixture grammar, semantic contract (see `docs/catalog-language.md`), and exported build input.
 - `fixtures/`: shared valid and invalid source cases, normalized oracle outputs.
 - `scripts/`: reproducible reference generation, parity checking, and footprint measurement.
 - `docs/`: copied approved design, plan, admission evidence, and deferred coverage.

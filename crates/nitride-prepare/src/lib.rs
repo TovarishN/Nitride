@@ -1,6 +1,9 @@
 //! Build-time preparation of the explicitly admitted Nitrogen grammar subset.
 #[rustfmt::skip]
 mod grammar_seed;
+#[rustfmt::skip]
+mod catalog_seed;
+mod catalog;
 mod functions;
 mod literal;
 mod normalize;
@@ -68,7 +71,7 @@ pub fn prepare_sources(
     start: &str,
     mode: &str,
 ) -> Result<Value, PrepareError> {
-    normalize::prepare(sources, catalog, start, mode, false).map(|p| p.data)
+    normalize::prepare(sources, catalog, start, mode, false, &|_| Ok(())).map(|p| p.data)
 }
 
 /// A prepared language with what tolerant preparation skipped and the
@@ -96,7 +99,7 @@ pub fn prepare_sources_detailed(
     start: &str,
     mode: &str,
 ) -> Result<Prepared, PrepareError> {
-    normalize::prepare(sources, catalog, start, mode, false)
+    normalize::prepare(sources, catalog, start, mode, false, &|_| Ok(()))
 }
 
 /// One `references` clause: the qualified rule, its name field and symbol kinds.
@@ -107,12 +110,36 @@ pub struct ReferenceClause {
     pub kinds: Vec<String>,
 }
 
-/// A rule name used in a grammar file, and the module it is used in.
+/// A rule or module name used in a grammar file, and the module it is used in.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GrammarReference {
+    /// "rule" or "module"; "member" (a catalog type, operation or overload),
+    /// "catalog" (a catalog module) or "builtin" (a built-in name a catalog
+    /// defines); in catalogs also "field", named `Rule.Field`.
+    pub kind: &'static str,
     pub name: String,
     pub span: [usize; 2],
     pub module: String,
+}
+
+/// A name bound inside one member of a grammar file: a helper parameter, a
+/// match capture or an element label, with every use within its scope.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct GrammarLocal {
+    /// "parameter", "capture" or "field".
+    pub kind: &'static str,
+    pub name: String,
+    /// The binder as written, e.g. `Value: Expr`.
+    pub detail: String,
+    /// Where the name is bound; a label may bind it more than once.
+    pub definitions: Vec<[usize; 2]>,
+    /// `$Name` in quotes (the name only), match selectors and clause fields.
+    pub uses: Vec<[usize; 2]>,
+}
+
+/// The local names of a grammar file and their uses.
+pub fn grammar_locals(source: &Source) -> Result<Vec<GrammarLocal>, PrepareError> {
+    parser::locals(source)
 }
 
 /// Whether a grammar file parses as written. The outline and references of a
@@ -121,7 +148,8 @@ pub fn grammar_parses(source: &Source) -> bool {
     parser::parses(source)
 }
 
-/// Every rule name a grammar file uses: element references and `extend` targets.
+/// Every rule and module name a grammar file uses: element references,
+/// `extend` targets and function calls, `using` and rule qualifiers.
 pub fn grammar_references(source: &Source) -> Result<Vec<GrammarReference>, PrepareError> {
     parser::references(source)
 }
@@ -133,7 +161,7 @@ pub fn prepare_sources_tolerant(
     catalog: &str,
     start: &str,
 ) -> Result<Prepared, PrepareError> {
-    normalize::prepare(sources, catalog, start, "syntax", true)
+    normalize::prepare(sources, catalog, start, "syntax", true, &|_| Ok(()))
 }
 
 /// The compiled grammar frontend, a syntax-only language for `.ngr` files.
@@ -157,6 +185,111 @@ pub struct LanguageDeclaration {
 /// The language a grammar declares, if any; `source` has its signature masked.
 pub fn language_declaration(source: &Source) -> Result<Option<LanguageDeclaration>, PrepareError> {
     parser::language_declaration(source)
+}
+
+/// The catalog JSON of a project's `.ncatalog` sources: their modules are
+/// resolved against each other (`using`) and merged in source order. No
+/// sources give the empty catalog of a syntax-only profile.
+pub fn catalogs(sources: &[Source]) -> Result<Value, PrepareError> {
+    catalog(sources).map(|c| c.value)
+}
+
+/// A project's lowered catalogs: the JSON value codegen reads, its compact
+/// text (what `catalog_hash` hashes), and the grammar names it uses.
+pub struct Catalog {
+    pub value: Value,
+    pub json: String,
+    sources: Vec<Source>,
+    uses: Vec<catalog::Use>,
+}
+
+/// Parses, resolves and merges a project's `.ncatalog` sources.
+pub fn catalog(sources: &[Source]) -> Result<Catalog, PrepareError> {
+    let (value, uses) = catalog::lower(sources)?;
+    Ok(Catalog {
+        json: value.to_string(),
+        value,
+        sources: sources.to_vec(),
+        uses,
+    })
+}
+
+impl Catalog {
+    /// Strict preparation of `sources` with this catalog.
+    pub fn prepare(
+        &self,
+        sources: &[Source],
+        start: &str,
+        mode: &str,
+    ) -> Result<Prepared, PrepareError> {
+        normalize::prepare(sources, &self.json, start, mode, false, &|d| self.check(d))
+    }
+    /// Tolerant syntax-mode preparation of `sources` with this catalog.
+    pub fn prepare_tolerant(
+        &self,
+        sources: &[Source],
+        start: &str,
+    ) -> Result<Prepared, PrepareError> {
+        normalize::prepare(sources, &self.json, start, "syntax", true, &|d| {
+            self.check(d)
+        })
+    }
+    /// Every grammar rule and field the catalog names exists in the prepared
+    /// language `data`; an error points at the catalog.
+    fn check(&self, data: &Value) -> Result<(), PrepareError> {
+        fn labels<'a>(e: &'a Value, found: &mut Vec<&'a str>) {
+            if let Some(label) = e["label"].as_str() {
+                found.push(label);
+            }
+            match e {
+                Value::Array(items) => items.iter().for_each(|i| labels(i, found)),
+                Value::Object(map) => map.values().for_each(|v| labels(v, found)),
+                _ => {}
+            }
+        }
+        let rules = data["rules"].as_array().map(Vec::as_slice).unwrap_or(&[]);
+        for used in &self.uses {
+            let source = &self.sources[used.source];
+            let Some(rule) = rules.iter().find(|r| r["name"] == used.rule.as_str()) else {
+                return Err(
+                    source.error(used.span, format!("unknown grammar rule '{}'", used.rule))
+                );
+            };
+            if let Some(field) = &used.field {
+                let mut found = Vec::new();
+                labels(&rule["expr"], &mut found);
+                if !found.contains(&field.as_str()) {
+                    return Err(
+                        source.error(used.span, format!("'{}' has no field '{field}'", used.rule))
+                    );
+                }
+            }
+        }
+        Ok(())
+    }
+}
+
+/// Whether a catalog file parses as written.
+pub fn catalog_parses(source: &Source) -> bool {
+    catalog::parses(source)
+}
+
+/// The catalog modules of one file and the types, operations, overloads and
+/// built-ins they declare (kinds "catalog", "type", "operation", "overload"
+/// and "builtin").
+pub fn catalog_outline(source: &Source) -> Result<Vec<GrammarItem>, PrepareError> {
+    catalog::outline(source)
+}
+
+/// Every name a catalog file uses (kinds "catalog", "member", "rule",
+/// "module" and "field").
+pub fn catalog_references(source: &Source) -> Result<Vec<GrammarReference>, PrepareError> {
+    catalog::references(source)
+}
+
+/// The compiled catalog frontend, a syntax-only language for `.ncatalog` files.
+pub fn catalog_language() -> &'static nitride_core::Language<'static> {
+    &catalog_seed::LANGUAGE
 }
 
 /// A declaration in a grammar file's outline.

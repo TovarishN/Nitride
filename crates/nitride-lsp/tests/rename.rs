@@ -16,7 +16,7 @@ fn calls(name: &str) -> PathBuf {
         ".calls",
         &[lang("calls/Calls.ngr")],
         "Calls.Program",
-        Some(&lang("calls/catalog.json")),
+        Some(&lang("calls/Calls.ncatalog")),
     );
     dir
 }
@@ -121,7 +121,7 @@ fn rename_rule_across_files() {
         ".powercalc",
         &[portable.clone(), power.clone()],
         "Portable.Program",
-        Some(&lang("power/catalog.json")),
+        Some(&lang("power/Power.ncatalog")),
     );
     let text = std::fs::read_to_string(&power).unwrap();
     let line = text
@@ -194,7 +194,7 @@ fn rename_refuses_when_sibling_damaged() {
         ".powercalc",
         &[portable.clone(), power.clone()],
         "Portable.Program",
-        Some(&lang("power/catalog.json")),
+        Some(&lang("power/Power.ncatalog")),
     );
     let text = std::fs::read_to_string(&portable).unwrap();
     let line = text

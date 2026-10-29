@@ -16,7 +16,7 @@ fn calls(name: &str) -> PathBuf {
         ".calls",
         &[lang("calls/Calls.ngr")],
         "Calls.Program",
-        Some(&lang("calls/catalog.json")),
+        Some(&lang("calls/Calls.ncatalog")),
     );
     dir
 }
@@ -106,7 +106,7 @@ fn grammar_rules_offered() {
         ".powercalc",
         &[lang("portable/Portable.ngr"), lang("power/Power.ngr")],
         "Portable.Program",
-        Some(&lang("power/catalog.json")),
+        Some(&lang("power/Power.ncatalog")),
     );
     let text =
         "syntax module Portable.Power\n{\n  extend syntax Portable.Expr\n  {\n    | Pow = Left:Ex";

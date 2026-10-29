@@ -1,0 +1,17 @@
+// The Portable contract with exponentiation. Its operation ids stay Portable.*,
+// so it restates the module rather than using it.
+catalog module Portable
+{
+  type Time;
+
+  operation Duration(Scalar) : Time = host identity;
+  operation Neg(Scalar) : Scalar = host neg;
+  operation Add(Scalar, Scalar) : Scalar = host add;
+  operation Sub(Scalar, Scalar) : Scalar = host sub;
+  operation Mul(Scalar, Scalar) : Scalar = host mul;
+  operation Div(Scalar, Scalar) : Scalar = host div;
+  operation Power(Scalar, Scalar) : Scalar = host pow;
+
+  let Let(Value);
+  show Show(Value);
+}

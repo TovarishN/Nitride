@@ -117,7 +117,7 @@ pub fn calls(name: &str) -> PathBuf {
         ".calls",
         &[lang("calls/Calls.ngr")],
         "Calls.Program",
-        Some(&lang("calls/catalog.json")),
+        Some(&lang("calls/Calls.ncatalog")),
     );
     dir
 }
@@ -166,7 +166,7 @@ fn duration_is_operation_word_token() {
         ".portable",
         &[lang("portable/Portable.ngr")],
         "Portable.Program",
-        Some(&lang("portable/catalog.json")),
+        Some(&lang("portable/Portable.ncatalog")),
     );
     let found = kinds(&dir, "x.portable", "duration(3);", true);
     assert!(

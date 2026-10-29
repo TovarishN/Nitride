@@ -1,0 +1,12 @@
+// Semantic contract of the Namespaces profile.
+catalog module Namespaces
+{
+  type Time;
+
+  operation Duration(Scalar) : Time = host identity;
+  operation Add(Scalar, Scalar) : Scalar = host add;
+
+  let LetValue(Value);
+  let LetRate(Value);
+  show Show(Value);
+}

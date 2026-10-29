@@ -1,4 +1,4 @@
-use crate::{PrepareError, Source, prepare_sources};
+use crate::{PrepareError, Source};
 use serde_json::Value;
 use std::path::{Path, PathBuf};
 
@@ -33,7 +33,12 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
             .ok_or_else(|| error(&path, format!("manifest requires string '{key}'")))
     };
     let start = required("start")?;
-    let catalog_path = path.parent().unwrap().join(required("catalog")?);
+    if manifest.get("catalog").is_some() {
+        return Err(error(
+            &path,
+            "'catalog' is replaced by 'catalogs', a list of .ncatalog files",
+        ));
+    }
     let mode = manifest
         .get("mode")
         .map(|m| {
@@ -46,34 +51,40 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
         .as_array()
         .filter(|g| !g.is_empty())
         .ok_or_else(|| error(&path, "manifest requires nonempty grammars array"))?;
+    let catalogs = match manifest.get("catalogs") {
+        None => &[][..],
+        Some(list) => list
+            .as_array()
+            .ok_or_else(|| error(&path, "catalogs must be an array"))?,
+    };
     let mut inputs = vec![path.clone()];
-    let mut sources = Vec::new();
-    for grammar in grammars {
-        let name = grammar
+    let mut load = |entry: &Value, what: &str| -> Result<Source, PrepareError> {
+        let name = entry
             .as_str()
             .filter(|s| !s.is_empty())
-            .ok_or_else(|| error(&path, "grammar path must be a nonempty string"))?;
+            .ok_or_else(|| error(&path, format!("{what} path must be a nonempty string")))?;
         let file = path.parent().unwrap().join(name);
         let text = read(&file)?;
         let file = file
             .canonicalize()
             .map_err(|e| error(&file, e.to_string()))?;
-        sources.push(Source {
+        let source = Source {
             path: file.display().to_string(),
             text,
-        });
+        };
         inputs.push(file);
-    }
-    let catalog = read(&catalog_path)?;
-    // Give malformed catalog JSON its own file identity before shared validation.
-    serde_json::from_str::<Value>(&catalog)
-        .map_err(|e| error(&catalog_path, format!("invalid catalog JSON: {e}")))?;
-    inputs.push(
-        catalog_path
-            .canonicalize()
-            .map_err(|e| error(&catalog_path, e.to_string()))?,
-    );
-    let data = prepare_sources(&sources, &catalog, start, mode)?;
+        Ok(source)
+    };
+    let sources = grammars
+        .iter()
+        .map(|g| load(g, "grammar"))
+        .collect::<Result<Vec<_>, _>>()?;
+    let catalog_sources = catalogs
+        .iter()
+        .map(|c| load(c, "catalog"))
+        .collect::<Result<Vec<_>, _>>()?;
+    let catalog = crate::catalog(&catalog_sources)?;
+    let data = catalog.prepare(&sources, start, mode)?.data;
     Ok(PreparedProject { data, inputs })
 }
 

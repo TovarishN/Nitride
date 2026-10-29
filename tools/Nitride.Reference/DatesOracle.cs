@@ -46,7 +46,9 @@ static class DatesOracle
         _=HostOperationRegistry.Bind(language.SemanticCatalog,operations.Select(o=>new HostOperationBinding(o,(Func<IReadOnlyList<ExecutionValue>,ExecutionValue>)(a=>new ExecutionValue(o.Result,0)))));
         foreach(var node in lowered.Roots.SelectMany(HirTraversal.PreOrder))
             if(node is HirOperation o && (!signatures.TryGetValue(o.Signature.Id,out var signature)||!signature.Equals(o.Signature)))return Error("host",node.Origins[0].Span,"signature mismatch");
-        double Builtin(string name)=>name switch{"pi"=>Math.PI,"today"=>DateOnly.ParseExact(today,"yyyy-MM-dd",CultureInfo.InvariantCulture).DayNumber,_=>throw new Exception("unknown builtin "+name)};
+        // Built-in values bind by their catalog handler, as the native fixture host does.
+        string ValueHandler(string name)=>(string)catalog["values"]!.AsObject().Select(k=>k.Value![name]).Single(v=>v is not null)!["handler"]!;
+        double Builtin(string name)=>ValueHandler(name) switch{"pi"=>Math.PI,"e"=>Math.E,"tau"=>Math.Tau,"today"=>DateOnly.ParseExact(today,"yyyy-MM-dd",CultureInfo.InvariantCulture).DayNumber,var h=>throw new Exception("unknown value handler "+h)};
         var symbols=new Dictionary<Symbol,double>();var trace=new List<string>();var values=new List<double>();
         double Eval(HirNode node)
         {

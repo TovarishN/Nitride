@@ -23,7 +23,7 @@ fn calls(name: &str) -> PathBuf {
         ".calls",
         &[lang("calls/Calls.ngr")],
         "Calls.Program",
-        Some(&lang("calls/catalog.json")),
+        Some(&lang("calls/Calls.ncatalog")),
     );
     dir
 }

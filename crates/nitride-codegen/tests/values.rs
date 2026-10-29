@@ -34,10 +34,9 @@ fn operation<'a>(d: &'a mut Value, id: &str) -> &'a mut Value {
 #[test]
 fn value_check_and_text_tables_are_generated_from_explicit_catalog() {
     let generated = nitride_codegen::generate(&fixture().to_string()).unwrap();
-    assert!(
-        generated
-            .contains(r#"nitride_core::BuiltinValue {kind:"value",name:"today",ty:"Dates.Date"}"#)
-    );
+    assert!(generated.contains(
+        r#"nitride_core::BuiltinValue {kind:"value",name:"today",ty:"Dates.Date",handler:"today"}"#
+    ));
     assert!(generated.contains("predicate:nitride_core::Predicate::IsoDate"));
     assert!(generated.contains("texts:&[true]"));
 }
@@ -45,9 +44,11 @@ fn value_check_and_text_tables_are_generated_from_explicit_catalog() {
 #[test]
 fn malformed_value_check_and_text_metadata_is_rejected() {
     let edits: Vec<fn(&mut Value)> = vec![
-        |d| d["catalog"]["values"]["value"]["pi"] = json!("Missing.Type"),
-        |d| d["catalog"]["values"]["value"]["pi"] = json!("Core.Text"),
-        |d| d["catalog"]["values"]["value"]["e"] = json!("Core.Scalar"),
+        |d| d["catalog"]["values"]["value"]["pi"]["type"] = json!("Missing.Type"),
+        |d| d["catalog"]["values"]["value"]["pi"]["type"] = json!("Core.Text"),
+        |d| d["catalog"]["values"]["value"]["pi"]["handler"] = json!("random"),
+        |d| d["catalog"]["values"]["value"]["pi"] = json!("Core.Scalar"),
+        |d| d["catalog"]["values"]["value"]["e"] = json!({"type":"Core.Scalar","handler":"e"}),
         |d| d["catalog"]["values"]["missing"] = json!({}),
         |d| {
             d["catalog"]["values"]["value"]

@@ -4,5 +4,5 @@
   "grammars": [
     "Dates.ngr"
   ],
-  "catalog": "catalog.json"
+  "catalogs": ["Dates.ncatalog"]
 }

@@ -11,7 +11,7 @@ def observe(source):
     with tempfile.TemporaryDirectory() as folder:
         path=pathlib.Path(folder)/"input.calls"
         path.write_text(source)
-        result=run("oracle-calls",path,ROOT/"languages/calls/catalog.json")
+        result=run("oracle-calls",path,ROOT/"languages/calls/Calls.ncatalog")
         assert result.returncode==0,result.stderr
         return json.loads(result.stdout)
 

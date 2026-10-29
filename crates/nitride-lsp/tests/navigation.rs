@@ -16,7 +16,7 @@ pub fn calls(name: &str) -> PathBuf {
         ".calls",
         &[lang("calls/Calls.ngr")],
         "Calls.Program",
-        Some(&lang("calls/catalog.json")),
+        Some(&lang("calls/Calls.ncatalog")),
     );
     dir
 }
@@ -30,7 +30,7 @@ pub fn power(name: &str) -> PathBuf {
         ".powercalc",
         &[lang("portable/Portable.ngr"), lang("power/Power.ngr")],
         "Portable.Program",
-        Some(&lang("power/catalog.json")),
+        Some(&lang("power/Power.ncatalog")),
     );
     dir
 }
@@ -332,7 +332,7 @@ fn locations_use_canonical_paths() {
         ".portable",
         &[dir.join("sub/../g/Portable.ngr")],
         "Portable.Program",
-        Some(&lang("portable/catalog.json")),
+        Some(&lang("portable/Portable.ncatalog")),
     );
     let path = dir.join("g/Portable.ngr");
     let text = std::fs::read_to_string(&path).unwrap();
@@ -413,4 +413,138 @@ fn empty_name_is_not_a_definition() {
     let dir = calls("empty-name");
     let result = hover(&dir, &dir.join("x.calls"), "let =1;", 0, 4);
     assert!(!result.to_string().contains("``"), "{result}");
+}
+
+pub fn rewrites(name: &str) -> PathBuf {
+    let dir = scratch(name);
+    manifest(
+        &dir,
+        "nitride.json",
+        "Rewrites",
+        ".rewrites",
+        &[lang("dates/Dates.ngr"), lang("rewrites/Rewrites.ngr")],
+        "Dates.Program",
+        Some(&lang("dates/Dates.ncatalog")),
+    );
+    dir
+}
+
+#[test]
+fn quote_placeholders_navigate_to_their_binders() {
+    let dir = rewrites("quote-placeholders");
+    let path = lang("rewrites/Rewrites.ngr");
+    let text = std::fs::read_to_string(&path).unwrap();
+    // (line, character) of the first `needle` in the first line containing `line`.
+    let find = |line: &str, needle: &str| {
+        let n = text.lines().position(|l| l.contains(line)).unwrap();
+        let c = text.lines().nth(n).unwrap().find(needle).unwrap();
+        (n as u32, c as u32)
+    };
+    for (use_line, use_text, def_line, def_text) in [
+        (
+            "$Count * 14",
+            "Count *",
+            "FortnightDuration(Count:",
+            "Count:",
+        ),
+        ("_ => <[ $Value", "Value ]", "SwapAddition(Value:", "Value:"),
+        (
+            "<[ $Right + $Left ]>",
+            "Right + $Left ]",
+            "Right: Expr)",
+            "Right:",
+        ),
+        ("| Soon", "Amount days", "| Soon", "Amount:"),
+        // Clicking the `$` of a placeholder.
+        ("| Soon", "$Amount days", "| Soon", "Amount:"),
+    ] {
+        let (line, character) = find(use_line, use_text);
+        let result = at(
+            &dir,
+            &path,
+            &text,
+            "textDocument/definition",
+            line,
+            character,
+            json!({}),
+        );
+        let (line, start) = find(def_line, def_text);
+        let end = start + def_text.len() as u32 - 1;
+        assert_eq!(
+            result["result"]["range"],
+            location(line, start, end),
+            "{use_text}"
+        );
+    }
+    let (line, character) = find("| Twice", "Inner:");
+    let result = at(
+        &dir,
+        &path,
+        &text,
+        "textDocument/references",
+        line,
+        character,
+        json!({"context":{"includeDeclaration":true}}),
+    );
+    assert_eq!(result["result"].as_array().unwrap().len(), 3);
+    let result = hover(&dir, &path, &text, line, character);
+    assert_eq!(
+        result["contents"]["value"],
+        "```ngr\nInner:Expr\n```\n*field*"
+    );
+}
+
+#[test]
+fn modules_navigate_from_using_and_qualifiers() {
+    let dir = rewrites("module-navigation");
+    let path = lang("rewrites/Rewrites.ngr");
+    let text = std::fs::read_to_string(&path).unwrap();
+    let dates = std::fs::read_to_string(lang("dates/Dates.ngr")).unwrap();
+    let declaration = dates
+        .lines()
+        .position(|l| l.contains("syntax module Dates"))
+        .unwrap() as u32;
+    let module = location(declaration, 14, 19);
+    let find = |line: &str, needle: &str| {
+        let n = text.lines().position(|l| l.contains(line)).unwrap();
+        let c = text.lines().nth(n).unwrap().find(needle).unwrap();
+        (n as u32, c as u32)
+    };
+    let definition = |(line, character): (u32, u32)| {
+        at(
+            &dir,
+            &path,
+            &text,
+            "textDocument/definition",
+            line,
+            character,
+            json!({}),
+        )["result"]
+            .clone()
+    };
+    for (line, needle) in [
+        ("using Dates", "Dates"),
+        ("extend syntax Dates.Expr", "Dates."),
+    ] {
+        let result = definition(find(line, needle));
+        assert_eq!(result["range"], module, "{line}");
+        assert!(
+            result["uri"].as_str().unwrap().ends_with("Dates.ngr"),
+            "{line}"
+        );
+    }
+    // The rule of a qualified name still resolves past its qualifier.
+    let result = definition(find("extend syntax Dates.Expr", "Expr"));
+    assert_ne!(result["range"], module);
+    let (line, character) = find("using Dates", "Dates");
+    let result = at(
+        &dir,
+        &path,
+        &text,
+        "textDocument/prepareRename",
+        line,
+        character,
+        json!({}),
+    );
+    assert!(result["error"].is_object(), "{result}");
 }

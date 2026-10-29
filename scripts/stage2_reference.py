@@ -11,7 +11,7 @@ def observe(case, typed=False):
     with tempfile.TemporaryDirectory() as tmp:
         source = pathlib.Path(tmp) / "input.txt"
         source.write_text(case["source"])
-        command = ["dotnet", str(DLL)] + (["oracle-power", str(source), str(ROOT / "languages/power/catalog.json")] if typed else ["oracle-syntax", profile, str(source), str(ROOT / f"languages/{profile}/language.json")])
+        command = ["dotnet", str(DLL)] + (["oracle-power", str(source), str(ROOT / "languages/power/Power.ncatalog")] if typed else ["oracle-syntax", profile, str(source), str(ROOT / f"languages/{profile}/language.json")])
         result = subprocess.run(command, capture_output=True, text=True)
         if result.returncode:
             raise RuntimeError(result.stderr)

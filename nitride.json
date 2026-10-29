@@ -9,7 +9,9 @@
         "languages/portable/Portable.ngr"
       ],
       "start": "Portable.Program",
-      "catalog": "languages/portable/catalog.json",
+      "catalogs": [
+        "languages/portable/Portable.ncatalog"
+      ],
       "mode": "typed"
     },
     {
@@ -22,7 +24,9 @@
         "languages/power/Power.ngr"
       ],
       "start": "Portable.Program",
-      "catalog": "languages/power/catalog.json",
+      "catalogs": [
+        "languages/power/Power.ncatalog"
+      ],
       "mode": "typed"
     },
     {
@@ -35,7 +39,6 @@
         "languages/composition/Uses.ngr"
       ],
       "start": "Uses.Doc",
-      "catalog": "languages/composition/catalog.json",
       "mode": "syntax"
     },
     {
@@ -47,7 +50,6 @@
         "languages/xml/Xml.ngr"
       ],
       "start": "Xml.Document",
-      "catalog": "languages/xml/catalog.json",
       "mode": "syntax"
     },
     {
@@ -59,7 +61,9 @@
         "languages/namespaces/Namespaces.ngr"
       ],
       "start": "Namespaces.Program",
-      "catalog": "languages/namespaces/catalog.json",
+      "catalogs": [
+        "languages/namespaces/Namespaces.ncatalog"
+      ],
       "mode": "typed"
     },
     {
@@ -71,7 +75,9 @@
         "languages/inference/Inference.ngr"
       ],
       "start": "Inference.Program",
-      "catalog": "languages/inference/catalog.json",
+      "catalogs": [
+        "languages/inference/Inference.ncatalog"
+      ],
       "mode": "typed"
     },
     {
@@ -83,7 +89,9 @@
         "languages/calls/Calls.ngr"
       ],
       "start": "Calls.Program",
-      "catalog": "languages/calls/catalog.json",
+      "catalogs": [
+        "languages/calls/Calls.ncatalog"
+      ],
       "mode": "typed"
     },
     {
@@ -95,7 +103,9 @@
         "languages/functions/Functions.ngr"
       ],
       "start": "Functions.Program",
-      "catalog": "languages/functions/catalog.json",
+      "catalogs": [
+        "languages/functions/Functions.ncatalog"
+      ],
       "mode": "typed"
     },
     {
@@ -107,7 +117,9 @@
         "languages/dates/Dates.ngr"
       ],
       "start": "Dates.Program",
-      "catalog": "languages/dates/catalog.json",
+      "catalogs": [
+        "languages/dates/Dates.ncatalog"
+      ],
       "mode": "typed"
     },
     {
@@ -120,7 +132,9 @@
         "languages/rewrites/Rewrites.ngr"
       ],
       "start": "Dates.Program",
-      "catalog": "languages/dates/catalog.json",
+      "catalogs": [
+        "languages/dates/Dates.ncatalog"
+      ],
       "mode": "typed"
     },
     {
@@ -132,7 +146,6 @@
         "languages/grammar/Grammar.ngr"
       ],
       "start": "NitrideGrammar.File",
-      "catalog": "languages/grammar/catalog.json",
       "mode": "syntax"
     },
     {
@@ -173,7 +186,6 @@
         "languages/csharp4/Grammars/GenericFollowersFourth.ngr"
       ],
       "start": "CSharp.CompilationUnits.CompilationUnit",
-      "catalog": "languages/csharp4/catalog.json",
       "mode": "syntax"
     }
   ]

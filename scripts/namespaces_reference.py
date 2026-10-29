@@ -11,7 +11,7 @@ def observe(source):
     with tempfile.TemporaryDirectory() as folder:
         path=pathlib.Path(folder)/"input.namespaces"
         path.write_text(source)
-        result=run("oracle-namespaces",path,ROOT/"languages/namespaces/catalog.json")
+        result=run("oracle-namespaces",path,ROOT/"languages/namespaces/Namespaces.ncatalog")
         assert result.returncode==0,result.stderr
         return json.loads(result.stdout)
 
