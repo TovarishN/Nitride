@@ -1,0 +1,31 @@
+// Semantic contract of the Dates profile: dates are day numbers, durations days.
+catalog module Dates
+{
+  type Date;
+  type Duration;
+
+  operation ParseDate(Text) : Date = host iso-date;
+  operation Days(Scalar) : Duration = host identity;
+  operation InDays(Duration) : Scalar = host identity;
+  operation AddScalar(Scalar, Scalar) : Scalar = host add;
+  operation Later(Date, Duration) : Date = host add;
+  operation AddDurations(Duration, Duration) : Duration = host add;
+  operation SubScalar(Scalar, Scalar) : Scalar = host sub;
+  operation Earlier(Date, Duration) : Date = host sub;
+  operation Between(Date, Date) : Duration = host sub;
+  operation SubDurations(Duration, Duration) : Duration = host sub;
+  operation MulScalar(Scalar, Scalar) : Scalar = host mul;
+  operation Scale(Scalar, Duration) : Duration = host mul;
+
+  overload Plus = AddScalar | Later | AddDurations;
+  overload Minus = SubScalar | Earlier | Between | SubDurations;
+  overload Times = MulScalar | Scale;
+
+  builtin value pi : Scalar = host pi;
+  builtin value today : Date = host today;
+
+  let Let(Value) infer;
+  show Show(Value);
+
+  check Day.Value is iso-date else DATE0001 "not a calendar date";
+}

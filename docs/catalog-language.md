@@ -173,7 +173,12 @@ files:
 
 1. `Catalog.ngr`, the parser, `using` resolution, merging and lowering, and a
    parity test against every `catalog.json`. Multi-module tests cover lookup,
-   ambiguity, merge order and conflicts.
+   ambiguity, merge order and conflicts. Done: each typed language has its
+   `.ncatalog` beside `catalog.json`. Fields are not yet checked against
+   grammar rules, since lowering does not see the grammar; that check moves to
+   phase 2, where both are prepared together. `power` restates `catalog module
+   Portable` with its extra operation, because its ids are `Portable.*` and a
+   module cannot span files.
 2. Convert each language's catalog, switch the manifests and readers, add
    `nitride catalog`, and delete the JSON files and the empty catalogs.
 3. Editor support: built-in `.ncatalog` language, diagnostics with spans, and

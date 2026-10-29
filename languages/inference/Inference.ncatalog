@@ -1,0 +1,20 @@
+// Semantic contract of the Inference profile: declared and inferred symbol types.
+catalog module Inference
+{
+  type Time;
+
+  operation Duration(Scalar) : Time = host identity;
+  operation AddScalar(Scalar, Scalar) : Scalar = host add;
+  operation AddTime(Time, Time) : Time = host add;
+  operation SubScalar(Scalar, Scalar) : Scalar = host sub;
+  operation SubTime(Time, Time) : Scalar = host sub;
+
+  overload Add = AddScalar | AddTime;
+  overload Sub = SubScalar | SubTime;
+
+  let LetValue(Value);
+  let LetRate(Value);
+  let InferValue(Value) infer;
+  let InferRate(Value) infer;
+  show Show(Value);
+}

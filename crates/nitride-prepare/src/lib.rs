@@ -1,6 +1,9 @@
 //! Build-time preparation of the explicitly admitted Nitrogen grammar subset.
 #[rustfmt::skip]
 mod grammar_seed;
+#[rustfmt::skip]
+mod catalog_seed;
+mod catalog;
 mod functions;
 mod literal;
 mod normalize;
@@ -162,6 +165,18 @@ pub fn prepare_sources_tolerant(
 /// The compiled grammar frontend, a syntax-only language for `.ngr` files.
 pub fn grammar_language() -> &'static nitride_core::Language<'static> {
     &grammar_seed::LANGUAGE
+}
+
+/// The catalog JSON of a project's `.ncatalog` sources: their modules are
+/// resolved against each other (`using`) and merged in source order. No
+/// sources give the empty catalog of a syntax-only profile.
+pub fn catalogs(sources: &[Source]) -> Result<Value, PrepareError> {
+    catalog::lower(sources)
+}
+
+/// The compiled catalog frontend, a syntax-only language for `.ncatalog` files.
+pub fn catalog_language() -> &'static nitride_core::Language<'static> {
+    &catalog_seed::LANGUAGE
 }
 
 /// A declaration in a grammar file's outline.
