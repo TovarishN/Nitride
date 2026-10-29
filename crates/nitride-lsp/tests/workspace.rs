@@ -290,3 +290,38 @@ fn language_extensions_lists_manifest_and_signed() {
     );
     assert_eq!(response(&messages, 5)["result"], json!([".m", ".sx"]));
 }
+
+#[test]
+fn broken_workspace_keeps_languages() {
+    let dir = xml_folder(
+        "transient-workspace",
+        "language B { extensions .b; grammar ../Xml.ngr; start Xml.Document; }",
+    );
+    let mut registry = Registry::default();
+    registry.reload(std::slice::from_ref(&dir), &|_| None);
+    let root = dir.join("nitride.nproj");
+    let typing = "workspace { include xml; include b; include la".to_owned();
+    for _ in 0..2 {
+        // Twice: a second edit while still broken keeps them too.
+        registry.reload(std::slice::from_ref(&dir), &|p| {
+            (p == root).then(|| typing.clone())
+        });
+        for file in ["t.xml", "t.b"] {
+            assert!(
+                registry.for_path(&dir.join(file)).is_some_and(|l| l.current.is_some()),
+                "{file}"
+            );
+        }
+    }
+    let with_errors: Vec<_> = registry
+        .manifests()
+        .iter()
+        .filter(|m| !m.errors.is_empty())
+        .collect();
+    assert_eq!(with_errors.len(), 1);
+    assert_eq!(with_errors[0].path, root);
+    // Fixing it reloads normally.
+    registry.reload(std::slice::from_ref(&dir), &|_| None);
+    assert!(registry.manifests().iter().all(|m| m.errors.is_empty()));
+    assert_eq!(registry.languages().len(), 2);
+}

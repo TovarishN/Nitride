@@ -66,6 +66,14 @@ fn projects(
     };
     let exists = |path: &Path| open(path).is_some() || path.exists();
     let resolved = nitride_prepare::read_workspace(&source, read, &exists);
+    if resolved.damaged {
+        // Mid-edit, often: the registry keeps the languages it included.
+        let problems = resolved.errors.into_iter().map(|e| ManifestError {
+            span: e.span.map(|v| v as u32),
+            message: e.message,
+        });
+        return vec![(workspace.to_owned(), Err(problems.collect()))];
+    }
     let mut found: Vec<(PathBuf, Parsed)> = vec![(workspace.to_owned(), Ok((vec![], vec![])))];
     for language in resolved.languages {
         found.push((language.path.clone(), Ok((vec![entry(language)], vec![]))));

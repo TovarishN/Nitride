@@ -45,6 +45,9 @@ pub struct NitrogenSection {
 pub struct ProjectWorkspace {
     pub languages: Vec<ProjectLanguage>,
     pub errors: Vec<PrepareError>,
+    /// The workspace file itself does not parse, or is not a workspace: its
+    /// includes are unknown (editors keep the languages they had).
+    pub damaged: bool,
 }
 
 /// The project frontend's tree of one source.
@@ -262,6 +265,7 @@ pub fn read_workspace(
         Ok(tree) => tree,
         Err(error) => {
             workspace.errors.push(error);
+            workspace.damaged = true;
             return workspace;
         }
     };
@@ -273,6 +277,7 @@ pub fn read_workspace(
             [at, at + "language".len()],
             "expected a workspace, not a language",
         ));
+        workspace.damaged = true;
         return workspace;
     }
     let base = directory(source);

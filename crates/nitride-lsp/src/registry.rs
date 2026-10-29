@@ -42,6 +42,9 @@ pub struct ManifestState {
 pub struct Registry {
     languages: Vec<LanguageState>,
     manifests: Vec<ManifestState>,
+    /// The language files each `nitride.nproj` last included, kept while it
+    /// does not parse.
+    included: HashMap<PathBuf, Vec<PathBuf>>,
 }
 
 impl Registry {
@@ -71,11 +74,31 @@ impl Registry {
         let before = self.fingerprint();
         let mut previous = std::mem::take(&mut self.languages);
         self.manifests.clear();
+        let mut included = HashMap::new();
         for folder in folders {
-            for (path, entries) in manifest::read(folder, open) {
+            let manifests = manifest::read(folder, open);
+            if let Some((workspace, parsed)) = manifests.first()
+                && workspace.file_name().is_some_and(|n| n == manifest::NAMES[0])
+            {
+                let files = match parsed {
+                    // An unreadable workspace keeps the languages it included.
+                    Err(_) => self.included.remove(workspace).unwrap_or_default(),
+                    Ok(_) => manifests[1..].iter().map(|(p, _)| p.clone()).collect(),
+                };
+                if parsed.is_err() {
+                    let (kept, rest) = std::mem::take(&mut previous)
+                        .into_iter()
+                        .partition(|l: &LanguageState| files.contains(&l.manifest));
+                    previous = rest;
+                    self.languages.extend(kept);
+                }
+                included.insert(workspace.clone(), files);
+            }
+            for (path, entries) in manifests {
                 self.load(&path, entries, &mut previous, open);
             }
         }
+        self.included = included;
         for path in discover(folders, open, open_paths) {
             self.load_signed(&path, &mut previous, open);
         }
