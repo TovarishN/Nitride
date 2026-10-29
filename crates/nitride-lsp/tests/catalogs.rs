@@ -191,6 +191,31 @@ fn hover_and_rename_over_catalog_members() {
 }
 
 #[test]
+fn hover_over_host_handlers() {
+    let dir = dates("catalog-host-hover");
+    let catalog = dir.join("Dates.ncatalog");
+    let text = std::fs::read_to_string(&catalog).unwrap();
+    let (line, at) = find(&text, "builtin value pi", "host pi");
+    for ((line, character), expected) in [
+        (
+            find(&text, "operation Later", "add"),
+            "```ngr\nhost add\n```\n*host operation* — the sum of its two inputs\n\n\
+             Supplied by the program running the language, not declared in a catalog.",
+        ),
+        (
+            (line, at + 5),
+            "```ngr\nhost pi\n```\n*host value* — π\n\n\
+             Supplied by the program running the language, not declared in a catalog.",
+        ),
+    ] {
+        let hover = request_at(&dir, &catalog, "textDocument/hover", (line, character));
+        assert_eq!(hover["result"]["contents"]["value"], expected);
+        let definition = request_at(&dir, &catalog, "textDocument/definition", (line, character));
+        assert!(definition["result"].is_null(), "{definition}");
+    }
+}
+
+#[test]
 fn catalog_structure_and_diagnostics() {
     let dir = dates("catalog-structure");
     let catalog = dir.join("Dates.ncatalog");

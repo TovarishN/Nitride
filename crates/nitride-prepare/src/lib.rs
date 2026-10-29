@@ -133,6 +133,15 @@ pub struct GrammarReference {
     pub module: String,
 }
 
+/// A host handler a catalog member names, as in `= host add;`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct HostHandler {
+    /// "operation" or "value".
+    pub kind: &'static str,
+    pub name: String,
+    pub span: [usize; 2],
+}
+
 /// A name bound inside one member of a grammar file: a helper parameter, a
 /// match capture or an element label, with every use within its scope.
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -296,6 +305,11 @@ pub fn catalog_outline(source: &Source) -> Result<Vec<GrammarItem>, PrepareError
 /// "module" and "field").
 pub fn catalog_references(source: &Source) -> Result<Vec<GrammarReference>, PrepareError> {
     catalog::references(source)
+}
+
+/// The host handlers a catalog file names (`host add`).
+pub fn catalog_handlers(source: &Source) -> Result<Vec<HostHandler>, PrepareError> {
+    catalog::handlers(source)
 }
 
 /// The compiled catalog frontend, a syntax-only language for `.ncatalog` files.

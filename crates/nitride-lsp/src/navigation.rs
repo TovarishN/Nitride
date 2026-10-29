@@ -43,6 +43,17 @@ pub fn hover(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
         return Value::Null;
     }
     if let Some(GrammarAt { index, file }) = grammar {
+        if let Some((handler, span)) = index.handler_at(file, offset) {
+            let (kind, handler) = (handler.kind, &handler.name);
+            let what = crate::values::describe(handler)
+                .map_or_else(String::new, |what| format!(" — {what}"));
+            return json!({
+                "contents": {"kind": "markdown", "value": format!(
+                    "```ngr\nhost {handler}\n```\n*host {kind}*{what}\n\n\
+                     Supplied by the program running the language, not declared in a catalog.")},
+                "range": range(&analysis.lines, span),
+            });
+        }
         if let Some((local, span)) = index.local_at(file, offset) {
             return json!({
                 "contents": {"kind": "markdown",
