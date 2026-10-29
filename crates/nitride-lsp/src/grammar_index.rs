@@ -1,6 +1,6 @@
 //! Rules across the grammar files of a language, and the members of its
 //! catalog files: where each is defined and every place a file uses it.
-use nitride_prepare::{GrammarItem, GrammarLocal, GrammarReference, Source};
+use nitride_prepare::{GrammarItem, GrammarLocal, GrammarReference, HostHandler, Source};
 use std::path::{Path, PathBuf};
 
 pub struct GrammarFile {
@@ -15,6 +15,8 @@ pub struct GrammarFile {
     pub references: Vec<GrammarReference>,
     /// Parameters, captures and labels, each with its uses in this file.
     pub locals: Vec<GrammarLocal>,
+    /// The host handlers a catalog names.
+    pub handlers: Vec<HostHandler>,
 }
 
 pub struct GrammarIndex {
@@ -112,6 +114,11 @@ pub fn build(
                 vec![]
             } else {
                 nitride_prepare::grammar_locals(&source).unwrap_or_default()
+            },
+            handlers: if catalog {
+                nitride_prepare::catalog_handlers(&source).unwrap_or_default()
+            } else {
+                vec![]
             },
             path: path.clone(),
             text: source.text,
@@ -299,6 +306,16 @@ impl GrammarIndex {
                 .find(|s| start(s) <= offset && offset <= s[1])
                 .map(|s| (local, s.map(|b| b as u32)))
         })
+    }
+
+    /// The host handler named at `offset` in a catalog file, and its span.
+    pub fn handler_at(&self, file: usize, offset: u32) -> Option<(&HostHandler, [u32; 2])> {
+        let offset = offset as usize;
+        let handlers = &self.files.get(file)?.handlers;
+        handlers
+            .iter()
+            .find(|h| h.span[0] <= offset && offset <= h.span[1])
+            .map(|h| (h, h.span.map(|b| b as u32)))
     }
 
     /// Every use of a module or rule, in every file, as (file, span).

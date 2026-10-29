@@ -39,6 +39,28 @@ pub fn bindings<'g>(language: &'g Language<'g>) -> Vec<HostBinding<'g>> {
         .collect()
 }
 
+/// What a host handler computes, for hovers; `None` for an unknown handler.
+pub fn describe(handler: &str) -> Option<&'static str> {
+    Some(match handler {
+        "zero" => "zero",
+        "identity" => "its input, unchanged",
+        "neg" => "its input, negated",
+        "add" => "the sum of its two inputs",
+        "sub" => "the first input minus the second",
+        "mul" => "the product of its two inputs",
+        "div" => "the first input divided by the second",
+        "pow" => "the first input raised to the power of the second",
+        "iso-date" => {
+            "the day number (days since 0001-01-01) of an ISO `yyyy-mm-dd` date as written"
+        }
+        "pi" => "π",
+        "e" => "Euler's number *e*",
+        "tau" => "τ (2π)",
+        "today" => "today's date as a day number, in UTC",
+        _ => return None,
+    })
+}
+
 /// Today as a day number (days since 0001-01-01), in UTC.
 fn today() -> f64 {
     let seconds = std::time::SystemTime::now()

@@ -657,6 +657,26 @@ pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError>
         .collect())
 }
 
+/// The host handlers a catalog file names.
+pub fn handlers(source: &Source) -> Result<Vec<crate::HostHandler>, PrepareError> {
+    let mut found = Vec::new();
+    for module in editor_modules(source)? {
+        for member in &module.members {
+            let (kind, handler) = match member {
+                Member::Operation { handler, .. } => ("operation", handler),
+                Member::Value { handler, .. } => ("value", handler),
+                _ => continue,
+            };
+            found.push(crate::HostHandler {
+                kind,
+                name: handler.text.clone(),
+                span: handler.span,
+            });
+        }
+    }
+    Ok(found)
+}
+
 /// Names a catalog file uses: catalog modules (`using`, qualifiers), catalog
 /// members ("member": types, operations and overloads), grammar rules and
 /// modules, and rule fields (named `Rule.Field` as written).
