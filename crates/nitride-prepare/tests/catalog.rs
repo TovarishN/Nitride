@@ -400,3 +400,85 @@ fn interface_errors_carry_the_catalog_span() {
     assert_eq!(error.message, "interface 'C.Cal' declares no operations");
     assert_eq!(&empty[error.span[0]..error.span[1]], "Cal");
 }
+
+const REPRESENTED: &str = "catalog module R {
+  type Day = represented i64;
+  type Name = represented text;
+  type Flag = represented bool;
+  type Plain = represented f64;
+  interface Cal version 1
+  {
+    operation Parse(Text) : Day;
+    operation Named(Day) : Name;
+    operation Odd(Day) : Flag;
+    example Named(Parse(\"1\")) == \"one\";
+    example Odd(Parse(\"1\")) == true;
+  }
+}";
+
+#[test]
+fn representations_are_lowered_and_part_of_the_contract() {
+    let lowered = lower(&[("R.ncatalog", REPRESENTED)]).unwrap();
+    // f64 is the default and is not recorded.
+    assert_eq!(
+        lowered["representations"],
+        json!({"R.Day":"i64","R.Flag":"bool","R.Name":"text"})
+    );
+    let examples = &lowered["interfaces"]["R.Cal"]["examples"];
+    assert_eq!(examples[0]["equals"], json!({"text":"one"}));
+    assert_eq!(examples[1]["equals"], json!({"boolean":true}));
+
+    let hash = &lowered["interfaces"]["R.Cal"]["hash"];
+    let wider = REPRESENTED.replace("Day = represented i64", "Day = represented f64");
+    let other = lower(&[("R.ncatalog", &wider)]).unwrap();
+    assert_ne!(&other["interfaces"]["R.Cal"]["hash"], hash);
+    assert!(
+        other
+            .get("representations")
+            .is_some_and(|r| r.get("R.Day").is_none())
+    );
+
+    // Catalogs without representations lower as before.
+    assert!(
+        lower(&[("C.ncatalog", CONTRACT)])
+            .unwrap()
+            .get("representations")
+            .is_none()
+    );
+}
+
+#[test]
+fn representation_errors_carry_the_catalog_span() {
+    for (from, to, message, at) in [
+        (
+            "Day = represented i64",
+            "Day = represented u8",
+            "unknown representation 'u8'; expected one of f64, i64, bool, text",
+            "u8",
+        ),
+        (
+            "== true;",
+            "== \"yes\";",
+            "the two sides of an example are 'R.Flag' and 'Core.Text'",
+            "example Odd(Parse(\"1\")) == \"yes\";",
+        ),
+        (
+            "== \"one\";",
+            "== false;",
+            "the two sides of an example are 'R.Name' and 'a boolean literal'",
+            "example Named(Parse(\"1\")) == false;",
+        ),
+        (
+            "example Odd(Parse(\"1\")) == true;",
+            "example true == true;",
+            "an example's value cannot be a text or boolean literal",
+            "example true == true;",
+        ),
+    ] {
+        let text = REPRESENTED.replace(from, to);
+        assert_ne!(text, REPRESENTED, "{from}");
+        let error = catalogs(&sources(&[("R.ncatalog", &text)])).unwrap_err();
+        assert_eq!(error.message, message, "{to}");
+        assert_eq!(&text[error.span[0]..error.span[1]], at, "{to}");
+    }
+}

@@ -4,13 +4,49 @@ use std::borrow::Cow;
 pub type Handler = dyn Fn(&[f64]) -> Result<f64, String> + Send + Sync;
 pub type TextHandler = dyn Fn(&str) -> Result<f64, String> + Send + Sync;
 pub type ValueProvider = dyn Fn() -> Result<f64, String> + Send + Sync;
-pub type ContractHandler = dyn Fn(Inputs<'_>) -> Result<f64, Failure> + Send + Sync;
+pub type ContractHandler = dyn Fn(Inputs<'_>) -> Result<Datum, Failure> + Send + Sync;
 
-/// An interface operation's inputs: scalars, or the exact source spelling of
+/// A runtime value. A type's catalog representation decides which kind its
+/// values are; a type without one is `Number`.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Datum {
+    Number(f64),
+    Integer(i64),
+    Boolean(bool),
+    Text(Box<str>),
+}
+
+impl Datum {
+    pub fn number(&self) -> Option<f64> {
+        match self {
+            Datum::Number(n) => Some(*n),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for Datum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Datum::Number(n) => write!(f, "{n}"),
+            Datum::Integer(i) => write!(f, "{i}"),
+            Datum::Boolean(b) => write!(f, "{b}"),
+            Datum::Text(t) => write!(f, "{t:?}"),
+        }
+    }
+}
+
+impl PartialEq<f64> for Datum {
+    fn eq(&self, other: &f64) -> bool {
+        self.number() == Some(*other)
+    }
+}
+
+/// An interface operation's inputs: values, or the exact source spelling of
 /// its single `Core.Text` input.
 #[derive(Debug, Clone, Copy)]
 pub enum Inputs<'a> {
-    Numbers(&'a [f64]),
+    Values(&'a [Datum]),
     Text(&'a str),
 }
 
@@ -49,7 +85,7 @@ impl<'g> HostBinding<'g> {
     pub fn contract(
         signature: Signature<'g>,
         contract: impl Into<Cow<'static, str>>,
-        run: impl Fn(Inputs<'_>) -> Result<f64, Failure> + Send + Sync + 'static,
+        run: impl Fn(Inputs<'_>) -> Result<Datum, Failure> + Send + Sync + 'static,
     ) -> Self {
         Self {
             signature,
@@ -61,18 +97,36 @@ impl<'g> HostBinding<'g> {
     }
 
     /// Calls the handler. A text handler or text contract receives `text`;
-    /// any other receives `numbers`.
-    pub fn call(&self, numbers: &[f64], text: Option<&str>) -> Result<f64, CallError> {
+    /// any other receives `inputs`. A built-in handler takes numbers only, and
+    /// `numbers` is its scratch space.
+    pub fn call(
+        &self,
+        inputs: &[Datum],
+        text: Option<&str>,
+        numbers: &mut Vec<f64>,
+    ) -> Result<Datum, CallError> {
         let plain = |message: String| CallError {
             message,
             failure: None,
         };
         match (&self.handler, text) {
-            (HostHandler::Numbers(handler), _) => handler(numbers).map_err(plain),
-            (HostHandler::Text(handler), Some(text)) => handler(text).map_err(plain),
+            (HostHandler::Numbers(handler), _) => {
+                numbers.clear();
+                for input in inputs {
+                    numbers.push(
+                        input
+                            .number()
+                            .ok_or_else(|| plain("a built-in handler takes numbers".into()))?,
+                    );
+                }
+                handler(numbers).map(Datum::Number).map_err(plain)
+            }
+            (HostHandler::Text(handler), Some(text)) => {
+                handler(text).map(Datum::Number).map_err(plain)
+            }
             (HostHandler::Text(_), None) => Err(plain("text handler without text".into())),
             (HostHandler::Contract { run, .. }, _) => {
-                let inputs = text.map_or(Inputs::Numbers(numbers), Inputs::Text);
+                let inputs = text.map_or(Inputs::Values(inputs), Inputs::Text);
                 run(inputs).map_err(|failure| CallError {
                     message: failure.message.into_owned(),
                     failure: Some(failure.id.into()),
@@ -124,7 +178,7 @@ impl HostValue {
 }
 #[derive(Debug)]
 pub struct ExecutionReport<'g> {
-    pub values: Vec<f64>,
+    pub values: Vec<Datum>,
     pub trace: Vec<&'g str>,
 }
 #[derive(Debug)]
@@ -350,28 +404,29 @@ pub fn execute_with_values<'g>(
         values: Vec::new(),
         trace: Vec::new(),
     };
-    let mut values = Vec::with_capacity(program.nodes.len());
-    let mut symbols = std::collections::HashMap::<u32, f64>::new();
+    let mut values: Vec<Datum> = Vec::with_capacity(program.nodes.len());
+    let mut symbols = std::collections::HashMap::<u32, Datum>::new();
     let mut builtins = Vec::<(&'static BuiltinValue, f64)>::new();
     let mut args_buffer = Vec::new();
+    let mut numbers = Vec::new();
     for statement in &program.statements {
         while values.len() <= statement.value as usize {
             let node = &program.nodes[values.len()];
             let result = match &node.kind {
                 HirKind::Error => Err(("damaged value cannot execute".into(), None)),
-                HirKind::Constant(n) => Ok(*n),
-                HirKind::Reference(symbol) => Ok(symbols[symbol]),
+                HirKind::Constant(n) => Ok(Datum::Number(*n)),
+                HirKind::Reference(symbol) => Ok(symbols[symbol].clone()),
                 // Text is consumed only by its operation's text handler.
-                HirKind::Text { .. } => Ok(0.0),
+                HirKind::Text { .. } => Ok(Datum::Number(0.0)),
                 HirKind::Builtin(builtin) => {
                     match builtins.iter().find(|(b, _)| std::ptr::eq(*b, *builtin)) {
-                        Some((_, value)) => Ok(*value),
+                        Some((_, value)) => Ok(Datum::Number(*value)),
                         None => {
                             let read = (host_value(host_values, builtin).unwrap().provider)();
                             if let Ok(value) = read {
                                 builtins.push((builtin, value));
                             }
-                            read.map_err(|e| (e, None))
+                            read.map(Datum::Number).map_err(|e| (e, None))
                         }
                     }
                 }
@@ -392,15 +447,15 @@ pub fn execute_with_values<'g>(
                     };
                     args_buffer.clear();
                     if text.is_none() {
-                        args_buffer.extend(operands.iter().map(|id| values[*id as usize]));
+                        args_buffer.extend(operands.iter().map(|id| values[*id as usize].clone()));
                     }
                     binding
-                        .call(&args_buffer, text)
+                        .call(&args_buffer, text, &mut numbers)
                         .map_err(|e| (e.message, e.failure))
                 }
             };
-            let number = match result {
-                Ok(n) if n.is_finite() => n,
+            let value = match result {
+                Ok(value) if value.number().is_none_or(f64::is_finite) => value,
                 other => {
                     let (message, failure) = other
                         .err()
@@ -413,9 +468,9 @@ pub fn execute_with_values<'g>(
                     });
                 }
             };
-            values.push(number);
+            values.push(value);
         }
-        let value = values[statement.value as usize];
+        let value = values[statement.value as usize].clone();
         if let Some(symbol) = statement.symbol {
             symbols.insert(symbol, value);
         } else {

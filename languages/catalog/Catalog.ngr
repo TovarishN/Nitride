@@ -13,12 +13,15 @@ syntax module NitrideCatalog
   token String = "\"" (Escape / [^ '"' '\\' '\n'])* "\"";
   token Digit = ['0'..'9'];
   token Number = "-"? Digit+ ("." Digit+)?;
+  token Boolean = "true" / "false";
 
   syntax File = Modules:Module*;
   syntax Module = "catalog" "module" Name:QualifiedName "{" Members:Member* "}";
   syntax Member = Using / Type / Failure / Interface / Operation / Overload / Builtin / Let / Show / Call / Check;
   syntax Using = "using" Name:QualifiedName ";";
-  syntax Type = "type" Name:Identifier ";";
+  // Values of a type are f64 unless it says how they are represented.
+  syntax Type = "type" Name:Identifier Representation:Representation? ";";
+  syntax Representation = "=" "represented" Kind:Identifier;
   syntax Failure = "failure" Name:Identifier Message:String ";";
   // Operations a binding implements together, and examples every binding must satisfy.
   syntax Interface = "interface" Name:Identifier "version" Version:Number "{" Members:InterfaceMember* "}";
@@ -28,9 +31,10 @@ syntax module NitrideCatalog
   syntax Example = "example" Value:ExampleExpr Outcome:(Equals / Raises) ";";
   syntax Equals = "==" Expected:ExampleExpr;
   syntax Raises = "fails" Failure:QualifiedName;
-  syntax ExampleExpr = ExampleCall / ExampleNumber / ExampleText;
+  syntax ExampleExpr = ExampleCall / ExampleNumber / ExampleBoolean / ExampleText;
   syntax ExampleCall = Operation:QualifiedName "(" Args:(ExampleExpr; ",")* ")";
   syntax ExampleNumber = Value:Number;
+  syntax ExampleBoolean = Value:Boolean;
   syntax ExampleText = Value:String;
   syntax Operation = "operation" Name:Identifier "(" Inputs:(QualifiedName; ",")* ")" ":" Result:QualifiedName "=" Handler:Handler ";";
   syntax Handler = "host" Name:HandlerName;

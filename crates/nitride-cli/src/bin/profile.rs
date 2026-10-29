@@ -439,7 +439,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
         "source_bytes":source.len(),"caller_source_capacity_bytes":source.capacity(),"syntax_nodes":tree.nodes.len(),
         "syntax_capacity_bytes":tree.retained_bytes(),"storage":{"representation":"legacy-flat","engine_retained_bytes":tree.retained_bytes(),"export_retained_bytes":null,"physical_retained_bytes":COUNT_ALLOCATIONS.then_some(parse_phase.retained_bytes)},"hir_nodes":program.as_ref().map(|p| p.nodes.len()),
         "parse":parse_phase.json(),"hir":hir_phase.as_ref().map(Phase::json),"execution":execution_phase.as_ref().map(Phase::json),
-        "values":execution.as_ref().map(|e| &e.values),"metric":"requested bytes through System; excludes allocator overhead, static language data and OS mappings"})
+        "values":execution.as_ref().map(|e| e.values.iter().map(nitride_cli::datum).collect::<Vec<_>>()),"metric":"requested bytes through System; excludes allocator overhead, static language data and OS mappings"})
     );
     Ok(())
 }

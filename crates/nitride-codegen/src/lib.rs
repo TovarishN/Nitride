@@ -71,6 +71,20 @@ pub fn generate(input: &str) -> Result<String, String> {
     if (!syntax_only && types.is_empty()) || types.len() != type_set.len() {
         return Err("duplicate/empty types".into());
     }
+    // Types whose values are not f64. Built-in handlers, literals and host
+    // values are f64 only, so these reach execution through interfaces.
+    let mut represented = HashSet::new();
+    if let Some(map) = data["catalog"].get("representations") {
+        for (ty, kind) in map.as_object().ok_or("representations must be an object")? {
+            if !type_set.contains(ty.as_str())
+                || ty.starts_with("Core.")
+                || !matches!(text(kind)?, "i64" | "bool" | "text")
+            {
+                return Err("invalid type representation".into());
+            }
+            represented.insert(ty.as_str());
+        }
+    }
     let operations = array(&data["catalog"]["operations"])?;
     if operations.len() > u16::MAX as usize {
         return Err("too many operations".into());
@@ -108,6 +122,9 @@ pub fn generate(input: &str) -> Result<String, String> {
             continue;
         }
         let handler = text(&op["handler"])?;
+        if represented.contains(result) || inputs.iter().any(|t| represented.contains(t)) {
+            return Err("built-in host handlers take and return f64 values".into());
+        }
         let host = nitride_core::host::operation(handler).ok_or("unknown fixture host handler")?;
         if array(&op["inputs"])?.len() != host.arity() {
             return Err("fixture host handler arity mismatch".into());
@@ -229,7 +246,7 @@ pub fn generate(input: &str) -> Result<String, String> {
                 if !builtin_declarations.contains(&(kind.as_str(), name.as_str())) {
                     return Err("undeclared builtin value mapping".into());
                 }
-                if !type_set.contains(ty) || ty == TEXT {
+                if !type_set.contains(ty) || ty == TEXT || represented.contains(ty) {
                     return Err("unknown builtin value type".into());
                 }
                 if !mapped_builtins.insert((kind.as_str(), name.as_str())) {
@@ -492,7 +509,7 @@ pub fn generate(input: &str) -> Result<String, String> {
             action = match text(&clause["kind"])? {
                 "LowersLiteral" => {
                     let ty = text(&clause["target"])?;
-                    if !type_set.contains(ty) || ty == TEXT {
+                    if !type_set.contains(ty) || ty == TEXT || represented.contains(ty) {
                         return Err("unknown literal type".into());
                     }
                     format!(

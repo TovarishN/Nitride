@@ -18,31 +18,68 @@ pub mod calendar {
     /// 0001-01-01 through 9999-12-31.
     pub struct FixtureCalendar;
 
-    /// 9999-12-31.
-    const LAST: f64 = 3_652_058.0;
+    use gregorian::GregorianFailure as Failure;
 
-    fn in_range(day: f64) -> Result<f64, gregorian::GregorianFailure> {
-        if (0.0..=LAST).contains(&day) {
+    /// 9999-12-31.
+    const LAST: i64 = 3_652_058;
+    /// 0001-01-01 was a Monday.
+    const WEEKDAYS: [&str; 7] = [
+        "Monday",
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday",
+    ];
+
+    /// `date` moved by a whole number of days.
+    fn shift(date: i64, days: f64) -> Result<i64, Failure> {
+        if days.fract() != 0.0 {
+            return Err(Failure::PartialDay);
+        }
+        let day = date + days as i64;
+        if (0..=LAST).contains(&day) {
             Ok(day)
         } else {
-            Err(gregorian::GregorianFailure::OutOfRange)
+            Err(Failure::OutOfRange)
         }
     }
 
+    /// The year a day number falls in.
+    fn year(date: i64) -> i64 {
+        let start = |y: i64| nitride_core::iso_date_day_number(&format!("{y:04}-01-01")).unwrap();
+        let (mut low, mut high) = (1, 9999);
+        while low < high {
+            let mid = (low + high + 1) / 2;
+            if start(mid) <= date {
+                low = mid;
+            } else {
+                high = mid - 1;
+            }
+        }
+        low
+    }
+
     impl gregorian::Gregorian for FixtureCalendar {
-        fn parse_date(&self, text: &str) -> Result<f64, gregorian::GregorianFailure> {
-            nitride_core::iso_date_day_number(text)
-                .map(|day| day as f64)
-                .ok_or(gregorian::GregorianFailure::InvalidDate)
+        fn parse_date(&self, text: &str) -> Result<i64, Failure> {
+            nitride_core::iso_date_day_number(text).ok_or(Failure::InvalidDate)
         }
-        fn later(&self, date: f64, duration: f64) -> Result<f64, gregorian::GregorianFailure> {
-            in_range(date + duration)
+        fn later(&self, date: i64, duration: f64) -> Result<i64, Failure> {
+            shift(date, duration)
         }
-        fn earlier(&self, date: f64, duration: f64) -> Result<f64, gregorian::GregorianFailure> {
-            in_range(date - duration)
+        fn earlier(&self, date: i64, duration: f64) -> Result<i64, Failure> {
+            shift(date, -duration)
         }
-        fn between(&self, date_1: f64, date_2: f64) -> Result<f64, gregorian::GregorianFailure> {
-            Ok(date_1 - date_2)
+        fn between(&self, date_1: i64, date_2: i64) -> Result<f64, Failure> {
+            Ok((date_1 - date_2) as f64)
+        }
+        fn day_of_week(&self, date: i64) -> Result<String, Failure> {
+            Ok(WEEKDAYS[date.rem_euclid(7) as usize].into())
+        }
+        fn is_leap_year(&self, date: i64) -> Result<bool, Failure> {
+            let y = year(date);
+            Ok(y % 4 == 0 && (y % 100 != 0 || y % 400 == 0))
         }
     }
 }
@@ -188,6 +225,17 @@ pub fn observe_dates(source: &str, today: f64) -> Value {
         true,
         &fixture_values_for(&dates::LANGUAGE, today),
     )
+}
+
+/// A runtime value as JSON: numbers (integers too) as numbers, then booleans
+/// and strings.
+pub fn datum(value: &Datum) -> Value {
+    match value {
+        Datum::Number(n) => json!(n),
+        Datum::Integer(i) => json!(i),
+        Datum::Boolean(b) => json!(b),
+        Datum::Text(t) => json!(t),
+    }
 }
 
 /// Runs Calendar with the built-in handlers and `implementation` of its
@@ -366,5 +414,5 @@ fn observe_with(
         .collect::<Vec<_>>();
     bindings.sort_by_key(|b| b["span"][0].as_u64().unwrap());
     json!({"ok":true,"syntax":syntax,"bindings":bindings,
-        "hir":program.statements.iter().map(|s| &hir[s.value as usize]).collect::<Vec<_>>(),"values":report.values,"trace":report.trace})
+        "hir":program.statements.iter().map(|s| &hir[s.value as usize]).collect::<Vec<_>>(),"values":report.values.iter().map(datum).collect::<Vec<_>>(),"trace":report.trace})
 }

@@ -2,3 +2,5 @@ let start = 2026-10-05;
 let sprint = 14 days;
 start + sprint;
 (2026-12-25 - start) in days;
+weekday(start + sprint);
+leap(2028-01-01);

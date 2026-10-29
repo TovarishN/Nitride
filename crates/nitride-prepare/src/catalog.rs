@@ -7,6 +7,10 @@ use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 
 const CORE: &[&str] = &["Core.Scalar", "Core.Text"];
+const REPRESENTATIONS: &[&str] = &["f64", "i64", "bool", "text"];
+/// The type of a `true` or `false` literal in an example: any type
+/// represented as bool.
+const BOOLEAN_LITERAL: &str = "a boolean literal";
 
 /// A name as written, where it was written.
 struct Name {
@@ -24,6 +28,7 @@ enum Provider {
 
 enum ExampleExpr {
     Number(f64),
+    Boolean(bool),
     Text(String),
     Call {
         operation: Name,
@@ -43,7 +48,8 @@ struct Example {
 }
 
 enum Member {
-    Type(Name),
+    /// A type, and how its values are represented when not f64.
+    Type(Name, Option<Name>),
     Failure {
         name: Name,
         message: String,
@@ -180,7 +186,15 @@ impl Decoder<'_> {
         })
     }
     fn example_expr(&self, id: u32, errors: &mut Vec<PrepareError>) -> ExampleExpr {
-        let id = self.choice(id, &["ExampleCall", "ExampleNumber", "ExampleText"]);
+        let id = self.choice(
+            id,
+            &[
+                "ExampleCall",
+                "ExampleNumber",
+                "ExampleBoolean",
+                "ExampleText",
+            ],
+        );
         match self.kind(id) {
             "ExampleCall" => ExampleExpr::Call {
                 operation: self.named(id, "Operation"),
@@ -197,6 +211,7 @@ impl Decoder<'_> {
                     0.0
                 }))
             }
+            "ExampleBoolean" => ExampleExpr::Boolean(self.named(id, "Value").text == "true"),
             _ => ExampleExpr::Text(self.string(self.field(id, "Value"), errors)),
         }
     }
@@ -285,7 +300,12 @@ impl Decoder<'_> {
                     module.usings.push(self.named(m, "Name"));
                     continue;
                 }
-                "Type" => Member::Type(self.named(m, "Name")),
+                "Type" => Member::Type(
+                    self.named(m, "Name"),
+                    self.tree
+                        .field(m, "Representation")
+                        .map(|r| self.named(r, "Kind")),
+                ),
                 "Failure" => Member::Failure {
                     name: self.named(m, "Name"),
                     message: self.string(self.field(m, "Message"), &mut module.errors),
@@ -402,9 +422,15 @@ struct Scope<'a> {
     callables: HashMap<String, (usize, [usize; 2], bool)>,
     /// Qualified failure and interface names, and whether each is a failure.
     contracts: HashMap<String, (usize, [usize; 2], bool)>,
+    /// Representations other than f64, by qualified type name.
+    representations: HashMap<String, String>,
 }
 
 impl<'a> Scope<'a> {
+    /// How values of a resolved type are represented.
+    fn representation(&self, ty: &str) -> &str {
+        self.representations.get(ty).map_or("f64", String::as_str)
+    }
     fn error(&self, module: &Module, span: [usize; 2], message: impl Into<String>) -> PrepareError {
         self.sources[module.source].error(span, message)
     }
@@ -502,6 +528,7 @@ fn lower_expr(
 ) -> Result<(Value, String), PrepareError> {
     match expr {
         ExampleExpr::Number(n) => Ok((json!({"number":n}), CORE[0].into())),
+        ExampleExpr::Boolean(b) => Ok((json!({"boolean":b}), BOOLEAN_LITERAL.into())),
         ExampleExpr::Text(text) => Ok((json!({"text":text}), CORE[1].into())),
         ExampleExpr::Call { operation, args } => {
             let id = scope.resolve(module, operation, "operation")?;
@@ -525,7 +552,7 @@ fn lower_expr(
             let mut lowered = Vec::new();
             for (position, (arg, input)) in args.iter().zip(inputs).enumerate() {
                 let (value, ty) = lower_expr(scope, module, operations, arg, fails)?;
-                if *input != ty.as_str() {
+                if !fits(scope, input.as_str().unwrap(), &ty) {
                     return Err(scope.error(
                         module,
                         operation.span,
@@ -550,6 +577,15 @@ fn lower_expr(
     }
 }
 
+/// Whether an example value of type `actual` may stand where `expected` is
+/// required. Types are nominal; a boolean literal is any bool type, and a
+/// string literal is source text or any text type.
+fn fits(scope: &Scope, expected: &str, actual: &str) -> bool {
+    expected == actual
+        || (actual == BOOLEAN_LITERAL && scope.representation(expected) == "bool")
+        || (actual == CORE[1] && scope.representation(expected) == "text")
+}
+
 /// An interface example as JSON, checked against the catalog's operations.
 fn lower_example(
     scope: &Scope,
@@ -560,15 +596,17 @@ fn lower_example(
     let error = |message: String| scope.error(module, example.span, message);
     let mut fails = Vec::new();
     let (value, ty) = lower_expr(scope, module, operations, &example.value, &mut fails)?;
-    if ty == CORE[1] {
-        return Err(error("an example's value cannot be text".into()));
+    if ty == CORE[1] || ty == BOOLEAN_LITERAL {
+        return Err(error(
+            "an example's value cannot be a text or boolean literal".into(),
+        ));
     }
     let source = &scope.sources[module.source].text[example.span[0]..example.span[1]];
     Ok(match &example.outcome {
         Outcome::Equals(expected) => {
             let (expected, other) =
                 lower_expr(scope, module, operations, expected, &mut Vec::new())?;
-            if other != ty {
+            if !fits(scope, &ty, &other) {
                 return Err(error(format!(
                     "the two sides of an example are '{ty}' and '{other}'"
                 )));
@@ -611,6 +649,7 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
         types: HashMap::new(),
         callables: HashMap::new(),
         contracts: HashMap::new(),
+        representations: HashMap::new(),
     };
     let mut seen: HashMap<&str, usize> = HashMap::new();
     for (index, module) in modules.iter().enumerate() {
@@ -627,9 +666,24 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
         }
         seen.insert(&module.name.text, index);
         for member in &module.members {
+            if let Member::Type(name, Some(kind)) = member {
+                vocabulary(
+                    &scope,
+                    module,
+                    kind,
+                    REPRESENTATIONS.iter().copied(),
+                    "representation",
+                )?;
+                if kind.text != "f64" {
+                    scope.representations.insert(
+                        format!("{}.{}", module.name.text, name.text),
+                        kind.text.clone(),
+                    );
+                }
+            }
             // The table a member's name goes in, and the flag it carries there.
             let (name, table, flag) = match member {
-                Member::Type(name) => (name, 0, false),
+                Member::Type(name, _) => (name, 0, false),
                 Member::Operation { name, .. } => (name, 1, true),
                 Member::Overload { name, .. } => (name, 1, false),
                 Member::Failure { name, .. } => (name, 2, true),
@@ -719,7 +773,7 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
         };
         for member in &module.members {
             match member {
-                Member::Type(name) => types.push(qualify(name)),
+                Member::Type(name, _) => types.push(qualify(name)),
                 Member::Failure { name, message } => {
                     failures.insert(qualify(name), json!(message));
                 }
@@ -897,7 +951,19 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
                 format!("interface '{id}' declares no operations"),
             ));
         }
-        let contract = json!({"interface":id,"version":version,"operations":members.iter().map(|op| json!({
+        let mut used = Map::new();
+        for op in &members {
+            for ty in op["inputs"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .chain([&op["result"]])
+            {
+                let ty = ty.as_str().unwrap();
+                used.insert(ty.into(), json!(scope.representation(ty)));
+            }
+        }
+        let contract = json!({"interface":id,"version":version,"representations":used,"operations":members.iter().map(|op| json!({
             "id":op["id"],"inputs":op["inputs"],"result":op["result"],"fails":op["fails"]})).collect::<Vec<_>>()});
         let hash = format!("{:x}", Sha256::digest(contract.to_string().as_bytes()));
         let examples = examples
@@ -920,6 +986,14 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
         ("checks", checks),
         ("failures", failures),
         ("interfaces", lowered),
+        (
+            "representations",
+            scope
+                .representations
+                .iter()
+                .map(|(ty, kind)| (ty.clone(), json!(kind)))
+                .collect(),
+        ),
     ] {
         if !section.is_empty() {
             catalog[key] = Value::Object(section);
@@ -956,7 +1030,7 @@ pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError>
                 .iter()
                 .zip(&module.spans)
                 .filter_map(|(member, &span)| match member {
-                    Member::Type(name) => Some(item("type", name, span)),
+                    Member::Type(name, _) => Some(item("type", name, span)),
                     Member::Failure { name, .. } => Some(item("failure", name, span)),
                     Member::Interface { name, .. } => Some(item("interface", name, span)),
                     Member::Operation { name, .. } => Some(item("operation", name, span)),
@@ -1023,7 +1097,7 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
         let mut members: Vec<&Name> = Vec::new();
         for member in &module.members {
             match member {
-                Member::Type(_) | Member::Failure { .. } | Member::Interface { .. } => {}
+                Member::Type(..) | Member::Failure { .. } | Member::Interface { .. } => {}
                 Member::Operation { inputs, result, .. } => {
                     members.extend(inputs);
                     members.push(result);

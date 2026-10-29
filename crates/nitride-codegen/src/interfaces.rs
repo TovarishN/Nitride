@@ -43,7 +43,50 @@ fn parameters(inputs: &[&str]) -> Vec<String> {
         .collect()
 }
 
+/// How values of `ty` cross the binding: `source` for `Core.Text`, the
+/// exact spelling a grammar passes, else its catalog representation.
+fn representation<'a>(catalog: &'a Value, ty: &str) -> &'a str {
+    if ty == crate::TEXT {
+        return "source";
+    }
+    catalog["representations"][ty].as_str().unwrap_or("f64")
+}
+
+/// The Rust parameter type of a representation.
+fn parameter(representation: &str) -> &'static str {
+    match representation {
+        "source" | "text" => "&str",
+        "i64" => "i64",
+        "bool" => "bool",
+        _ => "f64",
+    }
+}
+
+/// The Rust result type of a representation, and the `Datum` it becomes.
+fn result(representation: &str) -> (&'static str, &'static str) {
+    match representation {
+        "text" => ("String", "|t| Datum::Text(t.into())"),
+        "i64" => ("i64", "Datum::Integer"),
+        "bool" => ("bool", "Datum::Boolean"),
+        _ => ("f64", "Datum::Number"),
+    }
+}
+
+/// The `Datum` variant that carries a representation's values.
+fn variant(representation: &str) -> &'static str {
+    match representation {
+        "text" => "Text",
+        "i64" => "Integer",
+        "bool" => "Boolean",
+        _ => "Number",
+    }
+}
+
 fn expr(value: &Value) -> Result<String, String> {
+    if let Some(b) = value.get("boolean") {
+        let b = b.as_bool().ok_or("example boolean")?;
+        return Ok(format!("nitride_core::host::ExampleExpr::Boolean({b})"));
+    }
     if let Some(n) = value.get("number") {
         let n = n.as_f64().ok_or("example number")?;
         return Ok(format!("nitride_core::host::ExampleExpr::Number({n:?})"));
@@ -101,13 +144,13 @@ pub fn interfaces(input: &str) -> Result<String, String> {
                 }
             }
         }
-        let variant = |f: &str| tail(f).to_string();
+        let failure = |f: &str| tail(f).to_string();
 
         writeln!(out, "\n/// `{id}` version {version}.").unwrap();
         writeln!(out, "pub mod {} {{", snake(name)).unwrap();
         writeln!(
             out,
-            "    use nitride_core::{{Failure, HostBinding, Inputs, Language}};\n    use std::sync::Arc;\n"
+            "    use nitride_core::{{Datum, Failure, HostBinding, Inputs, Language}};\n    use std::sync::Arc;\n"
         )
         .unwrap();
         writeln!(
@@ -123,7 +166,7 @@ pub fn interfaces(input: &str) -> Result<String, String> {
         )
         .unwrap();
         for f in &declared {
-            writeln!(out, "        {},", variant(f)).unwrap();
+            writeln!(out, "        {},", failure(f)).unwrap();
         }
         writeln!(out, "    }}\n\n    impl {failure_enum} {{").unwrap();
         writeln!(
@@ -135,7 +178,7 @@ pub fn interfaces(input: &str) -> Result<String, String> {
             writeln!(
                 out,
                 "                Self::{} => {},",
-                variant(f),
+                failure(f),
                 quoted(f)
             )
             .unwrap();
@@ -150,7 +193,7 @@ pub fn interfaces(input: &str) -> Result<String, String> {
             writeln!(
                 out,
                 "                Self::{} => {},",
-                variant(f),
+                failure(f),
                 quoted(message)
             )
             .unwrap();
@@ -169,14 +212,9 @@ pub fn interfaces(input: &str) -> Result<String, String> {
             let typed: Vec<String> = params
                 .iter()
                 .zip(&inputs)
-                .map(|(p, ty)| {
-                    if *ty == crate::TEXT {
-                        format!("{p}: &str")
-                    } else {
-                        format!("{p}: f64")
-                    }
-                })
+                .map(|(p, ty)| format!("{p}: {}", parameter(representation(catalog, ty))))
                 .collect();
+            let (returns, _) = result(representation(catalog, text(&op["result"])?));
             let fails_doc = if fails.is_empty() {
                 String::new()
             } else {
@@ -187,7 +225,7 @@ pub fn interfaces(input: &str) -> Result<String, String> {
             };
             writeln!(
                 out,
-                "        /// `{}({}) : {}`{fails_doc}.\n        fn {}(&self{}) -> Result<f64, {failure_enum}>;",
+                "        /// `{}({}) : {}`{fails_doc}.\n        fn {}(&self{}) -> Result<{returns}, {failure_enum}>;",
                 tail(text(&op["id"])?),
                 inputs.iter().map(|t| tail(t)).collect::<Vec<_>>().join(", "),
                 tail(text(&op["result"])?),
@@ -200,7 +238,7 @@ pub fn interfaces(input: &str) -> Result<String, String> {
 
         writeln!(
             out,
-            "    fn checked(result: Result<f64, {failure_enum}>, declared: &[{failure_enum}]) -> Result<f64, Failure> {{
+            "    fn checked(result: Result<Datum, {failure_enum}>, declared: &[{failure_enum}]) -> Result<Datum, Failure> {{
         result.map_err(|f| {{
             if declared.contains(&f) {{
                 Failure {{ id: f.id().into(), message: f.message().into() }}
@@ -232,19 +270,32 @@ pub fn interfaces(input: &str) -> Result<String, String> {
             let params = parameters(&inputs);
             let fails = strings(&op["fails"])?
                 .iter()
-                .map(|f| format!("{failure_enum}::{}", variant(f)))
+                .map(|f| format!("{failure_enum}::{}", failure(f)))
                 .collect::<Vec<_>>()
                 .join(", ");
             let method = snake(tail(text(&op["id"])?));
+            let (_, wrap) = result(representation(catalog, text(&op["result"])?));
             let (pattern, call) = if inputs.first() == Some(&crate::TEXT) {
                 (
                     format!("Inputs::Text({})", params[0]),
-                    format!("i.{method}({})", params[0]),
+                    format!("i.{method}({}).map({wrap})", params[0]),
                 )
             } else {
+                // Matched through a reference: copy scalars, lend text.
+                let mut patterns = Vec::new();
+                let mut args = Vec::new();
+                for (p, ty) in params.iter().zip(&inputs) {
+                    let representation = representation(catalog, ty);
+                    patterns.push(format!("Datum::{}({p})", variant(representation)));
+                    args.push(if representation == "text" {
+                        p.clone()
+                    } else {
+                        format!("*{p}")
+                    });
+                }
                 (
-                    format!("Inputs::Numbers(&[{}])", params.join(", ")),
-                    format!("i.{method}({})", params.join(", ")),
+                    format!("Inputs::Values([{}])", patterns.join(", ")),
+                    format!("i.{method}({}).map({wrap})", args.join(", ")),
                 )
             };
             writeln!(

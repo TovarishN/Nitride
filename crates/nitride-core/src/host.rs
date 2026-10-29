@@ -251,7 +251,9 @@ pub fn host_values(language: &Language<'_>, today: f64) -> Vec<HostValue> {
 #[derive(Debug)]
 pub enum ExampleExpr<'g> {
     Number(f64),
-    /// Only as the single input of a text operation.
+    Boolean(bool),
+    /// Source spelling as the single input of a `Core.Text` operation, else
+    /// a text value.
     Text(&'g str),
     Call {
         operation: &'g str,
@@ -274,23 +276,32 @@ pub struct Example<'g> {
     pub expected: Expected<'g>,
 }
 
-/// Whether two results agree: exactly, or within a relative 1e-9.
-fn agree(a: f64, b: f64) -> bool {
-    a == b || (a - b).abs() <= 1e-9 * a.abs().max(b.abs())
+/// Whether two results agree: numbers exactly or within a relative 1e-9 (a
+/// number literal may stand for an integer), anything else exactly.
+fn agree(a: &Datum, b: &Datum) -> bool {
+    let close = |a: f64, b: f64| a == b || (a - b).abs() <= 1e-9 * a.abs().max(b.abs());
+    match (a, b) {
+        (Datum::Number(a), Datum::Number(b)) => close(*a, *b),
+        (Datum::Number(n), Datum::Integer(i)) | (Datum::Integer(i), Datum::Number(n)) => {
+            *n == *i as f64
+        }
+        _ => a == b,
+    }
 }
 
 fn evaluate(
     language: &Language<'_>,
     bindings: &[HostBinding<'_>],
     expr: &ExampleExpr<'_>,
-) -> Result<f64, CallError> {
+) -> Result<Datum, CallError> {
     let plain = |message: String| CallError {
         message,
         failure: None,
     };
     let (operation, args) = match expr {
-        ExampleExpr::Number(n) => return Ok(*n),
-        ExampleExpr::Text(_) => return Err(plain("text outside a text operation".into())),
+        ExampleExpr::Number(n) => return Ok(Datum::Number(*n)),
+        ExampleExpr::Boolean(b) => return Ok(Datum::Boolean(*b)),
+        ExampleExpr::Text(text) => return Ok(Datum::Text((*text).into())),
         ExampleExpr::Call { operation, args } => (*operation, *args),
     };
     let index = language
@@ -311,17 +322,21 @@ fn evaluate(
         }
         _ => {}
     }
+    let signature = &language.operations[index];
     let result = match args {
-        [ExampleExpr::Text(text)] => binding.call(&[], Some(text)),
+        // Source spelling, as a grammar's `text Field` passes it.
+        [ExampleExpr::Text(text)] if signature.inputs == [TEXT] => {
+            binding.call(&[], Some(text), &mut Vec::new())
+        }
         _ => {
-            let numbers = args
+            let inputs = args
                 .iter()
                 .map(|a| evaluate(language, bindings, a))
                 .collect::<Result<Vec<_>, _>>()?;
-            binding.call(&numbers, None)
+            binding.call(&inputs, None, &mut Vec::new())
         }
     }?;
-    if result.is_finite() {
+    if result.number().is_none_or(f64::is_finite) {
         Ok(result)
     } else {
         Err(plain("nonfinite result".into()))
@@ -341,7 +356,7 @@ pub fn conform<'e>(
         let why = match (&example.expected, value) {
             (Expected::Equals(expected), Ok(value)) => {
                 match evaluate(language, bindings, expected) {
-                    Ok(expected) if agree(value, expected) => None,
+                    Ok(expected) if agree(&value, &expected) => None,
                     Ok(expected) => Some(format!("got {value}, expected {expected}")),
                     Err(e) => Some(format!("expected side failed: {}", e.message)),
                 }

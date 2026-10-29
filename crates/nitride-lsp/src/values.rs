@@ -17,7 +17,16 @@ pub fn iso_date(day: i64) -> String {
     format!("{y:04}-{m:02}-{d:02}")
 }
 
-fn label(value: f64, ty: &str) -> String {
+fn label(value: &Datum, ty: &str) -> String {
+    match value {
+        Datum::Number(n) => number_label(*n, ty),
+        Datum::Integer(i) => number_label(*i as f64, ty),
+        Datum::Boolean(b) => format!("= {b}"),
+        Datum::Text(t) => format!("= {t:?}"),
+    }
+}
+
+fn number_label(value: f64, ty: &str) -> String {
     let number = || {
         if value.fract() == 0.0 && value.abs() < 1e15 {
             format!("{}", value as i64)
@@ -50,7 +59,7 @@ pub fn compute(program: &Program<'_>) -> Vec<(u32, String)> {
         .zip(report.values)
         .filter_map(|(statement, value)| {
             let node = program.nodes.get(statement.value as usize)?;
-            Some((node.span[1], label(value, node.ty)))
+            Some((node.span[1], label(&value, node.ty)))
         })
         .collect()
 }

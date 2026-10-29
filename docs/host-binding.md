@@ -3,7 +3,8 @@
 Status: draft for review. Adds interfaces to `.ncatalog`, a binding language
 (`.nbind`) that maps an interface onto a concrete implementation, and
 conformance examples that check every implementation against its interface.
-Phases 1 and 2 are implemented (see Phases); the rest is not.
+Phases 1 to 3 are implemented, phase 3 without records and lists (see
+Phases); the rest is not.
 
 ## Why
 
@@ -295,8 +296,38 @@ lists its bindings and their last conformance result.
      runs it. Existing catalogs and the .NET oracle are unchanged.
    - Editor: the outline lists interfaces and failures. Navigation and hover
      for failure names and example calls are not done.
-3. The value model: `i32`, `i64`, `bool`, `text`, then records and lists,
-   with `represented`. Dates moves `Date` to `represented i32`.
+3. The value model. Done for scalars and text; records and lists are
+   phase 3b. What was built:
+   - `type T = represented f64|i64|bool|text;` (`f64` is the default and is
+     not recorded). Lowering adds a `representations` section, and each
+     interface's contract hash covers the representations of the types its
+     signatures use, so changing one invalidates bindings.
+   - Runtime values are `nitride_core::Datum` (`Number`, `Integer`,
+     `Boolean`, `Text`): the evaluator's values, symbols and
+     `ExecutionReport::values`, contract inputs (`Inputs::Values`) and
+     results. The HIR is unchanged: literals stay `f64` constants.
+   - Built-in handlers, grammar literals and built-in host values are `f64`
+     only; codegen rejects them on a represented type. Values of other
+     representations therefore come only from interface operations, and the
+     generated binder guarantees their kind.
+   - Generated traits take and return `i64`, `bool`, `&str` / `String` and
+     `f64` by representation.
+   - Examples gain `true` and `false`. A boolean literal stands for any bool
+     type and a string literal for any text type (or `Core.Text` source
+     spelling); number literals stay `Core.Scalar`, so nominal typing holds.
+     Conformance compares integers exactly, and a number with an integer by
+     value.
+   - The CLI prints integers, booleans and text as JSON numbers, booleans and
+     strings, and the editor's value hints show them. Existing languages
+     only produce `Number`, so their output and the .NET oracle comparisons
+     are unchanged.
+   - Calendar: `Date` is `represented i64`, with `DayOfWeek(Date) : Weekday`
+     (text), `IsLeapYear(Date) : LeapYear` (bool), a `PartialDay` failure and
+     ten examples; the interface is `version 2`. Dates is unchanged.
+   - Not measured: values are now 24 bytes rather than 8, and arguments are
+     cloned per call. The memory evidence in `docs/` predates this.
+3b. Records and lists: declarations, construction and field access in
+   catalogs and grammars.
 4. `.nbind` with `wasm component` bindings and WIT output. With `f64` values a
    `rust crate` binding adds nothing over implementing the generated trait,
    so `.nbind` starts here, where it carries the type mapping.
