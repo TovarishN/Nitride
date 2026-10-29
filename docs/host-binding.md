@@ -3,7 +3,7 @@
 Status: draft for review. Adds interfaces to `.ncatalog`, a binding language
 (`.nbind`) that maps an interface onto a concrete implementation, and
 conformance examples that check every implementation against its interface.
-Phases 1 to 4b are implemented (see Phases); the rest is not.
+Phases 1 to 5 are implemented (see Phases); the rest is not.
 
 ## Why
 
@@ -405,7 +405,29 @@ lists its bindings and their last conformance result.
    - Editor: the LSP serves `.nbind` (diagnostics against the listing
      language's catalogs, a warning for a binding no language lists, outline,
      syntax colouring), and the VS Code extension registers the language.
-5. Effects: `effect` on operations, and how a host grants them.
+5. Effects. Done:
+   - Catalogs declare `effect Clock "reads the current date";` (module
+     members, like failures), and interface operations list theirs:
+     `operation Today() : Date effect Clock;`. Lowering adds an `effects`
+     section and `effects` on each operation that has any; the contract hash
+     covers them, and an operation without effects hashes as before.
+   - The host grants effects when it builds bindings:
+     `nitride_core::host::grant(bindings, needs, granted)` replaces the
+     binding of an operation that needs an ungranted effect with
+     `HostHandler::Denied`. Preflight rejects a program that uses one ("'…'
+     needs Calendar.Clock, which the host does not grant"), so it runs no
+     handler at all.
+   - Generated interfaces carry `EFFECTS` and `needs(op)`, and
+     `conformance(language, impl, granted)` reports failed and skipped
+     examples; examples that need an ungranted effect are skipped
+     (`host::conformance`). WIT documents a function's effects.
+   - `--grant <effect>` grants to `nitride run`, `nitride conform` and
+     `--calendar`; nothing is granted by default.
+   - Calendar: `effect Clock` and `interface Clock version 1` with
+     `Today() : Date effect Clock`, `today` in the grammar, implemented by the
+     Rust fixture (no component: `wasm32-unknown-unknown` has no clock).
+   - Effects apply to interface operations only. The built-in host value
+     `today` reads the clock without an effect.
 6. `process` bindings, and drafting bindings from library metadata.
 
 ## Open questions

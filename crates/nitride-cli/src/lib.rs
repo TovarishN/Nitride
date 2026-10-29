@@ -90,6 +90,12 @@ pub mod calendar {
             Ok((first..=span.end).step_by(7).collect())
         }
     }
+
+    impl clock::Clock for FixtureCalendar {
+        fn today(&self) -> Result<i64, clock::ClockFailure> {
+            Ok(nitride_core::host::utc_today() as i64)
+        }
+    }
 }
 pub mod calls {
     include!(concat!(env!("OUT_DIR"), "/calls.rs"));
@@ -251,16 +257,27 @@ pub fn datum(value: &Datum) -> Value {
     }
 }
 
-/// Runs Calendar with the built-in handlers and `implementation` of its
-/// `Gregorian` interface.
+/// Runs Calendar with the built-in handlers, `implementation` of its
+/// `Gregorian` interface and the fixture's `Clock`, granting `granted`
+/// effects.
 pub fn observe_calendar(
     source: &str,
     implementation: std::sync::Arc<dyn calendar::gregorian::Gregorian>,
+    granted: &[String],
 ) -> Value {
     let mut bindings = fixture_bindings_for(&calendar::LANGUAGE);
     bindings.extend(calendar::gregorian::bindings(
         &calendar::LANGUAGE,
         implementation,
+    ));
+    // Today's date comes from the fixture's clock, when the host grants it.
+    bindings.extend(host::grant(
+        calendar::clock::bindings(
+            &calendar::LANGUAGE,
+            std::sync::Arc::new(calendar::FixtureCalendar),
+        ),
+        &calendar::clock::needs,
+        granted,
     ));
     observe_with(&calendar::LANGUAGE, source, true, &[], &bindings)
 }

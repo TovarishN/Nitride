@@ -483,6 +483,38 @@ fn representation_errors_carry_the_catalog_span() {
     }
 }
 
+const EFFECTFUL: &str = "catalog module E {
+  type Day = represented i64;
+  effect Clock \"reads the current date\";
+  interface Cal version 1
+  {
+    operation Today() : Day effect Clock;
+    operation Next(Day) : Day;
+  }
+}";
+
+#[test]
+fn effects_are_lowered_and_part_of_the_contract() {
+    let lowered = lower(&[("E.ncatalog", EFFECTFUL)]).unwrap();
+    assert_eq!(
+        lowered["effects"],
+        json!({"E.Clock":"reads the current date"})
+    );
+    assert_eq!(lowered["operations"][0]["effects"], json!(["E.Clock"]));
+    // An operation without effects records none.
+    assert!(lowered["operations"][1].get("effects").is_none());
+
+    let hash = &lowered["interfaces"]["E.Cal"]["hash"];
+    let pure = EFFECTFUL.replace(" effect Clock;", ";");
+    let other = lower(&[("E.ncatalog", &pure)]).unwrap();
+    assert_ne!(&other["interfaces"]["E.Cal"]["hash"], hash);
+
+    let text = EFFECTFUL.replace("effect Clock;", "effect Network;");
+    let error = catalogs(&sources(&[("E.ncatalog", &text)])).unwrap_err();
+    assert_eq!(error.message, "unknown effect 'Network'");
+    assert_eq!(&text[error.span[0]..error.span[1]], "Network");
+}
+
 const SHAPES: &str = "catalog module S {
   type Day = represented i64;
   type Span = record { start: Day; end: Day; };

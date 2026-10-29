@@ -471,6 +471,21 @@ pub fn interfaces(input: &str) -> Result<String, String> {
         )
         .unwrap();
 
+        let effects = members
+            .iter()
+            .filter_map(|op| {
+                let effects = strings(op.get("effects")?).ok()?;
+                Some(format!(
+                    "        ({}, &[{}]),",
+                    quoted(op["id"].as_str()?),
+                    effects
+                        .iter()
+                        .map(|e| quoted(e))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                ))
+            })
+            .collect::<Vec<_>>();
         let examples = array(&interface["examples"])?
             .iter()
             .map(|e| {
@@ -496,16 +511,41 @@ pub fn interfaces(input: &str) -> Result<String, String> {
 {}
     ];
 
+    /// Each operation's effects, by operation id; the host grants them.
+    pub static EFFECTS: &[(&str, &[&str])] = &[
+{}
+    ];
+
+    /// The effects an operation needs.
+    pub fn needs(operation: &str) -> Vec<String> {{
+        EFFECTS
+            .iter()
+            .filter(|(op, _)| *op == operation)
+            .flat_map(|(_, effects)| effects.iter().map(|e| e.to_string()))
+            .collect()
+    }}
+
     /// Runs the examples through `implementation`, with the engine's handlers
     /// for the language's other operations: `(example, why)` for each one it
-    /// fails.
+    /// fails. No effects are granted, so examples that need one are skipped.
     pub fn conform(language: &Language<'_>, implementation: Arc<dyn {name}>) -> Vec<(&'static str, String)> {{
+        conformance(language, implementation, &[]).failed
+    }}
+
+    /// Runs the examples with `granted` effects: what failed, and what was
+    /// skipped for want of an effect.
+    pub fn conformance(
+        language: &Language<'_>,
+        implementation: Arc<dyn {name}>,
+        granted: &[String],
+    ) -> nitride_core::host::Conformance<'static> {{
         let mut all = nitride_core::host::bindings(language);
-        all.extend(bindings(language, implementation));
-        nitride_core::host::conform(language, &all, EXAMPLES)
+        all.extend(nitride_core::host::grant(bindings(language, implementation), &needs, granted));
+        nitride_core::host::conformance(language, &all, EXAMPLES)
     }}
 }}",
-            examples.join("\n")
+            examples.join("\n"),
+            effects.join("\n")
         )
         .unwrap();
     }

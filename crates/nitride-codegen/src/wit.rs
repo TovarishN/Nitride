@@ -228,6 +228,19 @@ fn document(
                 Some(name) => text(name)?.to_string(),
                 None => kebab(tail(op_id)),
             };
+            if let Some(effects) = op.get("effects") {
+                let effects = strings(effects)?;
+                writeln!(
+                    out,
+                    "  /// Effects the host grants: {}.",
+                    effects
+                        .iter()
+                        .map(|e| tail(e))
+                        .collect::<Vec<_>>()
+                        .join(", ")
+                )
+                .unwrap();
+            }
             writeln!(out, "  {export}: func({params}) -> {result};").unwrap();
         }
         writeln!(

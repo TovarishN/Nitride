@@ -82,6 +82,9 @@ pub enum HostHandler {
     /// Takes and returns values of any kind: the engine's record and list
     /// operations.
     Values(Box<ValuesHandler>),
+    /// Stands for a binding whose operation needs effects the host did not
+    /// grant. Preflight rejects any program that uses it, so it never runs.
+    Denied(Vec<String>),
     /// Implements an interface operation of the contract `M.I@hash`, which
     /// must be the one the language's catalog declares.
     Contract {
@@ -147,6 +150,7 @@ impl<'g> HostBinding<'g> {
             }
             (HostHandler::Text(_), None) => Err(plain("text handler without text".into())),
             (HostHandler::Values(handler), _) => handler(inputs).map_err(plain),
+            (HostHandler::Denied(effects), _) => Err(plain(denied(&self.signature, effects))),
             (HostHandler::Contract { run, .. }, _) => {
                 let inputs = text.map_or(Inputs::Values(inputs), Inputs::Text);
                 run(inputs).map_err(|failure| CallError {
@@ -175,6 +179,15 @@ impl<'g> HostBinding<'g> {
         }
     }
 }
+/// Why a denied binding cannot run.
+fn denied(signature: &Signature, effects: &[String]) -> String {
+    format!(
+        "'{}' needs {}, which the host does not grant",
+        signature.id,
+        effects.join(", ")
+    )
+}
+
 /// A built-in value supplied by the host for an exact (kind, name, type).
 /// Names are owned when they come from a language loaded at run time.
 pub struct HostValue {
@@ -304,7 +317,9 @@ pub fn preflight_with_values(
                         .get(*operation as usize)
                         .filter(|h| h.contains('@'));
                     let compatible = |handler: &HostHandler| match (handler, declared) {
-                        (HostHandler::Contract { .. }, declared) => declared.is_some(),
+                        (HostHandler::Contract { .. } | HostHandler::Denied(_), declared) => {
+                            declared.is_some()
+                        }
                         (_, Some(_)) => false,
                         (HostHandler::Text(_), None) => text_input,
                         (HostHandler::Numbers(_) | HostHandler::Values(_), None) => !text_input,
@@ -318,6 +333,12 @@ pub fn preflight_with_values(
                             "host",
                             node.span,
                             "missing, duplicate or incompatible host binding",
+                        ));
+                    } else if let HostHandler::Denied(effects) = &matches[0].handler {
+                        errors.push(Diagnostic::new(
+                            "host",
+                            node.span,
+                            denied(signature, effects),
                         ));
                     } else if let (HostHandler::Contract { contract, .. }, Some(declared)) =
                         (&matches[0].handler, declared)

@@ -24,6 +24,7 @@ fn runs_through_the_interface_binding() {
     let result = nitride_cli::observe_calendar(
         include_str!("../../../languages/calendar/sample.calendar"),
         Arc::new(FixtureCalendar),
+        &[],
     );
     assert_eq!(result["ok"], true, "{result}");
     // Records and lists print as arrays.
@@ -42,10 +43,46 @@ fn runs_through_the_interface_binding() {
 }
 
 #[test]
+fn effects_run_only_when_the_host_grants_them() {
+    let denied =
+        nitride_cli::observe_calendar("(today - today) in days;", Arc::new(FixtureCalendar), &[]);
+    assert_eq!(denied["ok"], false, "{denied}");
+    assert_eq!(denied["error"], "host");
+    assert_eq!(
+        denied["message"],
+        "'Calendar.Today' needs Calendar.Clock, which the host does not grant"
+    );
+    // Rejected before any handler ran.
+    assert_eq!(denied["trace"], serde_json::json!([]));
+
+    let granted = nitride_cli::observe_calendar(
+        "(today - today) in days;",
+        Arc::new(FixtureCalendar),
+        &["Calendar.Clock".into()],
+    );
+    assert_eq!(granted["values"], serde_json::json!([0.0]), "{granted}");
+
+    // Without the grant the Clock example is skipped, not failed.
+    use nitride_cli::calendar::clock;
+    let outcome = clock::conformance(&LANGUAGE, Arc::new(FixtureCalendar), &[]);
+    assert_eq!(outcome.failed, vec![]);
+    assert_eq!(outcome.skipped, ["example Today() == Today();"]);
+    let outcome = clock::conformance(
+        &LANGUAGE,
+        Arc::new(FixtureCalendar),
+        &["Calendar.Clock".into()],
+    );
+    assert_eq!(outcome, Default::default());
+    assert_eq!(clock::needs("Calendar.Today"), ["Calendar.Clock"]);
+    assert!(clock::needs("Calendar.Later").is_empty());
+}
+
+#[test]
 fn engine_list_operations_report_a_bad_index() {
     let result = nitride_cli::observe_calendar(
         "nth(mondays(span(2026-10-01, 2026-10-02)), 0);",
         Arc::new(FixtureCalendar),
+        &[],
     );
     assert_eq!(result["ok"], false, "{result}");
     assert_eq!(result["error"], "execution");
@@ -68,7 +105,7 @@ fn declared_failures_are_execution_diagnostics_with_their_id() {
             "not a whole number of days",
         ),
     ] {
-        let result = nitride_cli::observe_calendar(source, Arc::new(FixtureCalendar));
+        let result = nitride_cli::observe_calendar(source, Arc::new(FixtureCalendar), &[]);
         assert_eq!(result["ok"], false, "{source}");
         assert_eq!(result["error"], "execution", "{source}");
         assert_eq!(result["code"], code, "{source}");

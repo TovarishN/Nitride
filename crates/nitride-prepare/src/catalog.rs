@@ -23,7 +23,12 @@ enum Provider {
     /// A built-in host handler.
     Host(Name),
     /// Any binding of the module's interface; it may report these failures.
-    Interface { interface: Name, fails: Vec<Name> },
+    /// Its effects need the host's grant.
+    Interface {
+        interface: Name,
+        fails: Vec<Name>,
+        effects: Vec<Name>,
+    },
     /// The engine reads this field of its record input.
     Field(Name),
     /// The engine's `record`, `list`, `length` or `item`.
@@ -63,6 +68,10 @@ enum Member {
     /// A type, and how its values are represented when not f64.
     Type(Name, Option<Shape>),
     Failure {
+        name: Name,
+        message: String,
+    },
+    Effect {
         name: Name,
         message: String,
     },
@@ -252,6 +261,10 @@ impl Decoder<'_> {
                     .tree
                     .field(m, "Fails")
                     .map_or_else(Vec::new, |f| self.names(f, "Failures"));
+                let effects = self
+                    .tree
+                    .field(m, "Effects")
+                    .map_or_else(Vec::new, |f| self.names(f, "Names"));
                 operations.push((
                     Member::Operation {
                         name: self.named(m, "Name"),
@@ -263,6 +276,7 @@ impl Decoder<'_> {
                                 span: name.span,
                             },
                             fails,
+                            effects,
                         },
                     },
                     self.span(m),
@@ -330,6 +344,10 @@ impl Decoder<'_> {
                     }),
                 ),
                 "Failure" => Member::Failure {
+                    name: self.named(m, "Name"),
+                    message: self.string(self.field(m, "Message"), &mut module.errors),
+                },
+                "Effect" => Member::Effect {
                     name: self.named(m, "Name"),
                     message: self.string(self.field(m, "Message"), &mut module.errors),
                 },
@@ -455,6 +473,8 @@ struct Scope<'a> {
     callables: HashMap<String, (usize, [usize; 2], bool)>,
     /// Qualified failure and interface names, and whether each is a failure.
     contracts: HashMap<String, (usize, [usize; 2], bool)>,
+    /// Qualified effect names.
+    effects: HashMap<String, (usize, [usize; 2], bool)>,
     /// Representations other than f64, by qualified type name: a kind such
     /// as `"i64"`, `{"record":[[field, type], …]}` or `{"list":type}`.
     representations: HashMap<String, Value>,
@@ -516,6 +536,7 @@ impl<'a> Scope<'a> {
         let declared = |q: &str| match what {
             "type" => self.types.contains_key(q),
             "failure" => self.contracts.get(q).is_some_and(|c| c.2),
+            "effect" => self.effects.contains_key(q),
             _ => self.callables.get(q).is_some_and(|c| c.2),
         };
         let core = |q: &str| what == "type" && CORE.contains(&q);
@@ -795,6 +816,7 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
         types: HashMap::new(),
         callables: HashMap::new(),
         contracts: HashMap::new(),
+        effects: HashMap::new(),
         representations: HashMap::new(),
     };
     let mut seen: HashMap<&str, usize> = HashMap::new();
@@ -834,6 +856,7 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
                 Member::Overload { name, .. } => (name, 1, false),
                 Member::Failure { name, .. } => (name, 2, true),
                 Member::Interface { name, .. } => (name, 2, false),
+                Member::Effect { name, .. } => (name, 3, false),
                 _ => continue,
             };
             let qualified = format!("{}.{}", module.name.text, name.text);
@@ -844,6 +867,7 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
                     .insert(qualified, (index, name.span))
                     .map(|p| p.1),
                 1 => scope.callables.insert(qualified, entry).map(|p| p.1),
+                3 => scope.effects.insert(qualified, entry).map(|p| p.1),
                 _ => scope.contracts.insert(qualified, entry).map(|p| p.1),
             };
             if let Some(span) = previous {
@@ -924,6 +948,7 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
     let mut calls = Map::new();
     let mut checks = Map::new();
     let mut failures = Map::new();
+    let mut effects = Map::new();
     // (module, qualified name, name span, version, examples), lowered once
     // every operation is known.
     let mut interfaces = Vec::new();
@@ -965,6 +990,9 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
                 Member::Failure { name, message } => {
                     failures.insert(qualify(name), json!(message));
                 }
+                Member::Effect { name, message } => {
+                    effects.insert(qualify(name), json!(message));
+                }
                 Member::Interface {
                     name,
                     version,
@@ -990,13 +1018,26 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
                             )?;
                             operation["handler"] = json!(handler.text);
                         }
-                        Provider::Interface { interface, fails } => {
+                        Provider::Interface {
+                            interface,
+                            fails,
+                            effects,
+                        } => {
                             let fails = fails
                                 .iter()
                                 .map(|f| scope.resolve(module, f, "failure"))
                                 .collect::<Result<Vec<_>, _>>()?;
+                            let effects = effects
+                                .iter()
+                                .map(|e| scope.resolve(module, e, "effect"))
+                                .collect::<Result<Vec<_>, _>>()?;
                             operation["interface"] = json!(qualify(interface));
                             operation["fails"] = json!(fails);
+                            // Recorded only when present, so effect-free
+                            // contracts keep their hash.
+                            if !effects.is_empty() {
+                                operation["effects"] = json!(effects);
+                            }
                         }
                         Provider::Field(field) => {
                             structural(&scope, module, name, &operation, Some(field))?;
@@ -1159,8 +1200,17 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
                 scope.shapes(ty.as_str().unwrap(), &mut used);
             }
         }
-        let contract = json!({"interface":id,"version":version,"representations":used,"operations":members.iter().map(|op| json!({
-            "id":op["id"],"inputs":op["inputs"],"result":op["result"],"fails":op["fails"]})).collect::<Vec<_>>()});
+        let signatures: Vec<Value> = members
+            .iter()
+            .map(|op| {
+                let mut signature = json!({"id":op["id"],"inputs":op["inputs"],"result":op["result"],"fails":op["fails"]});
+                if let Some(effects) = op.get("effects") {
+                    signature["effects"] = effects.clone();
+                }
+                signature
+            })
+            .collect();
+        let contract = json!({"interface":id,"version":version,"representations":used,"operations":signatures});
         let hash = format!("{:x}", Sha256::digest(contract.to_string().as_bytes()));
         let examples = examples
             .iter()
@@ -1181,6 +1231,7 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
         ("calls", calls),
         ("checks", checks),
         ("failures", failures),
+        ("effects", effects),
         ("interfaces", lowered),
         (
             "representations",
@@ -1228,6 +1279,7 @@ pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError>
                 .filter_map(|(member, &span)| match member {
                     Member::Type(name, _) => Some(item("type", name, span)),
                     Member::Failure { name, .. } => Some(item("failure", name, span)),
+                    Member::Effect { name, .. } => Some(item("effect", name, span)),
                     Member::Interface { name, .. } => Some(item("interface", name, span)),
                     Member::Operation { name, .. } => Some(item("operation", name, span)),
                     Member::Overload { name, .. } => Some(item("overload", name, span)),
@@ -1297,7 +1349,10 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
                     members.extend(fields.iter().map(|f| &f.1))
                 }
                 Member::Type(_, Some(Shape::List(element))) => members.push(element),
-                Member::Type(..) | Member::Failure { .. } | Member::Interface { .. } => {}
+                Member::Type(..)
+                | Member::Failure { .. }
+                | Member::Effect { .. }
+                | Member::Interface { .. } => {}
                 Member::Operation { inputs, result, .. } => {
                     members.extend(inputs);
                     members.push(result);

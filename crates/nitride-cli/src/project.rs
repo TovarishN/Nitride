@@ -26,13 +26,26 @@ fn bind<'g>(
     loaded: &Loaded,
     language: &'g Language<'g>,
     manifest: &Path,
+    granted: &[String],
 ) -> Result<Vec<(String, String, Vec<HostBinding<'g>>)>, String> {
     let folder = manifest.parent().unwrap_or(Path::new(""));
+    let operations = &loaded.prepared["catalog"]["operations"];
+    let needs = |op: &str| -> Vec<String> {
+        operations
+            .as_array()
+            .into_iter()
+            .flatten()
+            .filter(|o| o["id"] == op)
+            .flat_map(|o| o["effects"].as_array().cloned().unwrap_or_default())
+            .filter_map(|e| e.as_str().map(str::to_owned))
+            .collect()
+    };
     let mut bound = Vec::new();
     for binding in loaded.prepared["bindings"].as_array().into_iter().flatten() {
         let component = binding["component"].as_str().unwrap_or_default();
         let bindings =
             nitride_wasm::bindings(language, &loaded.prepared, binding, &folder.join(component))?;
+        let bindings = host::grant(bindings, &needs, granted);
         bound.push((
             binding["interface"].as_str().unwrap_or_default().to_owned(),
             component.to_owned(),
@@ -43,12 +56,13 @@ fn bind<'g>(
 }
 
 /// Runs `source` in the project's language: the values of its show
-/// statements, or the first diagnostic.
-pub fn run_project(manifest: &Path, source: &str) -> Result<Value, String> {
+/// statements, or the first diagnostic. Components' operations that need
+/// effects outside `granted` are denied.
+pub fn run_project(manifest: &Path, source: &str, granted: &[String]) -> Result<Value, String> {
     let loaded = load(manifest)?;
     let language = loaded.language.language();
     let mut bindings = host::bindings(language);
-    for (_, _, component) in bind(&loaded, language, manifest)? {
+    for (_, _, component) in bind(&loaded, language, manifest, granted)? {
         bindings.extend(component);
     }
     let error = |e: Diagnostic| {
@@ -126,21 +140,23 @@ fn examples(interface: &Value) -> &'static [Example<'static>] {
 }
 
 /// Runs each bound interface's examples against its component, with the
-/// engine's handlers for the language's other operations.
-pub fn conform_project(manifest: &Path) -> Result<Value, String> {
+/// engine's handlers for the language's other operations. Examples that
+/// need effects outside `granted` are skipped.
+pub fn conform_project(manifest: &Path, granted: &[String]) -> Result<Value, String> {
     let loaded = load(manifest)?;
     let language = loaded.language.language();
     let mut reports = Vec::new();
-    for (interface, component, bindings) in bind(&loaded, language, manifest)? {
+    for (interface, component, bindings) in bind(&loaded, language, manifest, granted)? {
         let mut all = host::bindings(language);
         all.extend(bindings);
         let examples = examples(&loaded.prepared["catalog"]["interfaces"][&interface]);
-        let failed = host::conform(language, &all, examples);
+        let outcome = host::conformance(language, &all, examples);
         reports.push(json!({
             "interface": interface,
             "component": component,
             "examples": examples.len(),
-            "failed": failed
+            "skipped": outcome.skipped,
+            "failed": outcome.failed
                 .iter()
                 .map(|(example, why)| json!({"example": example, "why": why}))
                 .collect::<Vec<_>>(),

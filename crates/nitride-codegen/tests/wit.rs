@@ -28,9 +28,17 @@ fn calendar_exports_its_interface_as_a_world() {
     )))
     .unwrap();
     let documents = wit(&prepared.data.to_string()).unwrap();
-    assert_eq!(documents.len(), 1);
-    let (id, document) = &documents[0];
-    assert_eq!(id, "Calendar.Gregorian");
+    let ids: Vec<&str> = documents.iter().map(|(id, _)| id.as_str()).collect();
+    assert_eq!(ids, ["Calendar.Clock", "Calendar.Gregorian"]);
+    // Effects are documented on the functions that need them.
+    assert!(
+        documents[0]
+            .1
+            .contains("  /// Effects the host grants: Clock.\n  today: func() -> date;"),
+        "{}",
+        documents[0].1
+    );
+    let (_, document) = &documents[1];
     let hash = prepared.data["catalog"]["interfaces"]["Calendar.Gregorian"]["hash"]
         .as_str()
         .unwrap();

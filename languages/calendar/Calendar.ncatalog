@@ -14,6 +14,17 @@ catalog module Calendar
   failure OutOfRange "date out of range";
   failure PartialDay "not a whole number of days";
 
+  effect Clock "reads the current date";
+
+  // Today's date: a host that does not grant Clock rejects programs that ask.
+  interface Clock version 1
+  {
+    operation Today() : Date effect Clock;
+
+    // Examples run against one interface's binding, so this one uses Today alone.
+    example Today() == Today();
+  }
+
   interface Gregorian version 3
   {
     operation ParseDate(Text) : Date fails InvalidDate;

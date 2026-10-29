@@ -382,15 +382,82 @@ fn evaluate(
     }
 }
 
+/// Replaces each binding whose operation needs an effect not in `granted`
+/// with a denied one. `needs` gives an operation's effects by its id.
+pub fn grant<'g>(
+    bindings: Vec<HostBinding<'g>>,
+    needs: &dyn Fn(&str) -> Vec<String>,
+    granted: &[String],
+) -> Vec<HostBinding<'g>> {
+    bindings
+        .into_iter()
+        .map(|binding| {
+            let missing: Vec<String> = needs(binding.signature.id)
+                .into_iter()
+                .filter(|effect| !granted.contains(effect))
+                .collect();
+            if missing.is_empty() {
+                binding
+            } else {
+                HostBinding {
+                    signature: binding.signature,
+                    handler: HostHandler::Denied(missing),
+                }
+            }
+        })
+        .collect()
+}
+
+/// Whether an example calls an operation whose binding is denied.
+fn denied(bindings: &[HostBinding<'_>], expr: &ExampleExpr<'_>) -> bool {
+    match expr {
+        ExampleExpr::Call { operation, args } => {
+            bindings.iter().any(|b| {
+                b.signature.id == *operation && matches!(b.handler, HostHandler::Denied(_))
+            }) || args.iter().any(|a| denied(bindings, a))
+        }
+        _ => false,
+    }
+}
+
+/// The outcome of running an interface's examples.
+#[derive(Debug, Default, PartialEq)]
+pub struct Conformance<'e> {
+    /// `(example, why)` for each example the bindings fail.
+    pub failed: Vec<(&'e str, String)>,
+    /// Examples not run: they need effects the host did not grant.
+    pub skipped: Vec<&'e str>,
+}
+
 /// Runs interface examples through `bindings`: `(example, why)` for each one
-/// they fail. Empty when the bindings conform.
+/// they fail. Empty when the bindings conform. Examples that need ungranted
+/// effects are skipped.
 pub fn conform<'e>(
     language: &Language<'_>,
     bindings: &[HostBinding<'_>],
     examples: &'e [Example<'e>],
 ) -> Vec<(&'e str, String)> {
+    conformance(language, bindings, examples).failed
+}
+
+/// Runs interface examples through `bindings`, as `conform`, and also says
+/// which were skipped.
+pub fn conformance<'e>(
+    language: &Language<'_>,
+    bindings: &[HostBinding<'_>],
+    examples: &'e [Example<'e>],
+) -> Conformance<'e> {
     let mut failed = Vec::new();
+    let mut skipped = Vec::new();
     for example in examples {
+        let expected = match &example.expected {
+            Expected::Equals(expected) => Some(expected),
+            Expected::Fails(_) => None,
+        };
+        if denied(bindings, &example.value) || expected.is_some_and(|e| denied(bindings, e)) {
+            skipped.push(example.source);
+            continue;
+        }
         let value = evaluate(language, bindings, &example.value);
         let why = match (&example.expected, value) {
             (Expected::Equals(expected), Ok(value)) => {
@@ -411,7 +478,7 @@ pub fn conform<'e>(
             failed.push((example.source, why));
         }
     }
-    failed
+    Conformance { failed, skipped }
 }
 
 /// Today as a day number (days since 0001-01-01), in UTC.

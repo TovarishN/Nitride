@@ -17,9 +17,12 @@ fn manifest() -> PathBuf {
 #[test]
 fn the_component_runs_programs_as_the_rust_implementation_does() {
     let sample = std::fs::read_to_string(calendar().join("sample.calendar")).unwrap();
-    let component = nitride_cli::run_project(&manifest(), &sample).unwrap();
-    let native =
-        nitride_cli::observe_calendar(&sample, Arc::new(nitride_cli::calendar::FixtureCalendar));
+    let component = nitride_cli::run_project(&manifest(), &sample, &[]).unwrap();
+    let native = nitride_cli::observe_calendar(
+        &sample,
+        Arc::new(nitride_cli::calendar::FixtureCalendar),
+        &[],
+    );
     assert_eq!(component["ok"], true, "{component}");
     assert_eq!(component["values"], native["values"]);
     assert_eq!(component["trace"], native["trace"]);
@@ -29,7 +32,7 @@ fn the_component_runs_programs_as_the_rust_implementation_does() {
         ("0001-01-01 - 1 days;", "Calendar.OutOfRange"),
         ("2024-01-01 + 0.5 days;", "Calendar.PartialDay"),
     ] {
-        let result = nitride_cli::run_project(&manifest(), source).unwrap();
+        let result = nitride_cli::run_project(&manifest(), source, &[]).unwrap();
         assert_eq!(result["ok"], false, "{source}");
         assert_eq!(result["code"], code, "{source}");
     }
@@ -37,13 +40,14 @@ fn the_component_runs_programs_as_the_rust_implementation_does() {
 
 #[test]
 fn the_component_conforms() {
-    let reports = nitride_cli::conform_project(&manifest()).unwrap();
+    let reports = nitride_cli::conform_project(&manifest(), &[]).unwrap();
     assert_eq!(
         reports,
         serde_json::json!([{
             "interface": "Calendar.Gregorian",
             "component": "gregorian.wasm",
             "examples": 13,
+            "skipped": [],
             "failed": [],
         }])
     );
