@@ -1,6 +1,7 @@
 //! Rust for a catalog's interfaces: per interface, a trait an implementation
-//! fills in, its declared failures, a binder that turns an implementation into
-//! host bindings, and the interface's examples as a conformance run.
+//! fills in, its declared failures, the records its signatures use, a binder
+//! that turns an implementation into host bindings, and the interface's
+//! examples as a conformance run.
 use crate::{array, quoted, strings, text};
 use serde_json::Value;
 use std::fmt::Write;
@@ -43,43 +44,154 @@ fn parameters(inputs: &[&str]) -> Vec<String> {
         .collect()
 }
 
-/// How values of `ty` cross the binding: `source` for `Core.Text`, the
-/// exact spelling a grammar passes, else its catalog representation.
-fn representation<'a>(catalog: &'a Value, ty: &str) -> &'a str {
+/// How values of a type cross a binding.
+enum Shape<'a> {
+    /// `Core.Text`: the exact spelling a grammar passes.
+    Source,
+    F64,
+    I64,
+    Bool,
+    Text,
+    Record(Vec<(&'a str, &'a str)>),
+    List(&'a str),
+}
+
+fn shape<'a>(catalog: &'a Value, ty: &str) -> Result<Shape<'a>, String> {
     if ty == crate::TEXT {
-        return "source";
+        return Ok(Shape::Source);
     }
-    catalog["representations"][ty].as_str().unwrap_or("f64")
+    let representation = &catalog["representations"][ty];
+    Ok(match representation {
+        Value::Null => Shape::F64,
+        Value::String(kind) => match kind.as_str() {
+            "i64" => Shape::I64,
+            "bool" => Shape::Bool,
+            "text" => Shape::Text,
+            _ => Shape::F64,
+        },
+        _ => match (representation.get("record"), representation.get("list")) {
+            (Some(fields), _) => Shape::Record(
+                array(fields)?
+                    .iter()
+                    .map(|f| Ok((text(&f[0])?, text(&f[1])?)))
+                    .collect::<Result<_, String>>()?,
+            ),
+            (_, Some(element)) => Shape::List(text(element)?),
+            _ => return Err(format!("invalid representation of {ty}")),
+        },
+    })
 }
 
-/// The Rust parameter type of a representation.
-fn parameter(representation: &str) -> &'static str {
-    match representation {
-        "source" | "text" => "&str",
-        "i64" => "i64",
-        "bool" => "bool",
-        _ => "f64",
-    }
+/// The suffix of a type's converters: `Calendar.Date` → `calendar_date`.
+fn key(ty: &str) -> String {
+    ty.split('.').map(snake).collect::<Vec<_>>().join("_")
 }
 
-/// The Rust result type of a representation, and the `Datum` it becomes.
-fn result(representation: &str) -> (&'static str, &'static str) {
-    match representation {
-        "text" => ("String", "|t| Datum::Text(t.into())"),
-        "i64" => ("i64", "Datum::Integer"),
-        "bool" => ("bool", "Datum::Boolean"),
-        _ => ("f64", "Datum::Number"),
-    }
+/// The owned Rust type of a type's values.
+fn rust(catalog: &Value, ty: &str) -> Result<String, String> {
+    Ok(match shape(catalog, ty)? {
+        Shape::Source | Shape::Text => "String".into(),
+        Shape::F64 => "f64".into(),
+        Shape::I64 => "i64".into(),
+        Shape::Bool => "bool".into(),
+        Shape::Record(_) => tail(ty).into(),
+        Shape::List(element) => format!("Vec<{}>", rust(catalog, element)?),
+    })
 }
 
-/// The `Datum` variant that carries a representation's values.
-fn variant(representation: &str) -> &'static str {
-    match representation {
-        "text" => "Text",
-        "i64" => "Integer",
-        "bool" => "Boolean",
-        _ => "Number",
+/// `ty` and every type inside it, each once, components first.
+fn closure<'a>(catalog: &'a Value, ty: &'a str, into: &mut Vec<&'a str>) -> Result<(), String> {
+    if into.contains(&ty) || ty == crate::TEXT {
+        return Ok(());
     }
+    match shape(catalog, ty)? {
+        Shape::Record(fields) => {
+            for (_, field) in fields {
+                closure(catalog, field, into)?;
+            }
+        }
+        Shape::List(element) => closure(catalog, element, into)?,
+        _ => {}
+    }
+    into.push(ty);
+    Ok(())
+}
+
+/// A record's struct, and `get_`/`put_` converters between a type's values
+/// and `Datum`.
+fn converters(catalog: &Value, ty: &str, out: &mut String) -> Result<(), String> {
+    let k = key(ty);
+    let t = rust(catalog, ty)?;
+    let (get, put) = match shape(catalog, ty)? {
+        Shape::Source => return Ok(()),
+        Shape::F64 => (
+            "match d { Datum::Number(v) => Some(*v), _ => None }".to_string(),
+            "Datum::Number(v)".to_string(),
+        ),
+        Shape::I64 => (
+            "match d { Datum::Integer(v) => Some(*v), _ => None }".into(),
+            "Datum::Integer(v)".into(),
+        ),
+        Shape::Bool => (
+            "match d { Datum::Boolean(v) => Some(*v), _ => None }".into(),
+            "Datum::Boolean(v)".into(),
+        ),
+        Shape::Text => (
+            "match d { Datum::Text(v) => Some(v.to_string()), _ => None }".into(),
+            "Datum::Text(v.into())".into(),
+        ),
+        Shape::Record(fields) => {
+            writeln!(
+                out,
+                "    /// `{ty}`.\n    #[derive(Debug, Clone, PartialEq)]\n    pub struct {t} {{"
+            )
+            .unwrap();
+            for (name, field) in &fields {
+                writeln!(
+                    out,
+                    "        pub {}: {},",
+                    snake(name),
+                    rust(catalog, field)?
+                )
+                .unwrap();
+            }
+            writeln!(out, "    }}\n").unwrap();
+            let gets = fields
+                .iter()
+                .enumerate()
+                .map(|(i, (name, field))| format!("{}: get_{}(&f[{i}])?", snake(name), key(field)))
+                .collect::<Vec<_>>()
+                .join(", ");
+            let puts = fields
+                .iter()
+                .map(|(name, field)| format!("put_{}(v.{})", key(field), snake(name)))
+                .collect::<Vec<_>>()
+                .join(", ");
+            (
+                format!(
+                    "match d {{ Datum::Record(f) if f.len() == {} => Some({t} {{ {gets} }}), _ => None }}",
+                    fields.len()
+                ),
+                format!("Datum::Record(vec![{puts}].into())"),
+            )
+        }
+        Shape::List(element) => (
+            format!(
+                "match d {{ Datum::List(items) => items.iter().map(get_{}).collect(), _ => None }}",
+                key(element)
+            ),
+            format!(
+                "Datum::List(v.into_iter().map(put_{}).collect())",
+                key(element)
+            ),
+        ),
+    };
+    writeln!(
+        out,
+        "    #[allow(dead_code)]\n    fn get_{k}(d: &Datum) -> Option<{t}> {{\n        {get}\n    }}\n\n    #[allow(dead_code)]\n    fn put_{k}(v: {t}) -> Datum {{\n        {put}\n    }}\n"
+    )
+    .unwrap();
+    Ok(())
 }
 
 fn expr(value: &Value) -> Result<String, String> {
@@ -144,6 +256,16 @@ pub fn interfaces(input: &str) -> Result<String, String> {
                 }
             }
         }
+        // Every type the signatures use, with the types inside records and lists.
+        let mut types = Vec::new();
+        for op in &members {
+            for ty in strings(&op["inputs"])?
+                .into_iter()
+                .chain([text(&op["result"])?])
+            {
+                closure(catalog, ty, &mut types)?;
+            }
+        }
         let failure = |f: &str| tail(f).to_string();
 
         writeln!(out, "\n/// `{id}` version {version}.").unwrap();
@@ -200,6 +322,10 @@ pub fn interfaces(input: &str) -> Result<String, String> {
         }
         writeln!(out, "            }}\n        }}\n    }}\n").unwrap();
 
+        for ty in &types {
+            converters(catalog, ty, &mut out)?;
+        }
+
         writeln!(
             out,
             "    /// Implemented once per host; any conforming implementation can run the language.\n    pub trait {name}: Send + Sync + 'static {{"
@@ -209,12 +335,17 @@ pub fn interfaces(input: &str) -> Result<String, String> {
             let inputs = strings(&op["inputs"])?;
             let fails = strings(&op["fails"])?;
             let params = parameters(&inputs);
-            let typed: Vec<String> = params
+            let typed = params
                 .iter()
                 .zip(&inputs)
-                .map(|(p, ty)| format!("{p}: {}", parameter(representation(catalog, ty))))
-                .collect();
-            let (returns, _) = result(representation(catalog, text(&op["result"])?));
+                .map(|(p, ty)| {
+                    Ok(match shape(catalog, ty)? {
+                        Shape::Source | Shape::Text => format!("{p}: &str"),
+                        _ => format!("{p}: {}", rust(catalog, ty)?),
+                    })
+                })
+                .collect::<Result<Vec<_>, String>>()?;
+            let returns = rust(catalog, text(&op["result"])?)?;
             let fails_doc = if fails.is_empty() {
                 String::new()
             } else {
@@ -274,35 +405,52 @@ pub fn interfaces(input: &str) -> Result<String, String> {
                 .collect::<Vec<_>>()
                 .join(", ");
             let method = snake(tail(text(&op["id"])?));
-            let (_, wrap) = result(representation(catalog, text(&op["result"])?));
-            let (pattern, call) = if inputs.first() == Some(&crate::TEXT) {
-                (
-                    format!("Inputs::Text({})", params[0]),
-                    format!("i.{method}({}).map({wrap})", params[0]),
+            let put = format!("put_{}", key(text(&op["result"])?));
+            let body = if inputs.first() == Some(&crate::TEXT) {
+                format!(
+                    "let Inputs::Text({p}) = inputs else {{ return Err(mismatch()) }};
+                    checked(i.{method}({p}).map({put}), &[{fails}])",
+                    p = params[0]
                 )
             } else {
-                // Matched through a reference: copy scalars, lend text.
-                let mut patterns = Vec::new();
-                let mut args = Vec::new();
-                for (p, ty) in params.iter().zip(&inputs) {
-                    let representation = representation(catalog, ty);
-                    patterns.push(format!("Datum::{}({p})", variant(representation)));
-                    args.push(if representation == "text" {
-                        p.clone()
-                    } else {
-                        format!("*{p}")
-                    });
+                let mut converted = String::new();
+                if !params.is_empty() {
+                    converted = format!(
+                        "\n                    let ({},) = ({},) else {{ return Err(mismatch()) }};",
+                        params
+                            .iter()
+                            .map(|p| format!("Some({p})"))
+                            .collect::<Vec<_>>()
+                            .join(", "),
+                        params
+                            .iter()
+                            .zip(&inputs)
+                            .map(|(p, ty)| format!("get_{}({p})", key(ty)))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    );
                 }
-                (
-                    format!("Inputs::Values([{}])", patterns.join(", ")),
-                    format!("i.{method}({}).map({wrap})", args.join(", ")),
+                let args = params
+                    .iter()
+                    .zip(&inputs)
+                    .map(|(p, ty)| {
+                        Ok(match shape(catalog, ty)? {
+                            Shape::Text => format!("&{p}"),
+                            _ => p.clone(),
+                        })
+                    })
+                    .collect::<Result<Vec<_>, String>>()?;
+                format!(
+                    "let Inputs::Values([{}]) = inputs else {{ return Err(mismatch()) }};{converted}
+                    checked(i.{method}({}).map({put}), &[{fails}])",
+                    params.join(", "),
+                    args.join(", ")
                 )
             };
             writeln!(
                 out,
                 "                {} => HostBinding::contract(*signature, CONTRACT, move |inputs| {{
-                    let {pattern} = inputs else {{ return Err(mismatch()) }};
-                    checked({call}, &[{fails}])
+                    {body}
                 }}),",
                 quoted(text(&op["id"])?)
             )
@@ -325,7 +473,10 @@ pub fn interfaces(input: &str) -> Result<String, String> {
                 let expected = if let Some(f) = e.get("fails") {
                     format!("nitride_core::host::Expected::Fails({})", quoted(text(f)?))
                 } else {
-                    format!("nitride_core::host::Expected::Equals({})", expr(&e["equals"])?)
+                    format!(
+                        "nitride_core::host::Expected::Equals({})",
+                        expr(&e["equals"])?
+                    )
                 };
                 Ok(format!(
                     "        nitride_core::host::Example {{ source: {}, value: {}, expected: {expected} }},",
@@ -341,9 +492,9 @@ pub fn interfaces(input: &str) -> Result<String, String> {
 {}
     ];
 
-    /// Runs the examples through `implementation`, with the built-in host
-    /// handlers for the language's other operations: `(example, why)` for
-    /// each one it fails.
+    /// Runs the examples through `implementation`, with the engine's handlers
+    /// for the language's other operations: `(example, why)` for each one it
+    /// fails.
     pub fn conform(language: &Language<'_>, implementation: Arc<dyn {name}>) -> Vec<(&'static str, String)> {{
         let mut all = nitride_core::host::bindings(language);
         all.extend(bindings(language, implementation));

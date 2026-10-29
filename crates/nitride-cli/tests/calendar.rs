@@ -26,10 +26,31 @@ fn runs_through_the_interface_binding() {
         Arc::new(FixtureCalendar),
     );
     assert_eq!(result["ok"], true, "{result}");
+    // Records and lists print as arrays.
     assert_eq!(
         result["values"],
-        serde_json::json!([day("2026-10-19"), 81.0, "Monday", true])
+        serde_json::json!([
+            day("2026-10-19"),
+            81.0,
+            "Monday",
+            true,
+            4.0,
+            day("2026-10-12"),
+            [day("2026-10-05"), day("2026-10-12")]
+        ])
     );
+}
+
+#[test]
+fn engine_list_operations_report_a_bad_index() {
+    let result = nitride_cli::observe_calendar(
+        "nth(mondays(span(2026-10-01, 2026-10-02)), 0);",
+        Arc::new(FixtureCalendar),
+    );
+    assert_eq!(result["ok"], false, "{result}");
+    assert_eq!(result["error"], "execution");
+    assert_eq!(result["message"], "index 0 is outside a list of 0");
+    assert!(result.get("code").is_none());
 }
 
 #[test]
@@ -101,7 +122,7 @@ fn preflight_requires_a_binding_of_the_declared_contract() {
 
 #[test]
 fn the_fixture_conforms() {
-    assert_eq!(gregorian::EXAMPLES.len(), 10);
+    assert_eq!(gregorian::EXAMPLES.len(), 13);
     assert_eq!(
         gregorian::conform(&LANGUAGE, Arc::new(FixtureCalendar)),
         vec![]
@@ -132,6 +153,10 @@ impl Gregorian for Sloppy {
     fn is_leap_year(&self, _: i64) -> Result<bool, GregorianFailure> {
         Ok(true)
     }
+    fn mondays(&self, span: gregorian::Span) -> Result<Vec<i64>, GregorianFailure> {
+        // Only the first day, Monday or not.
+        Ok(vec![span.start])
+    }
 }
 
 #[test]
@@ -143,7 +168,19 @@ fn conformance_names_each_example_an_implementation_fails() {
             .find(|(source, _)| source.contains(example))
             .map(|(_, why)| why.as_str())
     };
-    assert_eq!(failed.len(), 8, "{failed:?}");
+    assert_eq!(failed.len(), 11, "{failed:?}");
+    assert_eq!(
+        why("== Pair("),
+        Some(
+            format!(
+                "got [{}], expected [{}, {}]",
+                day("2024-01-02"),
+                day("2024-01-08"),
+                day("2024-01-15")
+            )
+            .as_str()
+        )
+    );
     assert_eq!(
         why("Later(ParseDate(\"2024-01-01\"), Days(3))"),
         Some(format!("got {}, expected {}", day("2024-01-05"), day("2024-01-04")).as_str())
@@ -183,6 +220,8 @@ fn interface_rust_is_generated_from_the_catalog() {
         "fn between(&self, date_1: i64, date_2: i64) -> Result<f64, GregorianFailure>;",
         "fn day_of_week(&self, date: i64) -> Result<String, GregorianFailure>;",
         "fn is_leap_year(&self, date: i64) -> Result<bool, GregorianFailure>;",
+        "fn mondays(&self, span: Span) -> Result<Vec<i64>, GregorianFailure>;",
+        "pub struct Span {\n        pub start: i64,\n        pub end: i64,\n    }",
     ] {
         assert!(rust.contains(signature), "{signature}");
     }

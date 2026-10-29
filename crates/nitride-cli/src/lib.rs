@@ -81,6 +81,14 @@ pub mod calendar {
             let y = year(date);
             Ok(y % 4 == 0 && (y % 100 != 0 || y % 400 == 0))
         }
+        fn mondays(&self, span: gregorian::Span) -> Result<Vec<i64>, Failure> {
+            if span.start < 0 || span.end > LAST {
+                return Err(Failure::OutOfRange);
+            }
+            // Day numbers that are multiples of 7 are Mondays.
+            let first = span.start + (7 - span.start.rem_euclid(7)) % 7;
+            Ok((first..=span.end).step_by(7).collect())
+        }
     }
 }
 pub mod calls {
@@ -227,14 +235,17 @@ pub fn observe_dates(source: &str, today: f64) -> Value {
     )
 }
 
-/// A runtime value as JSON: numbers (integers too) as numbers, then booleans
-/// and strings.
+/// A runtime value as JSON: numbers (integers too) as numbers, booleans,
+/// strings, and records (fields in order) and lists as arrays.
 pub fn datum(value: &Datum) -> Value {
     match value {
         Datum::Number(n) => json!(n),
         Datum::Integer(i) => json!(i),
         Datum::Boolean(b) => json!(b),
         Datum::Text(t) => json!(t),
+        Datum::Record(items) | Datum::List(items) => {
+            Value::Array(items.iter().map(datum).collect())
+        }
     }
 }
 

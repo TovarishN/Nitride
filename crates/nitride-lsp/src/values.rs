@@ -22,7 +22,7 @@ fn label(value: &Datum, ty: &str) -> String {
         Datum::Number(n) => number_label(*n, ty),
         Datum::Integer(i) => number_label(*i as f64, ty),
         Datum::Boolean(b) => format!("= {b}"),
-        Datum::Text(t) => format!("= {t:?}"),
+        other => format!("= {other}"),
     }
 }
 

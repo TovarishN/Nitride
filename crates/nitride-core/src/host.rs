@@ -205,13 +205,52 @@ pub fn describe(name: &str) -> Option<&'static str> {
         .or_else(|| predicate(name).map(|h| h.description))
 }
 
+/// The engine's record and list operations, by the handler name codegen
+/// stores: `record` and `list` build one from their inputs, `field:N` reads
+/// a record's Nth field, `length` counts a list and `item` indexes it.
+pub fn structure(name: &str) -> Option<Box<ValuesHandler>> {
+    fn index(n: f64, len: usize) -> Result<usize, String> {
+        if n.fract() == 0.0 && n >= 0.0 && (n as usize) < len {
+            Ok(n as usize)
+        } else {
+            Err(format!("index {n} is outside a list of {len}"))
+        }
+    }
+    let shape = || "inputs do not match the signature".to_owned();
+    Some(match name {
+        "record" => Box::new(|a: &[Datum]| Ok(Datum::Record(a.into()))),
+        "list" => Box::new(|a: &[Datum]| Ok(Datum::List(a.into()))),
+        "length" => Box::new(move |a: &[Datum]| match a {
+            [Datum::List(items)] => Ok(Datum::Number(items.len() as f64)),
+            _ => Err(shape()),
+        }),
+        "item" => Box::new(move |a: &[Datum]| match a {
+            [Datum::List(items), Datum::Number(n)] => Ok(items[index(*n, items.len())?].clone()),
+            _ => Err(shape()),
+        }),
+        _ => {
+            let field: usize = name.strip_prefix("field:")?.parse().ok()?;
+            Box::new(move |a: &[Datum]| match a {
+                [Datum::Record(fields)] => fields.get(field).cloned().ok_or_else(shape),
+                _ => Err(shape()),
+            })
+        }
+    })
+}
+
 /// A binding for every catalog operation whose handler is known.
 pub fn bindings<'g>(language: &'g Language<'g>) -> Vec<HostBinding<'g>> {
     language
         .operations
         .iter()
         .zip(language.handlers)
-        .filter_map(|(signature, name)| Some(operation(name)?.binding(*signature)))
+        .filter_map(|(signature, name)| match operation(name) {
+            Some(handler) => Some(handler.binding(*signature)),
+            None => Some(HostBinding {
+                signature: *signature,
+                handler: HostHandler::Values(structure(name)?),
+            }),
+        })
         .collect()
 }
 

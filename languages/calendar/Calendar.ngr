@@ -6,7 +6,7 @@ syntax module Calendar
   token Digit = ['0'..'9'];
   token Date = Digit Digit Digit Digit "-" Digit Digit "-" Digit Digit;
   token Number = Digit+ ("." Digit+)?;
-  token Identifier = ['a'..'z' 'A'..'Z' '_'] ['a'..'z' 'A'..'Z' '0'..'9' '_']* except "let" "days" "in" "weekday" "leap";
+  token Identifier = ['a'..'z' 'A'..'Z' '_'] ['a'..'z' 'A'..'Z' '0'..'9' '_']* except "let" "days" "in" "weekday" "leap" "span" "mondays" "count" "nth" "start" "end";
   syntax Program = Statements:Statement*;
   syntax Statement = Let / Show;
   syntax Let = "let" Name:Identifier "=" Value:Expr ";" declares value Name sequential;
@@ -19,6 +19,12 @@ syntax module Calendar
     | Paren = "(" Inner:Expr ")"
     | Weekday = "weekday" "(" Of:Expr ")" lowers Calendar.DayOfWeek(Of)
     | Leap = "leap" "(" Of:Expr ")" lowers Calendar.IsLeapYear(Of)
+    | SpanOf = "span" "(" From:Expr "," To:Expr ")" lowers Calendar.SpanOf(From, To)
+    | Start = "start" "(" Of:Expr ")" lowers Calendar.SpanStart(Of)
+    | End = "end" "(" Of:Expr ")" lowers Calendar.SpanEnd(Of)
+    | Mondays = "mondays" "(" Of:Expr ")" lowers Calendar.Mondays(Of)
+    | Count = "count" "(" Of:Expr ")" lowers Calendar.Count(Of)
+    | Nth = "nth" "(" Of:Expr "," Index:Expr ")" lowers Calendar.Nth(Of, Index)
     | Days = Amount:Expr "days" precedence 30 lowers Calendar.Days(Amount)
     | InDays = Span:Expr "in" "days" precedence 5 lowers Calendar.InDays(Span)
     | Add = Left:Expr "+" Right:Expr precedence 10 left lowers Calendar.Plus(Left, Right)

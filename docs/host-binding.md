@@ -3,8 +3,7 @@
 Status: draft for review. Adds interfaces to `.ncatalog`, a binding language
 (`.nbind`) that maps an interface onto a concrete implementation, and
 conformance examples that check every implementation against its interface.
-Phases 1 to 3 are implemented, phase 3 without records and lists (see
-Phases); the rest is not.
+Phases 1 to 3b are implemented (see Phases); the rest is not.
 
 ## Why
 
@@ -326,8 +325,29 @@ lists its bindings and their last conformance result.
      ten examples; the interface is `version 2`. Dates is unchanged.
    - Not measured: values are now 24 bytes rather than 8, and arguments are
      cloned per call. The memory evidence in `docs/` predates this.
-3b. Records and lists: declarations, construction and field access in
-   catalogs and grammars.
+3b. Records and lists. Done, in catalogs only; grammars reach them through
+   ordinary `lowers` of catalog operations, so `.ngr` and the .NET exporter
+   are unchanged. What was built:
+   - `type Span = record { start: Date; end: Date; };` and
+     `type Dates = list of Date;`. Fields and elements may be any type but
+     `Text`, records and lists included; they resolve once every type is
+     known. The `representations` section records
+     `{"record":[[field, type], …]}` and `{"list":type}`, and a contract hash
+     covers the shapes inside the types its signatures use.
+   - Engine operations, checked against the types they work on:
+     `= record` (inputs are the result's fields in order), `= field f`,
+     `= list` (inputs are elements), `= length` (list to `Scalar`) and
+     `= item` (list and `Scalar` index to element). Codegen stores a field
+     as `field:N`; `nitride_core::host::structure` implements them as
+     `HostHandler::Values`, and a bad index is an execution error.
+   - `Datum::Record` and `Datum::List` hold `Arc<[Datum]>`. The CLI prints
+     both as JSON arrays (records have no field names at run time).
+   - Generated interfaces declare a struct per record type, use `Vec<T>` for
+     lists, and convert through per-type `get_`/`put_` functions.
+   - Calendar: `Span`, `Dates`, the engine operations, and
+     `Mondays(Span) : Dates` with three more examples (interface
+     `version 3`); `span(…)`, `start(…)`, `end(…)`, `mondays(…)`,
+     `count(…)` and `nth(…, i)` in the grammar.
 4. `.nbind` with `wasm component` bindings and WIT output. With `f64` values a
    `rust crate` binding adds nothing over implementing the generated trait,
    so `.nbind` starts here, where it carries the type mapping.

@@ -5,6 +5,7 @@ pub type Handler = dyn Fn(&[f64]) -> Result<f64, String> + Send + Sync;
 pub type TextHandler = dyn Fn(&str) -> Result<f64, String> + Send + Sync;
 pub type ValueProvider = dyn Fn() -> Result<f64, String> + Send + Sync;
 pub type ContractHandler = dyn Fn(Inputs<'_>) -> Result<Datum, Failure> + Send + Sync;
+pub type ValuesHandler = dyn Fn(&[Datum]) -> Result<Datum, String> + Send + Sync;
 
 /// A runtime value. A type's catalog representation decides which kind its
 /// values are; a type without one is `Number`.
@@ -14,6 +15,9 @@ pub enum Datum {
     Integer(i64),
     Boolean(bool),
     Text(Box<str>),
+    /// Field values in declaration order.
+    Record(std::sync::Arc<[Datum]>),
+    List(std::sync::Arc<[Datum]>),
 }
 
 impl Datum {
@@ -32,6 +36,20 @@ impl std::fmt::Display for Datum {
             Datum::Integer(i) => write!(f, "{i}"),
             Datum::Boolean(b) => write!(f, "{b}"),
             Datum::Text(t) => write!(f, "{t:?}"),
+            Datum::Record(fields) => {
+                write!(f, "(")?;
+                for (i, field) in fields.iter().enumerate() {
+                    write!(f, "{}{field}", if i > 0 { ", " } else { "" })?;
+                }
+                write!(f, ")")
+            }
+            Datum::List(items) => {
+                write!(f, "[")?;
+                for (i, item) in items.iter().enumerate() {
+                    write!(f, "{}{item}", if i > 0 { ", " } else { "" })?;
+                }
+                write!(f, "]")
+            }
         }
     }
 }
@@ -61,6 +79,9 @@ pub enum HostHandler {
     Numbers(Box<Handler>),
     /// Receives the exact source spelling of the operation's single `Core.Text` input.
     Text(Box<TextHandler>),
+    /// Takes and returns values of any kind: the engine's record and list
+    /// operations.
+    Values(Box<ValuesHandler>),
     /// Implements an interface operation of the contract `M.I@hash`, which
     /// must be the one the language's catalog declares.
     Contract {
@@ -125,6 +146,7 @@ impl<'g> HostBinding<'g> {
                 handler(text).map(Datum::Number).map_err(plain)
             }
             (HostHandler::Text(_), None) => Err(plain("text handler without text".into())),
+            (HostHandler::Values(handler), _) => handler(inputs).map_err(plain),
             (HostHandler::Contract { run, .. }, _) => {
                 let inputs = text.map_or(Inputs::Values(inputs), Inputs::Text);
                 run(inputs).map_err(|failure| CallError {
@@ -285,7 +307,7 @@ pub fn preflight_with_values(
                         (HostHandler::Contract { .. }, declared) => declared.is_some(),
                         (_, Some(_)) => false,
                         (HostHandler::Text(_), None) => text_input,
-                        (HostHandler::Numbers(_), None) => !text_input,
+                        (HostHandler::Numbers(_) | HostHandler::Values(_), None) => !text_input,
                     };
                     if matches.len() != 1
                         || matches[0].signature != *signature

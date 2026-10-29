@@ -482,3 +482,112 @@ fn representation_errors_carry_the_catalog_span() {
         assert_eq!(&text[error.span[0]..error.span[1]], at, "{to}");
     }
 }
+
+const SHAPES: &str = "catalog module S {
+  type Day = represented i64;
+  type Span = record { start: Day; end: Day; };
+  type Days = list of Day;
+  operation SpanOf(Day, Day) : Span = record;
+  operation Start(Span) : Day = field start;
+  operation Pair(Day, Day) : Days = list;
+  operation Count(Days) : Scalar = length;
+  operation Nth(Days, Scalar) : Day = item;
+  interface Cal version 1 { operation Within(Span) : Days; }
+}";
+
+#[test]
+fn records_and_lists_lower_with_their_engine_operations() {
+    let lowered = lower(&[("S.ncatalog", SHAPES)]).unwrap();
+    assert_eq!(
+        lowered["representations"],
+        json!({"S.Day":"i64",
+            "S.Span":{"record":[["start","S.Day"],["end","S.Day"]]},
+            "S.Days":{"list":"S.Day"}})
+    );
+    let handlers: Vec<Option<&str>> = lowered["operations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|op| op["handler"].as_str())
+        .collect();
+    // The interface operation has no handler.
+    assert_eq!(
+        handlers,
+        [
+            Some("record"),
+            Some("field"),
+            Some("list"),
+            Some("length"),
+            Some("item"),
+            None
+        ]
+    );
+    assert_eq!(lowered["operations"][1]["field"], "start");
+
+    // The contract covers the shapes inside the types it uses.
+    let hash = &lowered["interfaces"]["S.Cal"]["hash"];
+    let wider = SHAPES.replace("Day = represented i64", "Day = represented f64");
+    let other = lower(&[("S.ncatalog", &wider)]).unwrap();
+    assert_ne!(&other["interfaces"]["S.Cal"]["hash"], hash);
+}
+
+#[test]
+fn record_and_list_errors_carry_the_catalog_span() {
+    for (from, to, message, at) in [
+        (
+            "Start(Span) : Day = field start;",
+            "Start(Span) : Day = field middle;",
+            "'S.Span' has no field 'middle'",
+            "middle",
+        ),
+        (
+            "SpanOf(Day, Day) : Span = record;",
+            "SpanOf(Day) : Span = record;",
+            "a record operation takes its result's fields in order",
+            "record",
+        ),
+        (
+            "Pair(Day, Day) : Days = list;",
+            "Pair(Day, Scalar) : Days = list;",
+            "a list operation takes elements of its result's type",
+            "list",
+        ),
+        (
+            "Count(Days) : Scalar = length;",
+            "Count(Day) : Scalar = length;",
+            "a length operation takes a list and returns Scalar",
+            "length",
+        ),
+        (
+            "Nth(Days, Scalar) : Day = item;",
+            "Nth(Days, Day) : Day = item;",
+            "an item operation takes a list and a Scalar and returns an element",
+            "item",
+        ),
+        (
+            "end: Day;",
+            "start: Day;",
+            "field 'start' is already declared",
+            "start",
+        ),
+        (
+            "list of Day;",
+            "list of Text;",
+            "a record or list cannot hold Text",
+            "Text",
+        ),
+        (
+            "list of Day;",
+            "list of Week;",
+            "unknown type 'Week'",
+            "Week",
+        ),
+    ] {
+        let text = SHAPES.replace(from, to);
+        assert_ne!(text, SHAPES, "{from}");
+        let error = catalogs(&sources(&[("S.ncatalog", &text)])).unwrap_err();
+        assert_eq!(error.message, message, "{to}");
+        let at_text = &text[error.span[0]..error.span[1]];
+        assert_eq!(at_text, at, "{to}");
+    }
+}

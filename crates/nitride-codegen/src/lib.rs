@@ -74,12 +74,21 @@ pub fn generate(input: &str) -> Result<String, String> {
     // Types whose values are not f64. Built-in handlers, literals and host
     // values are f64 only, so these reach execution through interfaces.
     let mut represented = HashSet::new();
+    let representations = &data["catalog"]["representations"];
     if let Some(map) = data["catalog"].get("representations") {
-        for (ty, kind) in map.as_object().ok_or("representations must be an object")? {
-            if !type_set.contains(ty.as_str())
-                || ty.starts_with("Core.")
-                || !matches!(text(kind)?, "i64" | "bool" | "text")
-            {
+        let component = |ty: &Value| text(ty).is_ok_and(|t| type_set.contains(t) && t != TEXT);
+        for (ty, shape) in map.as_object().ok_or("representations must be an object")? {
+            let valid = match shape {
+                Value::String(kind) => matches!(kind.as_str(), "i64" | "bool" | "text"),
+                _ => match (shape.get("record"), shape.get("list")) {
+                    (Some(fields), None) => fields.as_array().is_some_and(|f| {
+                        !f.is_empty() && f.iter().all(|f| f[0].is_string() && component(&f[1]))
+                    }),
+                    (None, Some(element)) => component(element),
+                    _ => false,
+                },
+            };
+            if !type_set.contains(ty.as_str()) || ty.starts_with("Core.") || !valid {
                 return Err("invalid type representation".into());
             }
             represented.insert(ty.as_str());
@@ -122,6 +131,25 @@ pub fn generate(input: &str) -> Result<String, String> {
             continue;
         }
         let handler = text(&op["handler"])?;
+        if matches!(handler, "record" | "list" | "length" | "item" | "field") {
+            // The engine's record and list operations; prepare checked their
+            // signatures, and a field is read by its index.
+            if inputs.contains(&TEXT) {
+                return Err("record and list operations do not take text".into());
+            }
+            if handler == "field" {
+                let field = text(&op["field"])?;
+                let index = inputs
+                    .first()
+                    .and_then(|ty| representations[*ty]["record"].as_array())
+                    .and_then(|fields| fields.iter().position(|f| f[0] == field))
+                    .ok_or("unknown record field")?;
+                handlers.push(quoted(&format!("field:{index}")));
+            } else {
+                handlers.push(quoted(handler));
+            }
+            continue;
+        }
         if represented.contains(result) || inputs.iter().any(|t| represented.contains(t)) {
             return Err("built-in host handlers take and return f64 values".into());
         }

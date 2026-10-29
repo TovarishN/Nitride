@@ -24,6 +24,18 @@ enum Provider {
     Host(Name),
     /// Any binding of the module's interface; it may report these failures.
     Interface { interface: Name, fails: Vec<Name> },
+    /// The engine reads this field of its record input.
+    Field(Name),
+    /// The engine's `record`, `list`, `length` or `item`.
+    Structure(Name),
+}
+
+/// How a type's values are represented, when not f64.
+enum Shape {
+    Represented(Name),
+    /// Field names and types, in order.
+    Record(Vec<(Name, Name)>),
+    List(Name),
 }
 
 enum ExampleExpr {
@@ -49,7 +61,7 @@ struct Example {
 
 enum Member {
     /// A type, and how its values are represented when not f64.
-    Type(Name, Option<Name>),
+    Type(Name, Option<Shape>),
     Failure {
         name: Name,
         message: String,
@@ -302,9 +314,20 @@ impl Decoder<'_> {
                 }
                 "Type" => Member::Type(
                     self.named(m, "Name"),
-                    self.tree
-                        .field(m, "Representation")
-                        .map(|r| self.named(r, "Kind")),
+                    self.tree.field(m, "Representation").map(|r| {
+                        let shape =
+                            self.choice(self.field(r, "Shape"), &["Represented", "Record", "List"]);
+                        match self.kind(shape) {
+                            "Represented" => Shape::Represented(self.named(shape, "Kind")),
+                            "Record" => Shape::Record(
+                                self.fields(shape, "Fields")
+                                    .into_iter()
+                                    .map(|f| (self.named(f, "Name"), self.named(f, "Type")))
+                                    .collect(),
+                            ),
+                            _ => Shape::List(self.named(shape, "Element")),
+                        }
+                    }),
                 ),
                 "Failure" => Member::Failure {
                     name: self.named(m, "Name"),
@@ -321,7 +344,17 @@ impl Decoder<'_> {
                     name: self.named(m, "Name"),
                     inputs: self.names(m, "Inputs"),
                     result: self.named(m, "Result"),
-                    provider: Provider::Host(self.handler(m)),
+                    provider: {
+                        let p = self.choice(
+                            self.field(m, "Provider"),
+                            &["Handler", "FieldOf", "Structure"],
+                        );
+                        match self.kind(p) {
+                            "Handler" => Provider::Host(self.named(p, "Name")),
+                            "FieldOf" => Provider::Field(self.named(p, "Name")),
+                            _ => Provider::Structure(self.named(p, "Kind")),
+                        }
+                    },
                 },
                 "Overload" => Member::Overload {
                     name: self.named(m, "Name"),
@@ -422,14 +455,57 @@ struct Scope<'a> {
     callables: HashMap<String, (usize, [usize; 2], bool)>,
     /// Qualified failure and interface names, and whether each is a failure.
     contracts: HashMap<String, (usize, [usize; 2], bool)>,
-    /// Representations other than f64, by qualified type name.
-    representations: HashMap<String, String>,
+    /// Representations other than f64, by qualified type name: a kind such
+    /// as `"i64"`, `{"record":[[field, type], …]}` or `{"list":type}`.
+    representations: HashMap<String, Value>,
 }
 
 impl<'a> Scope<'a> {
-    /// How values of a resolved type are represented.
+    /// The kind of a resolved type's values: `f64`, `i64`, `bool`, `text`,
+    /// `record` or `list`.
     fn representation(&self, ty: &str) -> &str {
-        self.representations.get(ty).map_or("f64", String::as_str)
+        match self.representations.get(ty) {
+            None => "f64",
+            Some(Value::String(kind)) => kind,
+            Some(Value::Object(shape)) => shape.keys().next().map_or("f64", String::as_str),
+            Some(_) => "f64",
+        }
+    }
+    /// A record type's fields, `(name, type)` in order.
+    fn fields(&self, ty: &str) -> Option<Vec<(&str, &str)>> {
+        let fields = self.representations.get(ty)?.get("record")?.as_array()?;
+        Some(
+            fields
+                .iter()
+                .map(|f| (f[0].as_str().unwrap(), f[1].as_str().unwrap()))
+                .collect(),
+        )
+    }
+    /// A list type's element type.
+    fn element(&self, ty: &str) -> Option<&str> {
+        self.representations.get(ty)?.get("list")?.as_str()
+    }
+    /// The representations of `ty` and of every type inside it, for a
+    /// contract hash.
+    fn shapes(&self, ty: &str, into: &mut Map<String, Value>) {
+        if into.contains_key(ty) {
+            return;
+        }
+        into.insert(
+            ty.into(),
+            self.representations
+                .get(ty)
+                .cloned()
+                .unwrap_or_else(|| json!("f64")),
+        );
+        let inner: Vec<String> = match (self.fields(ty), self.element(ty)) {
+            (Some(fields), _) => fields.iter().map(|f| f.1.to_string()).collect(),
+            (_, Some(element)) => vec![element.into()],
+            _ => vec![],
+        };
+        for ty in inner {
+            self.shapes(&ty, into);
+        }
     }
     fn error(&self, module: &Module, span: [usize; 2], message: impl Into<String>) -> PrepareError {
         self.sources[module.source].error(span, message)
@@ -577,6 +653,76 @@ fn lower_expr(
     }
 }
 
+/// Checks an engine operation's signature against the types it works on:
+/// `field` (when `field` is given), `record`, `list`, `length` or `item`.
+fn structural(
+    scope: &Scope,
+    module: &Module,
+    at: &Name,
+    operation: &Value,
+    field: Option<&Name>,
+) -> Result<(), PrepareError> {
+    let inputs: Vec<&str> = operation["inputs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|t| t.as_str().unwrap())
+        .collect();
+    let result = operation["result"].as_str().unwrap();
+    let scalar = CORE[0];
+    let (valid, message) = match field {
+        Some(field) => {
+            let fields = inputs.first().and_then(|ty| scope.fields(ty));
+            match fields
+                .as_ref()
+                .and_then(|f| f.iter().find(|f| f.0 == field.text))
+            {
+                Some((_, ty)) => (
+                    inputs.len() == 1 && *ty == result,
+                    "a field operation takes one record and returns the field's type".into(),
+                ),
+                None if fields.is_some() => (
+                    false,
+                    format!("'{}' has no field '{}'", inputs[0], field.text),
+                ),
+                None => (
+                    false,
+                    "a field operation takes one record and returns the field's type".into(),
+                ),
+            }
+        }
+        None => match at.text.as_str() {
+            "record" => (
+                scope
+                    .fields(result)
+                    .is_some_and(|f| f.iter().map(|f| f.1).eq(inputs.iter().copied())),
+                "a record operation takes its result's fields in order".into(),
+            ),
+            "list" => (
+                scope
+                    .element(result)
+                    .is_some_and(|e| inputs.iter().all(|t| *t == e)),
+                "a list operation takes elements of its result's type".into(),
+            ),
+            "length" => (
+                inputs.len() == 1 && scope.element(inputs[0]).is_some() && result == scalar,
+                "a length operation takes a list and returns Scalar".into(),
+            ),
+            _ => (
+                inputs.len() == 2
+                    && inputs[1] == scalar
+                    && scope.element(inputs[0]) == Some(result),
+                "an item operation takes a list and a Scalar and returns an element".into(),
+            ),
+        },
+    };
+    if valid {
+        Ok(())
+    } else {
+        Err(scope.error(module, field.map_or(at.span, |f| f.span), message))
+    }
+}
+
 /// Whether an example value of type `actual` may stand where `expected` is
 /// required. Types are nominal; a boolean literal is any bool type, and a
 /// string literal is source text or any text type.
@@ -666,7 +812,7 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
         }
         seen.insert(&module.name.text, index);
         for member in &module.members {
-            if let Member::Type(name, Some(kind)) = member {
+            if let Member::Type(name, Some(Shape::Represented(kind))) = member {
                 vocabulary(
                     &scope,
                     module,
@@ -677,7 +823,7 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
                 if kind.text != "f64" {
                     scope.representations.insert(
                         format!("{}.{}", module.name.text, name.text),
-                        kind.text.clone(),
+                        json!(kind.text),
                     );
                 }
             }
@@ -724,6 +870,48 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
             }
         }
     }
+    // Records and lists name other types, so they resolve once all are known.
+    let mut composite = Vec::new();
+    for module in &modules {
+        for member in &module.members {
+            let (name, shape) = match member {
+                Member::Type(name, Some(shape @ (Shape::Record(_) | Shape::List(_)))) => {
+                    (name, shape)
+                }
+                _ => continue,
+            };
+            let component = |ty: &Name| {
+                let resolved = scope.resolve(module, ty, "type")?;
+                if resolved == CORE[1] {
+                    return Err(scope.error(module, ty.span, "a record or list cannot hold Text"));
+                }
+                Ok(resolved)
+            };
+            let value = match shape {
+                Shape::Record(fields) => {
+                    if fields.is_empty() {
+                        return Err(scope.error(module, name.span, "a record has fields"));
+                    }
+                    let mut lowered = Vec::new();
+                    for (i, (field, ty)) in fields.iter().enumerate() {
+                        if fields[..i].iter().any(|f| f.0.text == field.text) {
+                            return Err(scope.error(
+                                module,
+                                field.span,
+                                format!("field '{}' is already declared", field.text),
+                            ));
+                        }
+                        lowered.push(json!([field.text, component(ty)?]));
+                    }
+                    json!({"record": lowered})
+                }
+                Shape::List(element) => json!({"list": component(element)?}),
+                Shape::Represented(_) => unreachable!(),
+            };
+            composite.push((format!("{}.{}", module.name.text, name.text), value));
+        }
+    }
+    scope.representations.extend(composite);
     let scope = scope;
 
     let mut types = Vec::new();
@@ -809,6 +997,15 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
                                 .collect::<Result<Vec<_>, _>>()?;
                             operation["interface"] = json!(qualify(interface));
                             operation["fails"] = json!(fails);
+                        }
+                        Provider::Field(field) => {
+                            structural(&scope, module, name, &operation, Some(field))?;
+                            operation["handler"] = json!("field");
+                            operation["field"] = json!(field.text);
+                        }
+                        Provider::Structure(kind) => {
+                            structural(&scope, module, kind, &operation, None)?;
+                            operation["handler"] = json!(kind.text);
                         }
                     }
                     operations.push(operation);
@@ -959,8 +1156,7 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
                 .iter()
                 .chain([&op["result"]])
             {
-                let ty = ty.as_str().unwrap();
-                used.insert(ty.into(), json!(scope.representation(ty)));
+                scope.shapes(ty.as_str().unwrap(), &mut used);
             }
         }
         let contract = json!({"interface":id,"version":version,"representations":used,"operations":members.iter().map(|op| json!({
@@ -991,7 +1187,7 @@ pub fn lower(sources: &[Source]) -> Result<(Value, Vec<Use>), PrepareError> {
             scope
                 .representations
                 .iter()
-                .map(|(ty, kind)| (ty.clone(), json!(kind)))
+                .map(|(ty, shape)| (ty.clone(), shape.clone()))
                 .collect(),
         ),
     ] {
@@ -1097,6 +1293,10 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
         let mut members: Vec<&Name> = Vec::new();
         for member in &module.members {
             match member {
+                Member::Type(_, Some(Shape::Record(fields))) => {
+                    members.extend(fields.iter().map(|f| &f.1))
+                }
+                Member::Type(_, Some(Shape::List(element))) => members.push(element),
                 Member::Type(..) | Member::Failure { .. } | Member::Interface { .. } => {}
                 Member::Operation { inputs, result, .. } => {
                     members.extend(inputs);

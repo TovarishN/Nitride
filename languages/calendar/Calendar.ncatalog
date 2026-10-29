@@ -7,12 +7,14 @@ catalog module Calendar
   type Duration;
   type Weekday = represented text;
   type LeapYear = represented bool;
+  type Span = record { start: Date; end: Date; };
+  type Dates = list of Date;
 
   failure InvalidDate "not a calendar date";
   failure OutOfRange "date out of range";
   failure PartialDay "not a whole number of days";
 
-  interface Gregorian version 2
+  interface Gregorian version 3
   {
     operation ParseDate(Text) : Date fails InvalidDate;
     operation Later(Date, Duration) : Date fails OutOfRange, PartialDay;
@@ -20,6 +22,8 @@ catalog module Calendar
     operation Between(Date, Date) : Duration;
     operation DayOfWeek(Date) : Weekday;
     operation IsLeapYear(Date) : LeapYear;
+    // The Mondays from a span's start through its end.
+    operation Mondays(Span) : Dates fails OutOfRange;
 
     example Later(ParseDate("2024-01-01"), Days(3)) == ParseDate("2024-01-04");
     example Between(ParseDate("2024-03-01"), ParseDate("2024-02-01")) == Days(29);
@@ -31,7 +35,17 @@ catalog module Calendar
     example DayOfWeek(ParseDate("2026-10-29")) == "Thursday";
     example IsLeapYear(ParseDate("2024-03-01")) == true;
     example IsLeapYear(ParseDate("1900-03-01")) == false;
+    example Count(Mondays(SpanOf(ParseDate("2024-01-01"), ParseDate("2024-01-31")))) == 5;
+    example Mondays(SpanOf(ParseDate("2024-01-02"), ParseDate("2024-01-15"))) == Pair(ParseDate("2024-01-08"), ParseDate("2024-01-15"));
+    example Count(Mondays(SpanOf(ParseDate("2024-01-31"), ParseDate("2024-01-01")))) == 0;
   }
+
+  operation SpanOf(Date, Date) : Span = record;
+  operation SpanStart(Span) : Date = field start;
+  operation SpanEnd(Span) : Date = field end;
+  operation Pair(Date, Date) : Dates = list;
+  operation Count(Dates) : Scalar = length;
+  operation Nth(Dates, Scalar) : Date = item;
 
   operation Days(Scalar) : Duration = host identity;
   operation InDays(Duration) : Scalar = host identity;
