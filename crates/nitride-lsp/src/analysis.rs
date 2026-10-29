@@ -92,6 +92,8 @@ pub struct Analysis {
     pub repairs: Vec<Fix>,
     /// Each (rule, literal)'s palette role in the tree's language.
     pub roles: Arc<HashMap<(u16, String), Role>>,
+    /// The document's masked header: Nitrogen signatures and the comments holding them.
+    pub header: Vec<[u32; 2]>,
 }
 
 type Roles = Arc<HashMap<(u16, String), Role>>;
@@ -157,17 +159,106 @@ pub fn analyze(
     text: &str,
     open: &dyn Fn(&Path) -> Option<String>,
 ) -> Option<Analysis> {
-    if path.extension().is_some_and(|e| e == "ngr") {
-        return Some(grammar(registry, path, text, open));
-    }
     if path.extension().is_some_and(|e| e == "ncatalog") {
         return Some(catalog(registry, path, text, open));
     }
-    let state = registry.for_path(path)?;
-    Some(program(state, text))
+    // Nitrogen signatures choose the language; the rest of the document is
+    // parsed with them masked to spaces, so offsets are unchanged.
+    let header = crate::signed::read(text);
+    let source = header.masked.as_str();
+    let header_problems = header.diagnostics.iter().map(|(span, message)| Problem {
+        span: *span,
+        severity: 1,
+        message: message.clone(),
+        code: Some("NGR0401".into()),
+    });
+    let mut analysis = if header.grammar() || path.extension().is_some_and(|e| e == "ngr") {
+        grammar(registry, path, text, source, open)
+    } else if let Some(signature) = header.language() {
+        match select(registry, path, signature) {
+            Ok(state) => program(state, text, source),
+            Err(message) => Analysis {
+                problems: vec![Problem {
+                    span: signature.span,
+                    severity: 1,
+                    message,
+                    code: None,
+                }],
+                ..empty(text)
+            },
+        }
+    } else if let Some(state) = registry.for_path(path) {
+        program(state, text, source)
+    } else if !header.diagnostics.is_empty() {
+        // A broken header selects nothing, but is still reported.
+        empty(text)
+    } else {
+        return None;
+    };
+    analysis.problems.splice(0..0, header_problems);
+    analysis.header = header.masked_spans.clone();
+    Some(analysis)
 }
 
-fn program(state: &LanguageState, text: &str) -> Analysis {
+/// The language a `language` signature names: a quoted path to a signed
+/// grammar (relative to the document), or a declared name.
+fn select<'r>(
+    registry: &'r Registry,
+    path: &Path,
+    signature: &crate::signed::Signature,
+) -> Result<&'r LanguageState, String> {
+    let Some(reference) = &signature.reference else {
+        return Err("expected a quoted local path or a language name".into());
+    };
+    if reference.is_path {
+        let target = path
+            .parent()
+            .unwrap_or(Path::new(""))
+            .join(&reference.value);
+        return registry
+            .signed_at(&target)
+            .ok_or_else(|| format!("{} does not declare a language", reference.value));
+    }
+    match registry.signed(&reference.value).as_slice() {
+        [state] => Ok(state),
+        [] => Err(format!(
+            "no signed grammar declares language {}",
+            reference.value
+        )),
+        several => {
+            let mut paths: Vec<String> = several
+                .iter()
+                .map(|s| s.manifest.display().to_string())
+                .collect();
+            paths.sort();
+            Err(format!(
+                "language {} is declared by several signed grammars: {}",
+                reference.value,
+                paths.join(", ")
+            ))
+        }
+    }
+}
+
+/// An analysis of `text` with nothing in it.
+fn empty(text: &str) -> Analysis {
+    Analysis {
+        lines: LineIndex::new(text),
+        tree: None,
+        problems: vec![],
+        declarations: vec![],
+        outline: vec![],
+        index: SymbolIndex::default(),
+        values: vec![],
+        repairs: vec![],
+        roles: Default::default(),
+        header: vec![],
+    }
+}
+
+/// A program of `state`'s language: `text` as the editor holds it, parsed
+/// from `source` (the text with any signature masked).
+fn program(state: &LanguageState, text: &str, source: &str) -> Analysis {
     let lines = LineIndex::new(text);
     let Some(loaded) = state.current.clone() else {
         let reason = state
@@ -189,11 +280,12 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
             values: vec![],
             repairs: vec![],
             roles: Default::default(),
+            header: vec![],
         };
     };
     let language = loaded.language.language();
     let limits = Limits::default();
-    let parsed = parse_recovering(language, text, limits, RecoveryOptions::default());
+    let parsed = parse_recovering(language, source, limits, RecoveryOptions::default());
     let mut problems: Vec<Problem> = Vec::new();
     let mut add = |d: &Diagnostic| {
         let problem = Problem {
@@ -233,6 +325,7 @@ fn program(state: &LanguageState, text: &str) -> Analysis {
         values,
         repairs,
         roles: loaded.roles.clone(),
+        header: vec![],
     }
 }
 
@@ -272,12 +365,13 @@ fn grammar(
     registry: &Registry,
     path: &Path,
     text: &str,
-    open: &dyn Fn(&Path) -> Option<String>,
+    source: &str,
+    _open: &dyn Fn(&Path) -> Option<String>,
 ) -> Analysis {
     let lines = LineIndex::new(text);
     let parsed = parse_recovering(
         nitride_prepare::grammar_language(),
-        text,
+        source,
         Limits::default(),
         RecoveryOptions::default(),
     );
@@ -295,7 +389,7 @@ fn grammar(
     } else {
         let source = Source {
             path: path.to_string_lossy().into_owned(),
-            text: open(path).unwrap_or_else(|| text.to_owned()),
+            text: source.to_owned(),
         };
         match standalone(&source) {
             Ok(warnings) => reported.extend(warnings.into_iter().map(|w| (w, 2))),
@@ -305,7 +399,7 @@ fn grammar(
     let problems = in_file(reported, path);
     let outline = nitride_prepare::grammar_outline(&Source {
         path: path.to_string_lossy().into_owned(),
-        text: text.to_owned(),
+        text: source.to_owned(),
     })
     .unwrap_or_default();
     Analysis {
@@ -318,6 +412,7 @@ fn grammar(
         values: vec![],
         repairs: vec![],
         roles: frontend_roles(),
+        header: vec![],
     }
 }
 
@@ -386,6 +481,7 @@ fn catalog(
         values: vec![],
         repairs: vec![],
         roles: catalog_roles(),
+        header: vec![],
     }
 }
 

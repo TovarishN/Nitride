@@ -275,6 +275,55 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
     Ok(found)
 }
 
+/// A signed grammar's language declaration.
+pub fn language_declaration(
+    source: &Source,
+) -> Result<Option<crate::LanguageDeclaration>, PrepareError> {
+    let source = &tolerant(source)?;
+    let tree = syntax(source)?;
+    let decoder = Decoder {
+        source,
+        tree: &tree,
+        tolerant: true,
+        skipped: Default::default(),
+    };
+    let Some(id) = tree.field(tree.root, "Language") else {
+        return Ok(None);
+    };
+    let name = decoder.field(id, "Name");
+    let mut declaration = crate::LanguageDeclaration {
+        name: decoder.text(name).into(),
+        name_span: decoder.span(name),
+        span: decoder.span(id),
+        start: None,
+        grammars: vec![],
+        extensions: vec![],
+    };
+    for setting in decoder.fields(id, "Settings") {
+        let setting = decoder.first(setting);
+        match decoder.kind(setting) {
+            "LanguageNameSetting" if decoder.named(setting, "Kind") == "start" => {
+                declaration.start = Some(decoder.named(setting, "Name"));
+            }
+            "LanguageStringSetting" => {
+                let kind = decoder.named(setting, "Kind");
+                let values = decoder
+                    .fields(setting, "Values")
+                    .into_iter()
+                    .map(|v| decoder.literal(decoder.field(v, "Value")))
+                    .collect::<Result<Vec<_>, _>>()?;
+                match kind.as_str() {
+                    "grammars" => declaration.grammars.extend(values),
+                    "extensions" => declaration.extensions.extend(values),
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    }
+    Ok(Some(declaration))
+}
+
 /// The name of the module whose span holds `span`.
 fn module_of(modules: &[([usize; 2], String)], span: [usize; 2]) -> String {
     modules
@@ -337,36 +386,43 @@ pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError>
             children,
         }
     };
-    Ok(decoder
-        .fields(tree.root, "Modules")
+    let language = tree
+        .field(tree.root, "Language")
+        .map(|id| item("language", id, vec![]));
+    Ok(language
         .into_iter()
-        .map(|module| {
-            let members = decoder
-                .fields(module, "Members")
+        .chain(
+            decoder
+                .fields(tree.root, "Modules")
                 .into_iter()
-                .filter_map(|member| {
-                    let m = decoder.first(member);
-                    let kind = match decoder.kind(m) {
-                        "TokenRule" => "token",
-                        "SyntaxRule" => "syntax",
-                        "ExtensibleRule" => "extensible",
-                        "Extend" => "extend",
-                        "Function" => "function",
-                        "Helper" => "helper",
-                        _ => return None,
-                    };
-                    // Named alternatives are rules too.
-                    let alternatives = decoder
-                        .fields(m, "Alternatives")
+                .map(|module| {
+                    let members = decoder
+                        .fields(module, "Members")
                         .into_iter()
-                        .filter_map(|a| decoder.tree.field(a, "Named"))
-                        .map(|named| item("alternative", named, vec![]))
+                        .filter_map(|member| {
+                            let m = decoder.first(member);
+                            let kind = match decoder.kind(m) {
+                                "TokenRule" => "token",
+                                "SyntaxRule" => "syntax",
+                                "ExtensibleRule" => "extensible",
+                                "Extend" => "extend",
+                                "Function" => "function",
+                                "Helper" => "helper",
+                                _ => return None,
+                            };
+                            // Named alternatives are rules too.
+                            let alternatives = decoder
+                                .fields(m, "Alternatives")
+                                .into_iter()
+                                .filter_map(|a| decoder.tree.field(a, "Named"))
+                                .map(|named| item("alternative", named, vec![]))
+                                .collect();
+                            Some(item(kind, m, alternatives))
+                        })
                         .collect();
-                    Some(item(kind, m, alternatives))
-                })
-                .collect();
-            item("module", module, members)
-        })
+                    item("module", module, members)
+                }),
+        )
         .collect())
 }
 

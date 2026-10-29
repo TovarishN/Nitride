@@ -59,45 +59,68 @@ XML admission is also syntax-only and omits XML semantic checks.
 
 ### Recorded parsing comparison
 
-The [three-way report](docs/stage30-comparison.md) records **2026-10-27 measurements
-on one macOS ARM64 host**: Nitride `f23dca6`, Nitrogen 0.19.0, and Roslyn 5.0.0.
-Both .NET harnesses used .NET 10.0.0, Release builds, workstation GC. These are
-historical results, not measurements of the current checkout.
+The [refreshed three-way report](docs/stage45-comparison.md) records **2026-10-28
+measurements on one macOS ARM64 host**: Nitride `0954c58`, Nitrogen 0.19.0 and
+Roslyn 5.0.0. Both .NET harnesses used .NET 10.0.0, Release builds, workstation GC.
+It repeats the [2026-10-27 report](docs/stage30-comparison.md) with the same corpus
+and harnesses. That earlier report stays as the historical baseline.
 
 Full parses of generated valid C# 4 source, seconds (lower is better):
 
 | Input | Nitride cold / warm | Nitrogen cold / warm | Roslyn cold / warm |
 |---|---:|---:|---:|
-| 256 KiB | 0.078 / 0.077 | 0.341 / 0.109 | 0.071 / 0.035 |
-| 4 MiB | 1.26 / 1.25 | 1.35 / 0.808 | 0.631 / 0.144 |
-| 16 MiB | 5.16 / 5.14 | 4.25 / 3.37 | 1.23 / 0.629 |
+| 256 KiB | 0.050 / 0.050 | 0.323 / 0.108 | 0.068 / 0.033 |
+| 4 MiB | 0.783 / 0.781 | 1.30 / 0.759 | 0.646 / 0.134 |
+| 16 MiB | 3.16 / 3.18 | 4.06 / 3.15 | 1.19 / 0.600 |
 
 Cold means the first parse in a fresh process, including .NET JIT work; process
 startup and source I/O are excluded. Warm means repeated full parsing after
 warm-up, **not incremental editing**. Nitrogen language construction is excluded.
-See the report for repetitions, APIs, and harness settings.
 
-Roslyn was faster in every valid-input row above. Nitride had the lowest process
-peak memory for 256 KiB valid input (22 MiB, versus Roslyn's 64 and Nitrogen's 96),
-but Roslyn had the lowest peak on larger valid inputs. Retained-tree memory uses
-different accounting methods across implementations; those quantities are not
-interchangeable.
+On cold parses, Nitride was fastest at 256 KiB and faster than Nitrogen at every
+size. Roslyn was faster from 4 MiB up: by 1.2× at 4 MiB and 2.7× at 16 MiB.
+Nitride does not speed up when warm, while Roslyn's warm parses were 5–6× faster
+than Nitride's from 4 MiB up.
+
+Single-character edits, median milliseconds, through Roslyn's `WithChangedText`
+and Nitride's snapshot edits:
+
+| File | Nitride | Roslyn |
+|---|---:|---:|
+| 4 MiB valid | 1.72 | 11.3 |
+| 16 MiB valid | 8.55 | 52.1 |
+| 4 MiB with one syntax error | 7.76 | 11.4 |
+| 16 MiB with one syntax error | 32.0 | 54.5 |
 
 Recovery requires a separate reading. In this harness the Nitrogen reference
-stops at the first error and retains a partial tree; its damaged-input timings do
-not measure the same work as whole-file recovery in Nitride and Roslyn. Diagnostic
-grouping also differs between Nitride and Roslyn on inserted junk. The historical
-4 MiB dense-error parse took Nitride 90.2 s and Roslyn 0.679 s cold.
+stops at the first error and retains a partial tree, so its damaged-input timings
+do not measure the same work as whole-file recovery in Nitride and Roslyn.
+Diagnostic grouping also differs between Nitride and Roslyn on inserted junk.
 
-Later Nitride changes reduced that case to 7.93 s in the
-[stage44 paired measurements](docs/stage44-evidence.md). Those compare Nitride
-revisions and are not a fresh three-way run. They should not be substituted into
-the table as though all implementations were measured together.
+Cold full parses with errors, against Roslyn:
 
-The [raw results](docs/stage30-comparison.json) include individual samples,
-diagnostic counts, and memory observations. The [harness](docs/stage30-harness)
-contains host-specific paths requiring adjustment. This generated corpus on one
-host does not establish performance across real projects or full compilation.
+| Input | Nitride s | Roslyn s |
+|---|---:|---:|
+| 256 KiB, one error | 0.063 | 0.074 |
+| 4 MiB, one error | 0.975 | 0.641 |
+| 16 MiB, one error | 3.94 | 1.22 |
+| 4 MiB, junk | 0.974 | 0.676 |
+| 4 MiB, dense errors | 7.73 | 0.656 |
+
+Dense errors remain Nitride's widest gap: 12× Roslyn at 4 MiB, down from 133× on
+2026-10-27.
+
+Memory accounting differs between runtimes. Kept trees were about the same size
+in all three (65–73 MiB for 4 MiB valid). Peak process memory was lowest for
+Nitride at 256 KiB. From 4 MiB up it was lowest for Roslyn: Nitride's peak was
+1.5× Roslyn's on 4 MiB valid input and 3× with errors.
+
+The [raw results](docs/stage45-comparison.json) and [edit results](docs/stage45-incremental.json)
+include individual samples, diagnostic counts and memory observations. The
+[harness](docs/stage30-harness) contains host-specific paths requiring adjustment.
+This generated corpus on one host does not establish performance across real
+projects or full compilation, and Roslyn's parser does more work than this
+comparison uses: it covers every C# version and builds full-fidelity trees.
 
 ## Try it
 
@@ -176,6 +199,10 @@ code --install-extension editors/vscode/nitride-darwin-arm64-0.1.0.vsix
 
 Other packaging targets are `darwin-x64`, `linux-x64`, and `win32-x64`.
 
+A file can also choose its language with a Nitrogen signature such as
+`#!nitrogen language Calc`, declared by a `#!nitrogen grammar` file; see
+`languages/signed/` and the extension README.
+
 ## Development and evidence
 
 ```sh
@@ -208,7 +235,8 @@ and corpus provenance remain versioned for independent compatibility checks.
 | [CSharp4 admission](docs/stage12-evidence.md) | Grammar provenance and reference-tree parity |
 | [Recovery](docs/stage14-evidence.md) | Quality checks and recovery limits |
 | [Shared snapshots](docs/stage15-evidence.md) | Storage sharing, edits, and admission costs |
-| [Three-way comparison](docs/stage30-comparison.md) | Full-parse timing and memory methodology |
+| [Three-way comparison](docs/stage30-comparison.md) | Full-parse timing and memory methodology, 2026-10-27 |
+| [Refreshed comparison](docs/stage45-comparison.md) | Full-parse and edit timing, memory, change since stage30 |
 | [Incremental checkpoint](docs/stage34-evidence.md) | Edit measurements and Roslyn baseline |
 | [Latest recorded parser checkpoint](docs/stage44-evidence.md) | Paired timings, recovery filtering, validation |
 

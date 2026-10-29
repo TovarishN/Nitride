@@ -83,7 +83,7 @@ pub fn build(
         };
         let source = Source {
             path: path.to_string_lossy().into_owned(),
-            text,
+            text: crate::signed::grammar_source(&text),
         };
         let catalog = is_catalog(path);
         let (outline, references) = if catalog {

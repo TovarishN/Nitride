@@ -169,6 +169,24 @@ pub fn grammar_language() -> &'static nitride_core::Language<'static> {
     &grammar_seed::LANGUAGE
 }
 
+/// A signed grammar's `language Name { ... }` declaration: the settings
+/// Nitride uses (start rule, further grammars, file extensions). The C#-side
+/// settings (namespace, sources, usings, tokens, types) are read and ignored.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct LanguageDeclaration {
+    pub name: String,
+    pub name_span: [usize; 2],
+    pub span: [usize; 2],
+    pub start: Option<String>,
+    pub grammars: Vec<String>,
+    pub extensions: Vec<String>,
+}
+
+/// The language a grammar declares, if any; `source` has its signature masked.
+pub fn language_declaration(source: &Source) -> Result<Option<LanguageDeclaration>, PrepareError> {
+    parser::language_declaration(source)
+}
+
 /// The catalog JSON of a project's `.ncatalog` sources: their modules are
 /// resolved against each other (`using`) and merged in source order. No
 /// sources give the empty catalog of a syntax-only profile.
@@ -277,8 +295,8 @@ pub fn catalog_language() -> &'static nitride_core::Language<'static> {
 /// A declaration in a grammar file's outline.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GrammarItem {
-    /// "module", "syntax", "token", "extensible", "extend", "alternative",
-    /// "function" or "helper".
+    /// "language", "module", "syntax", "token", "extensible", "extend",
+    /// "alternative", "function" or "helper".
     pub kind: &'static str,
     pub name: String,
     pub span: [usize; 2],

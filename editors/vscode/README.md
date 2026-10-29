@@ -31,6 +31,11 @@ are skipped with a warning.
 - Completion, signature help for built-in calls, and formatting (document,
   selection, and on typing `}`); formatting changes only whitespace.
 - Inlay hints with each statement's computed value (`= 42`).
+- Nitrogen signatures: a file can pick its language with
+  `#!nitrogen language "./Calc.syntax"` or `#!nitrogen language Calc`, and a
+  `#!nitrogen grammar` file declares one with `language Calc { … }`. A
+  `Calc.ncatalog` beside it makes the language typed. Augmentations and
+  regions are not supported.
 - Quick fixes from the parser's repairs (`Insert ;`), and removal of Nitrogen
   C# semantic members from grammars (one, or all in a file).
 

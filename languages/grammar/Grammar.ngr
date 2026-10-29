@@ -23,7 +23,19 @@ syntax module NitrideGrammar
   token Opaque = "{" (!("@\"" / "\"\"\"") (Comment / String / OpaqueCharLiteral / Opaque / OpaqueChar))* "}";
   token QuoteText = "<[" (!"]>" .)* "]>";
 
-  syntax File = Modules:Module*;
+  syntax File = Language:LanguageDeclaration? Modules:Module*;
+  // A signed grammar's language declaration (Nitrogen.ngr's LanguageDeclaration).
+  syntax LanguageDeclaration = "language" Name:Identifier "{" Settings:LanguageSetting* "}";
+  syntax LanguageSetting = LanguageNameSetting / LanguageStringSetting / LanguageUsingSetting / LanguagePresentationSetting;
+  syntax LanguageNameSetting = Kind:LanguageNameKind Name:QualifiedName ";";
+  token LanguageNameKind = ("start" / "namespace") !NameTail;
+  syntax LanguageStringSetting = Kind:LanguageListKind Values:(LanguageString; ",")+ ";";
+  token LanguageListKind = ("grammars" / "sources" / "extensions") !NameTail;
+  syntax LanguageString = Value:String;
+  syntax LanguageUsingSetting = "usings" Values:(LanguageName; ",")+ ";";
+  syntax LanguageName = Value:QualifiedName;
+  syntax LanguagePresentationSetting = Kind:LanguagePresentationKind Name:QualifiedName Value:String ";";
+  token LanguagePresentationKind = ("tokens" / "types") !NameTail;
   syntax Module = "syntax" "module" Name:QualifiedName "{" Members:Member* "}";
   syntax Member = Using / Symbols / SymbolProperty / Builtin / Helper / Function / TokenRule / SyntaxRule / ExtensibleRule / Extend;
   syntax Using = "using" Name:QualifiedName ";";
