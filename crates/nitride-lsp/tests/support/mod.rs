@@ -59,9 +59,12 @@ pub fn fixture(name: &str) -> PathBuf {
         .unwrap()
 }
 
-/// A fresh, empty directory for one test.
+/// A fresh, empty directory for one test, under the target directory: on the
+/// repository's drive, so a `.nproj` there can name repository files by a
+/// relative path (Windows runners keep the system temp directory on `C:`).
 pub fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("nitride-lsp-{}-{name}", std::process::id()));
+    let dir = Path::new(env!("CARGO_TARGET_TMPDIR"))
+        .join(format!("nitride-lsp-{}-{name}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     dir.canonicalize().unwrap()
@@ -150,6 +153,12 @@ pub fn relative(from: &Path, to: &Path) -> String {
     let from: Vec<_> = from.components().collect();
     let to: Vec<_> = to.components().collect();
     let common = from.iter().zip(&to).take_while(|(a, b)| a == b).count();
+    assert!(
+        common > 0 && from.first() == to.first(),
+        "no relative path from {} to {}",
+        from.iter().collect::<PathBuf>().display(),
+        to.iter().collect::<PathBuf>().display()
+    );
     let mut parts = vec![".."; from.len() - common];
     let rest: Vec<String> = to[common..]
         .iter()
