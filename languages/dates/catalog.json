@@ -142,8 +142,14 @@
   },
   "values": {
     "value": {
-      "pi": "Core.Scalar",
-      "today": "Dates.Date"
+      "pi": {
+        "type": "Core.Scalar",
+        "handler": "pi"
+      },
+      "today": {
+        "type": "Dates.Date",
+        "handler": "today"
+      }
     }
   },
   "checks": {

@@ -410,12 +410,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     };
     let source = std::fs::read_to_string(path)?;
     let bindings = nitride_cli::fixture_bindings_for(language);
-    // A fixed 2026-10-24 keeps Dates measurements reproducible.
-    let values = if profile == "dates" || profile == "rewrites" {
-        nitride_cli::dates_values(739_912.0)
-    } else {
-        Vec::new()
-    };
+    // A fixed 2026-10-24 keeps `today` measurements reproducible.
+    let values = nitride_cli::fixture_values_for(language, 739_912.0);
     // Large generated inputs exceed the default work budget; parsing is measured, not bounded.
     let limits = Limits {
         work: u64::MAX,

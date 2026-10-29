@@ -143,20 +143,54 @@ pub fn utc_today() -> f64 {
     (719_162 + seconds / 86_400) as f64
 }
 
-/// The Dates fixture host's built-in values: `pi`, and `today` as a day number.
-pub fn dates_values(today: f64) -> Vec<HostValue> {
-    vec![
-        HostValue::new("value", "pi", "Core.Scalar", || Ok(std::f64::consts::PI)),
-        HostValue::new("value", "today", "Dates.Date", move || Ok(today)),
-    ]
+/// The fixture host's built-in values for `language`, by catalog handler:
+/// the constants `pi`, `e` and `tau`, and `today` as the given day number.
+pub fn fixture_values_for(language: &'static Language<'static>, today: f64) -> Vec<HostValue> {
+    let mut values: Vec<HostValue> = Vec::new();
+    let declared = language.rules.iter().flat_map(|r| match r.action {
+        Action::Reference { values, .. } => values,
+        _ => &[],
+    });
+    for value in declared {
+        if values
+            .iter()
+            .any(|v| v.kind == value.kind && v.name == value.name)
+        {
+            continue;
+        }
+        let constant = match value.handler {
+            "pi" => std::f64::consts::PI,
+            "e" => std::f64::consts::E,
+            "tau" => std::f64::consts::TAU,
+            "today" => today,
+            _ => continue,
+        };
+        values.push(HostValue::new(
+            value.kind,
+            value.name,
+            value.ty,
+            move || Ok(constant),
+        ));
+    }
+    values
 }
 
 pub fn observe_dates(source: &str, today: f64) -> Value {
-    observe_with_values(&dates::LANGUAGE, source, true, &dates_values(today))
+    observe_with_values(
+        &dates::LANGUAGE,
+        source,
+        true,
+        &fixture_values_for(&dates::LANGUAGE, today),
+    )
 }
 
 pub fn observe_rewrites(source: &str, today: f64) -> Value {
-    observe_with_values(&rewrites::LANGUAGE, source, true, &dates_values(today))
+    observe_with_values(
+        &rewrites::LANGUAGE,
+        source,
+        true,
+        &fixture_values_for(&rewrites::LANGUAGE, today),
+    )
 }
 
 pub fn observe(source: &str) -> Value {

@@ -1,4 +1,5 @@
 use crate::*;
+use std::borrow::Cow;
 
 pub type Handler = dyn Fn(&[f64]) -> Result<f64, String> + Send + Sync;
 pub type TextHandler = dyn Fn(&str) -> Result<f64, String> + Send + Sync;
@@ -33,23 +34,24 @@ impl<'g> HostBinding<'g> {
     }
 }
 /// A built-in value supplied by the host for an exact (kind, name, type).
+/// Names are owned when they come from a language loaded at run time.
 pub struct HostValue {
-    pub kind: &'static str,
-    pub name: &'static str,
-    pub ty: &'static str,
+    pub kind: Cow<'static, str>,
+    pub name: Cow<'static, str>,
+    pub ty: Cow<'static, str>,
     pub provider: Box<ValueProvider>,
 }
 impl HostValue {
     pub fn new(
-        kind: &'static str,
-        name: &'static str,
-        ty: &'static str,
+        kind: impl Into<Cow<'static, str>>,
+        name: impl Into<Cow<'static, str>>,
+        ty: impl Into<Cow<'static, str>>,
         provider: impl Fn() -> Result<f64, String> + Send + Sync + 'static,
     ) -> Self {
         Self {
-            kind,
-            name,
-            ty,
+            kind: kind.into(),
+            name: name.into(),
+            ty: ty.into(),
             provider: Box::new(provider),
         }
     }
