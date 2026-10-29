@@ -1,0 +1,5 @@
+language NitrideBinding
+{
+  grammar Binding.ngr;
+  start NitrideBinding.File;
+}

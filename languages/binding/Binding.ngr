@@ -1,0 +1,26 @@
+// Nitride bindings: which implementation runs a catalog interface, and what
+// its exports are called. Checked against the catalog by nitride-prepare.
+syntax module NitrideBinding
+{
+  token IdStart = ['a'..'z' 'A'..'Z' '_'];
+  token IdPart = ['a'..'z' 'A'..'Z' '0'..'9' '_'];
+  token Identifier = IdStart IdPart*;
+  token QualifiedName = Identifier ("." Identifier)*;
+  token Digit = ['0'..'9'];
+  token Number = Digit+;
+  token Hex = ['0'..'9' 'a'..'f' 'A'..'F'];
+  token Escape = "\\" (['n' 'r' 't' '0' '\\' '"' '\''] / "u" Hex Hex Hex Hex);
+  token String = "\"" (Escape / [^ '"' '\\' '\n'])* "\"";
+  // A WIT name: lowercase words joined by '-', `%` before a keyword.
+  token WitWord = ['a'..'z'] ['a'..'z' '0'..'9']*;
+  token WitName = "%"? WitWord ("-" WitWord)*;
+
+  syntax File = Bindings:Binding*;
+  syntax Binding = "binding" Interface:QualifiedName "version" Version:Number "for" Target:Target Body:(Exports / End);
+  syntax Target = WasmComponent;
+  syntax WasmComponent = "wasm" "component" Path:String;
+  // Exports named otherwise than the generated WIT names them.
+  syntax Exports = "{" Members:Export* "}";
+  syntax Export = Operation:Identifier "=" Name:WitName ";";
+  syntax End = ";";
+}

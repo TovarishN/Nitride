@@ -54,8 +54,14 @@ fn prepare_nproj(path: PathBuf) -> Result<PreparedProject, PrepareError> {
         .map(|c| load(c, &mut inputs))
         .collect::<Result<Vec<_>, _>>()?;
     let catalog = crate::catalog(&catalog_sources)?;
+    let binding_sources = language
+        .bindings
+        .iter()
+        .map(|b| load(b, &mut inputs))
+        .collect::<Result<Vec<_>, _>>()?;
+    let bindings = crate::bindings(&binding_sources, &catalog.value)?;
     let mode = if language.typed() { "typed" } else { "syntax" };
-    let data = catalog
+    let mut data = catalog
         .prepare(&sources, &language.start, mode)
         .map_err(|e| {
             if e.project && e.message.contains("start rule") {
@@ -65,6 +71,7 @@ fn prepare_nproj(path: PathBuf) -> Result<PreparedProject, PrepareError> {
             }
         })?
         .data;
+    with_bindings(&mut data, bindings);
     Ok(PreparedProject { data, inputs })
 }
 
@@ -111,6 +118,12 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
             .as_array()
             .ok_or_else(|| error(&path, "catalogs must be an array"))?,
     };
+    let bindings = match manifest.get("bindings") {
+        None => &[][..],
+        Some(list) => list
+            .as_array()
+            .ok_or_else(|| error(&path, "bindings must be an array"))?,
+    };
     let mut inputs = vec![path.clone()];
     let mut load = |entry: &Value, what: &str| -> Result<Source, PrepareError> {
         let name = entry
@@ -128,8 +141,22 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
         .map(|c| load(c, "catalog"))
         .collect::<Result<Vec<_>, _>>()?;
     let catalog = crate::catalog(&catalog_sources)?;
-    let data = catalog.prepare(&sources, start, mode)?.data;
+    let binding_sources = bindings
+        .iter()
+        .map(|b| load(b, "binding"))
+        .collect::<Result<Vec<_>, _>>()?;
+    let bindings = crate::bindings(&binding_sources, &catalog.value)?;
+    let mut data = catalog.prepare(&sources, start, mode)?.data;
+    with_bindings(&mut data, bindings);
     Ok(PreparedProject { data, inputs })
+}
+
+/// Records checked bindings in prepared data; a project without any keeps
+/// its data as before.
+fn with_bindings(data: &mut Value, bindings: Value) {
+    if bindings.as_array().is_some_and(|b| !b.is_empty()) {
+        data["bindings"] = bindings;
+    }
 }
 
 pub fn write_prepared(project: &PreparedProject, path: &Path) -> Result<(), PrepareError> {

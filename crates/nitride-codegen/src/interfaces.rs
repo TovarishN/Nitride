@@ -7,7 +7,7 @@ use serde_json::Value;
 use std::fmt::Write;
 
 /// `ParseDate` → `parse_date`.
-fn snake(name: &str) -> String {
+pub(crate) fn snake(name: &str) -> String {
     let mut out = String::new();
     for (i, c) in name.chars().enumerate() {
         if c.is_ascii_uppercase() {
@@ -23,12 +23,12 @@ fn snake(name: &str) -> String {
 }
 
 /// The last segment of a qualified name.
-fn tail(name: &str) -> &str {
+pub(crate) fn tail(name: &str) -> &str {
     name.rsplit('.').next().unwrap_or(name)
 }
 
 /// Parameter names from input types; a repeated type is numbered.
-fn parameters(inputs: &[&str]) -> Vec<String> {
+pub(crate) fn parameters(inputs: &[&str]) -> Vec<String> {
     inputs
         .iter()
         .enumerate()
@@ -45,7 +45,7 @@ fn parameters(inputs: &[&str]) -> Vec<String> {
 }
 
 /// How values of a type cross a binding.
-enum Shape<'a> {
+pub(crate) enum Shape<'a> {
     /// `Core.Text`: the exact spelling a grammar passes.
     Source,
     F64,
@@ -56,7 +56,7 @@ enum Shape<'a> {
     List(&'a str),
 }
 
-fn shape<'a>(catalog: &'a Value, ty: &str) -> Result<Shape<'a>, String> {
+pub(crate) fn shape<'a>(catalog: &'a Value, ty: &str) -> Result<Shape<'a>, String> {
     if ty == crate::TEXT {
         return Ok(Shape::Source);
     }
@@ -100,7 +100,11 @@ fn rust(catalog: &Value, ty: &str) -> Result<String, String> {
 }
 
 /// `ty` and every type inside it, each once, components first.
-fn closure<'a>(catalog: &'a Value, ty: &'a str, into: &mut Vec<&'a str>) -> Result<(), String> {
+pub(crate) fn closure<'a>(
+    catalog: &'a Value,
+    ty: &'a str,
+    into: &mut Vec<&'a str>,
+) -> Result<(), String> {
     if into.contains(&ty) || ty == crate::TEXT {
         return Ok(());
     }

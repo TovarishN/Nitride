@@ -3,9 +3,11 @@ mod lexical;
 mod syntax;
 use serde_json::Value;
 mod runtime;
+mod wit;
 pub use interfaces::interfaces;
 pub use runtime::LoadedLanguage;
 use std::collections::{HashMap, HashSet};
+pub use wit::{kebab as wit_name, wit};
 
 fn text(v: &Value) -> Result<&str, String> {
     v.as_str().ok_or_else(|| "expected string".into())

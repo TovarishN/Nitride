@@ -4,5 +4,6 @@
   "grammars": [
     "Calendar.ngr"
   ],
-  "catalogs": ["Calendar.ncatalog"]
+  "catalogs": ["Calendar.ncatalog"],
+  "bindings": ["gregorian.nbind"]
 }

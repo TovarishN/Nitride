@@ -3,7 +3,8 @@
 Status: draft for review. Adds interfaces to `.ncatalog`, a binding language
 (`.nbind`) that maps an interface onto a concrete implementation, and
 conformance examples that check every implementation against its interface.
-Phases 1 to 3b are implemented (see Phases); the rest is not.
+Phases 1 to 4 are implemented, phase 4 without a component runtime (see
+Phases); the rest is not.
 
 ## Why
 
@@ -348,9 +349,36 @@ lists its bindings and their last conformance result.
      `Mondays(Span) : Dates` with three more examples (interface
      `version 3`); `span(…)`, `start(…)`, `end(…)`, `mondays(…)`,
      `count(…)` and `nth(…, i)` in the grammar.
-4. `.nbind` with `wasm component` bindings and WIT output. With `f64` values a
-   `rust crate` binding adds nothing over implementing the generated trait,
-   so `.nbind` starts here, where it carries the type mapping.
+4. `.nbind` with `wasm component` bindings and WIT output. Done without a
+   runtime: this machine has no wasm32 target or wasm-tools to build a test
+   component, so loading components (wasmtime) is phase 4b. What was built:
+   - `nitride interface --target wit <manifest>` (and
+     `nitride_codegen::wit`) prints, per interface, a WIT package
+     `nitride:<module>@<version>.0.0` with the interface and a world
+     `implementation` that exports it. Types map to `f64`, `s64`, `bool`,
+     `string`, `record` and `list<…>`, nominal types as aliases, failures as
+     an enum, and operations return `result<T, I-failure>` when the interface
+     declares failures. Names are kebab-case, keywords `%`-escaped
+     (`nitride_codegen::wit_name`). The WIT is checked by tests against
+     expected text only; no WIT parser has validated it.
+   - `languages/binding/Binding.ngr` defines `.nbind`, parsed natively like
+     catalogs (seed `binding_seed.rs`, bootstrapped):
+     `binding M.I version n for wasm component "path" { Op = wit-name; }` or
+     `…;` with no renames. Prepare checks the interface and its version,
+     that renamed operations belong to it, and that an interface is bound
+     once; it lowers each binding to its contract, target, component path
+     (as written, relative to the `.nbind`) and every operation's export
+     name.
+   - Manifests list bindings: `binding x.nbind;` in `.nproj` and
+     `"bindings"` in `project.json`. Prepared data gains `bindings` only when
+     a project has some.
+   - Calendar binds `Calendar.Gregorian` to `gregorian.wasm`, renaming
+     `ParseDate` to `parse-iso`. The component does not exist.
+   - Not done: the editor does not serve `.nbind`, and `rust crate` targets
+     are not offered (implementing the generated trait already covers them).
+4b. A `nitride-wasm` crate on wasmtime that loads a binding's component,
+   checks its exports against the WIT world, and turns them into host
+   bindings; a Rust test component built for `wasm32-wasip2`.
 5. Effects: `effect` on operations, and how a host grants them.
 6. `process` bindings, and drafting bindings from library metadata.
 

@@ -87,16 +87,29 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         return Ok(true);
     }
     if args.first().is_some_and(|a| a == "interface") {
-        // Rust for the project's catalog interfaces: the traits an
-        // implementation fills in, binders and conformance runs.
-        let [_, manifest] = args.as_slice() else {
-            return Err("usage: nitride interface <project.nproj|project.json>".into());
+        // The project's catalog interfaces for implementers: Rust traits,
+        // binders and conformance runs, or WIT worlds for components.
+        let (target, manifest) = match args.as_slice() {
+            [_, manifest] => ("rust", manifest),
+            [_, flag, target, manifest] if flag == "--target" => (target.as_str(), manifest),
+            _ => {
+                return Err(
+                    "usage: nitride interface [--target rust|wit] <project.nproj|project.json>"
+                        .into(),
+                );
+            }
         };
         let prepared = nitride_prepare::prepare_project(std::path::Path::new(manifest))?;
-        print!(
-            "{}",
-            nitride_codegen::interfaces(&prepared.data.to_string())?
-        );
+        let data = prepared.data.to_string();
+        match target {
+            "rust" => print!("{}", nitride_codegen::interfaces(&data)?),
+            "wit" => {
+                let documents = nitride_codegen::wit(&data)?;
+                let texts: Vec<_> = documents.into_iter().map(|(_, wit)| wit).collect();
+                print!("{}", texts.join("\n"));
+            }
+            other => return Err(format!("unknown interface target '{other}'").into()),
+        }
         return Ok(true);
     }
     if args.first().is_some_and(|a| a == "conform") {

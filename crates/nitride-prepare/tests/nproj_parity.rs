@@ -155,6 +155,11 @@ fn nproj_matches_project_json() {
             paths(folder, &manifest["catalogs"]),
             "{name}"
         );
+        assert_eq!(
+            normals(&language.bindings),
+            paths(folder, &manifest["bindings"]),
+            "{name}"
+        );
         let typed = manifest["mode"].as_str().unwrap_or("typed") == "typed";
         assert_eq!(language.typed(), typed, "{name}");
         compared += 1;
@@ -162,7 +167,7 @@ fn nproj_matches_project_json() {
     // Every language folder but `signed` has a project.json (`project`'s goes
     // once bootstrap reads .nproj).
     assert!(compared >= 13, "{compared}");
-    assert_eq!(languages.len(), 15);
+    assert_eq!(languages.len(), 16);
 }
 
 #[test]

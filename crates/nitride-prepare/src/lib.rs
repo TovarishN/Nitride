@@ -3,6 +3,9 @@
 mod grammar_seed;
 #[rustfmt::skip]
 mod catalog_seed;
+#[rustfmt::skip]
+mod binding_seed;
+mod binding;
 mod catalog;
 mod functions;
 mod literal;
@@ -212,6 +215,17 @@ pub fn language_declaration(source: &Source) -> Result<Option<LanguageDeclaratio
 /// sources give the empty catalog of a syntax-only profile.
 pub fn catalogs(sources: &[Source]) -> Result<Value, PrepareError> {
     catalog(sources).map(|c| c.value)
+}
+
+/// The bindings of a project's `.nbind` sources, checked against its lowered
+/// catalog (`Catalog::value`).
+pub fn bindings(sources: &[Source], catalog: &Value) -> Result<Value, PrepareError> {
+    binding::lower(sources, catalog)
+}
+
+/// Whether a binding file parses as written.
+pub fn binding_parses(source: &Source) -> bool {
+    binding::parses(source)
 }
 
 /// A project's lowered catalogs: the JSON value codegen reads, its compact
