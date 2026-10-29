@@ -78,7 +78,9 @@ impl Registry {
         for folder in folders {
             let manifests = manifest::read(folder, open);
             if let Some((workspace, parsed)) = manifests.first()
-                && workspace.file_name().is_some_and(|n| n == manifest::NAMES[0])
+                && workspace
+                    .file_name()
+                    .is_some_and(|n| n == manifest::NAMES[0])
             {
                 let files = match parsed {
                     // An unreadable workspace keeps the languages it included.

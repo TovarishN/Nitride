@@ -42,7 +42,10 @@ fn strings(value: &Value) -> Vec<String> {
 }
 
 fn paths(base: &Path, value: &Value) -> Vec<PathBuf> {
-    strings(value).iter().map(|p| normal(&base.join(p))).collect()
+    strings(value)
+        .iter()
+        .map(|p| normal(&base.join(p)))
+        .collect()
 }
 
 fn workspace() -> Vec<ProjectLanguage> {
@@ -105,10 +108,25 @@ fn nproj_matches_nitrogen_json() {
         let language = languages.iter().find(|l| &l.name == name).unwrap();
         assert_eq!(language.extensions, strings(&entry["extensions"]), "{name}");
         assert_eq!(language.start, entry["start"].as_str().unwrap(), "{name}");
-        let nitrogen = language.nitrogen.as_ref().unwrap_or_else(|| panic!("{name}"));
-        assert_eq!(nitrogen.namespace, entry["namespace"].as_str().unwrap(), "{name}");
-        assert_eq!(normals(&nitrogen.grammars), paths(&root, &entry["grammars"]), "{name}");
-        assert_eq!(normals(&nitrogen.sources), paths(&root, &entry["sources"]), "{name}");
+        let nitrogen = language
+            .nitrogen
+            .as_ref()
+            .unwrap_or_else(|| panic!("{name}"));
+        assert_eq!(
+            nitrogen.namespace,
+            entry["namespace"].as_str().unwrap(),
+            "{name}"
+        );
+        assert_eq!(
+            normals(&nitrogen.grammars),
+            paths(&root, &entry["grammars"]),
+            "{name}"
+        );
+        assert_eq!(
+            normals(&nitrogen.sources),
+            paths(&root, &entry["sources"]),
+            "{name}"
+        );
     }
 }
 
@@ -122,9 +140,21 @@ fn nproj_matches_project_json() {
         };
         let manifest: Value = serde_json::from_str(&text).unwrap();
         let name = &language.name;
-        assert_eq!(language.start, manifest["start"].as_str().unwrap(), "{name}");
-        assert_eq!(normals(&language.grammars), paths(folder, &manifest["grammars"]), "{name}");
-        assert_eq!(normals(&language.catalogs), paths(folder, &manifest["catalogs"]), "{name}");
+        assert_eq!(
+            language.start,
+            manifest["start"].as_str().unwrap(),
+            "{name}"
+        );
+        assert_eq!(
+            normals(&language.grammars),
+            paths(folder, &manifest["grammars"]),
+            "{name}"
+        );
+        assert_eq!(
+            normals(&language.catalogs),
+            paths(folder, &manifest["catalogs"]),
+            "{name}"
+        );
         let typed = manifest["mode"].as_str().unwrap_or("typed") == "typed";
         assert_eq!(language.typed(), typed, "{name}");
         compared += 1;

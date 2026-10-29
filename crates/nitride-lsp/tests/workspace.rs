@@ -16,8 +16,15 @@ const GRAMMAR: &str =
 
 /// `dir/nitride.nproj` including `folders`.
 fn workspace(dir: &Path, folders: &[&str]) -> PathBuf {
-    let includes: String = folders.iter().map(|f| format!("  include {f};\n")).collect();
-    write(dir, "nitride.nproj", &format!("workspace\n{{\n{includes}}}\n"));
+    let includes: String = folders
+        .iter()
+        .map(|f| format!("  include {f};\n"))
+        .collect();
+    write(
+        dir,
+        "nitride.nproj",
+        &format!("workspace\n{{\n{includes}}}\n"),
+    );
     dir.join("nitride.nproj")
 }
 
@@ -36,7 +43,12 @@ fn no_buffers(_: &Path) -> Option<String> {
 fn nproj_wins_over_nitrogen_json() {
     let dir = scratch("prefers");
     write(&dir, "a/m.ngr", GRAMMAR);
-    language(&dir, "a", "A", "language A { extensions .a; grammar m.ngr; start M.Program; }");
+    language(
+        &dir,
+        "a",
+        "A",
+        "language A { extensions .a; grammar m.ngr; start M.Program; }",
+    );
     let root = workspace(&dir, &["a"]);
     write(
         &dir,
@@ -81,8 +93,18 @@ fn typed_follows_catalog() {
     let dir = scratch("mode");
     write(&dir, "m.ngr", GRAMMAR);
     write(&dir, "c.ncatalog", "");
-    language(&dir, "t", "T", "language T { extensions .t; grammar ../m.ngr; start M.Program; catalog ../c.ncatalog; }");
-    language(&dir, "s", "S", "language S { extensions .s; grammar ../m.ngr; start M.Program; }");
+    language(
+        &dir,
+        "t",
+        "T",
+        "language T { extensions .t; grammar ../m.ngr; start M.Program; catalog ../c.ncatalog; }",
+    );
+    language(
+        &dir,
+        "s",
+        "S",
+        "language S { extensions .s; grammar ../m.ngr; start M.Program; }",
+    );
     workspace(&dir, &["t", "s"]);
     let entries: Vec<_> = manifest::read(&dir, &no_buffers)
         .into_iter()
@@ -100,7 +122,12 @@ fn bad_manifest_reports_and_continues() {
     write(&bad, "nitride.nproj", text);
     let good = scratch("good-manifest");
     write(&good, "m/m.ngr", GRAMMAR);
-    language(&good, "m", "M", "language M { extensions .m; grammar m.ngr; start M.Program; }");
+    language(
+        &good,
+        "m",
+        "M",
+        "language M { extensions .m; grammar m.ngr; start M.Program; }",
+    );
     workspace(&good, &["m"]);
 
     let mut registry = Registry::default();
@@ -129,7 +156,12 @@ fn bad_manifest_reports_and_continues() {
 #[test]
 fn missing_grammar_is_reported_on_its_nproj() {
     let dir = scratch("missing-grammar");
-    let file = language(&dir, "m", "M", "language M { extensions .m; grammar absent.ngr; start M.Program; }");
+    let file = language(
+        &dir,
+        "m",
+        "M",
+        "language M { extensions .m; grammar absent.ngr; start M.Program; }",
+    );
     workspace(&dir, &["m"]);
     let messages = Session::run(&dir, vec![]);
     let diagnostics = diagnostics(&messages, &file);
@@ -163,7 +195,12 @@ fn repo_manifest_loads() {
         assert!(language.errors.is_empty(), "{}", language.entry.name);
     }
     for manifest in registry.manifests() {
-        assert!(manifest.errors.is_empty(), "{}: {:?}", manifest.path.display(), manifest.errors);
+        assert!(
+            manifest.errors.is_empty(),
+            "{}: {:?}",
+            manifest.path.display(),
+            manifest.errors
+        );
     }
 }
 
@@ -181,7 +218,10 @@ fn xml_folder(name: &str, second: &str) -> PathBuf {
 
 #[test]
 fn one_bad_language_keeps_others() {
-    let dir = xml_folder("bad-entry", "language B { extensions .b; grammar ../Xml.ngr; }");
+    let dir = xml_folder(
+        "bad-entry",
+        "language B { extensions .b; grammar ../Xml.ngr; }",
+    );
     let mut registry = Registry::default();
     registry.reload(std::slice::from_ref(&dir), &|_| None);
     assert!(
@@ -241,7 +281,13 @@ fn bad_include_reports_on_workspace_file() {
     let root = workspace(&dir, &["gone", "xml"]);
     let mut registry = Registry::default();
     registry.reload(std::slice::from_ref(&dir), &|_| None);
-    assert!(registry.for_path(&dir.join("t.xml")).unwrap().current.is_some());
+    assert!(
+        registry
+            .for_path(&dir.join("t.xml"))
+            .unwrap()
+            .current
+            .is_some()
+    );
     let errors = &registry
         .manifests()
         .iter()
@@ -268,8 +314,14 @@ fn unknown_start_rule_is_reported_at_start() {
         "{on_nproj}"
     );
     let at = text.find("Xml.Nope").unwrap() as u64;
-    assert_eq!(on_nproj[0]["range"]["start"], json!({"line":0,"character":at}));
-    assert_eq!(on_nproj[0]["range"]["end"], json!({"line":0,"character":at + 8}));
+    assert_eq!(
+        on_nproj[0]["range"]["start"],
+        json!({"line":0,"character":at})
+    );
+    assert_eq!(
+        on_nproj[0]["range"]["end"],
+        json!({"line":0,"character":at + 8})
+    );
     assert_eq!(diagnostics(&messages, &grammar), json!([]));
 }
 
@@ -277,7 +329,12 @@ fn unknown_start_rule_is_reported_at_start() {
 fn language_extensions_lists_manifest_and_signed() {
     let dir = scratch("language-extensions");
     write(&dir, "m/m.ngr", GRAMMAR);
-    language(&dir, "m", "M", "language M { extensions .m; grammar m.ngr; start M.Program; }");
+    language(
+        &dir,
+        "m",
+        "M",
+        "language M { extensions .m; grammar m.ngr; start M.Program; }",
+    );
     workspace(&dir, &["m"]);
     write(
         &dir,
@@ -308,7 +365,9 @@ fn broken_workspace_keeps_languages() {
         });
         for file in ["t.xml", "t.b"] {
             assert!(
-                registry.for_path(&dir.join(file)).is_some_and(|l| l.current.is_some()),
+                registry
+                    .for_path(&dir.join(file))
+                    .is_some_and(|l| l.current.is_some()),
                 "{file}"
             );
         }

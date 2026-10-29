@@ -65,7 +65,11 @@ fn definition_on_grammar_path_opens_file() {
     assert_eq!(found["uri"], uri(&dir.join("dates/Dates.ngr")), "{found}");
     assert_eq!(found["range"]["start"], json!({"line":0,"character":0}));
     let found = definition(&dir, &file, DATES, "Dates.ncatalog");
-    assert_eq!(found["uri"], uri(&dir.join("dates/Dates.ncatalog")), "{found}");
+    assert_eq!(
+        found["uri"],
+        uri(&dir.join("dates/Dates.ncatalog")),
+        "{found}"
+    );
 }
 
 #[test]
@@ -115,7 +119,13 @@ fn listed_nproj_shows_workspace_problems_once() {
 #[test]
 fn nproj_semantic_tokens() {
     let (dir, file) = dates("nproj-tokens");
-    let tokens = ask(&dir, &file, DATES, "textDocument/semanticTokens/full", json!({}));
+    let tokens = ask(
+        &dir,
+        &file,
+        DATES,
+        "textDocument/semanticTokens/full",
+        json!({}),
+    );
     let data: Vec<u64> = tokens["data"]
         .as_array()
         .unwrap()

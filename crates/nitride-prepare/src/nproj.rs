@@ -65,6 +65,15 @@ fn syntax(source: &Source) -> Result<SyntaxTree<'static>, PrepareError> {
     .map_err(|e| source.error(e.span.map(|v| v as usize), e.message))
 }
 
+/// A `nitrogen { }` block as written: its node, and the grammar list it
+/// gives, if any.
+struct NitrogenBlock {
+    node: u32,
+    namespace: Option<String>,
+    grammars: Option<Vec<PathBuf>>,
+    sources: Vec<PathBuf>,
+}
+
 /// A path or name as written, where it was written.
 struct Written {
     text: String,
@@ -111,7 +120,10 @@ impl Decoder<'_> {
     }
     /// The root item: a `Language` or `Workspace` node.
     fn item(&self) -> u32 {
-        let item = self.tree.field(self.tree.root, "Item").expect("project item");
+        let item = self
+            .tree
+            .field(self.tree.root, "Item")
+            .expect("project item");
         self.concrete(item, &["Language", "Workspace"])
     }
 }
@@ -165,7 +177,7 @@ pub fn read_language(
     let mut grammars = Vec::new();
     let mut start: Option<Written> = None;
     let mut catalogs = Vec::new();
-    let mut nitrogen: Option<(u32, Option<String>, Option<Vec<PathBuf>>, Vec<PathBuf>)> = None;
+    let mut nitrogen: Option<NitrogenBlock> = None;
     for member in children(&tree, item, "Members") {
         let m = d.concrete(
             member,
@@ -208,7 +220,12 @@ pub fn read_language(
                         _ => sources.extend(resolve(d.fields(n, "Paths"), &mut errors)),
                     }
                 }
-                nitrogen = Some((m, namespace, own, sources));
+                nitrogen = Some(NitrogenBlock {
+                    node: m,
+                    namespace,
+                    grammars: own,
+                    sources,
+                });
             }
         }
     }
@@ -221,15 +238,24 @@ pub fn read_language(
     };
     let nitrogen = match nitrogen {
         None => None,
-        Some((block, None, _, _)) => {
-            let at = d.span(block)[0];
+        Some(NitrogenBlock {
+            node,
+            namespace: None,
+            ..
+        }) => {
+            let at = d.span(node)[0];
             errors.push(source.error(
                 [at, at + "nitrogen".len()],
                 "nitrogen block needs a namespace",
             ));
             None
         }
-        Some((_, Some(namespace), own, sources)) => Some(NitrogenSection {
+        Some(NitrogenBlock {
+            namespace: Some(namespace),
+            grammars: own,
+            sources,
+            ..
+        }) => Some(NitrogenSection {
             namespace,
             grammars: own.unwrap_or_else(|| grammars.clone()),
             sources,
@@ -322,8 +348,7 @@ pub fn read_workspace(
             Err(errors) => workspace.errors.extend(errors),
             Ok(mut language) => {
                 let mut kept = (Vec::new(), Vec::new());
-                for (extension, span) in language.extensions.iter().zip(&language.extension_spans)
-                {
+                for (extension, span) in language.extensions.iter().zip(&language.extension_spans) {
                     match claimed.get(&extension.to_lowercase()) {
                         Some(owner) => workspace.errors.push(included.error(
                             *span,
@@ -457,7 +482,15 @@ pub fn references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError
     while let Some(member) = members.pop() {
         let m = d.concrete(
             member,
-            &["Extensions", "Grammar", "Start", "Catalog", "Nitrogen", "Namespace", "Source"],
+            &[
+                "Extensions",
+                "Grammar",
+                "Start",
+                "Catalog",
+                "Nitrogen",
+                "Namespace",
+                "Source",
+            ],
         );
         match d.kind(m) {
             "Grammar" => files("grammar", d.fields(m, "Paths"), &mut found),

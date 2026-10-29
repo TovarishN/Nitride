@@ -22,7 +22,9 @@ fn read(path: &Path) -> Result<String, PrepareError> {
 /// Reads `file` as a project input, recording it in `inputs`.
 fn load(file: &Path, inputs: &mut Vec<PathBuf>) -> Result<Source, PrepareError> {
     let text = read(file)?;
-    let file = file.canonicalize().map_err(|e| error(file, e.to_string()))?;
+    let file = file
+        .canonicalize()
+        .map_err(|e| error(file, e.to_string()))?;
     let source = Source {
         path: file.display().to_string(),
         text,

@@ -210,7 +210,11 @@ pub fn manifest(
         .map(str::to_owned)
         .collect();
     includes.push(format!("  include {folder};"));
-    std::fs::write(&workspace, format!("workspace\n{{\n{}\n}}\n", includes.join("\n"))).unwrap();
+    std::fs::write(
+        &workspace,
+        format!("workspace\n{{\n{}\n}}\n", includes.join("\n")),
+    )
+    .unwrap();
 }
 
 /// The `.nproj` that `manifest` writes for language `name` in `dir`.

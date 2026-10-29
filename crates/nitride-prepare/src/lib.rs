@@ -3,7 +3,6 @@
 mod grammar_seed;
 #[rustfmt::skip]
 mod catalog_seed;
-mod project_seed;
 mod catalog;
 mod functions;
 mod literal;
@@ -11,6 +10,8 @@ mod normalize;
 mod nproj;
 mod parser;
 mod project;
+#[rustfmt::skip]
+mod project_seed;
 pub use nproj::{
     NitrogenSection, ProjectLanguage, ProjectReference, ProjectWorkspace, read_language,
     read_workspace, snapshot,

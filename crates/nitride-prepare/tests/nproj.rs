@@ -66,7 +66,12 @@ fn dates_example_resolves() {
     let dir = directory();
     touch(
         &dir,
-        &["Dates.ngr", "Dates.ncatalog", "Dates.Reference.ngr", "DatesSemantics.cs"],
+        &[
+            "Dates.ngr",
+            "Dates.ncatalog",
+            "Dates.Reference.ngr",
+            "DatesSemantics.cs",
+        ],
     );
     let language = read_language(&source(dir.join("Dates.nproj"), DATES), &exists).unwrap();
     assert_eq!(language.path, dir.join("Dates.nproj"));
@@ -74,7 +79,10 @@ fn dates_example_resolves() {
     assert_eq!(language.extensions, [".dates"]);
     assert_eq!(language.grammars, [dir.join("Dates.ngr")]);
     assert_eq!(language.start, "Dates.Program");
-    assert_eq!(&DATES[language.start_span[0]..language.start_span[1]], "Dates.Program");
+    assert_eq!(
+        &DATES[language.start_span[0]..language.start_span[1]],
+        "Dates.Program"
+    );
     assert_eq!(language.catalogs, [dir.join("Dates.ncatalog")]);
     assert!(language.typed());
     let nitrogen = language.nitrogen.unwrap();
@@ -103,7 +111,12 @@ fn repeated_lists_append_in_order() {
     assert_eq!(language.extensions, [".a", ".b", ".c"]);
     assert_eq!(
         language.grammars,
-        [dir.join("A.ngr"), dir.join("B.ngr"), dir.join("C.ngr"), dir.join("sub/D.ngr")]
+        [
+            dir.join("A.ngr"),
+            dir.join("B.ngr"),
+            dir.join("C.ngr"),
+            dir.join("sub/D.ngr")
+        ]
     );
 }
 
@@ -122,7 +135,10 @@ fn no_catalog_means_syntax() {
 fn errors_carry_nproj_spans() {
     let dir = directory();
     touch(&dir, &["A.ngr"]);
-    let (at, error) = language_error(&dir, "language A { grammar A.ngr, Missing.ngr; start A.S; }");
+    let (at, error) = language_error(
+        &dir,
+        "language A { grammar A.ngr, Missing.ngr; start A.S; }",
+    );
     assert_eq!(at, "Missing.ngr");
     assert!(error.message.contains("file not found"), "{error}");
     assert!(error.path.ends_with("X.nproj"));
@@ -131,13 +147,22 @@ fn errors_carry_nproj_spans() {
     assert_eq!(at, "start A.T;");
     assert!(error.message.contains("repeated start"), "{error}");
 
-    let (at, error) = language_error(&dir, "language A { grammar A.ngr; start A.S; nitrogen { } }");
+    let (at, error) = language_error(
+        &dir,
+        "language A { grammar A.ngr; start A.S; nitrogen { } }",
+    );
     assert_eq!(at, "nitrogen");
-    assert!(error.message.contains("nitrogen block needs a namespace"), "{error}");
+    assert!(
+        error.message.contains("nitrogen block needs a namespace"),
+        "{error}"
+    );
 
     let (at, error) = language_error(&dir, "language A { grammar A.ngr; }");
     assert_eq!(at, "A");
-    assert!(error.message.contains("language needs a start rule"), "{error}");
+    assert!(
+        error.message.contains("language needs a start rule"),
+        "{error}"
+    );
 
     let (_, error) = language_error(&dir, "workspace { include a; }");
     assert!(error.message.contains("expected a language"), "{error}");
@@ -175,7 +200,11 @@ fn workspace_include_errors() {
 fn duplicate_extension_across_languages() {
     let dir = directory();
     touch(&dir, &["a/A.ngr", "b/B.ngr"]);
-    std::fs::write(dir.join("a/A.nproj"), "language A { extensions .x; grammar A.ngr; start A.S; }").unwrap();
+    std::fs::write(
+        dir.join("a/A.nproj"),
+        "language A { extensions .x; grammar A.ngr; start A.S; }",
+    )
+    .unwrap();
     let b = "language B { extensions .x, .y; grammar B.ngr; start B.S; }";
     std::fs::write(dir.join("b/B.nproj"), b).unwrap();
     let text = "workspace { include a; include b; }";
@@ -187,14 +216,23 @@ fn duplicate_extension_across_languages() {
     let error = &workspace.errors[0];
     assert!(error.path.ends_with("B.nproj"));
     assert_eq!(&b[error.span[0]..error.span[1]], ".x");
-    assert!(error.message.contains("extension .x is already claimed by A"), "{error}");
+    assert!(
+        error
+            .message
+            .contains("extension .x is already claimed by A"),
+        "{error}"
+    );
 }
 
 #[test]
 fn included_language_errors_are_reported_against_their_file() {
     let dir = directory();
     std::fs::create_dir_all(dir.join("a")).unwrap();
-    std::fs::write(dir.join("a/A.nproj"), "language A { grammar Gone.ngr; start A.S; }").unwrap();
+    std::fs::write(
+        dir.join("a/A.nproj"),
+        "language A { grammar Gone.ngr; start A.S; }",
+    )
+    .unwrap();
     let workspace = read_workspace(
         &source(dir.join("nitride.nproj"), "workspace { include a; }"),
         &read,

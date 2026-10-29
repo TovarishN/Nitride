@@ -136,7 +136,10 @@ fn nproj(path: &std::path::Path, text: &str) -> std::path::PathBuf {
 fn nproj_project_prepares_like_json() {
     let path = directory();
     fixture(&path);
-    let file = nproj(&path, "language Test { grammar Test.ngr; start Test.Start; }");
+    let file = nproj(
+        &path,
+        "language Test { grammar Test.ngr; start Test.Start; }",
+    );
     let from_nproj = prepare_project(&file).unwrap();
     assert_eq!(
         from_nproj.data,
@@ -155,7 +158,10 @@ fn nproj_typed_with_catalog_prepares_like_json() {
         std::fs::copy(root.join(file), path.join(file)).unwrap();
     }
     std::fs::write(path.join("project.json"), r#"{"mode":"typed","start":"Dates.Program","grammars":["Dates.ngr"],"catalogs":["Dates.ncatalog"]}"#).unwrap();
-    let file = nproj(&path, "language Dates { grammar Dates.ngr; start Dates.Program; catalog Dates.ncatalog; }");
+    let file = nproj(
+        &path,
+        "language Dates { grammar Dates.ngr; start Dates.Program; catalog Dates.ncatalog; }",
+    );
     assert_eq!(
         prepare_project(&file).unwrap().data,
         prepare_project(&path.join("project.json")).unwrap().data
