@@ -8,8 +8,12 @@ mod catalog;
 mod functions;
 mod literal;
 mod normalize;
+mod nproj;
 mod parser;
 mod project;
+pub use nproj::{
+    NitrogenSection, ProjectLanguage, ProjectWorkspace, read_language, read_workspace,
+};
 pub use project::{PreparedProject, prepare_project, write_prepared};
 
 use serde_json::Value;
