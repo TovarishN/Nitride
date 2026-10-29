@@ -17,6 +17,7 @@ pub mod roles;
 mod rpc;
 mod server;
 mod signatures;
+pub mod signed;
 mod structure;
 mod tokens;
 pub(crate) mod uri;

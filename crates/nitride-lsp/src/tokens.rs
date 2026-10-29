@@ -283,6 +283,7 @@ pub fn encode(analysis: &Analysis, palette: bool) -> Vec<u32> {
         for item in items {
             let (kind, scope) = match item.kind {
                 "module" => (NAMESPACE, "entity.name.namespace"),
+                "language" => (TYPE, "entity.name.type.language"),
                 "function" | "helper" => (FUNCTION, "entity.name.function.rule"),
                 _ => (TYPE, "entity.name.function.rule"),
             };
@@ -377,6 +378,19 @@ pub fn encode(analysis: &Analysis, palette: bool) -> Vec<u32> {
         at = end;
     }
     classifier.gap(at, text.len() as u32, &mut tokens);
+    // Nitrogen signatures were masked for parsing: they are directives, shown as comments.
+    if !analysis.header.is_empty() {
+        tokens.retain(|t| {
+            !analysis
+                .header
+                .iter()
+                .any(|h| t.start < h[1] && h[0] < t.end)
+        });
+        for span in &analysis.header {
+            tokens.push(Token::both(span[0], span[1], COMMENT, 0, None));
+        }
+        tokens.sort_by_key(|t| t.start);
+    }
     relative(analysis, &tokens, palette)
 }
 

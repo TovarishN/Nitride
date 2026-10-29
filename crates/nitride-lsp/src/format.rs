@@ -25,6 +25,11 @@ fn opaque(analysis: &Analysis) -> Vec<u8> {
             }
         }
     }
+    // A Nitrogen header (signatures and the comments holding them) is comment.
+    for span in &analysis.header {
+        let [start, end] = span.map(|b| (b as usize).min(bytes.len()));
+        mask[start..end].iter_mut().for_each(|m| *m = COMMENT);
+    }
     // Comments in the text between tokens.
     let mut i = 0;
     while i + 1 < bytes.len() {

@@ -64,6 +64,14 @@ fn item(label: &str, kind: u32, detail: Option<&str>) -> Value {
 }
 
 pub fn items(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -> Value {
+    // Nothing completes inside a Nitrogen header.
+    if analysis
+        .header
+        .iter()
+        .any(|h| h[0] <= offset && offset <= h[1])
+    {
+        return Value::Array(vec![]);
+    }
     let text = analysis.lines.text();
     let start = word_start(text, offset as usize);
     let typed = text[start..(offset as usize).min(text.len())].to_lowercase();

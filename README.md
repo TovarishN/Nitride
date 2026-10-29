@@ -199,6 +199,10 @@ code --install-extension editors/vscode/nitride-darwin-arm64-0.1.0.vsix
 
 Other packaging targets are `darwin-x64`, `linux-x64`, and `win32-x64`.
 
+A file can also choose its language with a Nitrogen signature such as
+`#!nitrogen language Calc`, declared by a `#!nitrogen grammar` file; see
+`languages/signed/` and the extension README.
+
 ## Development and evidence
 
 ```sh
