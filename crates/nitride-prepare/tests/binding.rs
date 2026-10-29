@@ -42,6 +42,7 @@ fn bindings_name_their_contract_component_and_exports() {
         json!([{
             "interface": "C.Cal",
             "contract": format!("C.Cal@{hash}"),
+            "export": "nitride:c/cal@2.0.0",
             "target": "wasm-component",
             "component": "cal.wasm",
             "exports": {"C.ParseDate": "parse-iso", "C.Next": "next"},

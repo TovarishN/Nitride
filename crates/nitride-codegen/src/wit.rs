@@ -113,9 +113,45 @@ pub fn wit(input: &str) -> Result<Vec<(String, String)>, String> {
     let Some(interfaces) = catalog.get("interfaces").and_then(Value::as_object) else {
         return Ok(vec![]);
     };
+    interfaces
+        .iter()
+        .map(|(id, interface)| Ok((id.clone(), document(catalog, id, interface, None)?)))
+        .collect()
+}
+
+/// WIT for each of a prepared project's bindings, as `(component path,
+/// document)`: the interface's world with the binding's export names, which
+/// is what the component must export.
+pub fn binding_wit(input: &str) -> Result<Vec<(String, String)>, String> {
+    let data: Value = serde_json::from_str(input).map_err(|e| e.to_string())?;
+    let catalog = &data["catalog"];
+    let Some(bindings) = data.get("bindings").and_then(Value::as_array) else {
+        return Ok(vec![]);
+    };
+    bindings
+        .iter()
+        .map(|binding| {
+            let id = text(&binding["interface"])?;
+            let interface = &catalog["interfaces"][id];
+            let exports = binding["exports"].as_object().ok_or("binding exports")?;
+            Ok((
+                text(&binding["component"])?.to_string(),
+                document(catalog, id, interface, Some(exports))?,
+            ))
+        })
+        .collect()
+}
+
+/// One interface's WIT package, its operations exported under `exports`
+/// (by operation id) or their own WIT names.
+fn document(
+    catalog: &Value,
+    id: &str,
+    interface: &Value,
+    exports: Option<&serde_json::Map<String, Value>>,
+) -> Result<String, String> {
     let operations = array(&catalog["operations"])?;
-    let mut documents = Vec::new();
-    for (id, interface) in interfaces {
+    {
         let module = id.rsplit_once('.').map_or("", |(m, _)| m);
         let interface_name = kebab(tail(id));
         let version = interface["version"].as_u64().ok_or("interface version")?;
@@ -187,19 +223,18 @@ pub fn wit(input: &str) -> Result<Vec<(String, String)>, String> {
             } else {
                 format!("result<{result}, {failure_enum}>")
             };
-            writeln!(
-                out,
-                "  {}: func({params}) -> {result};",
-                kebab(tail(text(&op["id"])?))
-            )
-            .unwrap();
+            let op_id = text(&op["id"])?;
+            let export = match exports.and_then(|e| e.get(op_id)) {
+                Some(name) => text(name)?.to_string(),
+                None => kebab(tail(op_id)),
+            };
+            writeln!(out, "  {export}: func({params}) -> {result};").unwrap();
         }
         writeln!(
             out,
             "}}\n\nworld implementation {{\n  export {interface_name};\n}}"
         )
         .unwrap();
-        documents.push((id.clone(), out));
+        Ok(out)
     }
-    Ok(documents)
 }

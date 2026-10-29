@@ -1,0 +1,25 @@
+# Calendar.Gregorian as a WebAssembly component: an implementation that
+# knows nothing of Nitride beyond the WIT `nitride interface --target
+# wit-binding` printed into wit/. Build with build.sh; the result is
+# ../gregorian.wasm, which gregorian.nbind binds.
+[package]
+name = "calendar-component"
+version = "0.1.0"
+edition = "2024"
+publish = false
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.63"
+
+[profile.release]
+opt-level = "s"
+lto = true
+strip = true
+codegen-units = 1
+panic = "abort"
+
+# Not part of the Nitride workspace.
+[workspace]

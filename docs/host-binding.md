@@ -3,8 +3,7 @@
 Status: draft for review. Adds interfaces to `.ncatalog`, a binding language
 (`.nbind`) that maps an interface onto a concrete implementation, and
 conformance examples that check every implementation against its interface.
-Phases 1 to 4 are implemented, phase 4 without a component runtime (see
-Phases); the rest is not.
+Phases 1 to 4b are implemented (see Phases); the rest is not.
 
 ## Why
 
@@ -376,9 +375,36 @@ lists its bindings and their last conformance result.
      `ParseDate` to `parse-iso`. The component does not exist.
    - Not done: the editor does not serve `.nbind`, and `rust crate` targets
      are not offered (implementing the generated trait already covers them).
-4b. A `nitride-wasm` crate on wasmtime that loads a binding's component,
-   checks its exports against the WIT world, and turns them into host
-   bindings; a Rust test component built for `wasm32-wasip2`.
+4b. Component runtime. Done:
+   - `crates/nitride-wasm` (wasmtime 50, component model, no WASI):
+     `bindings(language, prepared, binding, component)` instantiates the
+     component, finds the interface export (`binding.export`, e.g.
+     `nitride:calendar/gregorian@3.0.0`) and each operation's function, checks
+     parameter and result counts, and returns contract bindings. Values cross
+     as `f64`, `s64`, `bool`, `string`, records and lists; a `result` error
+     case maps back to the catalog failure and its message; a trap or a
+     malformed value is the failure `host.component`. Calls share one store
+     behind a mutex.
+   - Prepared bindings gain `export`, and their `component` path is made
+     relative to the manifest's folder.
+   - `nitride interface --target wit-binding` prints the WIT a binding's
+     component must export (the interface with the binding's renames).
+   - `nitride run <manifest> <source>` runs any project, prepared at run time,
+     with the engine's handlers and its bindings' components;
+     `nitride conform <manifest>` runs each bound interface's examples against
+     its component.
+   - Calendar's component: `languages/calendar/component`, a crate that
+     depends only on wit-bindgen and the checked-in WIT
+     (`component/wit/gregorian.wit`, kept current by a test). `build.sh`
+     builds it for `wasm32-unknown-unknown` and wraps it with
+     `wasm-tools component new` into `languages/calendar/gregorian.wasm`
+     (31 KB, checked in, so tests need no wasm toolchain). It conforms to all
+     13 examples and runs the sample with the same values and trace as the
+     Rust implementation.
+   - Generated WIT is parsed by `wasm-tools` in a test when it is installed.
+   - Editor: the LSP serves `.nbind` (diagnostics against the listing
+     language's catalogs, a warning for a binding no language lists, outline,
+     syntax colouring), and the VS Code extension registers the language.
 5. Effects: `effect` on operations, and how a host grants them.
 6. `process` bindings, and drafting bindings from library metadata.
 

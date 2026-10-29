@@ -72,9 +72,22 @@ impl Decoder<'_> {
 /// export name of every interface operation. A component path is as written,
 /// relative to its binding file.
 pub fn lower(sources: &[Source], catalog: &Value) -> Result<Value, PrepareError> {
+    Ok(Value::Array(
+        lower_from(sources, catalog)?
+            .into_iter()
+            .map(|(_, b)| b)
+            .collect(),
+    ))
+}
+
+/// As `lower`, with the index of the source each binding came from.
+pub fn lower_from(
+    sources: &[Source],
+    catalog: &Value,
+) -> Result<Vec<(usize, Value)>, PrepareError> {
     let mut bound: Map<String, Value> = Map::new();
     let mut lowered = Vec::new();
-    for source in sources {
+    for (index, source) in sources.iter().enumerate() {
         let tree = syntax(source)?;
         let d = Decoder { tree: &tree };
         for binding in d.nodes(tree.root, "Bindings") {
@@ -149,19 +162,55 @@ pub fn lower(sources: &[Source], catalog: &Value) -> Result<Value, PrepareError>
                 renamed.push(id.clone());
                 exports.insert(id, json!(d.name(export, "Name").text));
             }
-            lowered.push(json!({
+            // The component's export of the interface, as the WIT names it.
+            let wit = |name: &str| {
+                nitride_codegen::wit_name(name)
+                    .trim_start_matches('%')
+                    .to_owned()
+            };
+            let export = format!(
+                "nitride:{}/{}@{}.0.0",
+                wit(&module.replace('.', "")),
+                wit(interface.text.rsplit('.').next().unwrap()),
+                declared["version"]
+            );
+            lowered.push((index, json!({
                 "interface": interface.text,
                 "contract": format!("{}@{}", interface.text, declared["hash"].as_str().unwrap()),
+                "export": export,
                 "target": "wasm-component",
                 "component": component,
                 "exports": exports,
-            }));
+            })));
         }
     }
-    Ok(Value::Array(lowered))
+    Ok(lowered)
 }
 
 /// Whether a binding file parses as written.
 pub fn parses(source: &Source) -> bool {
     syntax(source).is_ok()
+}
+
+pub fn syntax_error(source: &Source) -> Result<(), PrepareError> {
+    syntax(source).map(|_| ())
+}
+
+/// One "binding" item per binding, named by its interface.
+pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError> {
+    let tree = syntax(source)?;
+    let d = Decoder { tree: &tree };
+    Ok(d.nodes(tree.root, "Bindings")
+        .into_iter()
+        .map(|binding| {
+            let interface = d.name(binding, "Interface");
+            crate::GrammarItem {
+                kind: "binding",
+                name: interface.text,
+                span: d.span(binding),
+                name_span: interface.span,
+                children: vec![],
+            }
+        })
+        .collect())
 }

@@ -113,7 +113,9 @@ pub mod power {
 
 use nitride_core::*;
 use serde_json::{Value, json};
+mod project;
 mod recovery;
+pub use project::{conform_project, run_project};
 pub use recovery::{recovery_language, recovery_observe};
 
 /// The compiled-in language of a `languages/<profile>` project.

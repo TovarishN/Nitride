@@ -42,7 +42,7 @@ fn prepare_nproj(path: PathBuf) -> Result<PreparedProject, PrepareError> {
     };
     let language = crate::read_language(&project, &|p: &Path| p.exists())
         .map_err(|errors| errors.into_iter().next().expect("an error"))?;
-    let mut inputs = vec![path];
+    let mut inputs = vec![path.clone()];
     let sources = language
         .grammars
         .iter()
@@ -59,7 +59,7 @@ fn prepare_nproj(path: PathBuf) -> Result<PreparedProject, PrepareError> {
         .iter()
         .map(|b| load(b, &mut inputs))
         .collect::<Result<Vec<_>, _>>()?;
-    let bindings = crate::bindings(&binding_sources, &catalog.value)?;
+    let bindings = located(&binding_sources, &catalog.value, &path)?;
     let mode = if language.typed() { "typed" } else { "syntax" };
     let mut data = catalog
         .prepare(&sources, &language.start, mode)
@@ -145,10 +145,33 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
         .iter()
         .map(|b| load(b, "binding"))
         .collect::<Result<Vec<_>, _>>()?;
-    let bindings = crate::bindings(&binding_sources, &catalog.value)?;
+    let bindings = located(&binding_sources, &catalog.value, &path)?;
     let mut data = catalog.prepare(&sources, start, mode)?.data;
     with_bindings(&mut data, bindings);
     Ok(PreparedProject { data, inputs })
+}
+
+/// Checked bindings, each component path made relative to the manifest's
+/// folder (it is written relative to its `.nbind`). A component outside that
+/// folder keeps the path its binding file's folder gives it.
+fn located(sources: &[Source], catalog: &Value, manifest: &Path) -> Result<Value, PrepareError> {
+    let folder = manifest.parent().unwrap_or(Path::new(""));
+    let mut bindings = Vec::new();
+    for (index, mut binding) in crate::binding::lower_from(sources, catalog)? {
+        let file = Path::new(&sources[index].path);
+        let component = file
+            .parent()
+            .unwrap_or(Path::new(""))
+            .join(binding["component"].as_str().unwrap());
+        let component = component.strip_prefix(folder).unwrap_or(&component);
+        let parts: Vec<_> = component
+            .components()
+            .map(|c| c.as_os_str().to_string_lossy().into_owned())
+            .collect();
+        binding["component"] = Value::String(parts.join("/"));
+        bindings.push(binding);
+    }
+    Ok(Value::Array(bindings))
 }
 
 /// Records checked bindings in prepared data; a project without any keeps

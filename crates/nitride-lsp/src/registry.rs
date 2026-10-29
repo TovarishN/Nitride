@@ -153,6 +153,7 @@ impl Registry {
                 Mode::Typed
             },
             catalogs,
+            bindings: vec![],
             start_span: None,
         };
         let at_name = |message: String| located(path, &source.text, declaration.name_span, message);
@@ -310,6 +311,13 @@ impl Registry {
 }
 
 impl Registry {
+    /// Languages whose bindings include `path`.
+    pub fn using_binding<'a>(&'a self, path: &'a Path) -> impl Iterator<Item = &'a LanguageState> {
+        self.languages
+            .iter()
+            .filter(move |l| l.entry.bindings.iter().any(|b| same_file(b, path)))
+    }
+
     /// Languages whose catalogs include `path`.
     pub fn using_catalog<'a>(&'a self, path: &'a Path) -> impl Iterator<Item = &'a LanguageState> {
         self.languages

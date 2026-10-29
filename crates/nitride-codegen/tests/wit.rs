@@ -72,3 +72,47 @@ fn interfaces_without_failures_return_plain_values() {
     assert!(!document.contains("enum"), "{document}");
     assert!(catalog_wit("catalog module C { type T; }").is_empty());
 }
+
+/// Parses generated WIT with `wasm-tools` when it is installed; skipped
+/// otherwise.
+#[test]
+fn generated_wit_parses_with_wasm_tools() {
+    if std::process::Command::new("wasm-tools")
+        .arg("--version")
+        .output()
+        .is_err()
+    {
+        eprintln!("wasm-tools not found; skipped");
+        return;
+    }
+    let calendar = nitride_prepare::prepare_project(std::path::Path::new(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../languages/calendar/Calendar.nproj"
+    )))
+    .unwrap()
+    .data
+    .to_string();
+    let mut documents = wit(&calendar).unwrap();
+    documents.extend(nitride_codegen::binding_wit(&calendar).unwrap());
+    documents.extend(catalog_wit(
+        "catalog module C { type List = represented i64;
+           interface Type version 1 { operation Size(List) : Scalar; } }",
+    ));
+    let folder = std::env::temp_dir().join(format!("nitride-wit-{}", std::process::id()));
+    for (i, (_, document)) in documents.iter().enumerate() {
+        std::fs::create_dir_all(&folder).unwrap();
+        let file = folder.join(format!("{i}.wit"));
+        std::fs::write(&file, document).unwrap();
+        let output = std::process::Command::new("wasm-tools")
+            .args(["component", "wit"])
+            .arg(&file)
+            .output()
+            .unwrap();
+        assert!(
+            output.status.success(),
+            "{}\n---\n{document}",
+            String::from_utf8_lossy(&output.stderr)
+        );
+    }
+    let _ = std::fs::remove_dir_all(&folder);
+}

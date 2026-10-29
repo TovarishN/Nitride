@@ -11,12 +11,14 @@ use std::sync::Arc;
 
 /// The language a tree was parsed with: a workspace language, or the
 /// compiled grammar frontend for `.ngr` files, catalog frontend for
-/// `.ncatalog` files or project frontend for `.nproj` files.
+/// `.ncatalog` files, binding frontend for `.nbind` files or project
+/// frontend for `.nproj` files.
 #[derive(Clone)]
 pub enum Grammar {
     Workspace(Arc<Loaded>),
     Frontend,
     Catalog,
+    Binding,
     Project,
 }
 
@@ -26,6 +28,7 @@ impl Grammar {
             Grammar::Workspace(loaded) => loaded.language.language(),
             Grammar::Frontend => nitride_prepare::grammar_language(),
             Grammar::Catalog => nitride_prepare::catalog_language(),
+            Grammar::Binding => nitride_prepare::binding_language(),
             Grammar::Project => nitride_prepare::project_language(),
         }
     }
@@ -127,6 +130,18 @@ fn catalog_roles() -> Roles {
 }
 
 /// The project frontend's literal roles, computed once.
+fn binding_roles() -> Roles {
+    static ROLES: std::sync::OnceLock<Roles> = std::sync::OnceLock::new();
+    ROLES
+        .get_or_init(|| {
+            Arc::new(crate::roles::roles(
+                nitride_prepare::binding_language(),
+                &|_| false,
+            ))
+        })
+        .clone()
+}
+
 fn project_roles() -> Roles {
     static ROLES: std::sync::OnceLock<Roles> = std::sync::OnceLock::new();
     ROLES
@@ -179,6 +194,9 @@ pub fn analyze(
     }
     if path.extension().is_some_and(|e| e == "nproj") {
         return Some(project(registry, path, text, open));
+    }
+    if path.extension().is_some_and(|e| e == "nbind") {
+        return Some(binding(registry, path, text, open));
     }
     // Nitrogen signatures choose the language; the rest of the document is
     // parsed with them masked to spaces, so offsets are unchanged.
@@ -569,6 +587,80 @@ fn catalog(
         values: vec![],
         repairs: vec![],
         roles: catalog_roles(),
+        header: vec![],
+    }
+}
+
+/// A binding file: checked against the catalogs of every language that lists
+/// it; a file no language lists is only parsed, and says so.
+fn binding(
+    registry: &Registry,
+    path: &Path,
+    text: &str,
+    open: &dyn Fn(&Path) -> Option<String>,
+) -> Analysis {
+    let lines = LineIndex::new(text);
+    let parsed = parse_recovering(
+        nitride_prepare::binding_language(),
+        text,
+        Limits::default(),
+        RecoveryOptions::default(),
+    );
+    let source = Source {
+        path: path.to_string_lossy().into_owned(),
+        text: text.to_owned(),
+    };
+    let read = |p: &Path| open(p).or_else(|| std::fs::read_to_string(p).ok());
+    let mut reported: Vec<(PrepareError, u8)> = Vec::new();
+    let mut users = registry.using_binding(path).peekable();
+    if users.peek().is_none() {
+        if let Err(error) = nitride_prepare::binding_syntax(&source) {
+            reported.push((error, 1));
+        } else {
+            let end = text.len().min(1);
+            reported.push((
+                PrepareError {
+                    path: source.path.clone(),
+                    span: [0, end],
+                    line: 1,
+                    column: 1,
+                    message: "no language lists this binding".into(),
+                    project: false,
+                },
+                2,
+            ));
+        }
+    }
+    for state in users {
+        let catalogs: Vec<Source> = state
+            .entry
+            .catalogs
+            .iter()
+            .filter_map(|c| {
+                Some(Source {
+                    path: c.to_string_lossy().into_owned(),
+                    text: read(c)?,
+                })
+            })
+            .collect();
+        // Catalog problems are the catalog's own to report.
+        if let Ok(catalog) = nitride_prepare::catalog(&catalogs)
+            && let Err(error) =
+                nitride_prepare::bindings(std::slice::from_ref(&source), &catalog.value)
+        {
+            reported.push((error, 1));
+        }
+    }
+    Analysis {
+        lines,
+        tree: Some(Tree::new(Grammar::Binding, &parsed.tree)),
+        problems: in_file(reported, path),
+        declarations: vec![],
+        outline: nitride_prepare::binding_outline(&source).unwrap_or_default(),
+        index: SymbolIndex::default(),
+        values: vec![],
+        repairs: vec![],
+        roles: binding_roles(),
         header: vec![],
     }
 }

@@ -228,6 +228,21 @@ pub fn binding_parses(source: &Source) -> bool {
     binding::parses(source)
 }
 
+/// A binding file's syntax error, if it has one.
+pub fn binding_syntax(source: &Source) -> Result<(), PrepareError> {
+    binding::syntax_error(source)
+}
+
+/// The bindings a binding file declares, by interface name.
+pub fn binding_outline(source: &Source) -> Result<Vec<GrammarItem>, PrepareError> {
+    binding::outline(source)
+}
+
+/// The compiled binding frontend, a syntax-only language for `.nbind` files.
+pub fn binding_language() -> &'static nitride_core::Language<'static> {
+    &binding_seed::LANGUAGE
+}
+
 /// A project's lowered catalogs: the JSON value codegen reads, its compact
 /// text (what `catalog_hash` hashes), and the grammar names it uses.
 pub struct Catalog {

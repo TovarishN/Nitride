@@ -32,7 +32,7 @@
         },
         {
           "name": "keyword.other.nproj",
-          "match": "\\b(include|extensions|grammar|start|catalog|namespace|source)\\b"
+          "match": "\\b(include|extensions|grammar|start|catalog|binding|namespace|source)\\b"
         }
       ]
     }
