@@ -11,13 +11,13 @@ fn main() {
             std::process::exit(2);
         }
     };
-    for (project, seed) in [
-        ("grammar", "grammar_seed.rs"),
-        ("catalog", "catalog_seed.rs"),
-        ("project", "project_seed.rs"),
+    for (project, name, seed) in [
+        ("grammar", "NitrideGrammar", "grammar_seed.rs"),
+        ("catalog", "NitrideCatalog", "catalog_seed.rs"),
+        ("project", "NitrideProject", "project_seed.rs"),
     ] {
         let prepared = nitride_prepare::prepare_project(
-            &root.join(format!("languages/{project}/project.json")),
+            &root.join(format!("languages/{project}/{name}.nproj")),
         )
         .unwrap_or_else(|e| panic!("prepare {project} frontend: {e}"));
         let generated =

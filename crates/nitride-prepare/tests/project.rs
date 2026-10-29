@@ -125,3 +125,64 @@ fn catalogs_are_inputs_and_their_grammar_names_are_checked() {
     );
     std::fs::remove_dir_all(path).unwrap();
 }
+
+fn nproj(path: &std::path::Path, text: &str) -> std::path::PathBuf {
+    let file = path.join("Test.nproj");
+    std::fs::write(&file, text).unwrap();
+    file
+}
+
+#[test]
+fn nproj_project_prepares_like_json() {
+    let path = directory();
+    fixture(&path);
+    let file = nproj(&path, "language Test { grammar Test.ngr; start Test.Start; }");
+    let from_nproj = prepare_project(&file).unwrap();
+    assert_eq!(
+        from_nproj.data,
+        prepare_project(&path.join("project.json")).unwrap().data
+    );
+    assert_eq!(from_nproj.inputs.len(), 2);
+    assert!(from_nproj.inputs[0].ends_with("Test.nproj"));
+    std::fs::remove_dir_all(path).unwrap();
+}
+
+#[test]
+fn nproj_typed_with_catalog_prepares_like_json() {
+    let path = directory();
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("../../languages/dates");
+    for file in ["Dates.ngr", "Dates.ncatalog"] {
+        std::fs::copy(root.join(file), path.join(file)).unwrap();
+    }
+    std::fs::write(path.join("project.json"), r#"{"mode":"typed","start":"Dates.Program","grammars":["Dates.ngr"],"catalogs":["Dates.ncatalog"]}"#).unwrap();
+    let file = nproj(&path, "language Dates { grammar Dates.ngr; start Dates.Program; catalog Dates.ncatalog; }");
+    assert_eq!(
+        prepare_project(&file).unwrap().data,
+        prepare_project(&path.join("project.json")).unwrap().data
+    );
+    std::fs::remove_dir_all(path).unwrap();
+}
+
+#[test]
+fn nproj_unknown_start_points_at_start() {
+    let path = directory();
+    fixture(&path);
+    let text = "language Test { grammar Test.ngr; start Test.Nope; }";
+    let error = prepare_project(&nproj(&path, text)).unwrap_err();
+    assert!(error.path.ends_with("Test.nproj"), "{error}");
+    assert_eq!(&text[error.span[0]..error.span[1]], "Test.Nope");
+    assert!(error.message.contains("start rule"), "{error}");
+    assert!(error.project);
+    std::fs::remove_dir_all(path).unwrap();
+}
+
+#[test]
+fn nproj_errors_surface() {
+    let path = directory();
+    fixture(&path);
+    let text = "language Test { grammar Gone.ngr; start Test.Start; }";
+    let error = prepare_project(&nproj(&path, text)).unwrap_err();
+    assert!(error.path.ends_with("Test.nproj"), "{error}");
+    assert_eq!(&text[error.span[0]..error.span[1]], "Gone.ngr");
+    std::fs::remove_dir_all(path).unwrap();
+}

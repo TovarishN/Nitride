@@ -52,9 +52,13 @@ impl Source {
     }
     /// An error about the project inputs, reported against this source.
     fn project_error(&self, message: impl Into<String>) -> PrepareError {
+        self.project_error_at([0, 0], message)
+    }
+    /// An error about the project inputs at `span` of this source.
+    fn project_error_at(&self, span: [usize; 2], message: impl Into<String>) -> PrepareError {
         PrepareError {
             project: true,
-            ..self.error([0, 0], message)
+            ..self.error(span, message)
         }
     }
 }
