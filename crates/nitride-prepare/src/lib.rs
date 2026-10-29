@@ -3,6 +3,7 @@
 mod grammar_seed;
 #[rustfmt::skip]
 mod catalog_seed;
+mod project_seed;
 mod catalog;
 mod functions;
 mod literal;
@@ -290,6 +291,11 @@ pub fn catalog_references(source: &Source) -> Result<Vec<GrammarReference>, Prep
 /// The compiled catalog frontend, a syntax-only language for `.ncatalog` files.
 pub fn catalog_language() -> &'static nitride_core::Language<'static> {
     &catalog_seed::LANGUAGE
+}
+
+/// The compiled project frontend, a syntax-only language for `.nproj` files.
+pub fn project_language() -> &'static nitride_core::Language<'static> {
+    &project_seed::LANGUAGE
 }
 
 /// A declaration in a grammar file's outline.

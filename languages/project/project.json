@@ -1,0 +1,5 @@
+{
+  "mode": "syntax",
+  "start": "NitrideProject.File",
+  "grammars": ["Project.ngr"]
+}

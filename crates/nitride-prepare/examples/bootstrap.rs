@@ -1,4 +1,4 @@
-//! Regenerate the checked-in grammar and catalog parsers, or verify them with --check.
+//! Regenerate the checked-in grammar, catalog and project parsers, or verify them with --check.
 use std::path::Path;
 fn main() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR")).join("../..");
@@ -14,6 +14,7 @@ fn main() {
     for (project, seed) in [
         ("grammar", "grammar_seed.rs"),
         ("catalog", "catalog_seed.rs"),
+        ("project", "project_seed.rs"),
     ] {
         let prepared = nitride_prepare::prepare_project(
             &root.join(format!("languages/{project}/project.json")),
