@@ -149,8 +149,8 @@ Nitrogen parity are then unchanged by construction.
   value. Codegen is unchanged. Resolution errors (unknown type, unknown
   operation, duplicate member, field not on rule) carry catalog spans. Codegen's
   remaining checks keep their current messages.
-- Manifests (`project.json`, `nitride.json`) list `.ncatalog` files in
-  `catalogs`. `nitride_prepare::catalogs(&[Source])` resolves and merges them,
+- Manifests (`.nproj` files, and the transitional `project.json`) list
+  `.ncatalog` files (`catalog` in `.nproj`, `catalogs` in JSON). `nitride_prepare::catalogs(&[Source])` resolves and merges them,
   and every reader of the old `catalog` path (prepare, the CLI build script,
   the LSP registry) calls it.
 - The development-only .NET tools take JSON. `nitride catalog <file.ncatalog>`

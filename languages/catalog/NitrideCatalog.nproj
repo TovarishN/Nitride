@@ -1,0 +1,5 @@
+language NitrideCatalog
+{
+  grammar Catalog.ngr;
+  start NitrideCatalog.File;
+}

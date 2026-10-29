@@ -1,0 +1,11 @@
+language Xml
+{
+  extensions .xml;
+  grammar Xml.ngr;
+  start Xml.Document;
+
+  nitrogen
+  {
+    namespace Nitride.Xml.Syntax;
+  }
+}

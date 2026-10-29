@@ -19,7 +19,7 @@ fn workspace(
     let grammars: Vec<_> = grammars.iter().map(|g| lang(g)).collect();
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         language,
         extension,
         &grammars,
@@ -117,7 +117,7 @@ fn failed_execution_has_no_hints() {
     let syntax = scratch("hints-syntax");
     manifest(
         &syntax,
-        "nitride.json",
+        "nitride.nproj",
         "Xml",
         ".xml",
         &[lang("xml/Xml.ngr")],

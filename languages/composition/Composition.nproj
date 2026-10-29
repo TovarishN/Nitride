@@ -1,0 +1,11 @@
+language Composition
+{
+  extensions .composed;
+  grammar Base.ngr, Uses.ngr;
+  start Uses.Doc;
+
+  nitrogen
+  {
+    namespace Nitride.Composition.Syntax;
+  }
+}

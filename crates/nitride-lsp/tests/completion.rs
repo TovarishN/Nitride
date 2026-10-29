@@ -11,7 +11,7 @@ fn calls(name: &str) -> PathBuf {
     let dir = scratch(name);
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "Calls",
         ".calls",
         &[lang("calls/Calls.ngr")],
@@ -101,7 +101,7 @@ fn grammar_rules_offered() {
     let dir = scratch("complete-rules");
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "PortablePower",
         ".powercalc",
         &[lang("portable/Portable.ngr"), lang("power/Power.ngr")],

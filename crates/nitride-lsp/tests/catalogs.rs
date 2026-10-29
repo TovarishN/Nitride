@@ -18,7 +18,7 @@ fn dates(name: &str) -> PathBuf {
     }
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "Dates",
         ".dates",
         &[dir.join("Dates.ngr")],

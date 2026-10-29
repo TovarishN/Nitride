@@ -188,8 +188,10 @@ is not claimed. Embedded targets and `no_std` are not current requirements.
 bundles it, providing diagnostics, coloring, navigation, rename, completion,
 formatting, hints, and parser-repair quick fixes for supported profiles.
 
-The server reads `nitride.json`, falling back to `nitrogen.json`, and prepares
-languages from grammar sources at runtime. Syntax mode skips Nitrogen C# semantic
+The server reads the workspace's `nitride.nproj` and the `.nproj` language files
+it includes (see `docs/superpowers/specs/2026-10-29-project-language-design.md`),
+falling back to Nitrogen's `nitrogen.json`, and prepares languages from grammar
+sources at runtime. Syntax mode skips Nitrogen C# semantic
 members with a warning. Package and install for your host, for example:
 
 ```sh

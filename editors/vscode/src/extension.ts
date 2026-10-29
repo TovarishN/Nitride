@@ -4,20 +4,29 @@ import { ExtensionContext, languages, Range, TextDocument, workspace } from 'vsc
 import { DocumentSelector, LanguageClient, LanguageClientOptions } from 'vscode-languageclient/node';
 import { manifestExtensions } from './manifest';
 import { serverCommand } from './server';
-import { routedLanguage, signatureMode } from './signatures';
+import { claimedMode, routedLanguage, signatureMode } from './signatures';
 
 let client: LanguageClient | undefined;
 
 /** File extensions of the languages every workspace folder's manifest declares. */
 function workspaceExtensions(): string[] {
   const folders = workspace.workspaceFolders ?? [];
-  return [...new Set(folders.flatMap(folder => manifestExtensions(name => {
-    try {
-      return fs.readFileSync(path.join(folder.uri.fsPath, name), 'utf8');
-    } catch {
-      return undefined;
-    }
-  })))];
+  return [...new Set(folders.flatMap(folder => manifestExtensions(
+    name => {
+      try {
+        return fs.readFileSync(path.join(folder.uri.fsPath, name), 'utf8');
+      } catch {
+        return undefined;
+      }
+    },
+    dir => {
+      try {
+        return fs.readdirSync(path.join(folder.uri.fsPath, dir));
+      } catch {
+        return [];
+      }
+    },
+  )))];
 }
 
 export async function activate(context: ExtensionContext): Promise<void> {
@@ -30,7 +39,8 @@ export async function activate(context: ExtensionContext): Promise<void> {
   const selector: DocumentSelector = [
     { scheme: 'file', language: 'ngr' },
     { scheme: 'file', language: 'ncatalog' },
-    { scheme: 'file', pattern: '**/{nitride,nitrogen}.json' },
+    { scheme: 'file', language: 'nproj' },
+    { scheme: 'file', pattern: '**/{nitride.nproj,nitrogen.json}' },
     ...workspaceExtensions().map(extension => ({ scheme: 'file', pattern: `**/*${extension}` })),
     // Files that choose their language with a #!nitrogen signature (routed below).
     { scheme: 'file', language: 'nitride-signed' },
@@ -49,19 +59,20 @@ export async function activate(context: ExtensionContext): Promise<void> {
   // A signed grammar (`#!nitrogen grammar`) is a grammar whatever its name, and a program with a
   // `#!nitrogen language` header belongs to Nitride: give each its language, so only these documents
   // (not every file) reach the server. The header is in the leading trivia: the first lines suffice.
-  // Extensions that signed grammars claim (`language X { extensions ".x"; }`), from the server.
-  let signedExtensions: string[] = [];
+  // Extensions that workspace languages (`nitride.nproj`) and signed grammars
+  // (`language X { extensions ".x"; }`) claim, from the server.
+  let languageExtensions: string[] = [];
   const route = (document: TextDocument): void => {
     if (document.uri.scheme !== 'file') return;
     const head = document.getText(new Range(0, 0, Math.min(document.lineCount, 200), 0));
-    const claimed = signedExtensions.some(extension => document.uri.path.toLowerCase().endsWith(extension.toLowerCase()));
-    const mode = signatureMode(head) ?? (claimed && document.languageId !== 'ngr' ? 'language' : undefined);
+    const claimed = languageExtensions.some(extension => document.uri.path.toLowerCase().endsWith(extension.toLowerCase()));
+    const mode = signatureMode(head) ?? claimedMode(claimed, document.languageId);
     const language = routedLanguage(mode, document.languageId);
     if (language) void languages.setTextDocumentLanguage(document, language);
   };
   const refreshExtensions = async (): Promise<void> => {
     try {
-      signedExtensions = (await client?.sendRequest<string[]>('nitride/signedExtensions', {})) ?? [];
+      languageExtensions = (await client?.sendRequest<string[]>('nitride/languageExtensions', {})) ?? [];
       workspace.textDocuments.forEach(route);
     } catch {
       // The server may be restarting.

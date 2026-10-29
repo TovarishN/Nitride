@@ -1,0 +1,14 @@
+language Dates
+{
+  extensions .dates;
+  grammar Dates.ngr;
+  start Dates.Program;
+  catalog Dates.ncatalog;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.Dates;
+    grammar Dates.Reference.ngr;
+    source DatesSemantics.cs;
+  }
+}

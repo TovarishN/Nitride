@@ -19,10 +19,64 @@ fn read(path: &Path) -> Result<String, PrepareError> {
     std::fs::read_to_string(path).map_err(|e| error(path, e.to_string()))
 }
 
+/// Reads `file` as a project input, recording it in `inputs`.
+fn load(file: &Path, inputs: &mut Vec<PathBuf>) -> Result<Source, PrepareError> {
+    let text = read(file)?;
+    let file = file
+        .canonicalize()
+        .map_err(|e| error(file, e.to_string()))?;
+    let source = Source {
+        path: file.display().to_string(),
+        text,
+    };
+    inputs.push(file);
+    Ok(source)
+}
+
+/// A `.nproj` language: typed when it lists catalogs. Start rule problems are
+/// reported at its `start`.
+fn prepare_nproj(path: PathBuf) -> Result<PreparedProject, PrepareError> {
+    let project = Source {
+        path: path.display().to_string(),
+        text: read(&path)?,
+    };
+    let language = crate::read_language(&project, &|p: &Path| p.exists())
+        .map_err(|errors| errors.into_iter().next().expect("an error"))?;
+    let mut inputs = vec![path];
+    let sources = language
+        .grammars
+        .iter()
+        .map(|g| load(g, &mut inputs))
+        .collect::<Result<Vec<_>, _>>()?;
+    let catalog_sources = language
+        .catalogs
+        .iter()
+        .map(|c| load(c, &mut inputs))
+        .collect::<Result<Vec<_>, _>>()?;
+    let catalog = crate::catalog(&catalog_sources)?;
+    let mode = if language.typed() { "typed" } else { "syntax" };
+    let data = catalog
+        .prepare(&sources, &language.start, mode)
+        .map_err(|e| {
+            if e.project && e.message.contains("start rule") {
+                project.project_error_at(language.start_span, e.message)
+            } else {
+                e
+            }
+        })?
+        .data;
+    Ok(PreparedProject { data, inputs })
+}
+
+/// Prepares a `.nproj` language, or a `project.json` manifest (kept while
+/// Nitrogen reads it).
 pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
     let path = path
         .canonicalize()
         .map_err(|e| error(path, e.to_string()))?;
+    if path.extension().is_some_and(|e| e == "nproj") {
+        return prepare_nproj(path);
+    }
     let text = read(&path)?;
     let manifest: Value = serde_json::from_str(&text)
         .map_err(|e| error(&path, format!("invalid manifest JSON: {e}")))?;
@@ -63,17 +117,7 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
             .as_str()
             .filter(|s| !s.is_empty())
             .ok_or_else(|| error(&path, format!("{what} path must be a nonempty string")))?;
-        let file = path.parent().unwrap().join(name);
-        let text = read(&file)?;
-        let file = file
-            .canonicalize()
-            .map_err(|e| error(&file, e.to_string()))?;
-        let source = Source {
-            path: file.display().to_string(),
-            text,
-        };
-        inputs.push(file);
-        Ok(source)
+        load(&path.parent().unwrap().join(name), &mut inputs)
     };
     let sources = grammars
         .iter()

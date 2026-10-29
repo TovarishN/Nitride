@@ -1,0 +1,13 @@
+language PortablePower
+{
+  extensions .powercalc;
+  grammar ../portable/Portable.ngr, Power.ngr;
+  start Portable.Program;
+  catalog Power.ncatalog;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.Syntax;
+    source PowerSemantics.cs;
+  }
+}

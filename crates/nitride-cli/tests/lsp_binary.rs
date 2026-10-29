@@ -1,4 +1,4 @@
-//! The real `nitride lsp` binary over stdio, against this repository's nitride.json.
+//! The real `nitride lsp` binary over stdio, against this repository's nitride.nproj.
 use serde_json::{Value, json};
 use std::io::{Read, Write};
 use std::path::Path;

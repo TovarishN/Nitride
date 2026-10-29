@@ -1,0 +1,25 @@
+{
+  "catalogs": [
+    "languages/dates/Dates.ncatalog"
+  ],
+  "extensions": [
+    ".rewrites"
+  ],
+  "grammars": [
+    "languages/dates/Dates.ngr",
+    "languages/rewrites/Rewrites.ngr"
+  ],
+  "name": "Rewrites",
+  "nitrogen": {
+    "grammars": [
+      "languages/dates/Dates.Reference.ngr",
+      "languages/rewrites/Rewrites.ngr"
+    ],
+    "namespace": "Nitride.Reference.Dates",
+    "sources": [
+      "languages/dates/DatesSemantics.cs"
+    ]
+  },
+  "start": "Dates.Program",
+  "typed": true
+}

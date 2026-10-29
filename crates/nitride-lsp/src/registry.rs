@@ -42,6 +42,9 @@ pub struct ManifestState {
 pub struct Registry {
     languages: Vec<LanguageState>,
     manifests: Vec<ManifestState>,
+    /// The language files each `nitride.nproj` last included, kept while it
+    /// does not parse.
+    included: HashMap<PathBuf, Vec<PathBuf>>,
 }
 
 impl Registry {
@@ -71,19 +74,33 @@ impl Registry {
         let before = self.fingerprint();
         let mut previous = std::mem::take(&mut self.languages);
         self.manifests.clear();
+        let mut included = HashMap::new();
         for folder in folders {
-            let (path, entries) = manifest::read(folder);
-            let Some(path) = path else { continue };
-            // An open manifest buffer replaces the file on disk.
-            let entries = match open(&path) {
-                Some(text) => {
-                    let nitride = path.file_name().is_some_and(|n| n == manifest::NAMES[0]);
-                    manifest::parse(&text, folder, nitride)
+            let manifests = manifest::read(folder, open);
+            if let Some((workspace, parsed)) = manifests.first()
+                && workspace
+                    .file_name()
+                    .is_some_and(|n| n == manifest::NAMES[0])
+            {
+                let files = match parsed {
+                    // An unreadable workspace keeps the languages it included.
+                    Err(_) => self.included.remove(workspace).unwrap_or_default(),
+                    Ok(_) => manifests[1..].iter().map(|(p, _)| p.clone()).collect(),
+                };
+                if parsed.is_err() {
+                    let (kept, rest) = std::mem::take(&mut previous)
+                        .into_iter()
+                        .partition(|l: &LanguageState| files.contains(&l.manifest));
+                    previous = rest;
+                    self.languages.extend(kept);
                 }
-                None => entries,
-            };
-            self.load(&path, entries, &mut previous, open);
+                included.insert(workspace.clone(), files);
+            }
+            for (path, entries) in manifests {
+                self.load(&path, entries, &mut previous, open);
+            }
         }
+        self.included = included;
         for path in discover(folders, open, open_paths) {
             self.load_signed(&path, &mut previous, open);
         }
@@ -136,6 +153,7 @@ impl Registry {
                 Mode::Typed
             },
             catalogs,
+            start_span: None,
         };
         let at_name = |message: String| located(path, &source.text, declaration.name_span, message);
         let mut state = if declaration.start.is_none() {
@@ -219,7 +237,7 @@ impl Registry {
                 self.languages.extend(kept);
                 self.manifests.push(ManifestState {
                     path: path.to_owned(),
-                    errors: vec![error],
+                    errors: error,
                 });
                 return;
             }
@@ -231,8 +249,14 @@ impl Registry {
                 .map(|i| previous.swap_remove(i));
             let state = prepare(entry, path, old, open);
             for error in state.errors.iter().filter(|e| e.project) {
+                // A `.nproj` points at its start rule; JSON manifests at their start.
+                let span = state
+                    .entry
+                    .start_span
+                    .filter(|_| error.message.contains("start rule"))
+                    .unwrap_or([0, 0]);
                 errors.push(ManifestError {
-                    span: [0, 0],
+                    span,
                     message: format!("{}: {}", state.entry.name, error.message),
                 });
             }
@@ -409,7 +433,10 @@ pub fn watched_change_matters(registry: &Registry, path: &Path, kind: u64) -> bo
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
-    if manifest::NAMES.contains(&name.as_str()) || name.ends_with(".ngr") || name.ends_with(".json")
+    if manifest::NAMES.contains(&name.as_str())
+        || name.ends_with(".ngr")
+        || name.ends_with(".nproj")
+        || name.ends_with(".json")
     {
         return true;
     }

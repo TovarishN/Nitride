@@ -41,3 +41,11 @@ export function routedLanguage(mode: SignatureMode | undefined, current: string)
   const wanted = mode === 'grammar' ? 'ngr' : mode === 'language' ? 'nitride-signed' : undefined;
   return wanted && wanted !== current ? wanted : undefined;
 }
+
+/**
+ * The mode for a document whose extension a workspace language or signed grammar claims: plain-text
+ * files become programs; a file another extension owns (`.xml`, `.ngr`) keeps its language.
+ */
+export function claimedMode(claimed: boolean, languageId: string): SignatureMode | undefined {
+  return claimed && languageId === 'plaintext' ? 'language' : undefined;
+}

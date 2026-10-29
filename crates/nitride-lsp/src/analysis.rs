@@ -10,13 +10,14 @@ use std::path::Path;
 use std::sync::Arc;
 
 /// The language a tree was parsed with: a workspace language, or the
-/// compiled grammar frontend for `.ngr` files or catalog frontend for
-/// `.ncatalog` files.
+/// compiled grammar frontend for `.ngr` files, catalog frontend for
+/// `.ncatalog` files or project frontend for `.nproj` files.
 #[derive(Clone)]
 pub enum Grammar {
     Workspace(Arc<Loaded>),
     Frontend,
     Catalog,
+    Project,
 }
 
 impl Grammar {
@@ -25,6 +26,7 @@ impl Grammar {
             Grammar::Workspace(loaded) => loaded.language.language(),
             Grammar::Frontend => nitride_prepare::grammar_language(),
             Grammar::Catalog => nitride_prepare::catalog_language(),
+            Grammar::Project => nitride_prepare::project_language(),
         }
     }
 }
@@ -124,6 +126,19 @@ fn catalog_roles() -> Roles {
         .clone()
 }
 
+/// The project frontend's literal roles, computed once.
+fn project_roles() -> Roles {
+    static ROLES: std::sync::OnceLock<Roles> = std::sync::OnceLock::new();
+    ROLES
+        .get_or_init(|| {
+            Arc::new(crate::roles::roles(
+                nitride_prepare::project_language(),
+                &|_| false,
+            ))
+        })
+        .clone()
+}
+
 /// A repair recovery made: text it inserted, or source it skipped.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub enum Fix {
@@ -161,6 +176,9 @@ pub fn analyze(
 ) -> Option<Analysis> {
     if path.extension().is_some_and(|e| e == "ncatalog") {
         return Some(catalog(registry, path, text, open));
+    }
+    if path.extension().is_some_and(|e| e == "nproj") {
+        return Some(project(registry, path, text, open));
     }
     // Nitrogen signatures choose the language; the rest of the document is
     // parsed with them masked to spaces, so offsets are unchanged.
@@ -435,6 +453,76 @@ fn in_file(reported: Vec<(PrepareError, u8)>, path: &Path) -> Vec<Problem> {
         }
     }
     problems
+}
+
+/// A project file: the workspace's problems for it, or, when no workspace
+/// lists it, the problems of the file resolved alone.
+fn project(
+    registry: &Registry,
+    path: &Path,
+    text: &str,
+    open: &dyn Fn(&Path) -> Option<String>,
+) -> Analysis {
+    let lines = LineIndex::new(text);
+    let parsed = parse_recovering(
+        nitride_prepare::project_language(),
+        text,
+        Limits::default(),
+        RecoveryOptions::default(),
+    );
+    let source = Source {
+        path: path.to_string_lossy().into_owned(),
+        text: text.to_owned(),
+    };
+    let problem = |span: [u32; 2], message: String| Problem {
+        span,
+        severity: 1,
+        message,
+        code: None,
+    };
+    let problems = match registry
+        .manifests()
+        .iter()
+        .find(|m| same_file(&m.path, path))
+    {
+        Some(manifest) => manifest
+            .errors
+            .iter()
+            .map(|e| problem(e.span, e.message.clone()))
+            .collect(),
+        None => {
+            let exists = |p: &Path| open(p).is_some() || p.exists();
+            let read = |p: &Path| open(p).or_else(|| std::fs::read_to_string(p).ok());
+            let errors = match nitride_prepare::read_language(&source, &exists) {
+                Ok(_) => vec![],
+                Err(errors)
+                    if errors
+                        .iter()
+                        .any(|e| e.message.starts_with("expected a language")) =>
+                {
+                    nitride_prepare::read_workspace(&source, &read, &exists).errors
+                }
+                Err(errors) => errors,
+            };
+            errors
+                .into_iter()
+                .filter(|e| same_file(Path::new(&e.path), path))
+                .map(|e| problem(e.span.map(|v| v as u32), e.message))
+                .collect()
+        }
+    };
+    Analysis {
+        lines,
+        tree: Some(Tree::new(Grammar::Project, &parsed.tree)),
+        problems,
+        declarations: vec![],
+        outline: nitride_prepare::project_outline(&source).unwrap_or_default(),
+        index: SymbolIndex::default(),
+        values: vec![],
+        repairs: vec![],
+        roles: project_roles(),
+        header: vec![],
+    }
 }
 
 /// A catalog file: problems of every language that lists it (or of the file

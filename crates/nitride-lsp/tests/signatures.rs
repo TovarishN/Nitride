@@ -8,7 +8,7 @@ fn calls(name: &str) -> PathBuf {
     let lang = |p: &str| repo().join("languages").join(p);
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "Calls",
         ".calls",
         &[lang("calls/Calls.ngr")],

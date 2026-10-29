@@ -285,13 +285,13 @@ fn header_comment_does_not_reindent() {
     assert_eq!(response(&messages, 6)["result"], json!([]));
 }
 
-/// The extension asks which file extensions signed grammars claim, to route
-/// those files to the server.
+/// The extension asks which file extensions languages claim, to route those
+/// files to the server.
 #[test]
 fn served_extensions_listed() {
     let messages = Session::run(
         &signed_dir(),
-        vec![request(5, "nitride/signedExtensions", json!({}))],
+        vec![request(5, "nitride/languageExtensions", json!({}))],
     );
     let extensions = response(&messages, 5)["result"].clone();
     assert!(

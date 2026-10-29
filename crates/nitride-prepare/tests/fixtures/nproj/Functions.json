@@ -1,0 +1,23 @@
+{
+  "catalogs": [
+    "languages/functions/Functions.ncatalog"
+  ],
+  "extensions": [
+    ".functions"
+  ],
+  "grammars": [
+    "languages/functions/Functions.ngr"
+  ],
+  "name": "Functions",
+  "nitrogen": {
+    "grammars": [
+      "languages/functions/Functions.ngr"
+    ],
+    "namespace": "Nitride.Reference.Functions",
+    "sources": [
+      "languages/functions/FunctionsSemantics.cs"
+    ]
+  },
+  "start": "Functions.Program",
+  "typed": true
+}

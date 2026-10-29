@@ -1,0 +1,23 @@
+{
+  "catalogs": [
+    "languages/calls/Calls.ncatalog"
+  ],
+  "extensions": [
+    ".calls"
+  ],
+  "grammars": [
+    "languages/calls/Calls.ngr"
+  ],
+  "name": "Calls",
+  "nitrogen": {
+    "grammars": [
+      "languages/calls/Calls.Reference.ngr"
+    ],
+    "namespace": "Nitride.Reference.Calls",
+    "sources": [
+      "languages/calls/CallsSemantics.cs"
+    ]
+  },
+  "start": "Calls.Program",
+  "typed": true
+}

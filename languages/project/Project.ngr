@@ -1,0 +1,28 @@
+// Nitride projects: one language per folder, or the workspace that lists them.
+// Nitrogen generates its parser from this file too; resolution is in
+// nitride-prepare (nproj.rs).
+syntax module NitrideProject
+{
+  token IdStart = ['a'..'z' 'A'..'Z' '_'];
+  token IdPart = ['a'..'z' 'A'..'Z' '0'..'9' '_'];
+  token Identifier = IdStart IdPart*;
+  token QualifiedName = Identifier ("." Identifier)*;
+  token Extension = "." IdPart+;
+  token PathPart = ['a'..'z' 'A'..'Z' '0'..'9' '_' '-' '.']+;
+  token Path = PathPart ("/" PathPart)*;
+
+  syntax File = Item:(Workspace / Language);
+  syntax Workspace = "workspace" "{" Includes:Include* "}";
+  syntax Include = "include" Path:Path ";";
+  syntax Language = "language" Name:Identifier "{" Members:Member* "}";
+  syntax Member = Extensions / Grammar / Start / Catalog / Nitrogen;
+  syntax Extensions = "extensions" Items:(Extension; ",")+ ";";
+  syntax Grammar = "grammar" Paths:(Path; ",")+ ";";
+  syntax Start = "start" Rule:QualifiedName ";";
+  syntax Catalog = "catalog" Paths:(Path; ",")+ ";";
+  // Only what differs for Nitrogen; a `grammar` here replaces the outer list.
+  syntax Nitrogen = "nitrogen" "{" Members:NitrogenMember* "}";
+  syntax NitrogenMember = Namespace / Grammar / Source;
+  syntax Namespace = "namespace" Name:QualifiedName ";";
+  syntax Source = "source" Paths:(Path; ",")+ ";";
+}

@@ -7,8 +7,15 @@ mod catalog;
 mod functions;
 mod literal;
 mod normalize;
+mod nproj;
 mod parser;
 mod project;
+#[rustfmt::skip]
+mod project_seed;
+pub use nproj::{
+    NitrogenSection, ProjectLanguage, ProjectReference, ProjectWorkspace, read_language,
+    read_workspace, snapshot,
+};
 pub use project::{PreparedProject, prepare_project, write_prepared};
 
 use serde_json::Value;
@@ -47,9 +54,13 @@ impl Source {
     }
     /// An error about the project inputs, reported against this source.
     fn project_error(&self, message: impl Into<String>) -> PrepareError {
+        self.project_error_at([0, 0], message)
+    }
+    /// An error about the project inputs at `span` of this source.
+    fn project_error_at(&self, span: [usize; 2], message: impl Into<String>) -> PrepareError {
         PrepareError {
             project: true,
-            ..self.error([0, 0], message)
+            ..self.error(span, message)
         }
     }
 }
@@ -290,6 +301,21 @@ pub fn catalog_references(source: &Source) -> Result<Vec<GrammarReference>, Prep
 /// The compiled catalog frontend, a syntax-only language for `.ncatalog` files.
 pub fn catalog_language() -> &'static nitride_core::Language<'static> {
     &catalog_seed::LANGUAGE
+}
+
+/// The compiled project frontend, a syntax-only language for `.nproj` files.
+pub fn project_language() -> &'static nitride_core::Language<'static> {
+    &project_seed::LANGUAGE
+}
+
+/// The language or workspace a `.nproj` file declares.
+pub fn project_outline(source: &Source) -> Result<Vec<GrammarItem>, PrepareError> {
+    nproj::outline(source)
+}
+
+/// Every file, include folder and start rule a `.nproj` file names.
+pub fn project_references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError> {
+    nproj::references(source)
 }
 
 /// A declaration in a grammar file's outline.

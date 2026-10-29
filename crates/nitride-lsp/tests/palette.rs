@@ -112,7 +112,7 @@ pub fn calls(name: &str) -> PathBuf {
     let dir = scratch(name);
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "Calls",
         ".calls",
         &[lang("calls/Calls.ngr")],
@@ -161,7 +161,7 @@ fn duration_is_operation_word_token() {
     let dir = scratch("palette-duration");
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "Portable",
         ".portable",
         &[lang("portable/Portable.ngr")],
@@ -197,7 +197,7 @@ fn longest_literal_wins() {
     std::fs::write(&grammar, "syntax module A\n{\n  token Number = ['0'..'9']+;\n  syntax Program = Items:Pair*;\n  syntax Pair = Key:Number \"=>\" Value:Number \";\";\n}\n").unwrap();
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "A",
         ".a",
         &[grammar],

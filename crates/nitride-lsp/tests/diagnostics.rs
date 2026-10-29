@@ -11,7 +11,7 @@ fn power_workspace(name: &str) -> PathBuf {
     let dir = scratch(name);
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "PortablePower",
         ".powercalc",
         &[lang("portable/Portable.ngr"), lang("power/Power.ngr")],
@@ -46,7 +46,7 @@ fn typed_semantic_error() {
     let dir = scratch("semantic-error");
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "Calls",
         ".calls",
         &[lang("calls/Calls.ngr")],
@@ -101,7 +101,7 @@ fn broken_grammar_keeps_last_language() {
     std::fs::write(&power, &original).unwrap();
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "PortablePower",
         ".powercalc",
         &[lang("portable/Portable.ngr"), power.clone()],
@@ -187,7 +187,7 @@ fn grammar_buffer_found_by_equivalent_path() {
     std::fs::write(&power, &original).unwrap();
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "PortablePower",
         ".powercalc",
         &[lang("portable/Portable.ngr"), dir.join("sub/../Power.ngr")],

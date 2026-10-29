@@ -59,9 +59,12 @@ pub fn fixture(name: &str) -> PathBuf {
         .unwrap()
 }
 
-/// A fresh, empty directory for one test.
+/// A fresh, empty directory for one test, under the target directory: on the
+/// repository's drive, so a `.nproj` there can name repository files by a
+/// relative path (Windows runners keep the system temp directory on `C:`).
 pub fn scratch(name: &str) -> PathBuf {
-    let dir = std::env::temp_dir().join(format!("nitride-lsp-{}-{name}", std::process::id()));
+    let dir = Path::new(env!("CARGO_TARGET_TMPDIR"))
+        .join(format!("nitride-lsp-{}-{name}", std::process::id()));
     let _ = std::fs::remove_dir_all(&dir);
     std::fs::create_dir_all(&dir).unwrap();
     dir.canonicalize().unwrap()
@@ -145,6 +148,30 @@ pub fn diagnostics(messages: &[Value], path: &Path) -> Value {
 }
 
 /// Writes a workspace manifest listing one language from absolute paths.
+/// `to` relative to directory `from`, both absolute, with `/`.
+pub fn relative(from: &Path, to: &Path) -> String {
+    let from: Vec<_> = from.components().collect();
+    let to: Vec<_> = to.components().collect();
+    let common = from.iter().zip(&to).take_while(|(a, b)| a == b).count();
+    assert!(
+        common > 0 && from.first() == to.first(),
+        "no relative path from {} to {}",
+        from.iter().collect::<PathBuf>().display(),
+        to.iter().collect::<PathBuf>().display()
+    );
+    let mut parts = vec![".."; from.len() - common];
+    let rest: Vec<String> = to[common..]
+        .iter()
+        .map(|c| c.as_os_str().to_string_lossy().into_owned())
+        .collect();
+    parts.extend(rest.iter().map(String::as_str));
+    parts.join("/")
+}
+
+/// One language in a workspace manifest. With `nitride.nproj`, the language
+/// gets its own `dir/<name>-lang/<name>.nproj`, which `dir/nitride.nproj`
+/// includes (added to any languages it already includes); with
+/// `nitrogen.json`, that JSON manifest of this one language.
 pub fn manifest(
     dir: &Path,
     file: &str,
@@ -154,12 +181,54 @@ pub fn manifest(
     start: &str,
     catalogs: Option<&Path>,
 ) {
-    let mut language = json!({"name":name,"extensions":[extension],
-        "grammars":grammars.iter().map(|g| g.to_string_lossy()).collect::<Vec<_>>(),"start":start});
-    if let Some(catalog) = catalogs {
-        language["catalogs"] = json!([catalog.to_string_lossy()]);
+    if file == "nitrogen.json" {
+        let mut language = json!({"name":name,"extensions":[extension],
+            "grammars":grammars.iter().map(|g| g.to_string_lossy()).collect::<Vec<_>>(),"start":start});
+        if let Some(catalog) = catalogs {
+            language["catalogs"] = json!([catalog.to_string_lossy()]);
+        }
+        std::fs::write(dir.join(file), json!({"languages":[language]}).to_string()).unwrap();
+        return;
     }
-    std::fs::write(dir.join(file), json!({"languages":[language]}).to_string()).unwrap();
+    assert_eq!(file, "nitride.nproj");
+    let folder = format!("{name}-lang");
+    let home = dir.join(&folder);
+    std::fs::create_dir_all(&home).unwrap();
+    let paths = |paths: &[&Path]| {
+        paths
+            .iter()
+            .map(|p| relative(&home, &p.canonicalize().unwrap_or_else(|_| p.to_path_buf())))
+            .collect::<Vec<_>>()
+            .join(", ")
+    };
+    let grammars: Vec<&Path> = grammars.iter().map(PathBuf::as_path).collect();
+    let mut text = format!(
+        "language {name}\n{{\n  extensions {extension};\n  grammar {};\n  start {start};\n",
+        paths(&grammars)
+    );
+    if let Some(catalog) = catalogs {
+        text += &format!("  catalog {};\n", paths(&[catalog]));
+    }
+    text += "}\n";
+    std::fs::write(home.join(format!("{name}.nproj")), text).unwrap();
+    let workspace = dir.join("nitride.nproj");
+    let mut includes: Vec<String> = std::fs::read_to_string(&workspace)
+        .unwrap_or_default()
+        .lines()
+        .filter(|l| l.trim_start().starts_with("include "))
+        .map(str::to_owned)
+        .collect();
+    includes.push(format!("  include {folder};"));
+    std::fs::write(
+        &workspace,
+        format!("workspace\n{{\n{}\n}}\n", includes.join("\n")),
+    )
+    .unwrap();
+}
+
+/// The `.nproj` that `manifest` writes for language `name` in `dir`.
+pub fn language_file(dir: &Path, name: &str) -> PathBuf {
+    dir.join(format!("{name}-lang/{name}.nproj"))
 }
 
 /// Every diagnostics list published for `path`, in order.

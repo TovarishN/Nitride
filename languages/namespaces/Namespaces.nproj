@@ -1,0 +1,13 @@
+language Namespaces
+{
+  extensions .namespaces;
+  grammar Namespaces.ngr;
+  start Namespaces.Program;
+  catalog Namespaces.ncatalog;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.Syntax;
+    source NamespacesSemantics.cs;
+  }
+}

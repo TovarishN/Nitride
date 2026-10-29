@@ -1,0 +1,13 @@
+language Portable
+{
+  extensions .portable;
+  grammar Portable.ngr;
+  start Portable.Program;
+  catalog Portable.ncatalog;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.Syntax;
+    source PortableSemantics.cs;
+  }
+}

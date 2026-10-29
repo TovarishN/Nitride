@@ -1,0 +1,21 @@
+{
+  "catalogs": [],
+  "extensions": [
+    ".composed"
+  ],
+  "grammars": [
+    "languages/composition/Base.ngr",
+    "languages/composition/Uses.ngr"
+  ],
+  "name": "Composition",
+  "nitrogen": {
+    "grammars": [
+      "languages/composition/Base.ngr",
+      "languages/composition/Uses.ngr"
+    ],
+    "namespace": "Nitride.Composition.Syntax",
+    "sources": []
+  },
+  "start": "Uses.Doc",
+  "typed": false
+}

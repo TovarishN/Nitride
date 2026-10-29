@@ -339,3 +339,64 @@ fn prefix_associativity_is_accepted_and_ignored() {
     assert!(rule(&right)["associativity"].is_null());
     assert_eq!(rule(&right), rule(&prepare(&grammar("")).unwrap()));
 }
+
+fn parse_project(text: &str) -> bool {
+    nitride_core::parse_with_options(
+        nitride_prepare::project_language(),
+        text,
+        nitride_core::Limits::default(),
+        nitride_core::ParseOptions {
+            strict_comments: true,
+            token_children: false,
+            alias_nodes: true,
+        },
+    )
+    .is_ok()
+}
+
+#[test]
+fn project_frontend_parses_the_spec_examples() {
+    let dates = r#"// Dates: calendar arithmetic over day numbers.
+language Dates
+{
+  extensions .dates;
+  grammar Dates.ngr;
+  start Dates.Program;
+  catalog Dates.ncatalog;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.Dates;
+    grammar Dates.Reference.ngr;   // replaces the grammars above for Nitrogen
+    source DatesSemantics.cs;
+  }
+}
+"#;
+    let rewrites = r#"language Rewrites
+{
+  extensions .rewrites;
+  grammar ../dates/Dates.ngr, Rewrites.ngr;
+  start Dates.Program;
+  catalog ../dates/Dates.ncatalog;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.Dates;
+    grammar ../dates/Dates.Reference.ngr, Rewrites.ngr;
+    source ../dates/DatesSemantics.cs;
+  }
+}
+"#;
+    let workspace = r#"workspace
+{
+  include languages/portable;
+  include languages/power;
+  /* more */
+  include languages/dates;
+}
+"#;
+    for text in [dates, rewrites, workspace] {
+        assert!(parse_project(text), "{text}");
+    }
+    assert!(!parse_project("language X { mode typed; }"));
+}

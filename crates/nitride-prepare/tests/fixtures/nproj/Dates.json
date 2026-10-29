@@ -1,0 +1,23 @@
+{
+  "catalogs": [
+    "languages/dates/Dates.ncatalog"
+  ],
+  "extensions": [
+    ".dates"
+  ],
+  "grammars": [
+    "languages/dates/Dates.ngr"
+  ],
+  "name": "Dates",
+  "nitrogen": {
+    "grammars": [
+      "languages/dates/Dates.Reference.ngr"
+    ],
+    "namespace": "Nitride.Reference.Dates",
+    "sources": [
+      "languages/dates/DatesSemantics.cs"
+    ]
+  },
+  "start": "Dates.Program",
+  "typed": true
+}

@@ -1,0 +1,5 @@
+language NitrideProject
+{
+  grammar Project.ngr;
+  start NitrideProject.File;
+}

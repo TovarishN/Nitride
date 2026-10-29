@@ -1,6 +1,6 @@
 import * as assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { routedLanguage, signatureMode } from './signatures';
+import { claimedMode, routedLanguage, signatureMode } from './signatures';
 
 test('grammar header routes to ngr', () => {
   assert.equal(signatureMode('#!nitrogen grammar\nlanguage Calc { start Calc.Program; }\n'), 'grammar');
@@ -25,4 +25,14 @@ test('routing: grammars to ngr, signed programs to nitride-signed', () => {
   assert.equal(routedLanguage('language', 'plaintext'), 'nitride-signed');
   assert.equal(routedLanguage(undefined, 'plaintext'), undefined);
   assert.equal(routedLanguage('language', 'nitride-signed'), undefined);
+});
+
+test('claimedMode: claimed plain-text files become programs', () => {
+  assert.equal(claimedMode(true, 'plaintext'), 'language');
+});
+
+test('claimedMode: files another extension owns keep their language', () => {
+  assert.equal(claimedMode(true, 'xml'), undefined);
+  assert.equal(claimedMode(true, 'ngr'), undefined);
+  assert.equal(claimedMode(false, 'plaintext'), undefined);
 });

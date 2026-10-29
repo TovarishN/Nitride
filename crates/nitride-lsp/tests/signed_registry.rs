@@ -75,7 +75,7 @@ fn manifest_and_signature_coexist() {
     write(&dir, "Calc.syntax", CALC);
     manifest(
         &dir,
-        "nitride.json",
+        "nitride.nproj",
         "Listed",
         ".listed",
         &[dir.join("Calc.syntax")],
@@ -161,8 +161,13 @@ fn watched_changes_that_matter() {
     ));
     assert!(watched_change_matters(
         &registry,
-        &dir.join("nitride.json"),
+        &dir.join("nitride.nproj"),
         1
+    ));
+    assert!(watched_change_matters(
+        &registry,
+        &dir.join("lib/Lib.nproj"),
+        2
     ));
     assert!(watched_change_matters(&registry, &dir.join("Other.ngr"), 2));
     assert!(watched_change_matters(
