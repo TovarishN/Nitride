@@ -1,0 +1,40 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Nitride project",
+  "scopeName": "source.nproj",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#keywords"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.nproj",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.nproj",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "storage.type.nproj",
+          "match": "\\b(workspace|language|nitrogen)\\b"
+        },
+        {
+          "name": "keyword.other.nproj",
+          "match": "\\b(include|extensions|grammar|start|catalog|namespace|source)\\b"
+        }
+      ]
+    }
+  }
+}

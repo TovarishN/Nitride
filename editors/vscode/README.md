@@ -6,19 +6,35 @@ needed.
 
 ## Languages
 
-The extension reads `nitride.json` at each workspace folder root, else
-`nitrogen.json`. Both list languages the same way:
+The extension reads `nitride.nproj` at each workspace folder root, which lists
+language folders, each holding one `.nproj` language file:
 
-```json
-{ "languages": [ { "name": "Calls", "extensions": [".calls"],
-  "grammars": ["languages/calls/Calls.ngr"], "start": "Calls.Program",
-  "catalogs": ["languages/calls/Calls.ncatalog"], "mode": "typed" } ] }
+```
+workspace
+{
+  include languages/calls;
+}
 ```
 
-`catalogs` and `mode` are read from `nitride.json` only. A language with
-catalogs (`.ncatalog` files, see `docs/catalog-language.md`) is checked in typed mode; without one (and every `nitrogen.json`
-language) it is syntax-only, and Nitrogen's C# semantic members in its grammar
-are skipped with a warning.
+```
+language Calls
+{
+  extensions .calls;
+  grammar Calls.ngr;
+  start Calls.Program;
+  catalog Calls.ncatalog;
+}
+```
+
+Paths are relative to the `.nproj`. A language with a `catalog` (`.ncatalog`
+files, see `docs/catalog-language.md`) is checked in typed mode; without one it
+is syntax-only, and Nitrogen's C# semantic members in its grammar are skipped
+with a warning. `.nproj` files get diagnostics, outline and go to definition
+(files, included folders and the start rule).
+
+Without `nitride.nproj`, the extension falls back to Nitrogen's `nitrogen.json`
+(`{ "languages": [ { "name", "extensions", "grammars", "start" } ] }`), whose
+languages are syntax-only.
 
 ## Features
 

@@ -6,17 +6,14 @@ const files = (entries: Record<string, string>) => (name: string) => entries[nam
 const manifest = (...extensions: string[][]) =>
   JSON.stringify({ languages: extensions.map((e, i) => ({ name: `L${i}`, extensions: e, grammars: [], start: 'M.P' })) });
 
-test('manifest: prefers nitride.json', () => {
-  assert.deepEqual(
-    manifestExtensions(files({ 'nitride.json': manifest(['.a']), 'nitrogen.json': manifest(['.b']) })),
-    ['.a'],
-  );
+test('manifest: ignores nitride.json (the server serves nitride.nproj workspaces)', () => {
+  assert.deepEqual(manifestExtensions(files({ 'nitride.json': manifest(['.a']) })), []);
 });
 
-test('manifest: falls back to nitrogen.json', () => {
+test('manifest: reads nitrogen.json', () => {
   assert.deepEqual(manifestExtensions(files({ 'nitrogen.json': manifest(['.b', 'c'], ['.b']) })), ['.b', '.c']);
 });
 
 test('manifest: invalid JSON yields []', () => {
-  assert.deepEqual(manifestExtensions(files({ 'nitride.json': '{"languages":[],}' })), []);
+  assert.deepEqual(manifestExtensions(files({ 'nitrogen.json': '{"languages":[],}' })), []);
 });

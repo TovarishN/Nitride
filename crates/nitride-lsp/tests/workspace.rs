@@ -272,3 +272,21 @@ fn unknown_start_rule_is_reported_at_start() {
     assert_eq!(on_nproj[0]["range"]["end"], json!({"line":0,"character":at + 8}));
     assert_eq!(diagnostics(&messages, &grammar), json!([]));
 }
+
+#[test]
+fn language_extensions_lists_manifest_and_signed() {
+    let dir = scratch("language-extensions");
+    write(&dir, "m/m.ngr", GRAMMAR);
+    language(&dir, "m", "M", "language M { extensions .m; grammar m.ngr; start M.Program; }");
+    workspace(&dir, &["m"]);
+    write(
+        &dir,
+        "Signed.syntax",
+        "#!nitrogen grammar\nlanguage S { extensions \".sx\"; start M.Program; }\nsyntax module M\n{\n  token Number = ['0'..'9']+;\n  syntax Program = Items:Number*;\n}\n",
+    );
+    let messages = Session::run(
+        &dir,
+        vec![request(5, "nitride/languageExtensions", json!({}))],
+    );
+    assert_eq!(response(&messages, 5)["result"], json!([".m", ".sx"]));
+}

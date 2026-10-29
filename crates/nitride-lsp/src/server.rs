@@ -365,8 +365,9 @@ impl<W: Write> Server<W> {
                     .collect();
                 Ok(Value::Array(hints))
             }
-            "nitride/signedExtensions" => {
-                // File extensions that signed grammars claim; the client routes those files here.
+            "nitride/languageExtensions" => {
+                // File extensions that languages claim (from manifests and signed
+                // grammars); the client routes those files here.
                 if std::mem::take(&mut self.reload) {
                     self.reload_languages()
                         .map_err(|e| (INVALID_REQUEST, e.to_string()))?;
@@ -375,7 +376,6 @@ impl<W: Write> Server<W> {
                     .registry
                     .languages()
                     .iter()
-                    .filter(|l| l.signed)
                     .flat_map(|l| l.entry.extensions.iter().map(String::as_str))
                     .collect();
                 extensions.sort_unstable();

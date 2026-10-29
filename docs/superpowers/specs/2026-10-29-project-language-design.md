@@ -1,6 +1,7 @@
 # Project language (`.nproj`) design
 
-Status: design agreed in conversation 2026-10-29; builder check done.
+Status: phases 1–2 implemented (branch `nproj-language`); phase 3 waits for
+Nitrogen to read `.nproj`.
 Replaces `nitride.json`, `nitrogen.json` and every `languages/*/project.json`
 with a Nitride-defined language, the way `docs/catalog-language.md` replaced
 `catalog.json`.

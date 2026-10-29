@@ -1,4 +1,4 @@
-//! The repository's `.nproj` files say what the JSON manifests say, and their
+//! The repository's `.nproj` files say what Nitrogen's JSON manifests say, and their
 //! resolved snapshots (Nitrogen's parity contract) are current.
 use nitride_prepare::{ProjectLanguage, Source, read_language, read_workspace, snapshot};
 use serde_json::Value;
@@ -83,38 +83,26 @@ fn folder_languages() -> Vec<(PathBuf, ProjectLanguage)> {
 }
 
 #[test]
-fn nproj_matches_nitride_json() {
-    let root = root();
-    let manifest = json(&root.join("nitride.json"));
-    let expected = manifest["languages"].as_array().unwrap();
-    let languages = workspace();
-    assert_eq!(
-        languages.iter().map(|l| l.name.as_str()).collect::<Vec<_>>(),
-        expected.iter().map(|l| l["name"].as_str().unwrap()).collect::<Vec<_>>()
-    );
-    for (language, entry) in languages.iter().zip(expected) {
-        let name = &language.name;
-        assert_eq!(language.extensions, strings(&entry["extensions"]), "{name}");
-        assert_eq!(normals(&language.grammars), paths(&root, &entry["grammars"]), "{name}");
-        assert_eq!(language.start, entry["start"].as_str().unwrap(), "{name}");
-        assert_eq!(normals(&language.catalogs), paths(&root, &entry["catalogs"]), "{name}");
-        assert_eq!(language.typed(), entry["mode"] == "typed", "{name}");
-    }
-}
-
-#[test]
 fn nproj_matches_nitrogen_json() {
     let root = root();
     let manifest = json(&root.join("nitrogen.json"));
     let languages = workspace();
     let entries = manifest["languages"].as_array().unwrap();
-    assert_eq!(entries.len(), languages.len());
+    let rename = |name: &str| match name {
+        "XmlReference" => "Xml".to_owned(),
+        other => other.to_owned(),
+    };
+    // Same languages, in the same order (nitride.json, now retired, matched too).
+    assert_eq!(
+        languages.iter().map(|l| l.name.clone()).collect::<Vec<_>>(),
+        entries
+            .iter()
+            .map(|e| rename(e["name"].as_str().unwrap()))
+            .collect::<Vec<_>>()
+    );
     for entry in entries {
-        let name = match entry["name"].as_str().unwrap() {
-            "XmlReference" => "Xml",
-            other => other,
-        };
-        let language = languages.iter().find(|l| l.name == name).unwrap();
+        let name = &rename(entry["name"].as_str().unwrap());
+        let language = languages.iter().find(|l| &l.name == name).unwrap();
         assert_eq!(language.extensions, strings(&entry["extensions"]), "{name}");
         assert_eq!(language.start, entry["start"].as_str().unwrap(), "{name}");
         let nitrogen = language.nitrogen.as_ref().unwrap_or_else(|| panic!("{name}"));
