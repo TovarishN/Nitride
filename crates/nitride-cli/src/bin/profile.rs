@@ -75,7 +75,7 @@ impl Phase {
     }
 }
 
-// The fixture hosts are synchronous and do not create threads. Snapshot all phases
+// Parser spill threads are joined before a phase returns. Snapshot all phases
 // before constructing observation JSON so serializer storage is excluded.
 fn measure<T>(action: impl FnOnce() -> T) -> (T, Phase) {
     let baseline = LIVE.load(SeqCst);
@@ -215,6 +215,14 @@ fn snapshot_parse(
 }
 
 fn run() -> Result<(), Box<dyn std::error::Error>> {
+    // Initialize process-wide thread runtime storage before measuring the engine.
+    // On musl, the first spill thread allocates std's stack-overflow thread-info
+    // BTreeMap, whose empty root survives joining the thread. That is runtime
+    // storage, not storage owned by the parse result.
+    std::thread::Builder::new()
+        .spawn(|| {})?
+        .join()
+        .map_err(|_| "profiler thread runtime initialization failed")?;
     let mut args: Vec<_> = std::env::args().skip(1).collect();
     let generated = args.first().is_some_and(|s| s == "--native-syntax");
     let compiled = generated || args.first().is_some_and(|s| s == "--native-lexers");

@@ -90,6 +90,11 @@ def build(args):
         base += ['-Ctarget-cpu=generic']
     if item.get('bolt'):
         base += ['-Clink-arg=-Wl,--emit-relocs']
+    if target == 'aarch64-pc-windows-msvc':
+        # MSVC link.exe corrupts LLVM's instrumentation records on ARM64.
+        # Keep the same bundled LLVM linker for profile generation and use.
+        linker = Path(output(['rustc', '--print', 'sysroot'])) / 'lib/rustlib' / target / 'bin/rust-lld.exe'
+        base += [f'-Clinker={linker}', '-Clinker-flavor=lld-link']
     # Prove Wasmtime cannot enter the release dependency graph.
     graph = output(['cargo', 'tree', '--locked', '-p', 'nitride-cli', '--no-default-features', '--target', target])
     if 'wasmtime' in graph or 'nitride-wasm' in graph:
@@ -126,7 +131,9 @@ def build(args):
             binary = bolt_optimize(binary, variant_work, env, args.bolt, args.merge_fdata)
         destination = payload / f'nitride-{variant}{suffix}' if is_x64 else payload / f'nitride{suffix}'
         shutil.copy2(binary, destination)
-        if 'windows' not in target:
+        # A post-BOLT strip rewrites ELF segments and corrupts the binary.
+        # Keep BOLT's verified output intact, including its symbol table.
+        if 'windows' not in target and not item.get('bolt'):
             run(['strip', destination])
         if 'apple' in target:
             run(['codesign', '--force', '--sign', '-', destination])

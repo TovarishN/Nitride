@@ -187,10 +187,24 @@ fn profiler_edits_measure_reuse_and_shared_reader_storage() {
 
 #[test]
 fn dropping_all_snapshot_readers_releases_all_dynamic_storage() {
-    let source = std::env::temp_dir().join(format!("nitride-drop-{}.xml", std::process::id()));
-    std::fs::write(&source, "<root><item/><item/></root>").unwrap();
+    check_snapshot_drop("xml", "<root><item/><item/></root>");
+}
+
+#[test]
+fn dropping_csharp_snapshot_excludes_spill_thread_runtime_storage() {
+    // This grammar spills to a parser thread in musl debug builds. Runtime
+    // storage that outlives that thread must not be charged to the snapshot.
+    check_snapshot_drop("csharp4", "class C { int A(){return 123;} }");
+}
+
+fn check_snapshot_drop(language: &str, text: &str) {
+    let source = std::env::temp_dir().join(format!(
+        "nitride-drop-{}-{language}.txt",
+        std::process::id()
+    ));
+    std::fs::write(&source, text).unwrap();
     let output = std::process::Command::new(env!("CARGO_BIN_EXE_nitride-profile"))
-        .args(["--snapshot-drop", "xml", source.to_str().unwrap()])
+        .args(["--snapshot-drop", language, source.to_str().unwrap()])
         .output()
         .unwrap();
     std::fs::remove_file(source).unwrap();

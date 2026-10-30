@@ -43,7 +43,6 @@ def set_version(new):
     if not SEMVER.fullmatch(new):
         raise ValueError('expected stable SemVer MAJOR.MINOR.PATCH, without a v prefix')
     # Validate all inputs before making any changes.
-    check()
     cargo = ROOT / 'Cargo.toml'
     text = cargo.read_text()
     start = text.index('[workspace.package]')
@@ -53,6 +52,9 @@ def set_version(new):
     updates = {cargo: text[:start] + section + text[end:]}
     names = package_names()
     lockfile = ROOT / 'Cargo.lock'
+    locked = tomllib.loads(lockfile.read_text())
+    if {p['name'] for p in locked['package'] if p['name'] in names and 'source' not in p} != names:
+        raise ValueError('workspace packages missing from Cargo.lock')
     blocks = lockfile.read_text().split('[[package]]')
     for index in range(1, len(blocks)):
         parsed = tomllib.loads(blocks[index])

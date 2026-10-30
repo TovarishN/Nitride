@@ -131,6 +131,17 @@ jobs:
           path: dist/*
           if-no-files-found: error
           retention-days: 14
+      - name: Preserve failed optimization profiles for diagnosis
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: profiles-${{ matrix.id }}
+          path: |
+            target/native-release/${{ matrix.id }}/*/raw/*.profraw
+            target/native-release/${{ matrix.id }}/*/merged.profdata
+            target/native-release/${{ matrix.id }}/*/merged.fdata
+          if-no-files-found: ignore
+          retention-days: 7
 
   publish:
     needs: [version, native]

@@ -57,6 +57,15 @@ class VersionTests(unittest.TestCase):
         package.write_text(json.dumps(data))
         self.assertNotEqual(self.run_version('check').returncode, 0)
 
+    def test_set_repairs_an_out_of_sync_extension_version(self):
+        package = self.root / 'editors/vscode/package.json'
+        data = json.loads(package.read_text())
+        data['version'] = '9.9.9'
+        package.write_text(json.dumps(data))
+        result = self.run_version('set', '1.2.3')
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(self.run_version('check', '--tag', 'v1.2.3').returncode, 0)
+
 
 
 

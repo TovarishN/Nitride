@@ -67,7 +67,8 @@ session with initialization, edits, diagnostics, semantic tokens, symbols,
 completion, navigation and formatting. Linux glibc builds additionally run
 BOLT instrumentation, collect fresh profiles, optimize block/function layout
 and validate the resulting binary. Symbols and relocations survive until
-BOLT completes; final Unix payloads are stripped. macOS executables receive
+BOLT completes. BOLT output keeps its symbol table because subsequent stripping
+can corrupt the ELF layout; other Unix payloads are stripped. macOS executables receive
 an ad-hoc code signature after stripping. These are optimization settings,
 not a claim of measured speedup; record benchmarks separately.
 
