@@ -1,3 +1,4 @@
+pub mod pgo;
 pub mod functions {
     include!(concat!(env!("OUT_DIR"), "/functions.rs"));
 }

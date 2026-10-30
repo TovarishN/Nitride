@@ -30,6 +30,13 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
             args.push(arg);
         }
     }
+    if let [flag, profile, path] = args.as_slice() {
+        if flag == "--pgo-parse" {
+            let source = std::fs::read_to_string(path)?;
+            println!("{}", nitride_cli::pgo::observe(profile, &source)?);
+            return Ok(true);
+        }
+    }
     if args.as_slice() == ["lsp"] {
         nitride_lsp::serve(
             std::io::BufReader::new(std::io::stdin()),

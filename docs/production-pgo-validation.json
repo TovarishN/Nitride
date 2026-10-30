@@ -1,0 +1,21 @@
+{
+  "date": "2026-10-30",
+  "toolchain": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: x86_64-pc-windows-msvc\nrelease: 1.99.1\nLLVM version: 23.1.1",
+  "target": "x86_64-pc-windows-msvc",
+  "base_revision": "070f6adae441bb40116bec542f3595492ac58096",
+  "compiled_source_sha256": {
+    "crates/nitride-cli/src/lib.rs": "5fad37862b0100e0bb5635b3d1d57a92b56b7e40ed9dbbf46ee897f605a23253",
+    "crates/nitride-cli/src/main.rs": "de826556f812659082a1b52aeb17d5f8798b685bb254693001d06d88f84540b2",
+    "crates/nitride-cli/src/pgo.rs": "cdc256a72f19af81524aa19552045d514cce2b54efe4b928c6b2be9da6fc739f"
+  },
+  "binary_sha256": "51fd7d6c31149fd9f38f13c6fe7c7f686e3d62d444350b315791311350b7035d",
+  "profile_sha256": "540f507ee5e41288f311488ce9f271ee2e3e090396ca59d5c230a880caf36557",
+  "training_cases": 46,
+  "validation": "Instrumented and PGO shipping executable: identical full trees, diagnostics and edited snapshots.",
+  "smoke_commands": [
+    "--version",
+    "languages/portable/sample.portable",
+    "--parse-xml languages/xml/sample.xml"
+  ],
+  "performance_measured": false
+}
