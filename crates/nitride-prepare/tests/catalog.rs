@@ -288,3 +288,338 @@ fn catalog_frontend_reproduces_its_seed() {
         "run bootstrap regeneration after changing the catalog grammar"
     );
 }
+
+const CONTRACT: &str = "catalog module C {
+  type Date;
+  failure Invalid \"not a date\";
+  interface Cal version 2
+  {
+    operation Parse(Text) : Date fails Invalid;
+    operation Next(Date) : Date;
+    example Next(Parse(\"1\")) == Parse(\"2\");
+    example Parse(\"x\") fails Invalid;
+  }
+  operation Days(Scalar) : Scalar = host identity;
+}";
+
+#[test]
+fn interfaces_lower_with_their_contract_hash_and_examples() {
+    let lowered = lower(&[("C.ncatalog", CONTRACT)]).unwrap();
+    assert_eq!(
+        lowered["operations"][0],
+        json!({"id":"C.Parse","inputs":["Core.Text"],"result":"C.Date","interface":"C.Cal","fails":["C.Invalid"]})
+    );
+    assert_eq!(lowered["operations"][2]["handler"], "identity");
+    assert_eq!(lowered["failures"], json!({"C.Invalid":"not a date"}));
+    let interface = &lowered["interfaces"]["C.Cal"];
+    assert_eq!(interface["version"], 2);
+    assert_eq!(interface["operations"], json!(["C.Parse", "C.Next"]));
+    assert_eq!(interface["hash"].as_str().unwrap().len(), 64);
+    assert_eq!(
+        interface["examples"][0],
+        json!({"source":"example Next(Parse(\"1\")) == Parse(\"2\");",
+            "value":{"call":"C.Next","args":[{"call":"C.Parse","args":[{"text":"1"}]}]},
+            "equals":{"call":"C.Parse","args":[{"text":"2"}]}})
+    );
+    assert_eq!(interface["examples"][1]["fails"], "C.Invalid");
+
+    // Examples are not part of the contract; signatures are.
+    let fewer = CONTRACT.replace("    example Parse(\"x\") fails Invalid;\n", "");
+    let same = lower(&[("C.ncatalog", &fewer)]).unwrap();
+    assert_eq!(same["interfaces"]["C.Cal"]["hash"], interface["hash"]);
+    let wider = CONTRACT.replace("Next(Date) : Date;", "Next(Date) : Date fails Invalid;");
+    let other = lower(&[("C.ncatalog", &wider)]).unwrap();
+    assert_ne!(other["interfaces"]["C.Cal"]["hash"], interface["hash"]);
+}
+
+#[test]
+fn interface_errors_carry_the_catalog_span() {
+    for (from, to, message, at) in [
+        (
+            "fails Invalid;",
+            "fails Missing;",
+            "unknown failure 'Missing'",
+            "Missing",
+        ),
+        (
+            "Next(Parse(\"1\")) ==",
+            "Next(Parse(\"1\"), 1) ==",
+            "'Next' takes 1 inputs, not 2",
+            "Next",
+        ),
+        (
+            "== Parse(\"2\");",
+            "== Days(2);",
+            "the two sides of an example are 'C.Date' and 'Core.Scalar'",
+            "example Next(Parse(\"1\")) == Days(2);",
+        ),
+        (
+            "example Parse(\"x\") fails Invalid;",
+            "example Next(Parse(\"x\")) fails Nope;",
+            "unknown failure 'Nope'",
+            "Nope",
+        ),
+        (
+            "Next(Parse(\"1\"))",
+            "Next(1)",
+            "input 1 of 'Next' is 'C.Date', not 'Core.Scalar'",
+            "Next",
+        ),
+        (
+            "version 2",
+            "version 0",
+            "an interface version is a positive integer",
+            "0",
+        ),
+        (
+            "type Date;",
+            "type Date; failure Invalid \"again\";",
+            "'Invalid' is already declared at C.ncatalog:2",
+            "Invalid",
+        ),
+    ] {
+        let text = CONTRACT.replace(from, to);
+        assert_ne!(text, CONTRACT, "{from}");
+        let error = catalogs(&sources(&[("C.ncatalog", &text)])).unwrap_err();
+        assert_eq!(error.message, message, "{to}");
+        assert_eq!(&text[error.span[0]..error.span[1]], at, "{to}");
+    }
+
+    let unreported = CONTRACT.replace(
+        "example Parse(\"x\") fails Invalid;",
+        "example Days(1) fails Invalid;",
+    );
+    let error = catalogs(&sources(&[("C.ncatalog", &unreported)])).unwrap_err();
+    assert_eq!(
+        error.message,
+        "no operation in this example reports 'Invalid'"
+    );
+
+    let empty = "catalog module C { interface Cal version 1 { } }";
+    let error = catalogs(&sources(&[("C.ncatalog", empty)])).unwrap_err();
+    assert_eq!(error.message, "interface 'C.Cal' declares no operations");
+    assert_eq!(&empty[error.span[0]..error.span[1]], "Cal");
+}
+
+const REPRESENTED: &str = "catalog module R {
+  type Day = represented i64;
+  type Name = represented text;
+  type Flag = represented bool;
+  type Plain = represented f64;
+  interface Cal version 1
+  {
+    operation Parse(Text) : Day;
+    operation Named(Day) : Name;
+    operation Odd(Day) : Flag;
+    example Named(Parse(\"1\")) == \"one\";
+    example Odd(Parse(\"1\")) == true;
+  }
+}";
+
+#[test]
+fn representations_are_lowered_and_part_of_the_contract() {
+    let lowered = lower(&[("R.ncatalog", REPRESENTED)]).unwrap();
+    // f64 is the default and is not recorded.
+    assert_eq!(
+        lowered["representations"],
+        json!({"R.Day":"i64","R.Flag":"bool","R.Name":"text"})
+    );
+    let examples = &lowered["interfaces"]["R.Cal"]["examples"];
+    assert_eq!(examples[0]["equals"], json!({"text":"one"}));
+    assert_eq!(examples[1]["equals"], json!({"boolean":true}));
+
+    let hash = &lowered["interfaces"]["R.Cal"]["hash"];
+    let wider = REPRESENTED.replace("Day = represented i64", "Day = represented f64");
+    let other = lower(&[("R.ncatalog", &wider)]).unwrap();
+    assert_ne!(&other["interfaces"]["R.Cal"]["hash"], hash);
+    assert!(
+        other
+            .get("representations")
+            .is_some_and(|r| r.get("R.Day").is_none())
+    );
+
+    // Catalogs without representations lower as before.
+    assert!(
+        lower(&[("C.ncatalog", CONTRACT)])
+            .unwrap()
+            .get("representations")
+            .is_none()
+    );
+}
+
+#[test]
+fn representation_errors_carry_the_catalog_span() {
+    for (from, to, message, at) in [
+        (
+            "Day = represented i64",
+            "Day = represented u8",
+            "unknown representation 'u8'; expected one of f64, i64, bool, text",
+            "u8",
+        ),
+        (
+            "== true;",
+            "== \"yes\";",
+            "the two sides of an example are 'R.Flag' and 'Core.Text'",
+            "example Odd(Parse(\"1\")) == \"yes\";",
+        ),
+        (
+            "== \"one\";",
+            "== false;",
+            "the two sides of an example are 'R.Name' and 'a boolean literal'",
+            "example Named(Parse(\"1\")) == false;",
+        ),
+        (
+            "example Odd(Parse(\"1\")) == true;",
+            "example true == true;",
+            "an example's value cannot be a text or boolean literal",
+            "example true == true;",
+        ),
+    ] {
+        let text = REPRESENTED.replace(from, to);
+        assert_ne!(text, REPRESENTED, "{from}");
+        let error = catalogs(&sources(&[("R.ncatalog", &text)])).unwrap_err();
+        assert_eq!(error.message, message, "{to}");
+        assert_eq!(&text[error.span[0]..error.span[1]], at, "{to}");
+    }
+}
+
+const EFFECTFUL: &str = "catalog module E {
+  type Day = represented i64;
+  effect Clock \"reads the current date\";
+  interface Cal version 1
+  {
+    operation Today() : Day effect Clock;
+    operation Next(Day) : Day;
+  }
+}";
+
+#[test]
+fn effects_are_lowered_and_part_of_the_contract() {
+    let lowered = lower(&[("E.ncatalog", EFFECTFUL)]).unwrap();
+    assert_eq!(
+        lowered["effects"],
+        json!({"E.Clock":"reads the current date"})
+    );
+    assert_eq!(lowered["operations"][0]["effects"], json!(["E.Clock"]));
+    // An operation without effects records none.
+    assert!(lowered["operations"][1].get("effects").is_none());
+
+    let hash = &lowered["interfaces"]["E.Cal"]["hash"];
+    let pure = EFFECTFUL.replace(" effect Clock;", ";");
+    let other = lower(&[("E.ncatalog", &pure)]).unwrap();
+    assert_ne!(&other["interfaces"]["E.Cal"]["hash"], hash);
+
+    let text = EFFECTFUL.replace("effect Clock;", "effect Network;");
+    let error = catalogs(&sources(&[("E.ncatalog", &text)])).unwrap_err();
+    assert_eq!(error.message, "unknown effect 'Network'");
+    assert_eq!(&text[error.span[0]..error.span[1]], "Network");
+}
+
+const SHAPES: &str = "catalog module S {
+  type Day = represented i64;
+  type Span = record { start: Day; end: Day; };
+  type Days = list of Day;
+  operation SpanOf(Day, Day) : Span = record;
+  operation Start(Span) : Day = field start;
+  operation Pair(Day, Day) : Days = list;
+  operation Count(Days) : Scalar = length;
+  operation Nth(Days, Scalar) : Day = item;
+  interface Cal version 1 { operation Within(Span) : Days; }
+}";
+
+#[test]
+fn records_and_lists_lower_with_their_engine_operations() {
+    let lowered = lower(&[("S.ncatalog", SHAPES)]).unwrap();
+    assert_eq!(
+        lowered["representations"],
+        json!({"S.Day":"i64",
+            "S.Span":{"record":[["start","S.Day"],["end","S.Day"]]},
+            "S.Days":{"list":"S.Day"}})
+    );
+    let handlers: Vec<Option<&str>> = lowered["operations"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|op| op["handler"].as_str())
+        .collect();
+    // The interface operation has no handler.
+    assert_eq!(
+        handlers,
+        [
+            Some("record"),
+            Some("field"),
+            Some("list"),
+            Some("length"),
+            Some("item"),
+            None
+        ]
+    );
+    assert_eq!(lowered["operations"][1]["field"], "start");
+
+    // The contract covers the shapes inside the types it uses.
+    let hash = &lowered["interfaces"]["S.Cal"]["hash"];
+    let wider = SHAPES.replace("Day = represented i64", "Day = represented f64");
+    let other = lower(&[("S.ncatalog", &wider)]).unwrap();
+    assert_ne!(&other["interfaces"]["S.Cal"]["hash"], hash);
+}
+
+#[test]
+fn record_and_list_errors_carry_the_catalog_span() {
+    for (from, to, message, at) in [
+        (
+            "Start(Span) : Day = field start;",
+            "Start(Span) : Day = field middle;",
+            "'S.Span' has no field 'middle'",
+            "middle",
+        ),
+        (
+            "SpanOf(Day, Day) : Span = record;",
+            "SpanOf(Day) : Span = record;",
+            "a record operation takes its result's fields in order",
+            "record",
+        ),
+        (
+            "Pair(Day, Day) : Days = list;",
+            "Pair(Day, Scalar) : Days = list;",
+            "a list operation takes elements of its result's type",
+            "list",
+        ),
+        (
+            "Count(Days) : Scalar = length;",
+            "Count(Day) : Scalar = length;",
+            "a length operation takes a list and returns Scalar",
+            "length",
+        ),
+        (
+            "Nth(Days, Scalar) : Day = item;",
+            "Nth(Days, Day) : Day = item;",
+            "an item operation takes a list and a Scalar and returns an element",
+            "item",
+        ),
+        (
+            "end: Day;",
+            "start: Day;",
+            "field 'start' is already declared",
+            "start",
+        ),
+        (
+            "list of Day;",
+            "list of Text;",
+            "a record or list cannot hold Text",
+            "Text",
+        ),
+        (
+            "list of Day;",
+            "list of Week;",
+            "unknown type 'Week'",
+            "Week",
+        ),
+    ] {
+        let text = SHAPES.replace(from, to);
+        assert_ne!(text, SHAPES, "{from}");
+        let error = catalogs(&sources(&[("S.ncatalog", &text)])).unwrap_err();
+        assert_eq!(error.message, message, "{to}");
+        let at_text = &text[error.span[0]..error.span[1]];
+        assert_eq!(at_text, at, "{to}");
+    }
+}

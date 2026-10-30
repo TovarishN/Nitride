@@ -1,5 +1,6 @@
 pub mod execution;
 pub mod grammar;
+pub mod host;
 #[doc(hidden)]
 pub mod lexical;
 pub mod parser;

@@ -1,9 +1,13 @@
+mod interfaces;
 mod lexical;
 mod syntax;
 use serde_json::Value;
 mod runtime;
+mod wit;
+pub use interfaces::interfaces;
 pub use runtime::LoadedLanguage;
 use std::collections::{HashMap, HashSet};
+pub use wit::{binding_wit, kebab as wit_name, wit};
 
 fn text(v: &Value) -> Result<&str, String> {
     v.as_str().ok_or_else(|| "expected string".into())
@@ -69,6 +73,29 @@ pub fn generate(input: &str) -> Result<String, String> {
     if (!syntax_only && types.is_empty()) || types.len() != type_set.len() {
         return Err("duplicate/empty types".into());
     }
+    // Types whose values are not f64. Built-in handlers, literals and host
+    // values are f64 only, so these reach execution through interfaces.
+    let mut represented = HashSet::new();
+    let representations = &data["catalog"]["representations"];
+    if let Some(map) = data["catalog"].get("representations") {
+        let component = |ty: &Value| text(ty).is_ok_and(|t| type_set.contains(t) && t != TEXT);
+        for (ty, shape) in map.as_object().ok_or("representations must be an object")? {
+            let valid = match shape {
+                Value::String(kind) => matches!(kind.as_str(), "i64" | "bool" | "text"),
+                _ => match (shape.get("record"), shape.get("list")) {
+                    (Some(fields), None) => fields.as_array().is_some_and(|f| {
+                        !f.is_empty() && f.iter().all(|f| f[0].is_string() && component(&f[1]))
+                    }),
+                    (None, Some(element)) => component(element),
+                    _ => false,
+                },
+            };
+            if !type_set.contains(ty.as_str()) || ty.starts_with("Core.") || !valid {
+                return Err("invalid type representation".into());
+            }
+            represented.insert(ty.as_str());
+        }
+    }
     let operations = array(&data["catalog"]["operations"])?;
     if operations.len() > u16::MAX as usize {
         return Err("too many operations".into());
@@ -92,18 +119,48 @@ pub fn generate(input: &str) -> Result<String, String> {
             list(inputs.iter().copied().map(quoted)),
             quoted(result)
         ));
+        if let Some(interface) = op.get("interface") {
+            // Any conforming binding implements it: the handler names the contract.
+            let interface = text(interface)?;
+            let declared = &data["catalog"]["interfaces"][interface];
+            if !strings(&declared["operations"])?.contains(&id) {
+                return Err("interface operation is not in its interface".into());
+            }
+            if result == TEXT || (inputs.contains(&TEXT) && inputs.len() != 1) {
+                return Err("a text interface operation takes one text input".into());
+            }
+            handlers.push(quoted(&format!("{interface}@{}", text(&declared["hash"])?)));
+            continue;
+        }
         let handler = text(&op["handler"])?;
-        let arity = match handler {
-            "zero" => 0,
-            "identity" | "neg" | "iso-date" => 1,
-            "add" | "sub" | "mul" | "div" | "pow" => 2,
-            _ => return Err("unknown fixture host handler".into()),
-        };
-        if array(&op["inputs"])?.len() != arity {
+        if matches!(handler, "record" | "list" | "length" | "item" | "field") {
+            // The engine's record and list operations; prepare checked their
+            // signatures, and a field is read by its index.
+            if inputs.contains(&TEXT) {
+                return Err("record and list operations do not take text".into());
+            }
+            if handler == "field" {
+                let field = text(&op["field"])?;
+                let index = inputs
+                    .first()
+                    .and_then(|ty| representations[*ty]["record"].as_array())
+                    .and_then(|fields| fields.iter().position(|f| f[0] == field))
+                    .ok_or("unknown record field")?;
+                handlers.push(quoted(&format!("field:{index}")));
+            } else {
+                handlers.push(quoted(handler));
+            }
+            continue;
+        }
+        if represented.contains(result) || inputs.iter().any(|t| represented.contains(t)) {
+            return Err("built-in host handlers take and return f64 values".into());
+        }
+        let host = nitride_core::host::operation(handler).ok_or("unknown fixture host handler")?;
+        if array(&op["inputs"])?.len() != host.arity() {
             return Err("fixture host handler arity mismatch".into());
         }
         // Text is only an operation input fed directly by source spelling.
-        if result == TEXT || (handler == "iso-date") != inputs.contains(&TEXT) {
+        if result == TEXT || host.takes_text() != inputs.contains(&TEXT) {
             return Err("text operations require a text host handler".into());
         }
         handlers.push(quoted(handler));
@@ -213,13 +270,13 @@ pub fn generate(input: &str) -> Result<String, String> {
             for (name, value) in names.as_object().ok_or("value names must be an object")? {
                 let ty = text(&value["type"])?;
                 let handler = text(&value["handler"])?;
-                if !matches!(handler, "pi" | "e" | "tau" | "today") {
+                if nitride_core::host::value(handler).is_none() {
                     return Err("unknown fixture host value handler".into());
                 }
                 if !builtin_declarations.contains(&(kind.as_str(), name.as_str())) {
                     return Err("undeclared builtin value mapping".into());
                 }
-                if !type_set.contains(ty) || ty == TEXT {
+                if !type_set.contains(ty) || ty == TEXT || represented.contains(ty) {
                     return Err("unknown builtin value type".into());
                 }
                 if !mapped_builtins.insert((kind.as_str(), name.as_str())) {
@@ -299,12 +356,11 @@ pub fn generate(input: &str) -> Result<String, String> {
             if message.is_empty() || !labels.contains(field) {
                 return Err("check requires a rule field and message".into());
             }
-            let predicate = match text(&check["predicate"])? {
-                "iso-date" => "IsoDate",
-                _ => return Err("unknown check predicate".into()),
-            };
+            let predicate = nitride_core::host::predicate(text(&check["predicate"])?)
+                .ok_or("unknown check predicate")?
+                .predicate;
             check_tables.push(format!(
-                "nitride_core::Check {{rule:{id},field:{},predicate:nitride_core::Predicate::{predicate},code:{},message:{}}}",
+                "nitride_core::Check {{rule:{id},field:{},predicate:nitride_core::Predicate::{predicate:?},code:{},message:{}}}",
                 quoted(field),
                 quoted(code),
                 quoted(message)
@@ -327,7 +383,12 @@ pub fn generate(input: &str) -> Result<String, String> {
             || calls.is_some_and(|m| !m.is_empty())
             || !groups.is_empty()
             || !check_tables.is_empty()
-            || operations.iter().any(|op| op["handler"] == "iso-date"))
+            || operations.iter().any(|op| {
+                op["handler"]
+                    .as_str()
+                    .and_then(nitride_core::host::operation)
+                    .is_some_and(|h| h.takes_text())
+            }))
     {
         return Err("template profile cannot mix builtin calls or overload policies".into());
     }
@@ -552,7 +613,7 @@ pub fn generate(input: &str) -> Result<String, String> {
             action = match text(&clause["kind"])? {
                 "LowersLiteral" => {
                     let ty = text(&clause["target"])?;
-                    if !type_set.contains(ty) || ty == TEXT {
+                    if !type_set.contains(ty) || ty == TEXT || represented.contains(ty) {
                         return Err("unknown literal type".into());
                     }
                     format!(

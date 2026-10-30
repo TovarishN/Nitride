@@ -1,0 +1,73 @@
+// Calendar arithmetic is an interface: the host supplies an implementation,
+// and the examples decide whether it conforms. Dates are whole day numbers
+// since 0001-01-01, durations are days.
+catalog module Calendar
+{
+  type Date = represented i64;
+  type Duration;
+  type Weekday = represented text;
+  type LeapYear = represented bool;
+  type Span = record { start: Date; end: Date; };
+  type Dates = list of Date;
+
+  failure InvalidDate "not a calendar date";
+  failure OutOfRange "date out of range";
+  failure PartialDay "not a whole number of days";
+
+  effect Clock "reads the current date";
+
+  // Today's date: a host that does not grant Clock rejects programs that ask.
+  interface Clock version 1
+  {
+    operation Today() : Date effect Clock;
+
+    // Examples run against one interface's binding, so this one uses Today alone.
+    example Today() == Today();
+  }
+
+  interface Gregorian version 3
+  {
+    operation ParseDate(Text) : Date fails InvalidDate;
+    operation Later(Date, Duration) : Date fails OutOfRange, PartialDay;
+    operation Earlier(Date, Duration) : Date fails OutOfRange, PartialDay;
+    operation Between(Date, Date) : Duration;
+    operation DayOfWeek(Date) : Weekday;
+    operation IsLeapYear(Date) : LeapYear;
+    // The Mondays from a span's start through its end.
+    operation Mondays(Span) : Dates fails OutOfRange;
+
+    example Later(ParseDate("2024-01-01"), Days(3)) == ParseDate("2024-01-04");
+    example Between(ParseDate("2024-03-01"), ParseDate("2024-02-01")) == Days(29);
+    example Earlier(ParseDate("2025-01-01"), Days(365)) == ParseDate("2024-01-02");
+    example ParseDate("2024-02-30") fails InvalidDate;
+    example Earlier(ParseDate("0001-01-01"), Days(1)) fails OutOfRange;
+    example Later(ParseDate("2024-01-01"), Days(0.5)) fails PartialDay;
+    example DayOfWeek(ParseDate("2024-01-01")) == "Monday";
+    example DayOfWeek(ParseDate("2026-10-29")) == "Thursday";
+    example IsLeapYear(ParseDate("2024-03-01")) == true;
+    example IsLeapYear(ParseDate("1900-03-01")) == false;
+    example Count(Mondays(SpanOf(ParseDate("2024-01-01"), ParseDate("2024-01-31")))) == 5;
+    example Mondays(SpanOf(ParseDate("2024-01-02"), ParseDate("2024-01-15"))) == Pair(ParseDate("2024-01-08"), ParseDate("2024-01-15"));
+    example Count(Mondays(SpanOf(ParseDate("2024-01-31"), ParseDate("2024-01-01")))) == 0;
+  }
+
+  operation SpanOf(Date, Date) : Span = record;
+  operation SpanStart(Span) : Date = field start;
+  operation SpanEnd(Span) : Date = field end;
+  operation Pair(Date, Date) : Dates = list;
+  operation Count(Dates) : Scalar = length;
+  operation Nth(Dates, Scalar) : Date = item;
+
+  operation Days(Scalar) : Duration = host identity;
+  operation InDays(Duration) : Scalar = host identity;
+  operation AddScalar(Scalar, Scalar) : Scalar = host add;
+  operation AddDurations(Duration, Duration) : Duration = host add;
+  operation SubScalar(Scalar, Scalar) : Scalar = host sub;
+  operation SubDurations(Duration, Duration) : Duration = host sub;
+
+  overload Plus = AddScalar | Later | AddDurations;
+  overload Minus = SubScalar | Earlier | Between | SubDurations;
+
+  let Let(Value) infer;
+  show Show(Value);
+}

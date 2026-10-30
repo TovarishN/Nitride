@@ -1,0 +1,8 @@
+language Calendar
+{
+  extensions .calendar;
+  grammar Calendar.ngr;
+  start Calendar.Program;
+  catalog Calendar.ncatalog;
+  binding gregorian.nbind, clock.nbind;
+}

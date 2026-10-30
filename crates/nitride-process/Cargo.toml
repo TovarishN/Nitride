@@ -1,0 +1,9 @@
+[package]
+name = "nitride-process"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+
+[dependencies]
+nitride-core = { path = "../nitride-core" }
+serde_json = "1"

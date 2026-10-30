@@ -45,7 +45,7 @@ pub fn hover(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
     if let Some(GrammarAt { index, file }) = grammar {
         if let Some((handler, span)) = index.handler_at(file, offset) {
             let (kind, handler) = (handler.kind, &handler.name);
-            let what = crate::values::describe(handler)
+            let what = nitride_core::host::describe(handler)
                 .map_or_else(String::new, |what| format!(" — {what}"));
             return json!({
                 "contents": {"kind": "markdown", "value": format!(

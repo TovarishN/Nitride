@@ -1,0 +1,7 @@
+// Calendar.Gregorian as a WebAssembly component. It exports the world that
+// `nitride interface --target wit` prints, with ParseDate named as an
+// existing component calls it.
+binding Calendar.Gregorian version 3 for wasm component "gregorian.wasm"
+{
+  ParseDate = parse-iso;
+}

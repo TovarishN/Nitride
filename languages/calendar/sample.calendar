@@ -1,0 +1,10 @@
+let kickoff = 2026-10-05;
+let sprint = 14 days;
+kickoff + sprint;
+(2026-12-25 - kickoff) in days;
+weekday(kickoff + sprint);
+leap(2028-01-01);
+let october = span(2026-10-01, 2026-10-31);
+count(mondays(october));
+nth(mondays(october), 1);
+mondays(span(start(october), 2026-10-14));

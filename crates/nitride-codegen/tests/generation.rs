@@ -272,3 +272,41 @@ fn fused_ascii_tables_keep_guards_fallback_and_ref_boundaries() {
     );
     assert_eq!(generate(&data.to_string()).unwrap(), result);
 }
+
+#[test]
+fn built_in_handlers_and_literals_take_only_f64_types() {
+    let data: serde_json::Value = serde_json::from_str(
+        &nitride_prepare::prepare_project(std::path::Path::new(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/../../languages/calendar/project.json"
+        )))
+        .unwrap()
+        .data
+        .to_string(),
+    )
+    .unwrap();
+    assert!(generate(&data.to_string()).is_ok());
+
+    // `InDays(Duration) : Scalar = host identity`, with Duration as i64.
+    let mut integer = data.clone();
+    integer["catalog"]["representations"]["Calendar.Duration"] = "i64".into();
+    assert_eq!(
+        generate(&integer.to_string()).unwrap_err(),
+        "built-in host handlers take and return f64 values"
+    );
+
+    // `Num = Value:Number lowers literal Core.Scalar Value`.
+    let mut literal = data.clone();
+    literal["catalog"]["representations"]["Core.Scalar"] = "i64".into();
+    assert_eq!(
+        generate(&literal.to_string()).unwrap_err(),
+        "invalid type representation"
+    );
+
+    let mut unknown = data;
+    unknown["catalog"]["representations"]["Calendar.Date"] = "u8".into();
+    assert_eq!(
+        generate(&unknown.to_string()).unwrap_err(),
+        "invalid type representation"
+    );
+}

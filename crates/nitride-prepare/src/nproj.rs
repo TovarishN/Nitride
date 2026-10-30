@@ -20,6 +20,8 @@ pub struct ProjectLanguage {
     pub start: String,
     pub start_span: [usize; 2],
     pub catalogs: Vec<PathBuf>,
+    /// `.nbind` files for the catalogs' interfaces.
+    pub bindings: Vec<PathBuf>,
     pub nitrogen: Option<NitrogenSection>,
 }
 
@@ -177,11 +179,19 @@ pub fn read_language(
     let mut grammars = Vec::new();
     let mut start: Option<Written> = None;
     let mut catalogs = Vec::new();
+    let mut bindings = Vec::new();
     let mut nitrogen: Option<NitrogenBlock> = None;
     for member in children(&tree, item, "Members") {
         let m = d.concrete(
             member,
-            &["Extensions", "Grammar", "Start", "Catalog", "Nitrogen"],
+            &[
+                "Extensions",
+                "Grammar",
+                "Start",
+                "Catalog",
+                "Binding",
+                "Nitrogen",
+            ],
         );
         match d.kind(m) {
             "Extensions" => extensions.extend(d.fields(m, "Items")),
@@ -192,6 +202,10 @@ pub fn read_language(
             "Catalog" => {
                 let paths = resolve(d.fields(m, "Paths"), &mut errors);
                 catalogs.extend(paths);
+            }
+            "Binding" => {
+                let paths = resolve(d.fields(m, "Paths"), &mut errors);
+                bindings.extend(paths);
             }
             "Start" => {
                 if start.is_some() {
@@ -274,6 +288,7 @@ pub fn read_language(
         start: start.text,
         start_span: start.span,
         catalogs,
+        bindings,
         nitrogen,
     })
 }
@@ -388,7 +403,7 @@ pub fn snapshot(language: &ProjectLanguage, root: &Path) -> serde_json::Value {
         parts.join("/")
     };
     let all = |paths: &[PathBuf]| paths.iter().map(relative).collect::<Vec<_>>();
-    serde_json::json!({
+    let mut snapshot = serde_json::json!({
         "name": language.name,
         "extensions": language.extensions,
         "grammars": all(&language.grammars),
@@ -400,7 +415,11 @@ pub fn snapshot(language: &ProjectLanguage, root: &Path) -> serde_json::Value {
             "grammars": all(&n.grammars),
             "sources": all(&n.sources),
         })),
-    })
+    });
+    if !language.bindings.is_empty() {
+        snapshot["bindings"] = serde_json::json!(all(&language.bindings));
+    }
+    snapshot
 }
 
 /// A name a `.nproj` uses: a "grammar", "catalog" or "source" file, an
@@ -487,6 +506,7 @@ pub fn references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError
                 "Grammar",
                 "Start",
                 "Catalog",
+                "Binding",
                 "Nitrogen",
                 "Namespace",
                 "Source",
@@ -495,6 +515,7 @@ pub fn references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError
         match d.kind(m) {
             "Grammar" => files("grammar", d.fields(m, "Paths"), &mut found),
             "Catalog" => files("catalog", d.fields(m, "Paths"), &mut found),
+            "Binding" => files("binding", d.fields(m, "Paths"), &mut found),
             "Source" => files("source", d.fields(m, "Paths"), &mut found),
             "Nitrogen" => members.extend(children(&tree, m, "Members")),
             "Start" => {

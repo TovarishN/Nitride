@@ -1,0 +1,11 @@
+{
+  "catalogs": [],
+  "extensions": [],
+  "grammars": [
+    "languages/binding/Binding.ngr"
+  ],
+  "name": "NitrideBinding",
+  "nitrogen": null,
+  "start": "NitrideBinding.File",
+  "typed": false
+}

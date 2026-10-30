@@ -14,6 +14,7 @@ fn main() {
     for (project, name, seed) in [
         ("grammar", "NitrideGrammar", "grammar_seed.rs"),
         ("catalog", "NitrideCatalog", "catalog_seed.rs"),
+        ("binding", "NitrideBinding", "binding_seed.rs"),
         ("project", "NitrideProject", "project_seed.rs"),
     ] {
         let prepared = nitride_prepare::prepare_project(

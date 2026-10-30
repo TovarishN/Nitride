@@ -1,0 +1,5 @@
+{
+  "mode": "syntax",
+  "start": "NitrideBinding.File",
+  "grammars": ["Binding.ngr"]
+}

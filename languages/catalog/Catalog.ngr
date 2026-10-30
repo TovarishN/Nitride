@@ -11,14 +11,45 @@ syntax module NitrideCatalog
   token Hex = ['0'..'9' 'a'..'f' 'A'..'F'];
   token Escape = "\\" (['n' 'r' 't' '0' '\\' '"' '\''] / "u" Hex Hex Hex Hex);
   token String = "\"" (Escape / [^ '"' '\\' '\n'])* "\"";
+  token Digit = ['0'..'9'];
+  token Number = "-"? Digit+ ("." Digit+)?;
+  token Boolean = "true" / "false";
 
   syntax File = Modules:Module*;
   syntax Module = "catalog" "module" Name:QualifiedName "{" Members:Member* "}";
-  syntax Member = Using / Type / Operation / Overload / Builtin / Let / Show / Call / Check;
+  syntax Member = Using / Type / Failure / Effect / Interface / Operation / Overload / Builtin / Let / Show / Call / Check;
   syntax Using = "using" Name:QualifiedName ";";
-  syntax Type = "type" Name:Identifier ";";
-  syntax Operation = "operation" Name:Identifier "(" Inputs:(QualifiedName; ",")* ")" ":" Result:QualifiedName "=" Handler:Handler ";";
+  // Values of a type are f64 unless it says how they are represented, or
+  // that they are records or lists.
+  syntax Type = "type" Name:Identifier Representation:Representation? ";";
+  syntax Representation = "=" Shape:(Represented / Record / List);
+  syntax Represented = "represented" Kind:Identifier;
+  syntax Record = "record" "{" Fields:RecordField* "}";
+  syntax RecordField = Name:Identifier ":" Type:QualifiedName ";";
+  syntax List = "list" "of" Element:QualifiedName;
+  syntax Failure = "failure" Name:Identifier Message:String ";";
+  // Something an operation does beyond computing its result; the host grants it.
+  syntax Effect = "effect" Name:Identifier Message:String ";";
+  // Operations a binding implements together, and examples every binding must satisfy.
+  syntax Interface = "interface" Name:Identifier "version" Version:Number "{" Members:InterfaceMember* "}";
+  syntax InterfaceMember = Contract / Example;
+  syntax Contract = "operation" Name:Identifier "(" Inputs:(QualifiedName; ",")* ")" ":" Result:QualifiedName Fails:Fails? Effects:Effects? ";";
+  syntax Fails = "fails" Failures:(QualifiedName; ",")+;
+  syntax Effects = "effect" Names:(QualifiedName; ",")+;
+  syntax Example = "example" Value:ExampleExpr Outcome:(Equals / Raises) ";";
+  syntax Equals = "==" Expected:ExampleExpr;
+  syntax Raises = "fails" Failure:QualifiedName;
+  syntax ExampleExpr = ExampleCall / ExampleNumber / ExampleBoolean / ExampleText;
+  syntax ExampleCall = Operation:QualifiedName "(" Args:(ExampleExpr; ",")* ")";
+  syntax ExampleNumber = Value:Number;
+  syntax ExampleBoolean = Value:Boolean;
+  syntax ExampleText = Value:String;
+  syntax Operation = "operation" Name:Identifier "(" Inputs:(QualifiedName; ",")* ")" ":" Result:QualifiedName "=" Provider:(Handler / FieldOf / Structure) ";";
   syntax Handler = "host" Name:HandlerName;
+  // The engine's record and list operations.
+  syntax FieldOf = "field" Name:Identifier;
+  syntax Structure = Kind:StructureKind;
+  token StructureKind = "record" / "list" / "length" / "item";
   syntax Overload = "overload" Name:Identifier "=" Candidates:(QualifiedName; "|")+ ";";
   // A callable built-in names its candidate operations; a value has a type and a handler.
   syntax Builtin = "builtin" Kind:Identifier Name:QualifiedName Body:(BuiltinValue / BuiltinCall) ";";

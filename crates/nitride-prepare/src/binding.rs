@@ -1,0 +1,244 @@
+//! Binding files (`.nbind`): parsed by the generated binding frontend and
+//! checked against the project's lowered catalog.
+use crate::{PrepareError, Source};
+use nitride_core::{Limits, SyntaxTree};
+use serde_json::{Map, Value, json};
+
+/// The binding frontend's tree of one source.
+fn syntax(source: &Source) -> Result<SyntaxTree<'static>, PrepareError> {
+    nitride_core::parse_with_options(
+        &crate::binding_seed::LANGUAGE,
+        &source.text,
+        Limits::default(),
+        nitride_core::ParseOptions {
+            strict_comments: true,
+            token_children: false,
+            alias_nodes: true,
+        },
+    )
+    .map_err(|e| source.error(e.span.map(|v| v as usize), e.message))
+}
+
+/// A name as written, where it was written.
+struct Name {
+    text: String,
+    span: [usize; 2],
+}
+
+struct Decoder<'a> {
+    tree: &'a SyntaxTree<'static>,
+}
+
+impl Decoder<'_> {
+    fn kind(&self, id: u32) -> &str {
+        crate::binding_seed::LANGUAGE.rules[self.tree.nodes[id as usize].rule as usize]
+            .name
+            .rsplit('.')
+            .next()
+            .unwrap()
+    }
+    fn span(&self, id: u32) -> [usize; 2] {
+        self.tree.nodes[id as usize].span.map(|v| v as usize)
+    }
+    /// The node of one of `kinds` that `id` stands for (choices wrap it).
+    fn concrete(&self, mut id: u32, kinds: &[&str]) -> u32 {
+        while !kinds.contains(&self.kind(id)) {
+            id = self.tree.children(id)[0].node;
+        }
+        id
+    }
+    fn node(&self, id: u32, label: &str) -> u32 {
+        self.tree.field(id, label).expect("generated binding field")
+    }
+    fn nodes(&self, id: u32, label: &str) -> Vec<u32> {
+        self.tree
+            .children(id)
+            .iter()
+            .filter(|e| self.tree.label(e) == label)
+            .map(|e| e.node)
+            .collect()
+    }
+    fn name(&self, id: u32, label: &str) -> Name {
+        let id = self.node(id, label);
+        Name {
+            text: self.tree.text(id).unwrap().into(),
+            span: self.span(id),
+        }
+    }
+}
+
+/// The bindings of a project's `.nbind` sources, checked against its lowered
+/// catalog: per binding, the interface, its contract, the target, and the
+/// export name of every interface operation. A component path is as written,
+/// relative to its binding file.
+pub fn lower(sources: &[Source], catalog: &Value) -> Result<Value, PrepareError> {
+    Ok(Value::Array(
+        lower_from(sources, catalog)?
+            .into_iter()
+            .map(|(_, b)| b)
+            .collect(),
+    ))
+}
+
+/// As `lower`, with the index of the source each binding came from.
+pub fn lower_from(
+    sources: &[Source],
+    catalog: &Value,
+) -> Result<Vec<(usize, Value)>, PrepareError> {
+    let mut bound: Map<String, Value> = Map::new();
+    let mut lowered = Vec::new();
+    for (index, source) in sources.iter().enumerate() {
+        let tree = syntax(source)?;
+        let d = Decoder { tree: &tree };
+        for binding in d.nodes(tree.root, "Bindings") {
+            let interface = d.name(binding, "Interface");
+            let Some(declared) = catalog["interfaces"].get(&interface.text) else {
+                return Err(source.error(
+                    interface.span,
+                    format!("unknown interface '{}'", interface.text),
+                ));
+            };
+            if let Some(other) = bound.get(&interface.text) {
+                return Err(source.error(
+                    interface.span,
+                    format!(
+                        "'{}' is already bound in {}",
+                        interface.text,
+                        other.as_str().unwrap()
+                    ),
+                ));
+            }
+            bound.insert(interface.text.clone(), json!(source.path));
+            let version = d.name(binding, "Version");
+            if version.text.parse::<u64>().ok() != declared["version"].as_u64() {
+                return Err(source.error(
+                    version.span,
+                    format!(
+                        "'{}' is version {} in the catalog",
+                        interface.text, declared["version"]
+                    ),
+                ));
+            }
+            let target = d.concrete(d.node(binding, "Target"), &["WasmComponent", "Process"]);
+            let path = d.node(target, "Path");
+            let written = crate::literal::decode(source, d.span(path), false)?;
+            let process = d.kind(target) == "Process";
+            if written.is_empty() {
+                let what = if process {
+                    "a program"
+                } else {
+                    "a component path"
+                };
+                return Err(source.error(d.span(path), format!("{what} is not empty")));
+            }
+            let args = d
+                .nodes(target, "Args")
+                .into_iter()
+                .map(|a| crate::literal::decode(source, d.span(a), false))
+                .collect::<Result<Vec<_>, _>>()?;
+            // Every operation is exported under its WIT name unless renamed.
+            let module = interface.text.rsplit_once('.').map_or("", |(m, _)| m);
+            let operations: Vec<&str> = declared["operations"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|o| o.as_str().unwrap())
+                .collect();
+            let mut exports = Map::new();
+            for op in &operations {
+                let tail = op.rsplit('.').next().unwrap();
+                exports.insert((*op).into(), json!(nitride_codegen::wit_name(tail)));
+            }
+            let body = d.concrete(d.node(binding, "Body"), &["Exports", "End"]);
+            let mut renamed: Vec<String> = Vec::new();
+            for export in d.nodes(body, "Members") {
+                let export = d.concrete(export, &["Export"]);
+                let operation = d.name(export, "Operation");
+                let id = format!("{module}.{}", operation.text);
+                if !operations.contains(&id.as_str()) {
+                    return Err(source.error(
+                        operation.span,
+                        format!(
+                            "'{}' is not an operation of '{}'",
+                            operation.text, interface.text
+                        ),
+                    ));
+                }
+                if renamed.contains(&id) {
+                    return Err(source.error(
+                        operation.span,
+                        format!("'{}' is already renamed", operation.text),
+                    ));
+                }
+                renamed.push(id.clone());
+                exports.insert(id, json!(d.name(export, "Name").text));
+            }
+            // The component's export of the interface, as the WIT names it.
+            let wit = |name: &str| {
+                nitride_codegen::wit_name(name)
+                    .trim_start_matches('%')
+                    .to_owned()
+            };
+            let export = format!(
+                "nitride:{}/{}@{}.0.0",
+                wit(&module.replace('.', "")),
+                wit(interface.text.rsplit('.').next().unwrap()),
+                declared["version"]
+            );
+            let mut lowered_binding = json!({
+                "interface": interface.text,
+                "contract": format!("{}@{}", interface.text, declared["hash"].as_str().unwrap()),
+                "export": export,
+                "exports": exports,
+            });
+            if process {
+                // Runs in its binding file's folder; a program without a '/'
+                // is found on PATH.
+                lowered_binding["target"] = json!("process");
+                lowered_binding["program"] = json!(written);
+                lowered_binding["args"] = json!(args);
+            } else {
+                lowered_binding["target"] = json!("wasm-component");
+                lowered_binding["component"] = json!(written);
+                if let Some(instance) = d.tree.field(target, "Instance") {
+                    let name = d.node(instance, "Name");
+                    let export = crate::literal::decode(source, d.span(name), false)?;
+                    if export.is_empty() {
+                        return Err(source.error(d.span(name), "an export name is not empty"));
+                    }
+                    lowered_binding["export"] = json!(export);
+                }
+            }
+            lowered.push((index, lowered_binding));
+        }
+    }
+    Ok(lowered)
+}
+
+/// Whether a binding file parses as written.
+pub fn parses(source: &Source) -> bool {
+    syntax(source).is_ok()
+}
+
+pub fn syntax_error(source: &Source) -> Result<(), PrepareError> {
+    syntax(source).map(|_| ())
+}
+
+/// One "binding" item per binding, named by its interface.
+pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError> {
+    let tree = syntax(source)?;
+    let d = Decoder { tree: &tree };
+    Ok(d.nodes(tree.root, "Bindings")
+        .into_iter()
+        .map(|binding| {
+            let interface = d.name(binding, "Interface");
+            crate::GrammarItem {
+                kind: "binding",
+                name: interface.text,
+                span: d.span(binding),
+                name_span: interface.span,
+                children: vec![],
+            }
+        })
+        .collect())
+}

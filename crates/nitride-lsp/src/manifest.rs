@@ -18,6 +18,8 @@ pub struct Entry {
     pub start: String,
     /// The `.ncatalog` files of a typed language, in merge order.
     pub catalogs: Vec<PathBuf>,
+    /// The `.nbind` files that bind its catalogs' interfaces.
+    pub bindings: Vec<PathBuf>,
     pub mode: Mode,
     /// Where a `.nproj` names the start rule.
     pub start_span: Option<[u32; 2]>,
@@ -107,6 +109,7 @@ fn entry(language: ProjectLanguage) -> Entry {
         start: language.start,
         start_span: Some(language.start_span.map(|v| v as u32)),
         catalogs: language.catalogs,
+        bindings: language.bindings,
     }
 }
 
@@ -149,6 +152,7 @@ fn nitrogen(text: &str, folder: &Path) -> Parsed {
                 .collect(),
             start: string("start")?,
             catalogs: vec![],
+            bindings: vec![],
             mode: Mode::Syntax,
             start_span: None,
         })

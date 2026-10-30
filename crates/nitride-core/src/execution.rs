@@ -4,16 +4,162 @@ use std::borrow::Cow;
 pub type Handler = dyn Fn(&[f64]) -> Result<f64, String> + Send + Sync;
 pub type TextHandler = dyn Fn(&str) -> Result<f64, String> + Send + Sync;
 pub type ValueProvider = dyn Fn() -> Result<f64, String> + Send + Sync;
+pub type ContractHandler = dyn Fn(Inputs<'_>) -> Result<Datum, Failure> + Send + Sync;
+pub type ValuesHandler = dyn Fn(&[Datum]) -> Result<Datum, String> + Send + Sync;
+
+/// A runtime value. A type's catalog representation decides which kind its
+/// values are; a type without one is `Number`.
+#[derive(Debug, Clone, PartialEq)]
+pub enum Datum {
+    Number(f64),
+    Integer(i64),
+    Boolean(bool),
+    Text(Box<str>),
+    /// Field values in declaration order.
+    Record(std::sync::Arc<[Datum]>),
+    List(std::sync::Arc<[Datum]>),
+}
+
+impl Datum {
+    pub fn number(&self) -> Option<f64> {
+        match self {
+            Datum::Number(n) => Some(*n),
+            _ => None,
+        }
+    }
+}
+
+impl std::fmt::Display for Datum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Datum::Number(n) => write!(f, "{n}"),
+            Datum::Integer(i) => write!(f, "{i}"),
+            Datum::Boolean(b) => write!(f, "{b}"),
+            Datum::Text(t) => write!(f, "{t:?}"),
+            Datum::Record(fields) => {
+                write!(f, "(")?;
+                for (i, field) in fields.iter().enumerate() {
+                    write!(f, "{}{field}", if i > 0 { ", " } else { "" })?;
+                }
+                write!(f, ")")
+            }
+            Datum::List(items) => {
+                write!(f, "[")?;
+                for (i, item) in items.iter().enumerate() {
+                    write!(f, "{}{item}", if i > 0 { ", " } else { "" })?;
+                }
+                write!(f, "]")
+            }
+        }
+    }
+}
+
+impl PartialEq<f64> for Datum {
+    fn eq(&self, other: &f64) -> bool {
+        self.number() == Some(*other)
+    }
+}
+
+/// An interface operation's inputs: values, or the exact source spelling of
+/// its single `Core.Text` input.
+#[derive(Debug, Clone, Copy)]
+pub enum Inputs<'a> {
+    Values(&'a [Datum]),
+    Text(&'a str),
+}
+
+/// A failure an interface operation declares, by catalog id (`Calendar.InvalidDate`).
+#[derive(Debug, Clone, PartialEq)]
+pub struct Failure {
+    pub id: Cow<'static, str>,
+    pub message: Cow<'static, str>,
+}
+
 pub enum HostHandler {
     Numbers(Box<Handler>),
     /// Receives the exact source spelling of the operation's single `Core.Text` input.
     Text(Box<TextHandler>),
+    /// Takes and returns values of any kind: the engine's record and list
+    /// operations.
+    Values(Box<ValuesHandler>),
+    /// Stands for a binding whose operation needs effects the host did not
+    /// grant. Preflight rejects any program that uses it, so it never runs.
+    Denied(Vec<String>),
+    /// Implements an interface operation of the contract `M.I@hash`, which
+    /// must be the one the language's catalog declares.
+    Contract {
+        contract: Cow<'static, str>,
+        run: Box<ContractHandler>,
+    },
 }
 pub struct HostBinding<'g> {
     pub signature: Signature<'g>,
     pub handler: HostHandler,
 }
+
+/// Why a host call returned no value.
+#[derive(Debug, Clone, PartialEq)]
+pub struct CallError {
+    pub message: String,
+    /// The declared failure, for interface operations.
+    pub failure: Option<Box<str>>,
+}
+
 impl<'g> HostBinding<'g> {
+    pub fn contract(
+        signature: Signature<'g>,
+        contract: impl Into<Cow<'static, str>>,
+        run: impl Fn(Inputs<'_>) -> Result<Datum, Failure> + Send + Sync + 'static,
+    ) -> Self {
+        Self {
+            signature,
+            handler: HostHandler::Contract {
+                contract: contract.into(),
+                run: Box::new(run),
+            },
+        }
+    }
+
+    /// Calls the handler. A text handler or text contract receives `text`;
+    /// any other receives `inputs`. A built-in handler takes numbers only, and
+    /// `numbers` is its scratch space.
+    pub fn call(
+        &self,
+        inputs: &[Datum],
+        text: Option<&str>,
+        numbers: &mut Vec<f64>,
+    ) -> Result<Datum, CallError> {
+        let plain = |message: String| CallError {
+            message,
+            failure: None,
+        };
+        match (&self.handler, text) {
+            (HostHandler::Numbers(handler), _) => {
+                numbers.clear();
+                for input in inputs {
+                    numbers.push(
+                        input
+                            .number()
+                            .ok_or_else(|| plain("a built-in handler takes numbers".into()))?,
+                    );
+                }
+                handler(numbers).map(Datum::Number).map_err(plain)
+            }
+            (HostHandler::Text(handler), Some(text)) => {
+                handler(text).map(Datum::Number).map_err(plain)
+            }
+            (HostHandler::Text(_), None) => Err(plain("text handler without text".into())),
+            (HostHandler::Values(handler), _) => handler(inputs).map_err(plain),
+            (HostHandler::Denied(effects), _) => Err(plain(denied(&self.signature, effects))),
+            (HostHandler::Contract { run, .. }, _) => {
+                let inputs = text.map_or(Inputs::Values(inputs), Inputs::Text);
+                run(inputs).map_err(|failure| CallError {
+                    message: failure.message.into_owned(),
+                    failure: Some(failure.id.into()),
+                })
+            }
+        }
+    }
     pub fn new(
         signature: Signature<'g>,
         handler: impl Fn(&[f64]) -> Result<f64, String> + Send + Sync + 'static,
@@ -33,6 +179,15 @@ impl<'g> HostBinding<'g> {
         }
     }
 }
+/// Why a denied binding cannot run.
+fn denied(signature: &Signature, effects: &[String]) -> String {
+    format!(
+        "'{}' needs {}, which the host does not grant",
+        signature.id,
+        effects.join(", ")
+    )
+}
+
 /// A built-in value supplied by the host for an exact (kind, name, type).
 /// Names are owned when they come from a language loaded at run time.
 pub struct HostValue {
@@ -58,7 +213,7 @@ impl HostValue {
 }
 #[derive(Debug)]
 pub struct ExecutionReport<'g> {
-    pub values: Vec<f64>,
+    pub values: Vec<Datum>,
     pub trace: Vec<&'g str>,
 }
 #[derive(Debug)]
@@ -155,15 +310,47 @@ pub fn preflight_with_values(
                         .filter(|b| b.signature.id == signature.id)
                         .collect();
                     let text_input = signature.inputs.contains(&TEXT);
+                    // `M.I@hash` for an interface operation, else a host handler name.
+                    let declared = program
+                        .language
+                        .handlers
+                        .get(*operation as usize)
+                        .filter(|h| h.contains('@'));
+                    let compatible = |handler: &HostHandler| match (handler, declared) {
+                        (HostHandler::Contract { .. } | HostHandler::Denied(_), declared) => {
+                            declared.is_some()
+                        }
+                        (_, Some(_)) => false,
+                        (HostHandler::Text(_), None) => text_input,
+                        (HostHandler::Numbers(_) | HostHandler::Values(_), None) => !text_input,
+                    };
                     if matches.len() != 1
                         || matches[0].signature != *signature
-                        || text_input != matches!(matches[0].handler, HostHandler::Text(_))
+                        || !compatible(&matches[0].handler)
                         || (text_input && signature.inputs.len() != 1)
                     {
                         errors.push(Diagnostic::new(
                             "host",
                             node.span,
                             "missing, duplicate or incompatible host binding",
+                        ));
+                    } else if let HostHandler::Denied(effects) = &matches[0].handler {
+                        errors.push(Diagnostic::new(
+                            "host",
+                            node.span,
+                            denied(signature, effects),
+                        ));
+                    } else if let (HostHandler::Contract { contract, .. }, Some(declared)) =
+                        (&matches[0].handler, declared)
+                        && contract != declared
+                    {
+                        errors.push(Diagnostic::new(
+                            "host",
+                            node.span,
+                            format!(
+                                "binding for '{}' implements contract {contract}, the catalog declares {declared}",
+                                signature.id
+                            ),
                         ));
                     }
                     let operands = program.args.get(args.start as usize..args.end as usize);
@@ -260,28 +447,29 @@ pub fn execute_with_values<'g>(
         values: Vec::new(),
         trace: Vec::new(),
     };
-    let mut values = Vec::with_capacity(program.nodes.len());
-    let mut symbols = std::collections::HashMap::<u32, f64>::new();
+    let mut values: Vec<Datum> = Vec::with_capacity(program.nodes.len());
+    let mut symbols = std::collections::HashMap::<u32, Datum>::new();
     let mut builtins = Vec::<(&'static BuiltinValue, f64)>::new();
     let mut args_buffer = Vec::new();
+    let mut numbers = Vec::new();
     for statement in &program.statements {
         while values.len() <= statement.value as usize {
             let node = &program.nodes[values.len()];
             let result = match &node.kind {
-                HirKind::Error => Err("damaged value cannot execute".into()),
-                HirKind::Constant(n) => Ok(*n),
-                HirKind::Reference(symbol) => Ok(symbols[symbol]),
+                HirKind::Error => Err(("damaged value cannot execute".into(), None)),
+                HirKind::Constant(n) => Ok(Datum::Number(*n)),
+                HirKind::Reference(symbol) => Ok(symbols[symbol].clone()),
                 // Text is consumed only by its operation's text handler.
-                HirKind::Text { .. } => Ok(0.0),
+                HirKind::Text { .. } => Ok(Datum::Number(0.0)),
                 HirKind::Builtin(builtin) => {
                     match builtins.iter().find(|(b, _)| std::ptr::eq(*b, *builtin)) {
-                        Some((_, value)) => Ok(*value),
+                        Some((_, value)) => Ok(Datum::Number(*value)),
                         None => {
                             let read = (host_value(host_values, builtin).unwrap().provider)();
                             if let Ok(value) = read {
                                 builtins.push((builtin, value));
                             }
-                            read
+                            read.map(Datum::Number).map_err(|e| (e, None))
                         }
                     }
                 }
@@ -293,39 +481,39 @@ pub fn execute_with_values<'g>(
                         .unwrap();
                     let operands = &program.args[args.start as usize..args.end as usize];
                     report.trace.push(signature.id);
-                    match &binding.handler {
-                        HostHandler::Numbers(handler) => {
-                            args_buffer.clear();
-                            args_buffer.extend(operands.iter().map(|id| values[*id as usize]));
-                            handler(&args_buffer)
+                    // Preflight admits a text argument only as an operation's single input.
+                    let text = match operands.first().map(|id| &program.nodes[*id as usize].kind) {
+                        Some(HirKind::Text { start, end }) => {
+                            Some(&program.text[*start as usize..*end as usize])
                         }
-                        HostHandler::Text(handler) => {
-                            let HirKind::Text { start, end } =
-                                program.nodes[operands[0] as usize].kind
-                            else {
-                                unreachable!("preflight admits only text arguments here")
-                            };
-                            handler(&program.text[start as usize..end as usize])
-                        }
+                        _ => None,
+                    };
+                    args_buffer.clear();
+                    if text.is_none() {
+                        args_buffer.extend(operands.iter().map(|id| values[*id as usize].clone()));
                     }
+                    binding
+                        .call(&args_buffer, text, &mut numbers)
+                        .map_err(|e| (e.message, e.failure))
                 }
             };
-            let number = match result {
-                Ok(n) if n.is_finite() => n,
+            let value = match result {
+                Ok(value) if value.number().is_none_or(f64::is_finite) => value,
                 other => {
+                    let (message, failure) = other
+                        .err()
+                        .unwrap_or_else(|| ("nonfinite result".into(), None));
+                    let mut diagnostic = Diagnostic::new("execution", node.span, message);
+                    diagnostic.code = failure;
                     return Err(ExecutionFailure {
-                        diagnostic: Diagnostic::new(
-                            "execution",
-                            node.span,
-                            other.err().unwrap_or_else(|| "nonfinite result".into()),
-                        ),
+                        diagnostic,
                         trace: report.trace,
                     });
                 }
             };
-            values.push(number);
+            values.push(value);
         }
-        let value = values[statement.value as usize];
+        let value = values[statement.value as usize].clone();
         if let Some(symbol) = statement.symbol {
             symbols.insert(symbol, value);
         } else {

@@ -1,0 +1,61 @@
+{
+  "$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+  "name": "Nitride binding",
+  "scopeName": "source.nbind",
+  "patterns": [
+    {
+      "include": "#comments"
+    },
+    {
+      "include": "#strings"
+    },
+    {
+      "include": "#keywords"
+    },
+    {
+      "include": "#numbers"
+    }
+  ],
+  "repository": {
+    "comments": {
+      "patterns": [
+        {
+          "name": "comment.line.double-slash.nbind",
+          "match": "//.*$"
+        },
+        {
+          "name": "comment.block.nbind",
+          "begin": "/\\*",
+          "end": "\\*/"
+        }
+      ]
+    },
+    "strings": {
+      "name": "string.quoted.double.nbind",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "name": "constant.character.escape.nbind",
+          "match": "\\\\."
+        }
+      ]
+    },
+    "keywords": {
+      "patterns": [
+        {
+          "name": "storage.type.nbind",
+          "match": "\\b(binding)\\b"
+        },
+        {
+          "name": "keyword.other.nbind",
+          "match": "\\b(version|for|wasm|component|export|process)\\b"
+        }
+      ]
+    },
+    "numbers": {
+      "name": "constant.numeric.nbind",
+      "match": "\\b[0-9]+\\b"
+    }
+  }
+}

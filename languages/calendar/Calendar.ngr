@@ -1,0 +1,34 @@
+// A Dates-shaped profile whose calendar arithmetic is a host interface: any
+// implementation that conforms to `Calendar.Gregorian` can run it.
+syntax module Calendar
+{
+  symbols { value }
+  token Digit = ['0'..'9'];
+  token Date = Digit Digit Digit Digit "-" Digit Digit "-" Digit Digit;
+  token Number = Digit+ ("." Digit+)?;
+  token Identifier = ['a'..'z' 'A'..'Z' '_'] ['a'..'z' 'A'..'Z' '0'..'9' '_']* except "let" "days" "in" "weekday" "leap" "span" "mondays" "count" "nth" "start" "end" "today";
+  syntax Program = Statements:Statement*;
+  syntax Statement = Let / Show;
+  syntax Let = "let" Name:Identifier "=" Value:Expr ";" declares value Name sequential;
+  syntax Show = Value:Expr ";";
+  extensible syntax Expr
+  {
+    | Day = Value:Date lowers Calendar.ParseDate(text Value)
+    | Today = "today" lowers Calendar.Today()
+    | Num = Value:Number lowers literal Core.Scalar Value
+    | Ref = Name:Identifier references value Name
+    | Paren = "(" Inner:Expr ")"
+    | Weekday = "weekday" "(" Of:Expr ")" lowers Calendar.DayOfWeek(Of)
+    | Leap = "leap" "(" Of:Expr ")" lowers Calendar.IsLeapYear(Of)
+    | SpanOf = "span" "(" From:Expr "," To:Expr ")" lowers Calendar.SpanOf(From, To)
+    | Start = "start" "(" Of:Expr ")" lowers Calendar.SpanStart(Of)
+    | End = "end" "(" Of:Expr ")" lowers Calendar.SpanEnd(Of)
+    | Mondays = "mondays" "(" Of:Expr ")" lowers Calendar.Mondays(Of)
+    | Count = "count" "(" Of:Expr ")" lowers Calendar.Count(Of)
+    | Nth = "nth" "(" Of:Expr "," Index:Expr ")" lowers Calendar.Nth(Of, Index)
+    | Days = Amount:Expr "days" precedence 30 lowers Calendar.Days(Amount)
+    | InDays = Span:Expr "in" "days" precedence 5 lowers Calendar.InDays(Span)
+    | Add = Left:Expr "+" Right:Expr precedence 10 left lowers Calendar.Plus(Left, Right)
+    | Sub = Left:Expr "-" Right:Expr precedence 10 left lowers Calendar.Minus(Left, Right)
+  }
+}
