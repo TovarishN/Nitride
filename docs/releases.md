@@ -19,12 +19,13 @@ git push origin v0.1.1
 
 Pushing a matching `vMAJOR.MINOR.PATCH` tag triggers Native release.
 Use Actions → Native release → Run workflow on a branch for a complete
-build rehearsal without publication. Pushing a `codex/release-*` branch also
-runs the full matrix without publishing. A manual run on a tag publishes only
+build rehearsal without publication. PGO/LTO/BOLT builds and packaging run only
+on version tags or explicit manual runs; updating a PR does not start them.
+A manual run on a tag publishes only
 when its Publish input is selected. A version/tag/lockfile mismatch stops
 the build before the matrix starts. The first release uses `v0.1.0`.
 
-A tag can promote a successful rehearsal's artifacts when the commit matches
+A tag can promote a successful manual rehearsal's artifacts when the commit matches
 exactly and all three artifact bundles are still available. The workflow validates
 the contents, checksums and clean source commit again before publication.
 Otherwise it builds the complete matrix. Artifact promotion keeps the binaries
@@ -74,6 +75,20 @@ Linux x64 uses BOLT; Windows and macOS use LLVM PGO/LTO. Linux binaries are
 built on Ubuntu 24.04 and require glibc 2.39 or newer. Windows and macOS
 support is bounded by the pinned Rust toolchain and VS Code runtime requirements. The macOS
 signature is ad-hoc, without Apple notarization or a Developer ID certificate.
+
+## Pull request validation
+
+Pull requests run one validation workflow. Branch pushes do not start a duplicate
+copy; pushes to `main` still validate the merged result. A newer update cancels
+older validation runs for that PR.
+
+Workspace tests and focused native-only CLI/process/LSP smoke tests run once
+on each supported OS. Formatting,
+clippy, optional ASCII/SIMD feature tests and grammar bootstrap run once on Linux.
+Extension and release-tooling checks also run once on Linux. Rust dependencies
+and npm downloads are cached for subsequent updates. Release-profile compilation,
+PGO training, BOLT and package smoke checks belong to the release workflow, so
+ordinary PR updates avoid building the optimized binaries again.
 
 ## WASM exclusion
 

@@ -3,7 +3,6 @@ name: Native release
 on:
   push:
     tags: ['v*.*.*']
-    branches: ['codex/release-*']
   workflow_dispatch:
     inputs:
       publish:

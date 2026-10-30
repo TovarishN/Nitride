@@ -9,8 +9,10 @@ import subprocess
 def eligible_runs(runs, sha, current_id):
     return sorted((int(run['id']) for run in runs
                    if run['head_sha'] == sha and int(run['id']) != current_id
-                   and run['conclusion'] == 'success' and run['event'] == 'push'
-                   and (run.get('head_branch') or '').startswith('codex/release-')), reverse=True)
+                   and run['conclusion'] == 'success'
+                   and (run['event'] == 'workflow_dispatch'
+                        or (run['event'] == 'push'
+                            and (run.get('head_branch') or '').startswith('codex/release-')))), reverse=True)
 
 
 def complete_artifacts(artifacts, wanted):
@@ -33,7 +35,7 @@ def main():
         wanted = {'native-' + row['id'] for row in matrix}
         # Reuse is optional; an API error falls back to a fresh complete build.
         try:
-            runs = api(f'repos/{repository}/actions/workflows/release.yml/runs?head_sha={sha}&status=success&event=push&per_page=100')['workflow_runs']
+            runs = api(f'repos/{repository}/actions/workflows/release.yml/runs?head_sha={sha}&status=success&per_page=100')['workflow_runs']
             for run_id in eligible_runs(runs, sha, current_id):
                 artifacts = api(f'repos/{repository}/actions/runs/{run_id}/artifacts?per_page=100')['artifacts']
                 if complete_artifacts(artifacts, wanted):

@@ -144,8 +144,10 @@ class PromotionTests(unittest.TestCase):
         runs = [good, {**good, 'id': 11, 'head_sha': 'b' * 40},
                 {**good, 'id': 12, 'conclusion': 'failure'},
                 {**good, 'id': 13, 'head_branch': 'main'},
-                {**good, 'id': 14}]
-        self.assertEqual(eligible_runs(runs, 'a' * 40, 14), [10])
+                {**good, 'id': 14},
+                {**good, 'id': 15, 'event': 'workflow_dispatch', 'head_branch': 'main'},
+                {**good, 'id': 16, 'event': 'pull_request'}]
+        self.assertEqual(eligible_runs(runs, 'a' * 40, 14), [15, 10])
 
     def test_expired_missing_or_duplicate_artifacts_cannot_be_promoted(self):
         from release.reuse import complete_artifacts
