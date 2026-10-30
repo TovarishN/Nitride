@@ -1,0 +1,2740 @@
+{
+  "date": "2026-10-30T13:50:56.279Z",
+  "baseline_revision": "afda797587c249e947cd773df157257c2a2c4665",
+  "method": "Five fresh-process timed parses and one untimed warmup per case/variant, reversing and rotating variant order. Ordinary allocator; same harness and source. Export/fingerprint outside timing.",
+  "affinity": "Windows logical CPU 0, inherited process affinity mask 1",
+  "variants": {
+    "baseline": {
+      "file": "target/compiler-audit/portable/x86_64-pc-windows-msvc/release/nitride-compiler-audit.exe",
+      "sha256": "603b956939260664b658a4f72a6234ce1f84ef1b49a05349970e0157c1980553",
+      "bytes": 3076608,
+      "section_sha256": {
+        ".text": "66b5b64ee377dafd4e85c1ae3f7185d4099c5d2999742c1b3a382d540d5efa64",
+        ".rdata": "1b7a3aacca11be4fc5a2965c2b3572d907c908cfca87c253ecebda5e1232d2c6",
+        ".data": "7938f8d765f771fb64841913fb0f0c24edc67e8b2dc73347d7c6196faaff7ed6",
+        ".pdata": "5c7028714ae626c74086b4a7f701b4c05fa9a9b0d90c592e6458ed3a20444e1b",
+        ".reloc": "5a179d2c2778ba25fa09c329dc999274f9e921abd96b61e5aa2c90552a20b13b"
+      }
+    },
+    "default": {
+      "file": "target/scanner-default/x86_64-pc-windows-msvc/release/nitride-compiler-audit.exe",
+      "sha256": "2f6dd034b7acfd70857aa7041b0538cb9db8df73b0a3f8ec09b69e6f09db4a40",
+      "bytes": 3076608,
+      "section_sha256": {
+        ".text": "66b5b64ee377dafd4e85c1ae3f7185d4099c5d2999742c1b3a382d540d5efa64",
+        ".rdata": "10b0a1352db8e90524230b13772008a6a343828c60babe3d87e77c930ec143a6",
+        ".data": "7938f8d765f771fb64841913fb0f0c24edc67e8b2dc73347d7c6196faaff7ed6",
+        ".pdata": "5c7028714ae626c74086b4a7f701b4c05fa9a9b0d90c592e6458ed3a20444e1b",
+        ".reloc": "5a179d2c2778ba25fa09c329dc999274f9e921abd96b61e5aa2c90552a20b13b"
+      },
+      "features": [],
+      "rustflags": []
+    },
+    "scalar": {
+      "file": "target/scanner-scalar/x86_64-pc-windows-msvc/release/nitride-compiler-audit.exe",
+      "sha256": "f83e92afd98dce2c0fa2cb36e4b121ee834556a821e2276a180494172936871f",
+      "bytes": 3077120,
+      "section_sha256": {
+        ".text": "9c1d6ea8334486670de7ba5066b5f87c407c8abee56af5d012964aeeb700bf22",
+        ".rdata": "c0b8cebf7d42b50324370ac1e084d0055db28b017f428eb1a03046910121f1ab",
+        ".data": "90c8391cb4d666f51ca20b8d7b65f97e3baa6dd13f6b4677805b4238aabbeec2",
+        ".pdata": "05d698508595461000d4d69fe52983196fbc036b01672b287098d449e2a35a0e",
+        ".reloc": "96d543c8bc638890d1d7e0a8d24411cc2f52c21232303c7ea024a4defd612961"
+      },
+      "features": [
+        "ascii-runs"
+      ],
+      "rustflags": []
+    },
+    "simd": {
+      "file": "target/scanner-simd/x86_64-pc-windows-msvc/release/nitride-compiler-audit.exe",
+      "sha256": "cd611a5700c5573a3a57c5a21a8e678a63e7736c097ded8c629752c17110fe27",
+      "bytes": 3079680,
+      "section_sha256": {
+        ".text": "7cdb8819a09d3c5b5678476f0d95776e3cc0b4da86cd05de495928b736ff911a",
+        ".rdata": "26d23546724aef148180ad917d743015c658ce9522ee3eccc3b36ffd6387c9db",
+        ".data": "e64a922b7b349e52e3ff6e0c784762b4103a23c4ca0724087c6c28346b419464",
+        ".pdata": "dee33ca4b47cea5f7ea6f108d54044529d13952b0fc5291f467144fde893e659",
+        ".reloc": "274bf619b6255d7e129f16d710d7d4cc3fd63e544dda4835711ef2aab7bfb943"
+      },
+      "features": [
+        "ascii-runs",
+        "simd-ascii-runs"
+      ],
+      "rustflags": []
+    }
+  },
+  "cases": [
+    {
+      "id": "262144-valid",
+      "file": "target\\compiler-audit\\262144-valid.cs",
+      "mode": "strict",
+      "source_sha256": "fb24d3b7883f34ab3c7774bbdb289f6d6e609ee81e386469e8cf3d5e6cb743f6",
+      "samples": {
+        "baseline": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 83230900,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 98980200,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 81654000,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 80530900,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 87962700,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          }
+        ],
+        "default": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 98383700,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 80357000,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 82869200,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 80911700,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 82964600,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          }
+        ],
+        "scalar": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 83577200,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 81205600,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 85353200,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 87605900,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 84448800,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          }
+        ],
+        "simd": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 77935500,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 81309200,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 85020200,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 88631200,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 79712700,
+            "fallbacks": 0,
+            "fingerprint": "cad0a88bd0424fa5",
+            "native_lexical_calls": 71445,
+            "native_syntax_calls": 227455,
+            "nodes": 113003,
+            "source_bytes": 262212,
+            "work": 12146637
+          }
+        ]
+      },
+      "median_ns": {
+        "baseline": 83230900,
+        "default": 82869200,
+        "scalar": 84448800,
+        "simd": 81309200
+      }
+    },
+    {
+      "id": "262144-one",
+      "file": "target\\compiler-audit\\262144-one.cs",
+      "mode": "recover",
+      "source_sha256": "4f184bb80dee1831ffbe33b1abb79d708dd94adb3d80627c09b35d43b36b1e94",
+      "samples": {
+        "baseline": [
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 96553200,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 103531700,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 117393900,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 113109100,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 102484000,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          }
+        ],
+        "default": [
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 97597500,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 97569700,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 96419000,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 122908100,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 112000100,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          }
+        ],
+        "scalar": [
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 104704000,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 100188500,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 103162500,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 114988000,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 106993400,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          }
+        ],
+        "simd": [
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 100638700,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 100696800,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 100370600,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 116445300,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 115111900,
+            "fallbacks": 0,
+            "fingerprint": "231e7462b9f37304",
+            "native_lexical_calls": 35637,
+            "native_syntax_calls": 113726,
+            "nodes": 113003,
+            "source_bytes": 262211,
+            "work": 1658544
+          }
+        ]
+      },
+      "median_ns": {
+        "baseline": 103531700,
+        "default": 97597500,
+        "scalar": 104704000,
+        "simd": 100696800
+      }
+    },
+    {
+      "id": "262144-junk",
+      "file": "target\\compiler-audit\\262144-junk.cs",
+      "mode": "recover",
+      "source_sha256": "f5c364ff50a497e6f402753f6ddb8ef8c91f4364bc364541427e51cd436ff121",
+      "samples": {
+        "baseline": [
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 102221100,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 105118600,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 100814900,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 117508600,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 98788800,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          }
+        ],
+        "default": [
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 101754700,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 108894500,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 102207300,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 106656900,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 100145100,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          }
+        ],
+        "scalar": [
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 99366200,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 109190200,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 103236900,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 102730600,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 101187300,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          }
+        ],
+        "simd": [
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 98681800,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 102408600,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 103139900,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 103462100,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 108856500,
+            "fallbacks": 0,
+            "fingerprint": "d2f0807723dd3476",
+            "native_lexical_calls": 35580,
+            "native_syntax_calls": 113807,
+            "nodes": 112999,
+            "source_bytes": 262340,
+            "work": 1676277
+          }
+        ]
+      },
+      "median_ns": {
+        "baseline": 102221100,
+        "default": 102207300,
+        "scalar": 102730600,
+        "simd": 103139900
+      }
+    },
+    {
+      "id": "262144-dense",
+      "file": "target\\compiler-audit\\262144-dense.cs",
+      "mode": "recover",
+      "source_sha256": "eba66199d7d7f67000726fad4834117e8ae0bf0ad8f006d8581dc42636724e88",
+      "samples": {
+        "baseline": [
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 627454600,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 640799200,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 686920100,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 641021500,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 605523800,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          }
+        ],
+        "default": [
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 638215100,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 626761200,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 646863900,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 591571300,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 603774500,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          }
+        ],
+        "scalar": [
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 643754100,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 590285900,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 636964600,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 583905000,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 649097200,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          }
+        ],
+        "simd": [
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 630221700,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 631844800,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 660549400,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 676731800,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          },
+          {
+            "diagnostics": 729,
+            "elapsed_ns": 606716100,
+            "fallbacks": 0,
+            "fingerprint": "ac557ebc3c66bd00",
+            "native_lexical_calls": 88899,
+            "native_syntax_calls": 529352,
+            "nodes": 113003,
+            "source_bytes": 261483,
+            "work": 9908773
+          }
+        ]
+      },
+      "median_ns": {
+        "baseline": 640799200,
+        "default": 626761200,
+        "scalar": 636964600,
+        "simd": 631844800
+      }
+    },
+    {
+      "id": "4194304-valid",
+      "file": "target\\compiler-audit\\4194304-valid.cs",
+      "mode": "strict",
+      "source_sha256": "bfa28dd3a2fa6c86836d2706d48026317228b2209d169ee355a7274f5ee2f919",
+      "samples": {
+        "baseline": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1293932900,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1299389400,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1282383400,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1199660300,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1184052400,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          }
+        ],
+        "default": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1350342000,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1361941300,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1320344900,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1187420200,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1179927100,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          }
+        ],
+        "scalar": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1283697500,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1307105500,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1311997300,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1194206200,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1263837900,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          }
+        ],
+        "simd": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1292860400,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1261396600,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1293018900,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1217031700,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1283187500,
+            "fallbacks": 0,
+            "fingerprint": "65e37734de06cda8",
+            "native_lexical_calls": 1110441,
+            "native_syntax_calls": 3535279,
+            "nodes": 1756313,
+            "source_bytes": 4194492,
+            "work": 189454475
+          }
+        ]
+      },
+      "median_ns": {
+        "baseline": 1282383400,
+        "default": 1320344900,
+        "scalar": 1283697500,
+        "simd": 1283187500
+      }
+    },
+    {
+      "id": "4194304-one",
+      "file": "target\\compiler-audit\\4194304-one.cs",
+      "mode": "recover",
+      "source_sha256": "d73208f5ec37051de89b68773a099dd4e50d9c10cee5c0bf5f62690efe4fd84c",
+      "samples": {
+        "baseline": [
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1567460200,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1530849600,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1599695300,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1510933100,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1518850200,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          }
+        ],
+        "default": [
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1608530300,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1595069900,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1538806500,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1468808000,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1567297000,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          }
+        ],
+        "scalar": [
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1569253800,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1541938500,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1554834400,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1668815600,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1580786400,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          }
+        ],
+        "simd": [
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1618446600,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1638310300,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1570767400,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1598427800,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          },
+          {
+            "diagnostics": 1,
+            "elapsed_ns": 1537479300,
+            "fallbacks": 0,
+            "fingerprint": "202866a808ff278c",
+            "native_lexical_calls": 552330,
+            "native_syntax_calls": 1758673,
+            "nodes": 1756313,
+            "source_bytes": 4194491,
+            "work": 30482396
+          }
+        ]
+      },
+      "median_ns": {
+        "baseline": 1530849600,
+        "default": 1567297000,
+        "scalar": 1569253800,
+        "simd": 1598427800
+      }
+    },
+    {
+      "id": "4194304-junk",
+      "file": "target\\compiler-audit\\4194304-junk.cs",
+      "mode": "recover",
+      "source_sha256": "68d483fa9b1ebd0c7af007549e174c016bf131429255a9bfb21a1cf2d3f74f72",
+      "samples": {
+        "baseline": [
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1611630700,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1693156800,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1602570300,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1746537900,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1666532100,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          }
+        ],
+        "default": [
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1468688400,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1588658800,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1587328000,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1647924100,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1635111000,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          }
+        ],
+        "scalar": [
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1481563400,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1607587600,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 2411002900,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1599062800,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1688857200,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          }
+        ],
+        "simd": [
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1571494300,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1625690600,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1712233600,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1981739400,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          },
+          {
+            "diagnostics": 4,
+            "elapsed_ns": 1618870700,
+            "fallbacks": 0,
+            "fingerprint": "78cf783120ab035b",
+            "native_lexical_calls": 552334,
+            "native_syntax_calls": 1758983,
+            "nodes": 1756309,
+            "source_bytes": 4194620,
+            "work": 30509415
+          }
+        ]
+      },
+      "median_ns": {
+        "baseline": 1666532100,
+        "default": 1588658800,
+        "scalar": 1607587600,
+        "simd": 1625690600
+      }
+    },
+    {
+      "id": "long-trivia",
+      "file": "target\\compiler-audit\\long-trivia.cs",
+      "mode": "strict",
+      "source_sha256": "2486a43dbec7c33e81f4bad87ba749bb5b4c764b097be462b8bebf227d965bf5",
+      "samples": {
+        "baseline": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2007500,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1990300,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2034300,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1987700,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2484800,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          }
+        ],
+        "default": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1907500,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2018100,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1985300,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2028900,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2390700,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          }
+        ],
+        "scalar": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1668300,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1710800,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2079700,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1673700,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1619700,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          }
+        ],
+        "simd": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1646000,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1927600,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2556200,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1676400,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1581600,
+            "fallbacks": 0,
+            "fingerprint": "374a08f245066ba5",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 348031,
+            "work": 192924
+          }
+        ]
+      },
+      "median_ns": {
+        "baseline": 2007500,
+        "default": 2018100,
+        "scalar": 1673700,
+        "simd": 1676400
+      }
+    },
+    {
+      "id": "unicode",
+      "file": "target\\compiler-audit\\unicode.cs",
+      "mode": "strict",
+      "source_sha256": "ba71b4a083f7a27abc0cb44b5aa44ef737d4cd1659120a9820ca0cfee2718dab",
+      "samples": {
+        "baseline": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1373600,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1373700,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1377200,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1385900,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1388400,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          }
+        ],
+        "default": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1568400,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1385400,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1421300,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1384400,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1373100,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          }
+        ],
+        "scalar": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1393100,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1405800,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1502300,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1417800,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1405400,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          }
+        ],
+        "simd": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1386900,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1402500,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1451800,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1492100,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1515200,
+            "fallbacks": 0,
+            "fingerprint": "a8b5d6938928f8eb",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 80,
+            "work": 956
+          }
+        ]
+      },
+      "median_ns": {
+        "baseline": 1377200,
+        "default": 1385400,
+        "scalar": 1405800,
+        "simd": 1451800
+      }
+    },
+    {
+      "id": "string-1m",
+      "file": "target\\compiler-audit\\string-1m.cs",
+      "mode": "strict",
+      "source_sha256": "6477c914369515a9575b1f410014e8b049af5ba88e38bde94f32c0ad150c398b",
+      "samples": {
+        "baseline": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 6252100,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 6928600,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 5679000,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 6679000,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 5303100,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          }
+        ],
+        "default": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 5382200,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 6322900,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 6213600,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 8073900,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 5318000,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          }
+        ],
+        "scalar": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2182300,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 3743700,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2149200,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2174100,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2099400,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          }
+        ],
+        "simd": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1726500,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1844900,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2314600,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1692900,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1801300,
+            "fallbacks": 0,
+            "fingerprint": "8ccfbf34fc8c9edc",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 1048602,
+            "work": 2098074
+          }
+        ]
+      },
+      "median_ns": {
+        "baseline": 6252100,
+        "default": 6213600,
+        "scalar": 2174100,
+        "simd": 1801300
+      }
+    },
+    {
+      "id": "string-unicode-escapes",
+      "file": "target\\compiler-audit\\string-unicode-escapes.cs",
+      "mode": "strict",
+      "source_sha256": "29040555e11e9db67bb77a79056edaefc2f444be7f965421b71d487d5a3e2bcb",
+      "samples": {
+        "baseline": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1533800,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1838400,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1649700,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 2009100,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1582300,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          }
+        ],
+        "default": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1584100,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1574500,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1528400,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1683000,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1563900,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          }
+        ],
+        "scalar": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1472900,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1802800,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1625100,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1441800,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1466200,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          }
+        ],
+        "simd": [
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1580400,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1412700,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1447000,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1451000,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          },
+          {
+            "diagnostics": 0,
+            "elapsed_ns": 1475100,
+            "fallbacks": 0,
+            "fingerprint": "4be67269742256b6",
+            "native_lexical_calls": 4,
+            "native_syntax_calls": 39,
+            "nodes": 11,
+            "source_bytes": 36378,
+            "work": 71578
+          }
+        ]
+      },
+      "median_ns": {
+        "baseline": 1649700,
+        "default": 1574500,
+        "scalar": 1472900,
+        "simd": 1451000
+      }
+    }
+  ],
+  "mismatches": [],
+  "source_sha256": {
+    "crates/nitride-core/src/lexical.rs": "fa3eca7027811eda8c82ee31c47cb481c5890bcad67050859279295f38006dc7",
+    "crates/nitride-core/src/lexical/runs.rs": "1e27d5463f446665c31f9a4f6f1a5b45c483a434b964752951ac3e4d006d8268",
+    "crates/nitride-core/Cargo.toml": "2d9661e923b82d03641aa63ae6a4d64bc5f18e3108a443ffd6c8287532021a21",
+    "crates/nitride-codegen/src/lexical.rs": "7abeb78337588c8e95d3eb85b538f1d85ea8180dfc6792d901b13470b0e423d0",
+    "crates/nitride-codegen/src/lexical/fused.rs": "368817a9d6c4e4c8e8a7e81f93218d739a719bf6ba60632e0fa7e2a14b5cfb83",
+    "scripts/compiler-audit/src/main.rs": "b29cbb53605c9034e30fb5d97c6e88c6b0ee35fcc8e55c8dda68ea7467d84487"
+  }
+}

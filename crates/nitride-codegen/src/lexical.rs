@@ -276,8 +276,16 @@ fn emit(
                 } else {
                     format!("count>={min}u32")
                 };
+                let run = if max >= 8 {
+                    fused::run_plan(&e["inner"]).map(|(mask, work, depth)| format!(
+                        "count+=c.ascii_run(&const{{nitride_core::lexical::AsciiRun::new([{}u64,{}u64],{work},{depth})}},{max}u32-count,{d}+1);if count=={max}u32{{break;}}",
+                        mask[0], mask[1]
+                    )).unwrap_or_default()
+                } else {
+                    String::new()
+                };
                 format!(
-                    "{{let mut count=0u32;while count<{max}u32{{let mark=c.position();let matched={};if !matched{{c.restore(mark);break;}}\n{zero}count+=1;}}{result}}}",
+                    "{{let mut count=0u32;while count<{max}u32{{{run}let mark=c.position();let matched={};if !matched{{c.restore(mark);break;}}\n{zero}count+=1;}}{result}}}",
                     emit(&e["inner"], ids, next, serial)?
                 )
             }
