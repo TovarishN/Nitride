@@ -135,17 +135,25 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         && verb == "draft"
     {
         // A `.nbind` drafted from what a component exports.
-        let prepared = nitride_prepare::prepare_project(std::path::Path::new(manifest))?;
-        print!(
-            "{}",
-            nitride_wasm::draft(
-                &prepared.data,
-                interface,
-                std::path::Path::new(component),
-                component,
-            )?
-        );
-        return Ok(true);
+        #[cfg(not(feature = "wasm"))]
+        {
+            let _ = (manifest, interface, component);
+            return Err("WebAssembly support is disabled in this build".into());
+        }
+        #[cfg(feature = "wasm")]
+        {
+            let prepared = nitride_prepare::prepare_project(std::path::Path::new(manifest))?;
+            print!(
+                "{}",
+                nitride_wasm::draft(
+                    &prepared.data,
+                    interface,
+                    std::path::Path::new(component),
+                    component,
+                )?
+            );
+            return Ok(true);
+        }
     }
     if let [command, manifest, source] = args.as_slice()
         && command == "run"

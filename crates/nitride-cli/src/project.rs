@@ -51,14 +51,19 @@ fn bind<'g>(
                 (program, bindings)
             }
             _ => {
-                let component = binding["component"].as_str().unwrap_or_default();
-                let bindings = nitride_wasm::bindings(
-                    language,
-                    &loaded.prepared,
-                    binding,
-                    &folder.join(component),
-                )?;
-                (component, bindings)
+                #[cfg(not(feature = "wasm"))]
+                return Err("WebAssembly support is disabled in this build".into());
+                #[cfg(feature = "wasm")]
+                {
+                    let component = binding["component"].as_str().unwrap_or_default();
+                    let bindings = nitride_wasm::bindings(
+                        language,
+                        &loaded.prepared,
+                        binding,
+                        &folder.join(component),
+                    )?;
+                    (component, bindings)
+                }
             }
         };
         bound.push((

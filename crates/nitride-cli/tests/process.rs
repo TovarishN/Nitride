@@ -21,6 +21,7 @@ fn python() -> bool {
 }
 
 #[test]
+#[cfg(feature = "wasm")] // Calendar.nproj also binds Gregorian's WASM component.
 fn the_python_clock_runs_when_granted() {
     if !python() {
         return;

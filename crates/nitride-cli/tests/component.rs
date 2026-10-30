@@ -1,6 +1,7 @@
 //! Calendar's Gregorian interface run by a WebAssembly component
 //! (`languages/calendar/gregorian.wasm`, built by `component/build.sh` from a
 //! crate that knows only its WIT), as `gregorian.nbind` binds it.
+#![cfg(feature = "wasm")]
 use nitride_core::*;
 use serde_json::Value;
 use std::path::{Path, PathBuf};

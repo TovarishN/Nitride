@@ -249,3 +249,9 @@ The CSharp4 grammar and Mono corpus carry provenance and license records under
 [languages/csharp4](languages/csharp4). Roslyn supplies an independent C# baseline;
 its inclusion implies no affiliation or endorsement. Preserve accompanying
 third-party notices when redistributing those sources.
+
+## Native releases
+
+See [release versioning and build instructions](docs/releases.md) for the
+nine native VS Code packages and CLI archives, PGO/LTO/AVX2/BOLT settings,
+CPU compatibility, and the native release configuration without Wasmtime.
