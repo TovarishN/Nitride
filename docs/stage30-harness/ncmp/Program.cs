@@ -39,4 +39,4 @@ if (Environment.GetEnvironmentVariable("NDIAG") is not null) foreach (var d in h
 GC.KeepAlive(held);
 held.Dispose();
 times.Sort();
-Console.WriteLine(JsonSerializer.Serialize(new { seconds = times[times.Count / 2], samples = times, retained_bytes = arrays + 2L * source.Length, heap_growth_bytes = after - before, nodes, diagnostics, success, language_build_seconds = build.Elapsed.TotalSeconds }));
+Console.WriteLine(JsonSerializer.Serialize(new { runtime_identity = typeof(SyntaxTree).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion, reference_identity = assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion, seconds = times[times.Count / 2], samples = times, retained_bytes = arrays + 2L * source.Length, heap_growth_bytes = after - before, nodes, diagnostics, success, language_build_seconds = build.Elapsed.TotalSeconds }));

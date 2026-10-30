@@ -39,3 +39,9 @@ Classifier tests cover all 256 byte values, masks, unaligned inputs, vector leng
 The workspace run's remaining failure is the pre-existing `existing_exports_match_native_frontend` comparison against an ignored XML export. Its old `omitted_semantics` metadata lists `Xml.Paired`; the pre-change executable also emits an empty list. The ignored export is preserved. Remaining prepare/process/WASM tests pass with that comparison excluded. A temporary test-only Python PATH entry and workspace-local temp directory avoid this machine's Windows Store Python alias and sandbox temp-file permissions; no machine settings are changed.
 
 This is one host and a bounded workload set. The tiny Unicode case measures mostly parser setup, not vector throughput. There is no updated peak-memory, Roslyn, PGO-combination, ARM SIMD or long-running edit/retention measurement. Use the opt-in features only after checking the consuming workload. Reproduction commands are in [the harness README](../scripts/compiler-audit/README.md).
+
+The subsequent [Apple M4 Pro reassessment](compiler-assessment-2026-10-30.md)
+measures batching with and without PGO and compares with Nitrogen/Roslyn. On
+ARM64 this feature follows its scalar path; an explicit NEON classifier remains
+unimplemented. The absence of ARM measurements above describes this Windows
+checkpoint, not the later reassessment.

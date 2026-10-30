@@ -2,6 +2,11 @@
 
 Measured 2026-10-30 on 13th Gen Intel(R) Core(TM) i7-13700, Windows x86-64, rustc 1.99.1 (58cf8f9c3 2026-10-13). Source revision: `afda797587c249e947cd773df157257c2a2c4665`.
 
+This is the Windows checkpoint before the optional ASCII scanner was added.
+See the [scanner experiment](ascii-scanner-runs.md) and the
+[Apple Silicon reassessment](compiler-assessment-2026-10-30.md) for subsequent
+measurements and the comparison with Nitrogen and Roslyn.
+
 PGO reduces parse-phase time by 25.0–39.0% across the eight primary CSharp4 cases. Native CPU targeting ranges from 7.5% slower to 2.0% faster; it has no consistent advantage. Combining native targeting with PGO provides no consistent extra improvement. The PGO harness executable is 27.4% larger (3,076,608 → 3,920,896 bytes; these are harness binaries, not shipping CLI sizes).
 
 ## Parse-phase medians
