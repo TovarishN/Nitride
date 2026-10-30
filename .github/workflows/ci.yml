@@ -21,6 +21,8 @@ jobs:
         run: rustup toolchain install stable --profile minimal --component rustfmt --component clippy
       - run: cargo +stable fmt --all --check
       - run: cargo +stable test --workspace --locked
+      - name: Test the editor's server build (no component runtime)
+        run: cargo +stable test --locked -p nitride-cli --no-default-features
       - name: Verify grammar bootstrap fixed point
         run: cargo +stable run --locked -p nitride-prepare --example bootstrap -- --check
       - run: cargo +stable clippy --workspace --all-targets --locked -- -D warnings

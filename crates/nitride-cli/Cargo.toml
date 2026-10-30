@@ -20,7 +20,7 @@ nitride-prepare = { path = "../nitride-prepare" }
 nitride-core = { path = "../nitride-core" }
 nitride-lsp = { path = "../nitride-lsp" }
 nitride-codegen = { path = "../nitride-codegen" }
-nitride-wasm = { path = "../nitride-wasm" }
+nitride-wasm = { path = "../nitride-wasm", optional = true }
 nitride-process = { path = "../nitride-process" }
 serde_json = "1"
 
@@ -29,5 +29,10 @@ nitride-prepare = { path = "../nitride-prepare" }
 nitride-codegen = { path = "../nitride-codegen" }
 
 [features]
+default = ["components"]
+# WebAssembly component bindings (`run`, `conform` and `binding draft` over
+# `.nbind` components), through wasmtime. The editor's server leaves it out:
+# scripts/package-vscode.sh builds with --no-default-features.
+components = ["dep:nitride-wasm"]
 # Measure latency with the ordinary default allocator; allocator metrics are null.
 uninstrumented-profiler = []
