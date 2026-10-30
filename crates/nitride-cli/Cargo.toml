@@ -34,5 +34,7 @@ default = ["components"]
 # `.nbind` components), through wasmtime. The editor's server leaves it out:
 # scripts/package-vscode.sh builds with --no-default-features.
 components = ["dep:nitride-wasm"]
+# Compatibility with the feature name in the v0.1.0 release.
+wasm = ["components"]
 # Measure latency with the ordinary default allocator; allocator metrics are null.
 uninstrumented-profiler = []

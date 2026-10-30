@@ -1,0 +1,161 @@
+name: Native release
+
+on:
+  push:
+    tags: ['v*.*.*']
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the selected tag after every target succeeds (branches only build artifacts)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: native-release-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref_type != 'tag' }}
+
+env:
+  RUST_TOOLCHAIN: '1.99.1'
+
+jobs:
+  version:
+    runs-on: ubuntu-24.04
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+      reuse_run_id: ${{ steps.reuse.outputs.run_id }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Validate synchronized versions and tag
+        env:
+          RELEASE_REF_TYPE: ${{ github.ref_type }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if [[ "$RELEASE_REF_TYPE" == tag ]]; then
+            python scripts/version.py check --tag "$RELEASE_TAG"
+          else
+            python scripts/version.py check
+          fi
+      - name: Find verified artifacts for this exact tag commit
+        id: reuse
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: python scripts/release/reuse.py >> "$GITHUB_OUTPUT"
+      - id: matrix
+        run: python -c 'import json, os; m=json.load(open("scripts/release/matrix.json")); open(os.environ["GITHUB_OUTPUT"], "a").write("matrix="+json.dumps(m)+"\n")'
+
+  native:
+    needs: version
+    if: ${{ needs.version.outputs.reuse_run_id == '' }}
+    name: ${{ matrix.id }} (PGO)
+    runs-on: ${{ matrix.runner }}
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.version.outputs.matrix) }}
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: editors/vscode/package-lock.json
+      - name: Install pinned Rust and profiling tools
+        env:
+          RUST_TARGET: ${{ matrix.target }}
+        run: |
+          rustup toolchain install "$RUST_TOOLCHAIN" --profile minimal --component llvm-tools-preview --target "$RUST_TARGET"
+          rustup override set "$RUST_TOOLCHAIN"
+      - name: Install Linux post-link optimizer
+        if: ${{ matrix.bolt }}
+        run: |
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /usr/share/keyrings/llvm-archive-keyring.gpg >/dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] https://apt.llvm.org/noble/ llvm-toolchain-noble-23 main' | sudo tee /etc/apt/sources.list.d/llvm.list
+          sudo apt-get update
+          sudo apt-get install -y bolt-23 libbolt-23-dev
+      - name: Test native CLI and server without Wasmtime
+        run: cargo test --locked -p nitride-cli -p nitride-lsp --no-default-features
+      - name: Build, train PGO, optimize and verify native binaries
+        env:
+          RELEASE_PLATFORM: ${{ matrix.id }}
+        run: python scripts/release/build.py "$RELEASE_PLATFORM"
+      - name: Compile and test extension
+        working-directory: editors/vscode
+        run: |
+          npm ci
+          npm run compile
+          npm test
+      - name: Package target-specific VSIX and CLI archive
+        env:
+          RELEASE_PLATFORM: ${{ matrix.id }}
+        run: python scripts/release/package.py "$RELEASE_PLATFORM"
+      - name: Upload verified release assets
+        uses: actions/upload-artifact@v4
+        with:
+          name: native-${{ matrix.id }}
+          overwrite: true
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 14
+      - name: Preserve failed optimization profiles for diagnosis
+        if: ${{ failure() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: profiles-${{ matrix.id }}
+          overwrite: true
+          path: |
+            target/native-release/${{ matrix.id }}/*/raw/*.profraw
+            target/native-release/${{ matrix.id }}/*/merged.profdata
+            target/native-release/${{ matrix.id }}/*/merged.fdata
+          if-no-files-found: ignore
+          retention-days: 7
+
+  publish:
+    needs: [version, native]
+    if: ${{ always() && !cancelled() && needs.version.result == 'success' && (needs.native.result == 'success' || needs.native.result == 'skipped') && startsWith(github.ref, 'refs/tags/v') && (github.event_name == 'push' || inputs.publish) }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: actions/download-artifact@v4
+        with:
+          github-token: ${{ github.token }}
+          run-id: ${{ needs.version.outputs.reuse_run_id || github.run_id }}
+          pattern: native-*
+          merge-multiple: true
+          path: dist
+      - name: Verify all three targets, archives, VSIXs and checksums
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          python scripts/version.py check --tag "$RELEASE_TAG"
+          python scripts/release/package.py verify
+      - name: Create draft, upload assets and publish complete release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          if gh release view "$RELEASE_TAG" --json isDraft > release-state.json 2>/dev/null; then
+            python -c 'import json; assert json.load(open("release-state.json"))["isDraft"], "Refusing to overwrite a published release"'
+          else
+            gh release create "$RELEASE_TAG" --verify-tag --draft --generate-notes --title "Nitride $RELEASE_TAG"
+          fi
+          gh release upload "$RELEASE_TAG" dist/* --clobber
+          gh release edit "$RELEASE_TAG" --draft=false

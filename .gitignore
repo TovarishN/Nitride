@@ -12,3 +12,6 @@ target/
 
 # Exported language tables; prepare from project.json instead.
 /languages/*/language.json
+
+# Verified native release assets.
+/dist/
