@@ -57,3 +57,29 @@ information may omit source locations.
 Native CPU builds may require instruction sets absent from other machines.
 The audit does not change production compilation defaults. PGO data is specific
 to the source, compiler and training workloads; regenerate it after changes.
+
+## ASCII run experiment
+
+`scanner-runs.mjs` compares the frozen portable audit executable with scalar
+and SIMD candidates built into separate directories:
+
+```powershell
+cargo build --offline --release --manifest-path scripts/compiler-audit/Cargo.toml --target x86_64-pc-windows-msvc --target-dir target/scanner-default
+cargo build --offline --release --manifest-path scripts/compiler-audit/Cargo.toml --target x86_64-pc-windows-msvc --features nitride-core/ascii-runs --target-dir target/scanner-scalar
+cargo build --offline --release --manifest-path scripts/compiler-audit/Cargo.toml --target x86_64-pc-windows-msvc --features nitride-core/simd-ascii-runs --target-dir target/scanner-simd
+python3 scripts/compiler-audit/pin-windows.py
+node scripts/compiler-audit/summarize-scanner-runs.mjs
+```
+
+The Python launcher pins only itself and its child benchmark processes to CPU 0.
+Run after compilation/tests finish. The baseline executable must still match
+the original audit's recorded hash. `NITRIDE_SCANNER_REPORT` overrides the
+output path, which otherwise is `docs/ascii-scanner-runs.json`. Preserve each
+completed report before rerunning.
+
+The optional `nitride-core/ascii-runs` feature enables scalar batching of proven
+repeated one-byte ASCII traces in generated lexical scanners. The optional
+`nitride-core/simd-ascii-runs` Cargo feature includes scalar batching and adds
+runtime AVX2 detection on x86-64; unsupported CPUs and other
+architectures keep scalar scanning. It does not require a native CPU build or
+change interpreted/incremental parsing into generated parsing.

@@ -140,6 +140,68 @@ fn compiled_snapshot_edits_recheck_lexical_boundaries() {
 }
 
 #[test]
+fn compiled_ascii_runs_preserve_long_string_boundaries_and_limits() {
+    for length in [7, 8, 31, 32, 33, 63, 64, 65, 129] {
+        for suffix in ["", "é😀", "\\n", "\\u0041"] {
+            let source = format!(
+                "class C {{ string s = \"{}{suffix}\"; }}",
+                "a".repeat(length)
+            );
+            for work in [0, 50, 200, 500, 1000, 2000, 10000] {
+                compare(
+                    &source,
+                    ParseOptions::default(),
+                    Limits {
+                        work,
+                        parser_work_per_byte: 0,
+                        ..Limits::default()
+                    },
+                );
+            }
+            for frames in [0, 8, 16, 32, 64, 128] {
+                compare(
+                    &source,
+                    ParseOptions::default(),
+                    Limits {
+                        parser_frames: frames,
+                        ..Limits::default()
+                    },
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn edits_inside_ascii_runs_invalidate_the_entire_lexical_fact() {
+    let source = format!("class C {{ string s = \"{}\"; }}", "a".repeat(128));
+    let snapshot = parse_snapshot_compiled(
+        &nitride_cli::csharp4::LEXERS,
+        &source,
+        Limits::default(),
+        SnapshotMode::Strict(ParseOptions::default()),
+    )
+    .unwrap();
+    let at = source.find('"').unwrap() + 64;
+    for replacement in ["é😀", "\\n", "aaaaaaaa"] {
+        let edit = TextEdit {
+            range: [at as u32, at as u32 + 1],
+            replacement: replacement.into(),
+        };
+        let mut changed = source.clone();
+        changed.replace_range(at..at + 1, replacement);
+        let edited = snapshot.edit(&edit, Limits::default()).unwrap();
+        let fresh = compare(&changed, ParseOptions::default(), Limits::default()).unwrap();
+        assert_eq!(
+            normalized(&edited.materialize().unwrap()),
+            normalized(&fresh.materialize().unwrap())
+        );
+        assert_eq!(edited.stats().native_lexical_calls, 0);
+        assert_eq!(snapshot.materialize().unwrap().source, source);
+    }
+}
+
+#[test]
 fn native_depth_facts_do_not_reject_lower_budget_interpreted_edits() {
     use nitride_core::lexical::{CompiledLexers, LexicalContext};
     fn scan(c: &mut LexicalContext<'_>, d: u32) -> Option<bool> {
