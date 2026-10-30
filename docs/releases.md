@@ -93,7 +93,7 @@ component behavior. Release builds do not distribute `nitride-profile`.
 ## Local packaging
 
 Install the pinned Rust toolchain with `llvm-tools-preview`, Node.js 22 and
-Python 3.11+. On Linux glibc install Ubuntu's `bolt-18` package. Run on the
+Python 3.11+. On Linux glibc install LLVM's signed apt repository packages `bolt-23` and `libbolt-23-dev`. Run on the
 actual target architecture and userspace:
 
 ```sh

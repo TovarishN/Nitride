@@ -153,8 +153,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('platform', choices=[row['id'] for row in MATRIX])
     parser.add_argument('--profdata', help='override compiler-matched llvm-profdata path')
-    parser.add_argument('--bolt', default='llvm-bolt-18')
-    parser.add_argument('--merge-fdata', default='merge-fdata-18')
+    parser.add_argument('--bolt', default='llvm-bolt-23')
+    parser.add_argument('--merge-fdata', default='merge-fdata-23')
     args = parser.parse_args()
     build(args)
 

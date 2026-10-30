@@ -75,8 +75,10 @@ jobs:
       - name: Install Linux post-link optimizer
         if: ${{ matrix.bolt }}
         run: |
+          curl -fsSL https://apt.llvm.org/llvm-snapshot.gpg.key | gpg --dearmor | sudo tee /usr/share/keyrings/llvm-archive-keyring.gpg >/dev/null
+          echo 'deb [signed-by=/usr/share/keyrings/llvm-archive-keyring.gpg] https://apt.llvm.org/noble/ llvm-toolchain-noble-23 main' | sudo tee /etc/apt/sources.list.d/llvm.list
           sudo apt-get update
-          sudo apt-get install -y bolt-18 libbolt-18-dev
+          sudo apt-get install -y bolt-23 libbolt-23-dev
       - name: Test native CLI and server without Wasmtime
         if: ${{ !matrix.container }}
         run: cargo test --locked -p nitride-cli -p nitride-lsp --no-default-features
@@ -102,10 +104,10 @@ jobs:
             -e RELEASE_PLATFORM -e RUST_TOOLCHAIN \
             "$RELEASE_CONTAINER" sh -eu -c '
               if command -v apk >/dev/null; then
-                apk add --no-cache python git build-base
+                apk add --no-cache python3 git build-base
               else
                 apt-get update
-                apt-get install -y python git binutils
+                apt-get install -y python3 git binutils
               fi
               git config --global --add safe.directory /work
               rustup component add llvm-tools-preview
