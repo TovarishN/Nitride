@@ -57,70 +57,66 @@ The CSharp4 fixture does not make Nitride a C# compiler. It admits a historical
 grammar without Roslyn's C# type system, compilation, or modern language coverage.
 XML admission is also syntax-only and omits XML semantic checks.
 
-### Recorded parsing comparison
+### Parsing assessment, 2026-10-30
 
-The [refreshed three-way report](docs/stage45-comparison.md) records **2026-10-28
-measurements on one macOS ARM64 host**: Nitride `0954c58`, Nitrogen 0.19.0 and
-Roslyn 5.0.0. Both .NET harnesses used .NET 10.0.0, Release builds, workstation GC.
-It repeats the [2026-10-27 report](docs/stage30-comparison.md) with the same corpus
-and harnesses. That earlier report stays as the historical baseline.
+The [updated assessment](docs/compiler-assessment-2026-10-30.md) measures Nitride
+`fa9b5c6` on an **Apple M4 Pro**, including PGO, native CPU targeting and optional
+ASCII batching, against fresh Nitrogen 0.19.0 and Roslyn 5.0.0 runs on .NET 10.
+The [October 28 comparison](docs/stage45-comparison.md) remains the historical
+checkpoint for memory and incremental edits.
 
 Full parses of generated valid C# 4 source, seconds (lower is better):
 
-| Input | Nitride cold / warm | Nitrogen cold / warm | Roslyn cold / warm |
-|---|---:|---:|---:|
-| 256 KiB | 0.050 / 0.050 | 0.323 / 0.108 | 0.068 / 0.033 |
-| 4 MiB | 0.783 / 0.781 | 1.30 / 0.759 | 0.646 / 0.134 |
-| 16 MiB | 3.16 / 3.18 | 4.06 / 3.15 | 1.19 / 0.600 |
+| Input | Nitride portable | Nitride PGO | Nitrogen cold / warm | Roslyn cold / warm |
+|---|---:|---:|---:|---:|
+| 256 KiB | 0.054 | 0.035 | 0.350 / 0.112 | 0.077 / 0.042 |
+| 4 MiB | 0.812 | 0.533 | 1.450 / 0.808 | 0.704 / 0.151 |
+| 16 MiB | 3.385 | 2.240 | 4.207 / 3.271 | 1.411 / 0.778 |
 
-Cold means the first parse in a fresh process, including .NET JIT work; process
-startup and source I/O are excluded. Warm means repeated full parsing after
-warm-up, **not incremental editing**. Nitrogen language construction is excluded.
+PGO reduced Nitride parse time by **32–35%** across eight primary valid/damaged
+C# cases. On valid files, this puts Nitride ahead of Nitrogen cold and warm at
+all three sizes, and ahead of Roslyn cold at 256 KiB and 4 MiB. At 16 MiB,
+Roslyn remains 1.6× faster cold. Roslyn's warm full parses are 3.5× faster than
+PGO Nitride at 4 MiB and 2.9× at 16 MiB. Native CPU targeting adds no consistent gain.
 
-On cold parses, Nitride was fastest at 256 KiB and faster than Nitrogen at every
-size. Roslyn was faster from 4 MiB up: by 1.2× at 4 MiB and 2.7× at 16 MiB.
-Nitride does not speed up when warm, while Roslyn's warm parses were 5–6× faster
-than Nitride's from 4 MiB up.
+**The SIMD feature currently uses scalar batching on Apple Silicon.** Its
+explicit vector classifier uses AVX2 on x86-64; no ARM NEON classifier is
+implemented. On this M4 Pro, batching makes the 1 MiB string case 2.66× faster,
+while mixed-code results show only small gains and regressions. Combining
+batching with PGO adds no consistent mixed-code benefit. The separate
+[Windows AVX2 experiment](docs/ascii-scanner-runs.md) measured 3.45× over
+default on that long-string workload, including a 1.21× gain over scalar batching.
+Those results do not establish a general parser speedup or a NEON speedup.
 
-Single-character edits, median milliseconds, through Roslyn's `WithChangedText`
-and Nitride's snapshot edits:
+Recovery still has a substantial gap on dense errors: at 256 KiB, PGO Nitride
+is 3.1× Roslyn cold and 6.7× Roslyn warm. At 4 MiB with one error or junk, PGO
+Nitride is close to Roslyn cold, while Roslyn warm is 4.4–5.0× faster. Nitrogen
+stops at its first syntax error in this harness, so damaged-input timings
+measure different work and are not a whole-file recovery comparison.
 
-| File | Nitride | Roslyn |
-|---|---:|---:|
-| 4 MiB valid | 1.72 | 11.3 |
-| 16 MiB valid | 8.55 | 52.1 |
-| 4 MiB with one syntax error | 7.76 | 11.4 |
-| 16 MiB with one syntax error | 32.0 | 54.5 |
+Cold means the first parse in a fresh process, including .NET JIT work;
+process launch, source I/O and Nitrogen language construction are excluded.
+Warm means repeated full parsing after two warmups, **not incremental editing**.
+Native cells are medians of five fresh processes. PGO training uses separate
+64 KiB inputs from the same generator family; native and .NET batches run
+sequentially on identical inputs. This is one synthetic corpus on one host,
+with different language coverage and tree contracts. It does not establish
+real-project or full-compilation performance.
 
-Recovery requires a separate reading. In this harness the Nitrogen reference
-stops at the first error and retains a partial tree, so its damaged-input timings
-do not measure the same work as whole-file recovery in Nitride and Roslyn.
-Diagnostic grouping also differs between Nitride and Roslyn on inserted junk.
+The October 28 snapshot-edit measurements remain useful historical evidence:
+Nitride took about 0.16× Roslyn's time for single-digit edits in valid files
+and 0.59–0.74× with one existing error. That checkpoint also recorded larger
+peak memory than Roslyn on large files. Neither edits nor memory were remeasured
+with PGO/batching; these parse-time gains must not be applied to them.
 
-Cold full parses with errors, against Roslyn:
-
-| Input | Nitride s | Roslyn s |
-|---|---:|---:|
-| 256 KiB, one error | 0.063 | 0.074 |
-| 4 MiB, one error | 0.975 | 0.641 |
-| 16 MiB, one error | 3.94 | 1.22 |
-| 4 MiB, junk | 0.974 | 0.676 |
-| 4 MiB, dense errors | 7.73 | 0.656 |
-
-Dense errors remain Nitride's widest gap: 12× Roslyn at 4 MiB, down from 133× on
-2026-10-27.
-
-Memory accounting differs between runtimes. Kept trees were about the same size
-in all three (65–73 MiB for 4 MiB valid). Peak process memory was lowest for
-Nitride at 256 KiB. From 4 MiB up it was lowest for Roslyn: Nitride's peak was
-1.5× Roslyn's on 4 MiB valid input and 3× with errors.
-
-The [raw results](docs/stage45-comparison.json) and [edit results](docs/stage45-incremental.json)
-include individual samples, diagnostic counts and memory observations. The
-[harness](docs/stage30-harness) contains host-specific paths requiring adjustment.
-This generated corpus on one host does not establish performance across real
-projects or full compilation, and Roslyn's parser does more work than this
-comparison uses: it covers every C# version and builds full-fidelity trees.
+This assessment changes no ordinary Cargo release settings or ASCII feature
+defaults. The [native release pipeline](docs/releases.md) separately applies
+PGO/LTO and Apple M1 CPU tuning on macOS; its binaries and training workload
+were not measured here. These gains belong to the standalone parser harness;
+deployment should measure the actual executable. The assessment
+links [native samples](docs/compiler-optimization-macos.json),
+[.NET samples](docs/compiler-comparison-macos.json), correctness fingerprints,
+assembly identities, training limits and [reproduction commands](scripts/compiler-audit/README.md).
 
 ## Try it
 
@@ -239,6 +235,7 @@ and corpus provenance remain versioned for independent compatibility checks.
 | [Shared snapshots](docs/stage15-evidence.md) | Storage sharing, edits, and admission costs |
 | [Three-way comparison](docs/stage30-comparison.md) | Full-parse timing and memory methodology, 2026-10-27 |
 | [Refreshed comparison](docs/stage45-comparison.md) | Full-parse and edit timing, memory, change since stage30 |
+| [PGO and SIMD reassessment](docs/compiler-assessment-2026-10-30.md) | Apple M4 Pro compiler configurations, fresh .NET comparison, ARM SIMD boundary |
 | [Incremental checkpoint](docs/stage34-evidence.md) | Edit measurements and Roslyn baseline |
 | [Latest recorded parser checkpoint](docs/stage44-evidence.md) | Paired timings, recovery filtering, validation |
 

@@ -1,0 +1,1459 @@
+{
+  "date": "2026-10-30T19:10:32.428830+00:00",
+  "native_audit": "docs/compiler-optimization-macos.json",
+  "host": "macOS-27.0.1-arm64-arm-64bit-Mach-O",
+  "dotnet_info": ".NET SDK:\n Version:           11.0.100-preview.2.26159.112\n Commit:            17d11de66c\n Workload version:  11.0.100-manifests.77bb7014\n MSBuild version:   18.5.0-preview-26159-112+17d11de66\n\nRuntime Environment:\n OS Name:     Mac OS X\n OS Version:  27.0\n OS Platform: Darwin\n RID:         osx-arm64\n Base Path:   /usr/local/share/dotnet/sdk/11.0.100-preview.2.26159.112/\n\n.NET workloads installed:\nThere are no installed workloads to display.\nConfigured to use workload sets when installing new manifests.\nNo workload sets are installed. Run \"dotnet workload restore\" to install a workload set.\n\nHost:\n  Version:      11.0.0-preview.2.26159.112\n  Architecture: arm64\n  Commit:       17d11de66c\n\n.NET SDKs installed:\n  7.0.410 [/usr/local/share/dotnet/sdk]\n  8.0.410 [/usr/local/share/dotnet/sdk]\n  9.0.304 [/usr/local/share/dotnet/sdk]\n  10.0.100 [/usr/local/share/dotnet/sdk]\n  11.0.100-preview.2.26159.112 [/usr/local/share/dotnet/sdk]\n\n.NET runtimes installed:\n  Microsoft.AspNetCore.App 7.0.20 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.AspNetCore.App 8.0.15 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.AspNetCore.App 8.0.16 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.AspNetCore.App 9.0.4 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.AspNetCore.App 9.0.8 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.AspNetCore.App 10.0.0-preview.3.25172.1 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.AspNetCore.App 10.0.0-preview.4.25258.110 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.AspNetCore.App 10.0.0-preview.5.25277.114 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.AspNetCore.App 10.0.0-preview.6.25358.103 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.AspNetCore.App 10.0.0 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.AspNetCore.App 11.0.0-preview.2.26159.112 [/usr/local/share/dotnet/shared/Microsoft.AspNetCore.App]\n  Microsoft.NETCore.App 7.0.20 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n  Microsoft.NETCore.App 8.0.15 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n  Microsoft.NETCore.App 8.0.16 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n  Microsoft.NETCore.App 9.0.4 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n  Microsoft.NETCore.App 9.0.8 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n  Microsoft.NETCore.App 10.0.0-preview.3.25171.5 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n  Microsoft.NETCore.App 10.0.0-preview.4.25258.110 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n  Microsoft.NETCore.App 10.0.0-preview.5.25277.114 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n  Microsoft.NETCore.App 10.0.0-preview.6.25358.103 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n  Microsoft.NETCore.App 10.0.0 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n  Microsoft.NETCore.App 11.0.0-preview.2.26159.112 [/usr/local/share/dotnet/shared/Microsoft.NETCore.App]\n\nOther architectures found:\n  x64   [/usr/local/share/dotnet/x64]\n    registered at [/etc/dotnet/install_location_x64]\n\nEnvironment variables:\n  Not set\n\nglobal.json file:\n  Not found\n\nLearn more:\n  https://aka.ms/dotnet/info\n\nDownload .NET:\n  https://aka.ms/dotnet/download",
+  "nitrogen_checkout_revision": "ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+  "method": "Same source files as native audit. Five fresh-process first parses per case/tool; tool order alternates. One warm process per case/tool, two warmups and five timed parses. Existing stage30 harnesses; source I/O, process launch and Nitrogen language construction excluded. Managed memory accounting retained as observations, not compared with native audit. Native audit runs separately before this comparison. No affinity pinning.",
+  "binaries": {
+    "roslyn": {
+      "path": "target/reassessment/dotnet/bin/rcmp/release/rcmp.dll",
+      "sha256": "55ffd5f2760e45a75e45e5c8bc1591f988abb8e2dfc1a719260e5fc05e2751f9"
+    },
+    "nitrogen": {
+      "path": "target/reassessment/dotnet/bin/ncmp-binaries/release/ncmp-binaries.dll",
+      "sha256": "ff62a8e4e4743f59c627b06c88fe6c7289c91c88cd1f10fcfa31137d42e49f55"
+    }
+  },
+  "assemblies": {
+    "roslyn": {
+      "Microsoft.CodeAnalysis.CSharp.dll": "36f5ac8da30a6107f53a2ca6509b61e284c08eb59aa1b22956d4e200e4514aa5",
+      "rcmp.dll": "55ffd5f2760e45a75e45e5c8bc1591f988abb8e2dfc1a719260e5fc05e2751f9",
+      "Microsoft.CodeAnalysis.dll": "10f489db67b8ac7489e58d392166c928302ba5698506dd652311da5d89f0a0f8"
+    },
+    "nitrogen": {
+      "ncmp-binaries.dll": "ff62a8e4e4743f59c627b06c88fe6c7289c91c88cd1f10fcfa31137d42e49f55",
+      "Nitrogen.Runtime.dll": "b42eb34f92b9c2d2012775d1a2759a769a347a40d5f21eaf63e42b09063f7046",
+      "Nitrogen.Grammar.dll": "c30ea66d2d2cff8e19e301f8c2783349c49ae1f4a5bb220afc378efcbd2f0833",
+      "Nitride.Reference.dll": "cfc7be9b206bf2300f4c7e08494783cd23737ff8de55fecb856931f12c633262"
+    }
+  },
+  "harness_sources": {
+    "docs/stage30-harness/rcmp/Program.cs": "5f7314360425ba74435d887332ee5c3b0f44039daee1bc97e06db7a0ac405211",
+    "docs/stage30-harness/ncmp/Program.cs": "5ec97897bfaff027bede3f3ee2819198df5ab5dbd22c818816b478d39f986956"
+  },
+  "rows": [
+    {
+      "case": "262144-valid",
+      "tool": "roslyn",
+      "source_sha256": "fb24d3b7883f34ab3c7774bbdb289f6d6e609ee81e386469e8cf3d5e6cb743f6",
+      "cold_s": 0.0769325,
+      "warm_s": 0.0417907,
+      "cold": [
+        {
+          "seconds": 0.0716582,
+          "samples": [
+            0.0716582
+          ],
+          "retained_bytes": 4712200,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.0725923,
+          "samples": [
+            0.0725923
+          ],
+          "retained_bytes": 4712200,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.0777209,
+          "samples": [
+            0.0777209
+          ],
+          "retained_bytes": 4712200,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.0769325,
+          "samples": [
+            0.0769325
+          ],
+          "retained_bytes": 4712200,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.0780942,
+          "samples": [
+            0.0780942
+          ],
+          "retained_bytes": 4712200,
+          "diagnostics": 0
+        }
+      ],
+      "warm": {
+        "seconds": 0.0417907,
+        "samples": [
+          0.0358245,
+          0.0360266,
+          0.0417907,
+          0.0418192,
+          0.0453925
+        ],
+        "retained_bytes": 4616648,
+        "diagnostics": 0
+      }
+    },
+    {
+      "case": "262144-valid",
+      "tool": "nitrogen",
+      "source_sha256": "fb24d3b7883f34ab3c7774bbdb289f6d6e609ee81e386469e8cf3d5e6cb743f6",
+      "cold_s": 0.3499668,
+      "warm_s": 0.1124374,
+      "cold": [
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3505047,
+          "samples": [
+            0.3505047
+          ],
+          "retained_bytes": 4400108,
+          "heap_growth_bytes": 3873984,
+          "nodes": 207052,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0489399
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3509605,
+          "samples": [
+            0.3509605
+          ],
+          "retained_bytes": 4400108,
+          "heap_growth_bytes": 3873984,
+          "nodes": 207052,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.050432
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3499668,
+          "samples": [
+            0.3499668
+          ],
+          "retained_bytes": 4400108,
+          "heap_growth_bytes": 3873984,
+          "nodes": 207052,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.050137
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.347404,
+          "samples": [
+            0.347404
+          ],
+          "retained_bytes": 4400108,
+          "heap_growth_bytes": 3873984,
+          "nodes": 207052,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0510569
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3488365,
+          "samples": [
+            0.3488365
+          ],
+          "retained_bytes": 4400108,
+          "heap_growth_bytes": 3873984,
+          "nodes": 207052,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0502799
+        }
+      ],
+      "warm": {
+        "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+        "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+        "seconds": 0.1124374,
+        "samples": [
+          0.0807207,
+          0.0867284,
+          0.1124374,
+          0.121321,
+          0.1622405
+        ],
+        "retained_bytes": 4400108,
+        "heap_growth_bytes": 3981384,
+        "nodes": 207052,
+        "diagnostics": 0,
+        "success": true,
+        "language_build_seconds": 0.0482123
+      }
+    },
+    {
+      "case": "262144-one",
+      "tool": "roslyn",
+      "source_sha256": "4f184bb80dee1831ffbe33b1abb79d708dd94adb3d80627c09b35d43b36b1e94",
+      "cold_s": 0.081287,
+      "warm_s": 0.036639,
+      "cold": [
+        {
+          "seconds": 0.0810712,
+          "samples": [
+            0.0810712
+          ],
+          "retained_bytes": 4610016,
+          "diagnostics": 1
+        },
+        {
+          "seconds": 0.0800397,
+          "samples": [
+            0.0800397
+          ],
+          "retained_bytes": 4610016,
+          "diagnostics": 1
+        },
+        {
+          "seconds": 0.0822948,
+          "samples": [
+            0.0822948
+          ],
+          "retained_bytes": 4610016,
+          "diagnostics": 1
+        },
+        {
+          "seconds": 0.0830602,
+          "samples": [
+            0.0830602
+          ],
+          "retained_bytes": 4610016,
+          "diagnostics": 1
+        },
+        {
+          "seconds": 0.081287,
+          "samples": [
+            0.081287
+          ],
+          "retained_bytes": 4610016,
+          "diagnostics": 1
+        }
+      ],
+      "warm": {
+        "seconds": 0.036639,
+        "samples": [
+          0.0344913,
+          0.0346442,
+          0.036639,
+          0.0393741,
+          0.0439885
+        ],
+        "retained_bytes": 4599472,
+        "diagnostics": 1
+      }
+    },
+    {
+      "case": "262144-one",
+      "tool": "nitrogen",
+      "source_sha256": "4f184bb80dee1831ffbe33b1abb79d708dd94adb3d80627c09b35d43b36b1e94",
+      "cold_s": 0.332935,
+      "warm_s": 0.108481,
+      "cold": [
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3294777,
+          "samples": [
+            0.3294777
+          ],
+          "retained_bytes": 2883846,
+          "heap_growth_bytes": 797176,
+          "nodes": 103676,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0513753
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3626975,
+          "samples": [
+            0.3626975
+          ],
+          "retained_bytes": 2883846,
+          "heap_growth_bytes": 797176,
+          "nodes": 103676,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0503764
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.332935,
+          "samples": [
+            0.332935
+          ],
+          "retained_bytes": 2883846,
+          "heap_growth_bytes": 797176,
+          "nodes": 103676,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0477942
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3325817,
+          "samples": [
+            0.3325817
+          ],
+          "retained_bytes": 2883846,
+          "heap_growth_bytes": 797176,
+          "nodes": 103676,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0500979
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3351805,
+          "samples": [
+            0.3351805
+          ],
+          "retained_bytes": 2883846,
+          "heap_growth_bytes": 797176,
+          "nodes": 103676,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0507375
+        }
+      ],
+      "warm": {
+        "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+        "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+        "seconds": 0.108481,
+        "samples": [
+          0.0705648,
+          0.0776042,
+          0.108481,
+          0.1110142,
+          0.1136318
+        ],
+        "retained_bytes": 2883846,
+        "heap_growth_bytes": 797176,
+        "nodes": 103676,
+        "diagnostics": 2,
+        "success": false,
+        "language_build_seconds": 0.0475226
+      }
+    },
+    {
+      "case": "262144-junk",
+      "tool": "roslyn",
+      "source_sha256": "f5c364ff50a497e6f402753f6ddb8ef8c91f4364bc364541427e51cd436ff121",
+      "cold_s": 0.0833228,
+      "warm_s": 0.0415135,
+      "cold": [
+        {
+          "seconds": 0.0836791,
+          "samples": [
+            0.0836791
+          ],
+          "retained_bytes": 4701224,
+          "diagnostics": 64
+        },
+        {
+          "seconds": 0.081952,
+          "samples": [
+            0.081952
+          ],
+          "retained_bytes": 4701224,
+          "diagnostics": 64
+        },
+        {
+          "seconds": 0.0833228,
+          "samples": [
+            0.0833228
+          ],
+          "retained_bytes": 4701224,
+          "diagnostics": 64
+        },
+        {
+          "seconds": 0.080642,
+          "samples": [
+            0.080642
+          ],
+          "retained_bytes": 4701224,
+          "diagnostics": 64
+        },
+        {
+          "seconds": 0.0853535,
+          "samples": [
+            0.0853535
+          ],
+          "retained_bytes": 4701224,
+          "diagnostics": 64
+        }
+      ],
+      "warm": {
+        "seconds": 0.0415135,
+        "samples": [
+          0.035449,
+          0.0356761,
+          0.0415135,
+          0.0418767,
+          0.0440551
+        ],
+        "retained_bytes": 4692736,
+        "diagnostics": 64
+      }
+    },
+    {
+      "case": "262144-junk",
+      "tool": "nitrogen",
+      "source_sha256": "f5c364ff50a497e6f402753f6ddb8ef8c91f4364bc364541427e51cd436ff121",
+      "cold_s": 0.3298967,
+      "warm_s": 0.1070816,
+      "cold": [
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3297001,
+          "samples": [
+            0.3297001
+          ],
+          "retained_bytes": 2884104,
+          "heap_growth_bytes": 797464,
+          "nodes": 103960,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.050813
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3383304,
+          "samples": [
+            0.3383304
+          ],
+          "retained_bytes": 2884104,
+          "heap_growth_bytes": 797464,
+          "nodes": 103960,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0506695
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3323193,
+          "samples": [
+            0.3323193
+          ],
+          "retained_bytes": 2884104,
+          "heap_growth_bytes": 797464,
+          "nodes": 103960,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0505054
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3289741,
+          "samples": [
+            0.3289741
+          ],
+          "retained_bytes": 2884104,
+          "heap_growth_bytes": 797464,
+          "nodes": 103960,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.05075
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.3298967,
+          "samples": [
+            0.3298967
+          ],
+          "retained_bytes": 2884104,
+          "heap_growth_bytes": 797464,
+          "nodes": 103960,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0500385
+        }
+      ],
+      "warm": {
+        "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+        "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+        "seconds": 0.1070816,
+        "samples": [
+          0.0704275,
+          0.095232,
+          0.1070816,
+          0.1195751,
+          0.1196459
+        ],
+        "retained_bytes": 2884104,
+        "heap_growth_bytes": 797464,
+        "nodes": 103960,
+        "diagnostics": 2,
+        "success": false,
+        "language_build_seconds": 0.0506682
+      }
+    },
+    {
+      "case": "262144-dense",
+      "tool": "roslyn",
+      "source_sha256": "eba66199d7d7f67000726fad4834117e8ae0bf0ad8f006d8581dc42636724e88",
+      "cold_s": 0.0812851,
+      "warm_s": 0.0381407,
+      "cold": [
+        {
+          "seconds": 0.0791991,
+          "samples": [
+            0.0791991
+          ],
+          "retained_bytes": 4839048,
+          "diagnostics": 729
+        },
+        {
+          "seconds": 0.0830457,
+          "samples": [
+            0.0830457
+          ],
+          "retained_bytes": 4839048,
+          "diagnostics": 729
+        },
+        {
+          "seconds": 0.0812851,
+          "samples": [
+            0.0812851
+          ],
+          "retained_bytes": 4839048,
+          "diagnostics": 729
+        },
+        {
+          "seconds": 0.0814667,
+          "samples": [
+            0.0814667
+          ],
+          "retained_bytes": 4839048,
+          "diagnostics": 729
+        },
+        {
+          "seconds": 0.0807535,
+          "samples": [
+            0.0807535
+          ],
+          "retained_bytes": 4839048,
+          "diagnostics": 729
+        }
+      ],
+      "warm": {
+        "seconds": 0.0381407,
+        "samples": [
+          0.035703,
+          0.0357043,
+          0.0381407,
+          0.0403146,
+          0.0439907
+        ],
+        "retained_bytes": 4944016,
+        "diagnostics": 729
+      }
+    },
+    {
+      "case": "262144-dense",
+      "tool": "nitrogen",
+      "source_sha256": "eba66199d7d7f67000726fad4834117e8ae0bf0ad8f006d8581dc42636724e88",
+      "cold_s": 0.0480144,
+      "warm_s": 0.0005192,
+      "cold": [
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.0487002,
+          "samples": [
+            0.0487002
+          ],
+          "retained_bytes": 523446,
+          "heap_growth_bytes": 11288,
+          "nodes": 15,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0503906
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.0497201,
+          "samples": [
+            0.0497201
+          ],
+          "retained_bytes": 523446,
+          "heap_growth_bytes": 11288,
+          "nodes": 15,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0504166
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.0476684,
+          "samples": [
+            0.0476684
+          ],
+          "retained_bytes": 523446,
+          "heap_growth_bytes": 11288,
+          "nodes": 15,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0478885
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.0480033,
+          "samples": [
+            0.0480033
+          ],
+          "retained_bytes": 523446,
+          "heap_growth_bytes": 11288,
+          "nodes": 15,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0507423
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.0480144,
+          "samples": [
+            0.0480144
+          ],
+          "retained_bytes": 523446,
+          "heap_growth_bytes": 11288,
+          "nodes": 15,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.048519
+        }
+      ],
+      "warm": {
+        "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+        "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+        "seconds": 0.0005192,
+        "samples": [
+          0.000495,
+          0.0005067,
+          0.0005192,
+          0.0005565,
+          0.0006071
+        ],
+        "retained_bytes": 523446,
+        "heap_growth_bytes": 11288,
+        "nodes": 15,
+        "diagnostics": 2,
+        "success": false,
+        "language_build_seconds": 0.0490618
+      }
+    },
+    {
+      "case": "4194304-valid",
+      "tool": "roslyn",
+      "source_sha256": "bfa28dd3a2fa6c86836d2706d48026317228b2209d169ee355a7274f5ee2f919",
+      "cold_s": 0.7044275,
+      "warm_s": 0.1505694,
+      "cold": [
+        {
+          "seconds": 0.7147622,
+          "samples": [
+            0.7147622
+          ],
+          "retained_bytes": 75983336,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.7044275,
+          "samples": [
+            0.7044275
+          ],
+          "retained_bytes": 75976960,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.6507422,
+          "samples": [
+            0.6507422
+          ],
+          "retained_bytes": 75968576,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.6214085,
+          "samples": [
+            0.6214085
+          ],
+          "retained_bytes": 75962048,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.7121045,
+          "samples": [
+            0.7121045
+          ],
+          "retained_bytes": 75959632,
+          "diagnostics": 0
+        }
+      ],
+      "warm": {
+        "seconds": 0.1505694,
+        "samples": [
+          0.1225376,
+          0.138256,
+          0.1505694,
+          0.1694158,
+          0.2240273
+        ],
+        "retained_bytes": 74885784,
+        "diagnostics": 0
+      }
+    },
+    {
+      "case": "4194304-valid",
+      "tool": "nitrogen",
+      "source_sha256": "bfa28dd3a2fa6c86836d2706d48026317228b2209d169ee355a7274f5ee2f919",
+      "cold_s": 1.4496998,
+      "warm_s": 0.807577,
+      "cold": [
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.4744093,
+          "samples": [
+            1.4744093
+          ],
+          "retained_bytes": 68624900,
+          "heap_growth_bytes": 60236928,
+          "nodes": 3218020,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0506842
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.4408187,
+          "samples": [
+            1.4408187
+          ],
+          "retained_bytes": 68624900,
+          "heap_growth_bytes": 60236928,
+          "nodes": 3218020,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0516728
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.3499252,
+          "samples": [
+            1.3499252
+          ],
+          "retained_bytes": 68624900,
+          "heap_growth_bytes": 60236928,
+          "nodes": 3218020,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0475996
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.4496998,
+          "samples": [
+            1.4496998
+          ],
+          "retained_bytes": 68624900,
+          "heap_growth_bytes": 60236928,
+          "nodes": 3218020,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0486813
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.4610758,
+          "samples": [
+            1.4610758
+          ],
+          "retained_bytes": 68624900,
+          "heap_growth_bytes": 60236928,
+          "nodes": 3218020,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0484933
+        }
+      ],
+      "warm": {
+        "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+        "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+        "seconds": 0.807577,
+        "samples": [
+          0.8043162,
+          0.8074776,
+          0.807577,
+          0.815991,
+          0.8197153
+        ],
+        "retained_bytes": 68624900,
+        "heap_growth_bytes": 60236904,
+        "nodes": 3218020,
+        "diagnostics": 0,
+        "success": true,
+        "language_build_seconds": 0.0517102
+      }
+    },
+    {
+      "case": "4194304-one",
+      "tool": "roslyn",
+      "source_sha256": "d73208f5ec37051de89b68773a099dd4e50d9c10cee5c0bf5f62690efe4fd84c",
+      "cold_s": 0.7133356,
+      "warm_s": 0.1527624,
+      "cold": [
+        {
+          "seconds": 0.6232301,
+          "samples": [
+            0.6232301
+          ],
+          "retained_bytes": 75897352,
+          "diagnostics": 1
+        },
+        {
+          "seconds": 0.7002927,
+          "samples": [
+            0.7002927
+          ],
+          "retained_bytes": 76357040,
+          "diagnostics": 1
+        },
+        {
+          "seconds": 0.7133356,
+          "samples": [
+            0.7133356
+          ],
+          "retained_bytes": 75901448,
+          "diagnostics": 1
+        },
+        {
+          "seconds": 0.7237508,
+          "samples": [
+            0.7237508
+          ],
+          "retained_bytes": 75913072,
+          "diagnostics": 1
+        },
+        {
+          "seconds": 0.7500385,
+          "samples": [
+            0.7500385
+          ],
+          "retained_bytes": 75905408,
+          "diagnostics": 1
+        }
+      ],
+      "warm": {
+        "seconds": 0.1527624,
+        "samples": [
+          0.1272222,
+          0.138901,
+          0.1527624,
+          0.1714574,
+          0.2064519
+        ],
+        "retained_bytes": 74852472,
+        "diagnostics": 1
+      }
+    },
+    {
+      "case": "4194304-one",
+      "tool": "nitrogen",
+      "source_sha256": "d73208f5ec37051de89b68773a099dd4e50d9c10cee5c0bf5f62690efe4fd84c",
+      "cold_s": 1.4178029,
+      "warm_s": 0.7981247,
+      "cold": [
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.4080237,
+          "samples": [
+            1.4080237
+          ],
+          "retained_bytes": 38663930,
+          "heap_growth_bytes": 30277136,
+          "nodes": 1617396,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0479972
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.4192485,
+          "samples": [
+            1.4192485
+          ],
+          "retained_bytes": 38663930,
+          "heap_growth_bytes": 30277136,
+          "nodes": 1617396,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0485267
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.3930037,
+          "samples": [
+            1.3930037
+          ],
+          "retained_bytes": 38663930,
+          "heap_growth_bytes": 30277136,
+          "nodes": 1617396,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0476954
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.4287373,
+          "samples": [
+            1.4287373
+          ],
+          "retained_bytes": 38663930,
+          "heap_growth_bytes": 30277136,
+          "nodes": 1617396,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0481427
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.4178029,
+          "samples": [
+            1.4178029
+          ],
+          "retained_bytes": 38663930,
+          "heap_growth_bytes": 30277136,
+          "nodes": 1617396,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0496512
+        }
+      ],
+      "warm": {
+        "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+        "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+        "seconds": 0.7981247,
+        "samples": [
+          0.7864509,
+          0.7903896,
+          0.7981247,
+          0.800989,
+          0.8114061
+        ],
+        "retained_bytes": 38663930,
+        "heap_growth_bytes": 30277136,
+        "nodes": 1617396,
+        "diagnostics": 2,
+        "success": false,
+        "language_build_seconds": 0.0498477
+      }
+    },
+    {
+      "case": "4194304-junk",
+      "tool": "roslyn",
+      "source_sha256": "68d483fa9b1ebd0c7af007549e174c016bf131429255a9bfb21a1cf2d3f74f72",
+      "cold_s": 0.6791412,
+      "warm_s": 0.1327436,
+      "cold": [
+        {
+          "seconds": 0.6791412,
+          "samples": [
+            0.6791412
+          ],
+          "retained_bytes": 75880720,
+          "diagnostics": 64
+        },
+        {
+          "seconds": 0.6786228,
+          "samples": [
+            0.6786228
+          ],
+          "retained_bytes": 75876688,
+          "diagnostics": 64
+        },
+        {
+          "seconds": 0.7467872,
+          "samples": [
+            0.7467872
+          ],
+          "retained_bytes": 75894232,
+          "diagnostics": 64
+        },
+        {
+          "seconds": 0.6861114,
+          "samples": [
+            0.6861114
+          ],
+          "retained_bytes": 75869016,
+          "diagnostics": 64
+        },
+        {
+          "seconds": 0.618454,
+          "samples": [
+            0.618454
+          ],
+          "retained_bytes": 75870696,
+          "diagnostics": 64
+        }
+      ],
+      "warm": {
+        "seconds": 0.1327436,
+        "samples": [
+          0.1287817,
+          0.1307878,
+          0.1327436,
+          0.1527788,
+          0.190989
+        ],
+        "retained_bytes": 74911584,
+        "diagnostics": 64
+      }
+    },
+    {
+      "case": "4194304-junk",
+      "tool": "nitrogen",
+      "source_sha256": "68d483fa9b1ebd0c7af007549e174c016bf131429255a9bfb21a1cf2d3f74f72",
+      "cold_s": 1.334613,
+      "warm_s": 0.7737317,
+      "cold": [
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.422646,
+          "samples": [
+            1.422646
+          ],
+          "retained_bytes": 38664188,
+          "heap_growth_bytes": 30277424,
+          "nodes": 1617396,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0519588
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.4261975,
+          "samples": [
+            1.4261975
+          ],
+          "retained_bytes": 38664188,
+          "heap_growth_bytes": 30277424,
+          "nodes": 1617396,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.048669
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.334613,
+          "samples": [
+            1.334613
+          ],
+          "retained_bytes": 38664188,
+          "heap_growth_bytes": 30277424,
+          "nodes": 1617396,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0503136
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.3275412,
+          "samples": [
+            1.3275412
+          ],
+          "retained_bytes": 38664188,
+          "heap_growth_bytes": 30277424,
+          "nodes": 1617396,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0497674
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 1.298687,
+          "samples": [
+            1.298687
+          ],
+          "retained_bytes": 38664188,
+          "heap_growth_bytes": 30277424,
+          "nodes": 1617396,
+          "diagnostics": 2,
+          "success": false,
+          "language_build_seconds": 0.0487218
+        }
+      ],
+      "warm": {
+        "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+        "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+        "seconds": 0.7737317,
+        "samples": [
+          0.765534,
+          0.7704415,
+          0.7737317,
+          0.7742308,
+          0.7832719
+        ],
+        "retained_bytes": 38664188,
+        "heap_growth_bytes": 30277424,
+        "nodes": 1617396,
+        "diagnostics": 2,
+        "success": false,
+        "language_build_seconds": 0.0498752
+      }
+    },
+    {
+      "case": "16m-valid",
+      "tool": "roslyn",
+      "source_sha256": "92d0168144c734efaf090d7a82048a4149ff45481caacffd10a834e1c2fad508",
+      "cold_s": 1.4110336,
+      "warm_s": 0.7779493,
+      "cold": [
+        {
+          "seconds": 1.4110336,
+          "samples": [
+            1.4110336
+          ],
+          "retained_bytes": 328075600,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 1.4445249,
+          "samples": [
+            1.4445249
+          ],
+          "retained_bytes": 328014800,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 1.4658954,
+          "samples": [
+            1.4658954
+          ],
+          "retained_bytes": 328098920,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 1.3755348,
+          "samples": [
+            1.3755348
+          ],
+          "retained_bytes": 328042264,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 1.3997127,
+          "samples": [
+            1.3997127
+          ],
+          "retained_bytes": 328127768,
+          "diagnostics": 0
+        }
+      ],
+      "warm": {
+        "seconds": 0.7779493,
+        "samples": [
+          0.7605611,
+          0.7648621,
+          0.7779493,
+          0.7807146,
+          0.7811384
+        ],
+        "retained_bytes": 329260664,
+        "diagnostics": 0
+      }
+    },
+    {
+      "case": "16m-valid",
+      "tool": "nitrogen",
+      "source_sha256": "92d0168144c734efaf090d7a82048a4149ff45481caacffd10a834e1c2fad508",
+      "cold_s": 4.2067595,
+      "warm_s": 3.271289,
+      "cold": [
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 4.2670267,
+          "samples": [
+            4.2670267
+          ],
+          "retained_bytes": 270281700,
+          "heap_growth_bytes": 236736584,
+          "nodes": 12646820,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0508282
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 4.2067595,
+          "samples": [
+            4.2067595
+          ],
+          "retained_bytes": 270281700,
+          "heap_growth_bytes": 236736584,
+          "nodes": 12646820,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0496275
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 4.1454938,
+          "samples": [
+            4.1454938
+          ],
+          "retained_bytes": 270281700,
+          "heap_growth_bytes": 236736584,
+          "nodes": 12646820,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0523305
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 4.2540327,
+          "samples": [
+            4.2540327
+          ],
+          "retained_bytes": 270281700,
+          "heap_growth_bytes": 236736584,
+          "nodes": 12646820,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.048308
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 4.1446412,
+          "samples": [
+            4.1446412
+          ],
+          "retained_bytes": 270281700,
+          "heap_growth_bytes": 236736584,
+          "nodes": 12646820,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0487738
+        }
+      ],
+      "warm": {
+        "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+        "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+        "seconds": 3.271289,
+        "samples": [
+          3.2075873,
+          3.2585069,
+          3.271289,
+          3.2916215,
+          3.3182377
+        ],
+        "retained_bytes": 270281700,
+        "heap_growth_bytes": 236733128,
+        "nodes": 12646820,
+        "diagnostics": 0,
+        "success": true,
+        "language_build_seconds": 0.0514475
+      }
+    },
+    {
+      "case": "string-1m",
+      "tool": "roslyn",
+      "source_sha256": "6477c914369515a9575b1f410014e8b049af5ba88e38bde94f32c0ad150c398b",
+      "cold_s": 0.0296281,
+      "warm_s": 0.0036289,
+      "cold": [
+        {
+          "seconds": 0.0377809,
+          "samples": [
+            0.0377809
+          ],
+          "retained_bytes": 2098552,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.02948,
+          "samples": [
+            0.02948
+          ],
+          "retained_bytes": 2098552,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.0321066,
+          "samples": [
+            0.0321066
+          ],
+          "retained_bytes": 2098552,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.0296281,
+          "samples": [
+            0.0296281
+          ],
+          "retained_bytes": 2098552,
+          "diagnostics": 0
+        },
+        {
+          "seconds": 0.0286616,
+          "samples": [
+            0.0286616
+          ],
+          "retained_bytes": 2098552,
+          "diagnostics": 0
+        }
+      ],
+      "warm": {
+        "seconds": 0.0036289,
+        "samples": [
+          0.0034195,
+          0.003534,
+          0.0036289,
+          0.003876,
+          0.004416
+        ],
+        "retained_bytes": 2098736,
+        "diagnostics": 0
+      }
+    },
+    {
+      "case": "string-1m",
+      "tool": "nitrogen",
+      "source_sha256": "6477c914369515a9575b1f410014e8b049af5ba88e38bde94f32c0ad150c398b",
+      "cold_s": 0.0200795,
+      "warm_s": 0.0010136,
+      "cold": [
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.0200795,
+          "samples": [
+            0.0200795
+          ],
+          "retained_bytes": 2097780,
+          "heap_growth_bytes": 9800,
+          "nodes": 20,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0538635
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.0228057,
+          "samples": [
+            0.0228057
+          ],
+          "retained_bytes": 2097780,
+          "heap_growth_bytes": 9800,
+          "nodes": 20,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0556822
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.0212152,
+          "samples": [
+            0.0212152
+          ],
+          "retained_bytes": 2097780,
+          "heap_growth_bytes": 9800,
+          "nodes": 20,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0532135
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.0199636,
+          "samples": [
+            0.0199636
+          ],
+          "retained_bytes": 2097780,
+          "heap_growth_bytes": 9800,
+          "nodes": 20,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.0511696
+        },
+        {
+          "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+          "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+          "seconds": 0.0192188,
+          "samples": [
+            0.0192188
+          ],
+          "retained_bytes": 2097780,
+          "heap_growth_bytes": 9800,
+          "nodes": 20,
+          "diagnostics": 0,
+          "success": true,
+          "language_build_seconds": 0.049444
+        }
+      ],
+      "warm": {
+        "runtime_identity": "0.19.0+build.242.ed69ac8aaa3bbc7c8d44c97cf969d1b6ddd89ea2",
+        "reference_identity": "1.0.0+f95f70c8d87cbe418f2caf129b73b460b15a7944",
+        "seconds": 0.0010136,
+        "samples": [
+          0.0009562,
+          0.0010083,
+          0.0010136,
+          0.0010238,
+          0.0010567
+        ],
+        "retained_bytes": 2097780,
+        "heap_growth_bytes": 9800,
+        "nodes": 20,
+        "diagnostics": 0,
+        "success": true,
+        "language_build_seconds": 0.0659618
+      }
+    }
+  ]
+}

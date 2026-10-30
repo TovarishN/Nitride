@@ -6,7 +6,8 @@ import os from 'node:os';
 import crypto from 'node:crypto';
 
 const root = process.cwd();
-const out = path.join(root, 'target/compiler-audit');
+const out = path.resolve(process.env.NITRIDE_AUDIT_OUT || 'target/compiler-audit');
+const reportPath = process.env.NITRIDE_AUDIT_REPORT || 'docs/compiler-optimization-audit.json';
 fs.mkdirSync(out, { recursive: true });
 const sha = p => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 function command(exe, args, env = {}, log) {
@@ -21,15 +22,15 @@ function command(exe, args, env = {}, log) {
 }
 const target = command('rustc', ['-vV']).match(/host: (.*)/)[1];
 const sysroot = command('rustc', ['--print', 'sysroot']);
-const tools = path.join(sysroot, 'lib/rustlib', target, 'bin');
+const tools = process.env.NITRIDE_LLVM_BIN || path.join(sysroot, 'lib/rustlib', target, 'bin');
 const ext = process.platform === 'win32' ? '.exe' : '';
 const llvm = name => path.join(tools, name + ext);
 const binary = name => path.join(out, name, target, 'release', 'nitride-compiler-audit' + ext);
 const manifest = 'scripts/compiler-audit/Cargo.toml';
-function build(name, flags) {
+function build(name, flags, features = []) {
   console.log(`Building ${name}`);
   command('cargo', ['build', '--offline', '--verbose', '--release', '--manifest-path', manifest,
-    '--target', target, '--target-dir', path.join(out, name)], { RUSTFLAGS: flags }, `${name}-build.log`);
+    '--target', target, '--target-dir', path.join(out, name), ...features], { RUSTFLAGS: flags }, `${name}-build.log`);
 }
 // Same deterministic valid source generator as csharp4_scaling.py, LF bytes.
 function generated(size) {
@@ -67,27 +68,55 @@ const training = ['valid', 'one', 'junk', 'dense'].map(p => fixture(`train-${p}`
 const variants = { portable: '', native: '-Ctarget-cpu=native' };
 for (const [name, flags] of Object.entries(variants)) build(name, flags);
 if (fs.existsSync(llvm('llvm-profdata'))) {
-  const profiles = path.join(out, 'profiles-' + Date.now());
-  fs.mkdirSync(profiles);
-  build('training', `-Cprofile-generate=${profiles}`);
-  console.log('Training PGO on separate 64 KiB inputs');
-  for (const c of training) command(binary('training'), [c.mode, c.file], { LLVM_PROFILE_FILE: path.join(profiles, '%m-%p.profraw') });
   const merged = path.join(out, 'training.profdata');
-  command(llvm('llvm-profdata'), ['merge', '-o', merged, ...fs.readdirSync(profiles).filter(f => f.endsWith('.profraw')).map(f => path.join(profiles, f))]);
+  if (process.env.NITRIDE_AUDIT_REUSE_PROFILE !== '1' || !fs.existsSync(merged)) {
+    const profiles = path.join(out, 'profiles-' + Date.now());
+    fs.mkdirSync(profiles);
+    build('training', `-Cprofile-generate=${profiles}`);
+    console.log('Training PGO on separate 64 KiB inputs');
+    for (const c of training) command(binary('training'), [c.mode, c.file], { LLVM_PROFILE_FILE: path.join(profiles, '%m-%p.profraw') });
+    command(llvm('llvm-profdata'), ['merge', '-o', merged, ...fs.readdirSync(profiles).filter(f => f.endsWith('.profraw')).map(f => path.join(profiles, f))]);
+  }
   variants.pgo = `-Cprofile-use=${merged} -Cllvm-args=-pgo-warn-missing-function`;
   variants['native-pgo'] = `-Ctarget-cpu=native ${variants.pgo}`;
   build('pgo', variants.pgo);
   build('native-pgo', variants['native-pgo']);
 }
+if (process.env.NITRIDE_AUDIT_ASCII === '1') {
+  // This feature uses scalar batching on ARM64; its explicit SIMD is x86 AVX2.
+  variants['ascii-feature'] = '';
+  build('ascii-feature', '', ['--features', 'nitride-core/simd-ascii-runs']);
+  if (variants.pgo) {
+    const profiles = path.join(out, 'ascii-profiles-' + Date.now());
+    fs.mkdirSync(profiles);
+    const features = ['--features', 'nitride-core/simd-ascii-runs'];
+    build('ascii-training', `-Cprofile-generate=${profiles}`, features);
+    for (const c of training) command(binary('ascii-training'), [c.mode, c.file], { LLVM_PROFILE_FILE: path.join(profiles, '%m-%p.profraw') });
+    const merged = path.join(out, 'ascii-training.profdata');
+    command(llvm('llvm-profdata'), ['merge', '-o', merged, ...fs.readdirSync(profiles).filter(f => f.endsWith('.profraw')).map(f => path.join(profiles, f))]);
+    variants['ascii-feature-pgo'] = `-Cprofile-use=${merged} -Cllvm-args=-pgo-warn-missing-function`;
+    build('ascii-feature-pgo', variants['ascii-feature-pgo'], features);
+  }
+  cases.push(fixture('string-1m', `class C { string s = "${'a'.repeat(1 << 20)}"; }`, 'strict'));
+}
 const report = { date: new Date().toISOString(), host: os.platform(), cpu: os.cpus()[0].model,
   toolchain: command('rustc', ['-vV']), revision: command('git', ['rev-parse', 'HEAD']),
   method: '5 fresh processes per case/variant, rotating and reversing variant order; one untimed warmup per case/variant. Ordinary allocator. Parse phase excludes source I/O, export, fingerprint and process launch. Separate 64 KiB PGO training, same generator family. LF UTF-8 input. No affinity pinning.',
-  variants: Object.fromEntries(Object.entries(variants).map(([name, flags]) => [name, { flags, binary_sha256: sha(binary(name)), binary_bytes: fs.statSync(binary(name)).size }])),
+  variants: Object.fromEntries(Object.entries(variants).map(([name, flags]) => [name, { flags, features: name.startsWith('ascii-feature') ? ['nitride-core/simd-ascii-runs'] : [], binary_sha256: sha(binary(name)), binary_bytes: fs.statSync(binary(name)).size }])),
   cases: [], mismatches: [] };
 report.harness_sources = Object.fromEntries(['Cargo.toml', 'Cargo.lock', 'build.rs', 'src/main.rs'].map(f => [f, sha(path.join(root, 'scripts/compiler-audit', f))]));
 report.training = { bytes_target: 64 << 10, patterns: ['valid', 'one', 'junk', 'dense'],
-  profile: 'Portable instrumentation profile shared by both PGO builds; includes untimed export and fingerprint validation.',
+  profile: 'Portable profile shared by pgo/native-pgo; separate feature-enabled training for ascii-feature-pgo when requested. Training includes export/fingerprint validation.',
+  ascii_profile_sha256: fs.existsSync(path.join(out, 'ascii-training.profdata')) ? sha(path.join(out, 'ascii-training.profdata')) : null,
   profile_sha256: fs.existsSync(path.join(out, 'training.profdata')) ? sha(path.join(out, 'training.profdata')) : null };
+report.llvm_profdata_version = fs.existsSync(llvm('llvm-profdata')) ? command(llvm('llvm-profdata'), ['--version']) : null;
+report.profile_warnings = Object.fromEntries(Object.keys(variants).filter(name => name.includes('pgo')).map(name => {
+  const log = fs.readFileSync(path.join(out, `${name}-build.log`), 'utf8');
+  return [name, {
+    missing_function_count: (log.match(/no profile data available for function/g) || []).length,
+    hash_mismatch_count: (log.match(/hash mismatch/gi) || []).length,
+  }];
+}));
 const names = Object.keys(variants);
 for (const c of cases) {
   console.log(`Measuring ${c.id}`);
@@ -108,7 +137,7 @@ for (const c of cases) {
   }
   row.median_ns = Object.fromEntries(names.map(name => [name, row.samples[name].map(r => r.elapsed_ns).sort((a,b) => a-b)[2]]));
   report.cases.push(row);
-  fs.writeFileSync('docs/compiler-optimization-audit.json', JSON.stringify(report, null, 2) + '\n');
+  fs.writeFileSync(reportPath, JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify({ case: c.id, medians: row.median_ns, mismatches: report.mismatches.length }));
 }
 if (report.mismatches.length) process.exitCode = 1;

@@ -83,3 +83,52 @@ repeated one-byte ASCII traces in generated lexical scanners. The optional
 runtime AVX2 detection on x86-64; unsupported CPUs and other
 architectures keep scalar scanning. It does not require a native CPU build or
 change interpreted/incremental parsing into generated parsing.
+
+## Apple Silicon reassessment
+
+The [October 30 assessment](../../docs/compiler-assessment-2026-10-30.md)
+compares fresh M4 Pro PGO/ASCII-batching runs with Nitrogen and Roslyn. The
+explicit SIMD classifier is AVX2-only: on ARM64 the feature measures scalar
+batching. A NEON classifier is a proposed follow-up, with no measured speedup.
+
+Use a new output directory when changing source, compiler or training. The
+runner accepts output/report paths so the Windows evidence stays intact:
+
+```sh
+NITRIDE_AUDIT_OUT=target/compiler-audit-macos \
+NITRIDE_AUDIT_REPORT=docs/compiler-optimization-macos.json \
+NITRIDE_LLVM_BIN=/opt/homebrew/opt/llvm/bin \
+NITRIDE_AUDIT_ASCII=1 node scripts/compiler-audit/run.mjs
+```
+
+`NITRIDE_LLVM_BIN` is optional when Rust's bundled LLVM tools are installed.
+Use tools compatible with rustc's LLVM profile format; this run used rustc
+LLVM 23.1.3 and Homebrew `llvm-profdata` 23.1.4. `NITRIDE_AUDIT_ASCII=1` adds
+feature-enabled and feature-enabled PGO builds, a separate feature-enabled
+training profile, and the 1 MiB string case. It does not add NEON code.
+`NITRIDE_AUDIT_REUSE_PROFILE=1` reuses the existing base training profile only;
+use it solely when the source, toolchain and training inputs are unchanged.
+
+Build the .NET harnesses before timing. The binary-reference harness reuses
+`tools/Nitride.Reference/bin/Release/net10.0/` and records the runtime/reference
+identities and DLL hashes. If those files are absent, first build
+`tools/Nitride.Reference` against the intended Nitrogen checkout. Its generated
+CSharp4 grammar must match the grammar being compared. The assessment records
+the exact identities used here; checkout HEAD alone does not identify a DLL.
+
+```sh
+dotnet build -c Release docs/stage30-harness/rcmp \
+  -p:UseArtifactsOutput=true -p:ArtifactsPath="$PWD/target/reassessment/dotnet" \
+  -p:UseSharedCompilation=false -p:NuGetAudit=false
+dotnet build -c Release scripts/compiler-audit/ncmp-binaries.csproj \
+  -p:UseArtifactsOutput=true -p:ArtifactsPath="$PWD/target/reassessment/dotnet" \
+  -p:UseSharedCompilation=false -p:NuGetAudit=false
+python3 scripts/compiler-audit/compare-dotnet.py
+```
+
+Run the comparison after the native audit and all builds finish. It verifies
+source hashes, measures five fresh .NET first parses and one warm process
+(two warmups/five timed parses), and writes `docs/compiler-comparison-macos.json`.
+Nitrogen language construction and process launch remain outside timing.
+Damaged Nitrogen parses stop early and must not be ranked against whole-file
+recovery. This run does not update memory or incremental-edit measurements.
