@@ -74,7 +74,6 @@ jobs:
           cache: npm
           cache-dependency-path: editors/vscode/package-lock.json
       - name: Install pinned Rust and profiling tools
-        if: ${{ !matrix.container }}
         env:
           RUST_TARGET: ${{ matrix.target }}
         run: |
@@ -88,48 +87,11 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y bolt-23 libbolt-23-dev
       - name: Test native CLI and server without Wasmtime
-        if: ${{ !matrix.container }}
         run: cargo test --locked -p nitride-cli -p nitride-lsp --no-default-features
       - name: Build, train PGO, optimize and verify native binaries
-        if: ${{ !matrix.container }}
         env:
           RELEASE_PLATFORM: ${{ matrix.id }}
         run: python scripts/release/build.py "$RELEASE_PLATFORM"
-      - name: Enable ARMv7 container execution
-        if: ${{ matrix.id == 'linux-armhf' }}
-        uses: docker/setup-qemu-action@v3
-        with:
-          platforms: arm
-      - name: Build and train Alpine or ARMv7 on its own userspace
-        if: ${{ matrix.container }}
-        env:
-          RELEASE_PLATFORM: ${{ matrix.id }}
-          RELEASE_CONTAINER: ${{ matrix.container }}
-          RELEASE_DOCKER_PLATFORM: ${{ matrix.platform }}
-        run: |
-          docker run --rm --platform "$RELEASE_DOCKER_PLATFORM" \
-            -v "$PWD:/work" -w /work \
-            -e RELEASE_PLATFORM -e RUST_TOOLCHAIN \
-            "$RELEASE_CONTAINER" sh -eu -c '
-              if command -v apk >/dev/null; then
-                apk add --no-cache python3 git build-base
-              else
-                apt-get update
-                apt-get install -y python3 git binutils
-              fi
-              if [ "$RELEASE_PLATFORM" = linux-armhf ]; then
-                apt-get install -y gcc-arm-linux-gnueabihf libc6-dev-armhf-cross qemu-user-static
-                rustup target add armv7-unknown-linux-gnueabihf
-                export CARGO_BUILD_TARGET=armv7-unknown-linux-gnueabihf
-                export CARGO_TARGET_ARMV7_UNKNOWN_LINUX_GNUEABIHF_LINKER=arm-linux-gnueabihf-gcc
-                export QEMU_LD_PREFIX=/usr/arm-linux-gnueabihf
-                export NITRIDE_TEST_EMULATED=1
-              fi
-              git config --global --add safe.directory /work
-              rustup component add llvm-tools-preview
-              cargo test --locked -p nitride-cli -p nitride-lsp --no-default-features
-              python3 scripts/release/build.py "$RELEASE_PLATFORM"
-            '
       - name: Compile and test extension
         working-directory: editors/vscode
         run: |
@@ -180,7 +142,7 @@ jobs:
           pattern: native-*
           merge-multiple: true
           path: dist
-      - name: Verify all nine targets, archives, VSIXs and checksums
+      - name: Verify all three targets, archives, VSIXs and checksums
         env:
           RELEASE_TAG: ${{ github.ref_name }}
         run: |

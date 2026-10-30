@@ -199,7 +199,7 @@ scripts/package-vscode.sh darwin-arm64
 code --install-extension editors/vscode/nitride-darwin-arm64-0.1.0.vsix
 ```
 
-Other packaging targets are `darwin-x64`, `linux-x64`, and `win32-x64`.
+Other packaging targets are `linux-x64` and `win32-x64`.
 
 A file can also choose its language with a Nitrogen signature such as
 `#!nitrogen language Calc`, declared by a `#!nitrogen grammar` file; see
@@ -253,5 +253,5 @@ third-party notices when redistributing those sources.
 ## Native releases
 
 See [release versioning and build instructions](docs/releases.md) for the
-nine native VS Code packages and CLI archives, PGO/LTO/AVX2/BOLT settings,
+three native VS Code packages and CLI archives, PGO/LTO/AVX2/BOLT settings,
 CPU compatibility, and the native release configuration without Wasmtime.

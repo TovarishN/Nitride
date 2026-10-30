@@ -149,7 +149,7 @@ class PromotionTests(unittest.TestCase):
 
     def test_expired_missing_or_duplicate_artifacts_cannot_be_promoted(self):
         from release.reuse import complete_artifacts
-        wanted = {'native-linux-x64', 'native-win32-arm64'}
+        wanted = {'native-linux-x64', 'native-win32-x64'}
         artifacts = [{'name': name, 'expired': False} for name in sorted(wanted)]
         self.assertTrue(complete_artifacts(artifacts, wanted))
         self.assertFalse(complete_artifacts(artifacts[:1], wanted))

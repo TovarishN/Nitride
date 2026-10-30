@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
 # Build a fully optimized native release and package its extension on the target host.
-# For container targets see .github/workflows/release.yml.
 set -euo pipefail
 platform="${1:?usage: scripts/package-vscode.sh <vsce-target>}"
 root="$(cd "$(dirname "$0")/.." && pwd)"

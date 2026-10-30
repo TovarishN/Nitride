@@ -25,12 +25,12 @@ when its Publish input is selected. A version/tag/lockfile mismatch stops
 the build before the matrix starts. The first release uses `v0.1.0`.
 
 A tag can promote a successful rehearsal's artifacts when the commit matches
-exactly and all nine artifact bundles are still available. The workflow validates
+exactly and all three artifact bundles are still available. The workflow validates
 the contents, checksums and clean source commit again before publication.
 Otherwise it builds the complete matrix. Artifact promotion keeps the binaries
 that passed verification and avoids repeating PGO training just to add a tag.
 
-Each release includes nine platform-specific VSIXs, nine CLI archives
+Each release includes three platform-specific VSIXs, three CLI archives
 (`.zip` on Windows, `.tar.gz` elsewhere), per-platform optimization metadata,
 per-platform SHA-256 manifests and a combined `SHA256SUMS.txt`. The workflow
 checks the entire artifact set before creating a draft release, uploads all
@@ -41,22 +41,12 @@ install a downloaded VSIX using VS Code's “Install from VSIX” command.
 | VSIX target | Rust target | Optimization |
 | --- | --- | --- |
 | win32-x64 | x86_64-pc-windows-msvc | PGO, full LTO, baseline + AVX2 |
-| win32-arm64 | aarch64-pc-windows-msvc | PGO, full LTO |
 | linux-x64 | x86_64-unknown-linux-gnu | PGO, full LTO, BOLT, baseline + AVX2 |
-| linux-arm64 | aarch64-unknown-linux-gnu | PGO, full LTO, BOLT |
-| linux-armhf | armv7-unknown-linux-gnueabihf | PGO, full LTO |
-| alpine-x64 | x86_64-unknown-linux-musl | PGO, full LTO, baseline + AVX2 |
-| alpine-arm64 | aarch64-unknown-linux-musl | PGO, full LTO |
-| darwin-x64 | x86_64-apple-darwin | PGO, full LTO, baseline + AVX2 |
 | darwin-arm64 | aarch64-apple-darwin | PGO, full LTO, Apple M1 CPU tuning |
 
 All payloads use optimization level 3, one codegen unit and abort-on-panic.
-The toolchain is pinned to Rust 1.99.1. ARMv7 is cross-compiled by native ARM64
-Rust in Debian Bookworm, then tested and trained as ARMv7 under QEMU with its
-ARMv7 glibc sysroot. Functional assertions remain enabled; native wall-clock
-performance limits are disabled under emulation. Alpine runs in architecture-matched musl
-containers. Other targets train on native runners. PGO generation and use
-keep the same CPU/LTO/target flags and use that compiler's `llvm-profdata`.
+The toolchain is pinned to Rust 1.99.1. Each target builds and trains on a
+native runner. PGO generation and use keep the same CPU/LTO/target flags and use that compiler's `llvm-profdata`.
 Empty/missing profiles fail the build. Every optimized payload is exercised
 again before packaging.
 
@@ -80,11 +70,9 @@ can corrupt the ELF layout; other Unix payloads are stripped. macOS executables 
 an ad-hoc code signature after stripping. These are optimization settings,
 not a claim of measured speedup; record benchmarks separately.
 
-BOLT supports ELF x64/ARM64, so Windows and macOS use LLVM PGO/LTO.
-Alpine and ARMv7 use PGO/LTO without BOLT. Linux glibc binaries are built
-on Ubuntu 24.04 and require glibc 2.39 or newer. ARMv7 uses Debian Bookworm
-(glibc 2.36). Alpine binaries use musl. Windows and macOS support is bounded
-by the pinned Rust toolchain and VS Code runtime requirements. The macOS
+Linux x64 uses BOLT; Windows and macOS use LLVM PGO/LTO. Linux binaries are
+built on Ubuntu 24.04 and require glibc 2.39 or newer. Windows and macOS
+support is bounded by the pinned Rust toolchain and VS Code runtime requirements. The macOS
 signature is ad-hoc, without Apple notarization or a Developer ID certificate.
 
 ## WASM exclusion

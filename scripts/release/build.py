@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Build target-local PGO payloads; run on the target OS/architecture (or in QEMU)."""
+"""Build target-local PGO payloads; run on the target OS/architecture."""
 import argparse
 import hashlib
 import json
@@ -76,9 +76,7 @@ def build(args):
     profdata = profdata_tool(args.profdata)
     target = item['target']
     compiler = output(['rustc', '-vV'])
-    armv7_cross = (item['id'] == 'linux-armhf' and 'host: aarch64-unknown-linux-gnu' in compiler.splitlines()
-                   and os.environ.get('QEMU_LD_PREFIX') == '/usr/arm-linux-gnueabihf')
-    if f'host: {target}' not in compiler.splitlines() and not armv7_cross:
+    if f'host: {target}' not in compiler.splitlines():
         raise RuntimeError(f'{target} must be built and trained in its target userspace; wrong rustc host')
     is_x64 = target.startswith('x86_64-')
     suffix = '.exe' if 'windows' in target else ''
@@ -92,11 +90,6 @@ def build(args):
         base += ['-Ctarget-cpu=generic']
     if item.get('bolt'):
         base += ['-Clink-arg=-Wl,--emit-relocs']
-    if target == 'aarch64-pc-windows-msvc':
-        # MSVC link.exe corrupts LLVM's instrumentation records on ARM64.
-        # Keep the same bundled LLVM linker for profile generation and use.
-        linker = Path(output(['rustc', '--print', 'sysroot'])) / 'lib/rustlib' / target / 'bin/rust-lld.exe'
-        base += [f'-Clinker={linker}', '-Clinker-flavor=lld-link']
     # Prove Wasmtime cannot enter the release dependency graph.
     graph = output(['cargo', 'tree', '--locked', '-p', 'nitride-cli', '--no-default-features', '--target', target])
     if 'wasmtime' in graph or 'nitride-wasm' in graph:
@@ -136,7 +129,7 @@ def build(args):
         # A post-BOLT strip rewrites ELF segments and corrupts the binary.
         # Keep BOLT's verified output intact, including its symbol table.
         if 'windows' not in target and not item.get('bolt'):
-            run(['arm-linux-gnueabihf-strip' if armv7_cross else 'strip', destination])
+            run(['strip', destination])
         if 'apple' in target:
             run(['codesign', '--force', '--sign', '-', destination])
         found = output([str(destination), '--version'])
