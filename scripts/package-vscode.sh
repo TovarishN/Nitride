@@ -5,7 +5,8 @@
 set -euo pipefail
 target="${1:?usage: scripts/package-vscode.sh <darwin-arm64|darwin-x64|linux-x64|win32-x64>}"
 root="$(cd "$(dirname "$0")/.." && pwd)"
-cargo build --release -p nitride-cli --manifest-path "$root/Cargo.toml"
+# The editor's server needs no component runtime (wasmtime): leave it out.
+cargo build --release -p nitride-cli --no-default-features --manifest-path "$root/Cargo.toml"
 binary=nitride
 [[ "$target" == win32-* ]] && binary=nitride.exe
 mkdir -p "$root/editors/vscode/server"

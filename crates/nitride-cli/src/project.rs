@@ -20,6 +20,31 @@ fn load(manifest: &Path) -> Result<Loaded, String> {
     Ok(Loaded { prepared, language })
 }
 
+#[cfg(feature = "components")]
+fn component_bindings<'g>(
+    language: &'g Language<'g>,
+    loaded: &Loaded,
+    binding: &Value,
+    component: &Path,
+) -> Result<Vec<HostBinding<'g>>, String> {
+    nitride_wasm::bindings(language, &loaded.prepared, binding, component)
+}
+
+/// Without the `components` feature a component binding cannot be loaded.
+#[cfg(not(feature = "components"))]
+fn component_bindings<'g>(
+    _: &'g Language<'g>,
+    _: &Loaded,
+    binding: &Value,
+    component: &Path,
+) -> Result<Vec<HostBinding<'g>>, String> {
+    Err(format!(
+        "{} binds {} to a WebAssembly component; this nitride was built without component support (cargo feature `components`)",
+        component.display(),
+        binding["interface"].as_str().unwrap_or_default()
+    ))
+}
+
 /// Per binding, its implementation's bindings: `(interface, what implements
 /// it, bindings)`, where the implementation is a component path or a program.
 fn bind<'g>(
@@ -52,13 +77,10 @@ fn bind<'g>(
             }
             _ => {
                 let component = binding["component"].as_str().unwrap_or_default();
-                let bindings = nitride_wasm::bindings(
-                    language,
-                    &loaded.prepared,
-                    binding,
-                    &folder.join(component),
-                )?;
-                (component, bindings)
+                (
+                    component,
+                    component_bindings(language, loaded, binding, &folder.join(component))?,
+                )
             }
         };
         bound.push((

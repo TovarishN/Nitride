@@ -25,6 +25,8 @@ jobs:
         run: |
           cargo +stable test --locked -p nitride-core --features simd-ascii-runs
           cargo +stable test --locked -p nitride-cli --test native_lexers --test generated_syntax --features nitride-core/simd-ascii-runs
+      - name: Test the editor's server build (no component runtime)
+        run: cargo +stable test --locked -p nitride-cli --no-default-features
       - name: Verify grammar bootstrap fixed point
         run: cargo +stable run --locked -p nitride-prepare --example bootstrap -- --check
       - run: cargo +stable clippy --workspace --all-targets --all-features --locked -- -D warnings
