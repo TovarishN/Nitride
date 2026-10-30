@@ -1,6 +1,8 @@
 //! Runtime support for generated lexical scanners.
 
 use crate::Language;
+mod runs;
+pub use runs::AsciiRun;
 
 /// Exact generated trace for one ASCII first-byte decision. Zero work declines.
 #[derive(Clone, Copy)]
@@ -121,6 +123,39 @@ impl<'a> LexicalContext<'a> {
     #[inline]
     pub fn position(&self) -> usize {
         self.position
+    }
+    /// Replay complete successful one-byte iterations. Decline short prefixes,
+    /// unavailable depth/work headroom, and invalid metadata without mutation.
+    /// The caller must run the ordinary body at the first unconsumed byte.
+    #[inline]
+    pub fn ascii_run(&mut self, plan: &AsciiRun, maximum: u32, depth: u32) -> u32 {
+        if !cfg!(feature = "ascii-runs") {
+            return 0;
+        }
+        let bytes = &self.source.as_bytes()[self.position..];
+        if maximum < 8 || plan.work == 0 || !plan.prefix(bytes) {
+            return 0;
+        }
+        let Some(max_depth) = depth.checked_add(u32::from(plan.depth)) else {
+            return 0;
+        };
+        if max_depth > self.frames {
+            return 0;
+        }
+        let budget = self.work_budget.saturating_sub(self.work) / u64::from(plan.work);
+        let length = bytes
+            .len()
+            .min(maximum as usize)
+            .min(budget.min(usize::MAX as u64) as usize);
+        if length == 0 {
+            return 0;
+        }
+        let count = plan.scan(&bytes[..length]);
+        self.position += count;
+        self.work += count as u64 * u64::from(plan.work);
+        self.max_depth = self.max_depth.max(max_depth);
+        self.observe(self.position);
+        count as u32
     }
     #[inline]
     pub fn restore(&mut self, position: usize) {
@@ -246,6 +281,70 @@ mod tests {
     }
     fn state(c: &LexicalContext<'_>) -> (usize, u64, u64, u32) {
         (c.position, c.observed, c.work, c.max_depth)
+    }
+    fn repeated_lower(c: &mut LexicalContext<'_>, max: u32, depth: u32, fast: bool) -> Option<u32> {
+        let mask = [0, ((1u64 << 26) - 1) << (b'a' - 64)];
+        let plan = AsciiRun::new(mask, 2, 1);
+        let mut count = 0;
+        while count < max {
+            if fast {
+                count += c.ascii_run(&plan, max - count, depth);
+                if count == max {
+                    break;
+                }
+            }
+            c.step(depth)?;
+            c.step(depth + 1)?;
+            if !c.class(mask, &[], false) {
+                break;
+            }
+            count += 1;
+        }
+        Some(count)
+    }
+    #[test]
+    fn ascii_runs_preserve_partial_work_depth_observations_and_repeat_limits() {
+        for suffix in ["", "!", "é", "😀", "\\u0061", "\0"] {
+            for length in [0, 1, 7, 8, 9, 31, 32, 33, 63, 64, 65] {
+                let source = format!("zz{}{suffix}", "a".repeat(length));
+                for work in 0..=140 {
+                    for frames in [0, 3, 4, 5] {
+                        for maximum in [0, 1, 7, 8, 9, 31, 32, 33, 64, 100] {
+                            let make = || {
+                                let mut c = context(&source, work, frames);
+                                c.position = 2;
+                                c.work = 5;
+                                c.observed = 3;
+                                c.max_depth = 2;
+                                c
+                            };
+                            let mut fast = make();
+                            let mut scalar = make();
+                            let result = repeated_lower(&mut fast, maximum, 3, true);
+                            let expected = repeated_lower(&mut scalar, maximum, 3, false);
+                            assert_eq!(
+                                (result, state(&fast)),
+                                (expected, state(&scalar)),
+                                "len {length} suffix {suffix:?} work {work} frames {frames} max {maximum}"
+                            );
+                        }
+                    }
+                }
+            }
+        }
+        let plan = AsciiRun::new([u64::MAX; 2], 1, 1);
+        let mut c = context("aaaaaaaa", u64::MAX, u32::MAX);
+        let before = state(&c);
+        assert_eq!(c.ascii_run(&plan, 8, u32::MAX), 0);
+        assert_eq!(state(&c), before);
+        c.work = u64::MAX - 3;
+        if cfg!(feature = "ascii-runs") {
+            assert_eq!(c.ascii_run(&plan, 8, 0), 3);
+            assert_eq!(c.work, u64::MAX);
+        } else {
+            assert_eq!(c.ascii_run(&plan, 8, 0), 0);
+            assert_eq!(c.work, u64::MAX - 3);
+        }
     }
     fn decision_table() -> [AsciiDecision; 128] {
         std::array::from_fn(|byte| {

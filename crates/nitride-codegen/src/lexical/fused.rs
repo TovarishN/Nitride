@@ -25,6 +25,24 @@ pub(super) fn plan(expr: &Value) -> Option<[Decision; 128]> {
     });
     entries.iter().any(|d| d.work != 0).then_some(entries)
 }
+/// Largest uniform group of successful single-byte traces. Rule calls and
+/// observations beyond that byte are never batched.
+pub(super) fn run_plan(expr: &Value) -> Option<([u64; 2], u16, u8)> {
+    let mut groups = std::collections::BTreeMap::<(u16, u8), [u64; 2]>::new();
+    for byte in 0..128u8 {
+        if let Some(t) =
+            trace(expr, byte).filter(|t| t.matched && t.advance && t.observed == 1 && t.work != 0)
+        {
+            let mask = groups.entry((t.work, t.depth)).or_default();
+            mask[byte as usize / 64] |= 1u64 << (byte % 64);
+        }
+    }
+    groups
+        .into_iter()
+        .max_by_key(|(_, m)| m[0].count_ones() + m[1].count_ones())
+        .filter(|(_, m)| m[0].count_ones() + m[1].count_ones() >= 4)
+        .map(|((work, depth), mask)| (mask, work, depth))
+}
 fn trace(expr: &Value, byte: u8) -> Option<Decision> {
     if !byte.is_ascii() {
         return None;
@@ -140,10 +158,27 @@ fn eval(expr: &Value, byte: u8, depth: u8, remaining: &mut usize) -> Option<Deci
 
 #[cfg(test)]
 mod tests {
-    use super::{plan, trace};
+    use super::{plan, run_plan, trace};
     use serde_json::json;
     fn class() -> serde_json::Value {
         json!({"kind":"class","ranges":[[97,97]],"negated":false})
+    }
+    #[test]
+    fn runs_only_group_exact_advancing_traces_without_rule_calls() {
+        let lower = json!({"kind":"class","ranges":[[97,122]],"negated":false});
+        assert_eq!(
+            run_plan(&lower),
+            Some(([0, ((1u64 << 26) - 1) << 33], 1, 0))
+        );
+        let e = json!({"kind":"choice","items":[lower,{"kind":"ref","name":"Escape"}]});
+        assert_eq!(run_plan(&e), Some(([0, ((1u64 << 26) - 1) << 33], 2, 1)));
+        assert!(run_plan(&json!({"kind":"ref","name":"Lower"})).is_none());
+        assert!(run_plan(&json!({"kind":"literal","text":""})).is_none());
+        let e = json!({"kind":"sequence","items":[{"kind":"predicate","positive":false,"inner":{"kind":"literal","text":"ab"}}, {"kind":"any"}]});
+        assert!(
+            run_plan(&e).is_none(),
+            "two-byte failed lookahead must not lose observations"
+        );
     }
     #[test]
     fn ordered_decisions_preserve_work_depth_and_unknown_suffixes() {

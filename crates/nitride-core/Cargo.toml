@@ -4,3 +4,8 @@ version.workspace = true
 edition.workspace = true
 license.workspace = true
 rust-version.workspace = true
+
+[features]
+ascii-runs = []
+# Optional runtime-dispatched AVX2 acceleration of generated ASCII runs.
+simd-ascii-runs = ["ascii-runs"]

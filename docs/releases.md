@@ -93,10 +93,10 @@ Release builds pass `--no-default-features -p nitride-cli --bin nitride`.
 Neither `nitride-wasm` nor Wasmtime enters their dependency graph, and no
 WebAssembly component or web-extension package is shipped. Component-backed
 project execution/conformance and `binding draft` return an explicit
-“WebAssembly support is disabled” error. Process bindings and native language
+“built without component support” error. Process bindings and native language
 features remain available. A project that mixes process and WASM bindings
 also fails this preflight; use process-only bindings for native releases.
-Ordinary development builds keep the default `wasm` feature and existing
+Ordinary development builds keep the default `components` feature (`wasm` remains a compatibility alias) and existing
 component behavior. Release builds do not distribute `nitride-profile`.
 
 ## Local packaging
