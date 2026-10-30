@@ -299,11 +299,63 @@ pub fn prepare(
             }
             Ok(resolved)
         })?;
+        let mut checks = Vec::new();
+        for check in &rule.checks {
+            let span = |v: &Value| -> [usize; 2] {
+                serde_json::from_value(v["span"].clone()).unwrap_or(rule.span)
+            };
+            let mut check = check.clone();
+            let captures = check.get_mut("captures").and_then(Value::as_array_mut);
+            for capture in captures.into_iter().flatten() {
+                let at = span(capture);
+                let resolved = resolve(capture["category"].as_str().unwrap(), module, None, at)?;
+                let (mi, ri) = symbols[&resolved];
+                if modules[mi].rules[ri].lexical {
+                    return Err(source.error(at, "capture categories must be syntax rules"));
+                }
+                capture["category"] = json!(resolved);
+                capture.as_object_mut().unwrap().remove("span");
+            }
+            let mut labels = Vec::new();
+            crate::expr_labels(&rule.body, &mut labels);
+            for key in ["left", "right", "at"] {
+                if let Some(field) = check[key].as_str()
+                    && !labels.contains(&field)
+                {
+                    return Err(
+                        source.error(span(&check), format!("{field} is not a field of {name}"))
+                    );
+                }
+            }
+            let captures: Vec<&str> = check["captures"]
+                .as_array()
+                .into_iter()
+                .flatten()
+                .filter_map(|c| c["name"].as_str())
+                .collect();
+            for placeholder in nitride_core::placeholders(check["message"].as_str().unwrap()) {
+                let known = match placeholder.strip_suffix(".Text") {
+                    Some(field) => labels.contains(&field),
+                    None => captures.contains(&placeholder),
+                };
+                if !known {
+                    return Err(source.error(
+                        span(&check),
+                        format!("unknown message placeholder {{{placeholder}}}"),
+                    ));
+                }
+            }
+            check.as_object_mut().unwrap().remove("span");
+            checks.push(check);
+        }
         let mut value = json!({"name":name,"lexical":rule.lexical,"expr":expr,
             "clauses":if mode=="syntax"{Vec::<Value>::new()}else{clauses},"except":rule.except,
             "precedence":rule.precedence,"owner":owner,"associativity":associativity});
         if rule.transparent {
             value["transparent"] = json!(true);
+        }
+        if !checks.is_empty() {
+            value["checks"] = json!(checks);
         }
         Ok(value)
     };

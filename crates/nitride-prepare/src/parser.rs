@@ -53,6 +53,8 @@ pub struct Rule {
     pub body: Value,
     pub lexical: bool,
     pub clauses: Vec<Value>,
+    /// The rule's own `check` and `match` diagnostics, kept in every mode.
+    pub checks: Vec<Value>,
     pub block: bool,
     pub except: Vec<String>,
     pub precedence: Option<u32>,
@@ -568,6 +570,68 @@ impl Decoder<'_> {
         }
         found.extend(parameters);
     }
+    /// A rule's checks: fields used by comparisons, targets and messages, and
+    /// each `match`'s captures, used by its pattern holes and its message.
+    fn check_locals(
+        &self,
+        id: u32,
+        labels: &mut [crate::GrammarLocal],
+        found: &mut Vec<crate::GrammarLocal>,
+    ) {
+        let Some(checks) = self
+            .tree
+            .field(id, "End")
+            .map(|n| self.first(n))
+            .filter(|&n| self.kind(n) == "Checks")
+        else {
+            return;
+        };
+        for item in self.fields(checks, "Items") {
+            let check = self.first(item);
+            let mut captures: Vec<_> = match self.tree.field(check, "Captures") {
+                Some(c) => self
+                    .fields(c, "Items")
+                    .into_iter()
+                    .map(|p| self.local("capture", p))
+                    .collect(),
+                None => vec![],
+            };
+            if let Some(pattern) = self.tree.field(check, "Pattern") {
+                for (name, span) in self.holes(pattern) {
+                    bind(&mut captures, name, span);
+                }
+            }
+            for field in self.within(check, &["FieldText", "CheckTarget"]) {
+                let name = self.field(field, "Field");
+                bind(labels, self.text(name), self.span(name));
+            }
+            for (name, span) in self.placeholders(self.field(check, "Message")) {
+                match name.strip_suffix(".Text") {
+                    Some(field) => bind(labels, field, [span[0], span[0] + field.len()]),
+                    None => bind(&mut captures, name, span),
+                };
+            }
+            found.extend(captures);
+        }
+    }
+    /// The `{Name}` placeholders of an interpolated message and their spans.
+    fn placeholders(&self, message: u32) -> Vec<(&str, [usize; 2])> {
+        let start = self.span(message)[0];
+        let text = self.text(message);
+        let mut found = Vec::new();
+        let mut at = 0;
+        while let Some(open) = text[at..].find('{').map(|i| at + i) {
+            let Some(close) = text[open..].find('}').map(|i| open + i) else {
+                break;
+            };
+            let inner = &text[open + 1..close];
+            let name = inner.trim();
+            let offset = open + 1 + (inner.len() - inner.trim_start().len());
+            found.push((name, [start + offset, start + offset + name.len()]));
+            at = close + 1;
+        }
+        found
+    }
     /// The element labels of a rule or alternative, used by its clauses:
     /// quote placeholders, helper and lowering arguments, and named fields.
     fn label_locals(&self, id: u32, found: &mut Vec<crate::GrammarLocal>) {
@@ -582,6 +646,7 @@ impl Decoder<'_> {
                 None => labels.push(self.local("field", label)),
             }
         }
+        self.check_locals(id, &mut labels, found);
         if labels.is_empty() {
             return;
         }
@@ -894,6 +959,7 @@ impl Decoder<'_> {
             body,
             lexical: self.kind(id) == "TokenRule",
             clauses: vec![],
+            checks: vec![],
             block: false,
             except: vec![],
             precedence: None,
@@ -960,7 +1026,43 @@ impl Decoder<'_> {
                 .filter(|&n| self.kind(n) == "Semantics")
         });
         rule.block = semantics.is_some();
+        let checks = self
+            .tree
+            .field(id, "End")
+            .map(|n| self.first(n))
+            .filter(|&n| self.kind(n) == "Checks");
+        for item in checks.map(|n| self.fields(n, "Items")).unwrap_or_default() {
+            rule.checks.push(self.rule_check(self.first(item))?);
+        }
         Ok(rule)
+    }
+    /// A `check` comparison or a `match` pattern, as prepared JSON. Capture
+    /// categories are resolved, and the span dropped, by normalization.
+    fn rule_check(&self, id: u32) -> Result<Value, PrepareError> {
+        let message = self.span(self.field(id, "Message"));
+        let message = crate::literal::decode(self.source, [message[0] + 1, message[1]], false)?;
+        let code = self.named(id, "Code");
+        if self.kind(id) == "CompareCheck" {
+            let op = self.field(id, "Op");
+            let equal = match self.text(op) {
+                "==" => true,
+                "!=" => false,
+                _ => return Err(self.error(op, "a check compares with == or !=")),
+            };
+            let field = |label| self.named(self.field(id, label), "Field");
+            return Ok(json!({"kind":"compare","code":code,"severity":"error",
+                "left":field("Left"),"right":field("Right"),"equal":equal,"message":message,
+                "at":self.tree.field(id, "Target").map(|t| self.named(t, "Field")),"span":self.span(id)}));
+        }
+        let captures = match self.tree.field(id, "Captures") {
+            Some(c) => self.parameters(self.fields(c, "Items"))?,
+            None => vec![],
+        };
+        Ok(
+            json!({"kind":"match","code":code,"severity":self.named(id, "Severity"),
+            "captures":captures.iter().map(|p| json!({"name":p.name,"category":p.category,"span":p.span})).collect::<Vec<_>>(),
+            "pattern":self.quote(self.field(id, "Pattern")),"message":message,"at":null,"span":self.span(id)}),
+        )
     }
     fn expr(&self, id: u32) -> Result<Value, PrepareError> {
         let mut value = match self.kind(id) {

@@ -4046,6 +4046,7 @@ mod tests {
             handlers: &[],
             checks: &[],
             helpers: &[],
+            rule_checks: &[],
             source_hash: "prefix-fact",
             rules: Box::leak(rules.into_boxed_slice()),
         }))
@@ -4166,6 +4167,7 @@ mod tests {
             handlers: &[],
             checks: &[],
             helpers: &[],
+            rule_checks: &[],
             source_hash: "hint-cache",
             rules: &[],
         }));
@@ -4225,6 +4227,7 @@ mod tests {
             handlers: &[],
             checks: &[],
             helpers: &[],
+            rule_checks: &[],
             source_hash: "maintenance-slack",
             rules: &[],
         }));
@@ -4341,6 +4344,7 @@ mod tests {
             handlers: &[],
             checks: &[],
             helpers: &[],
+            rule_checks: &[],
             source_hash: "unselected-recovery",
             rules: Box::leak(
                 vec![
@@ -4395,6 +4399,7 @@ mod tests {
             handlers: &[],
             checks: &[],
             helpers: &[],
+            rule_checks: &[],
             source_hash: "active-recovery",
             rules: Box::leak(
                 vec![
@@ -4456,6 +4461,7 @@ mod tests {
             handlers: &[],
             checks: &[],
             helpers: &[],
+            rule_checks: &[],
             source_hash: "pressure",
             rules: Box::leak(
                 vec![
@@ -4522,6 +4528,7 @@ mod tests {
             handlers: &[],
             checks: &[],
             helpers: &[],
+            rule_checks: &[],
             source_hash: "wide",
             rules: Box::leak(
                 vec![

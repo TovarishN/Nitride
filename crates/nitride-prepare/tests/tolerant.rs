@@ -155,6 +155,32 @@ fn grammar_locals_bind_quote_placeholders() {
 }
 
 #[test]
+fn grammar_locals_bind_rule_check_names() {
+    let grammar = source("languages/xml/Xml.ngr");
+    let locals = grammar_locals(&grammar).unwrap();
+    let text = |span: [usize; 2]| &grammar.text[span[0]..span[1]];
+    let local = |kind: &str, name: &str| {
+        locals
+            .iter()
+            .find(|l| l.kind == kind && l.name == name)
+            .unwrap_or_else(|| panic!("{kind} {name}: {locals:?}"))
+    };
+    // A match capture, used by its pattern hole and its message.
+    let pass = local("capture", "pass");
+    assert_eq!(pass.detail, "pass:Text");
+    assert_eq!(text(pass.definitions[0]), "pass");
+    assert_eq!(pass.uses.len(), 2, "{pass:?}");
+    assert!(pass.uses.iter().all(|&u| text(u) == "pass"));
+    let after = grammar.text.find("$pass").unwrap();
+    assert_eq!(pass.uses[0][0], after + 1);
+    // Fields, used by a check's comparison, its message and its target.
+    let open = local("field", "Open");
+    assert_eq!(open.uses.len(), 2, "{open:?}");
+    let close = local("field", "Close");
+    assert_eq!(close.uses.len(), 3, "{close:?}");
+}
+
+#[test]
 fn grammar_locals_of_every_language() {
     let languages = Path::new(env!("CARGO_MANIFEST_DIR")).join("../../languages");
     for language in std::fs::read_dir(languages).unwrap() {

@@ -127,3 +127,62 @@ fn reload_and_drop() {
         assert!(!tree.nodes.is_empty());
     }
 }
+
+fn load_grammar(text: &str) -> Result<LoadedLanguage, String> {
+    let prepared = nitride_prepare::prepare_sources(
+        &[nitride_prepare::Source {
+            path: "test.ngr".into(),
+            text: text.into(),
+        }],
+        "{\"types\":[],\"operations\":[],\"statements\":{}}",
+        "Test.Start",
+        "syntax",
+    )
+    .map_err(|e| e.to_string())?;
+    LoadedLanguage::load(&prepared.to_string())
+}
+
+#[test]
+fn rule_checks_load_and_report() {
+    let grammar = "syntax module Test { token N = ['a'..'z']+; \
+        syntax Start = \"(\" Open:N Items:Item* \")\" Close:N \
+        { check T1 Open.Text == Close.Text : $\"{Close.Text} closes {Open.Text}\" at Close; \
+          match (x:Item)<[ (a ..$_ $x ..$_) a ]> => warning T2 : $\"saw {x}\"; } \
+        syntax Item = N; }";
+    let loaded = load_grammar(grammar).unwrap();
+    let language = loaded.language();
+    assert_eq!(language.rule_checks.len(), 2);
+    let diagnostics = |text: &str| {
+        let parsed = parse_recovering(language, text, Limits::default(), Default::default());
+        compile_recovering(language, &parsed, Limits::default())
+            .diagnostics
+            .into_iter()
+            .map(|d| {
+                (
+                    d.code.unwrap_or_default().to_string(),
+                    d.severity,
+                    d.message,
+                    d.span,
+                )
+            })
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(
+        diagnostics("(a b) b"),
+        [("T1".into(), Severity::Error, "b closes a".into(), [6, 7])]
+    );
+    // One report per node, with the first binding that matches.
+    assert_eq!(
+        diagnostics("(a q r s) a"),
+        [("T2".into(), Severity::Warning, "saw q".into(), [0, 11])]
+    );
+    assert!(diagnostics("(b q) b").is_empty());
+}
+
+#[test]
+fn unparseable_rule_check_patterns_fail_to_load() {
+    let grammar = "syntax module Test { token N = ['a'..'z']+; \
+        syntax Start = Open:N { match <[ 1 2 3 ]> => error T1 : $\"x\"; } }";
+    let error = load_grammar(grammar).err().unwrap();
+    assert!(error.contains("pattern of check T1"), "{error}");
+}

@@ -69,6 +69,7 @@ fn local_edit_does_not_allocate_a_temporary_wide_child_list() {
             handlers: &[],
             checks: &[],
             helpers: &[],
+            rule_checks: &[],
             source_hash: "wide-allocations",
             rules: Box::leak(
                 vec![
