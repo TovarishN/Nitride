@@ -386,6 +386,12 @@ lists its bindings and their last conformance result.
      case maps back to the catalog failure and its message; a trap or a
      malformed value is the failure `host.component`. Calls share one store
      behind a mutex.
+   - The CLI links it through its default cargo feature `components`. The
+     VS Code extension's server is built without it
+     (`scripts/package-vscode.sh` passes `--no-default-features`), since the
+     language server never runs components and wasmtime would otherwise
+     dominate the binary; that build reports a project with a component
+     binding as needing the feature.
    - Prepared bindings gain `export`, and their `component` path is made
      relative to the manifest's folder.
    - `nitride interface --target wit-binding` prints the WIT a binding's

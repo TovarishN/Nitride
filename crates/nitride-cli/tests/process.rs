@@ -20,6 +20,23 @@ fn python() -> bool {
     found
 }
 
+/// A build without components (the editor's server) says why it cannot run
+/// a project that binds one.
+#[cfg(not(feature = "components"))]
+#[test]
+fn components_need_the_components_feature() {
+    let error =
+        nitride_cli::run_project(&calendar().join("Calendar.nproj"), "1;", &[]).unwrap_err();
+    assert!(
+        error.ends_with(
+            "gregorian.wasm binds Calendar.Gregorian to a WebAssembly component; this nitride was built without component support (cargo feature `components`)"
+        ),
+        "{error}"
+    );
+}
+
+/// Through Calendar's manifest, which also binds its component.
+#[cfg(feature = "components")]
 #[test]
 fn the_python_clock_runs_when_granted() {
     if !python() {
