@@ -76,7 +76,9 @@ def build(args):
     profdata = profdata_tool(args.profdata)
     target = item['target']
     compiler = output(['rustc', '-vV'])
-    if f'host: {target}' not in compiler.splitlines():
+    armv7_cross = (item['id'] == 'linux-armhf' and 'host: aarch64-unknown-linux-gnu' in compiler.splitlines()
+                   and os.environ.get('QEMU_LD_PREFIX') == '/usr/arm-linux-gnueabihf')
+    if f'host: {target}' not in compiler.splitlines() and not armv7_cross:
         raise RuntimeError(f'{target} must be built and trained in its target userspace; wrong rustc host')
     is_x64 = target.startswith('x86_64-')
     suffix = '.exe' if 'windows' in target else ''
@@ -134,7 +136,7 @@ def build(args):
         # A post-BOLT strip rewrites ELF segments and corrupts the binary.
         # Keep BOLT's verified output intact, including its symbol table.
         if 'windows' not in target and not item.get('bolt'):
-            run(['strip', destination])
+            run(['arm-linux-gnueabihf-strip' if armv7_cross else 'strip', destination])
         if 'apple' in target:
             run(['codesign', '--force', '--sign', '-', destination])
         found = output([str(destination), '--version'])
@@ -144,14 +146,18 @@ def build(args):
                              'profile_sha256': hashlib.sha256(merged.read_bytes()).hexdigest()}
     if is_x64:
         # This process must remain compatible with CPUs that have no AVX instructions.
-        run(['rustc', '--edition=2024', '-O', '-Ctarget-cpu=x86-64', '--target', target,
-             ROOT / 'scripts/release/launcher.rs', '-o', payload / f'nitride{suffix}'])
+        launcher = work / 'launcher' / f'nitride{suffix}'
+        launcher.parent.mkdir(exist_ok=True)
+        run(['rustc', '--edition=2024', '-O', '-Clto=fat', '-Ccodegen-units=1', '-Cpanic=abort',
+             '-Ctarget-cpu=x86-64', '--target', target,
+             ROOT / 'scripts/release/launcher.rs', '-o', launcher])
+        shutil.copy2(launcher, payload / f'nitride{suffix}')
         if 'apple' in target:
             run(['codesign', '--force', '--sign', '-', payload / f'nitride{suffix}'])
     train(payload / f'nitride{suffix}', os.environ.copy())
     metadata = {'version': current, 'platform': item['id'], 'target': target,
                 'commit': output(['git', 'rev-parse', 'HEAD']), 'rustc': compiler,
-                'source_dirty': subprocess.run(['git', 'diff', '--quiet'], cwd=ROOT).returncode != 0,
+                'source_dirty': bool(output(['git', 'status', '--porcelain', '--untracked-files=normal'])),
                 'wasmtime': False, 'variants': variants}
     (payload / 'release.json').write_text(json.dumps(metadata, indent=2) + '\n')
 

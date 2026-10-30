@@ -8,6 +8,7 @@ import tempfile
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
+sys.path.insert(0, str(ROOT / "scripts"))
 
 
 class VersionTests(unittest.TestCase):
@@ -132,6 +133,36 @@ class PackageTests(unittest.TestCase):
                         packaging.verify_assets(root / 'dist', ['darwin-arm64'])
             finally:
                 parent.chmod(0o755)
+
+
+class PromotionTests(unittest.TestCase):
+    def test_only_successful_rehearsals_of_the_exact_commit_are_eligible(self):
+        sys.path.insert(0, str(ROOT / 'scripts'))
+        from release.reuse import eligible_runs
+        good = {'id': 10, 'head_sha': 'a' * 40, 'conclusion': 'success',
+                'event': 'push', 'head_branch': 'codex/release-native'}
+        runs = [good, {**good, 'id': 11, 'head_sha': 'b' * 40},
+                {**good, 'id': 12, 'conclusion': 'failure'},
+                {**good, 'id': 13, 'head_branch': 'main'},
+                {**good, 'id': 14}]
+        self.assertEqual(eligible_runs(runs, 'a' * 40, 14), [10])
+
+    def test_expired_missing_or_duplicate_artifacts_cannot_be_promoted(self):
+        from release.reuse import complete_artifacts
+        wanted = {'native-linux-x64', 'native-win32-arm64'}
+        artifacts = [{'name': name, 'expired': False} for name in sorted(wanted)]
+        self.assertTrue(complete_artifacts(artifacts, wanted))
+        self.assertFalse(complete_artifacts(artifacts[:1], wanted))
+        self.assertFalse(complete_artifacts([*artifacts, artifacts[0]], wanted))
+        self.assertFalse(complete_artifacts([{**artifacts[0], 'expired': True}, artifacts[1]], wanted))
+
+    def test_publication_rejects_dirty_or_different_source_commits(self):
+        from release.package import verify_provenance
+        verify_provenance({'commit': 'a' * 40, 'source_dirty': False}, 'a' * 40)
+        for data in [{'commit': 'b' * 40, 'source_dirty': False},
+                     {'commit': 'a' * 40, 'source_dirty': True}]:
+            with self.assertRaises(ValueError):
+                verify_provenance(data, 'a' * 40)
 
 
 if __name__ == '__main__':

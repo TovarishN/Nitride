@@ -34,6 +34,11 @@ def verify_metadata(data, platform, current):
         raise ValueError(f'wrong BOLT optimization for {platform}')
 
 
+def verify_provenance(data, commit):
+    if data.get('commit') != commit or data.get('source_dirty') is not False:
+        raise ValueError('release assets must come from the exact clean tagged commit')
+
+
 def verify_vsix(path, platform, current):
     with zipfile.ZipFile(path) as archive:
         names = archive.namelist()
@@ -127,7 +132,8 @@ def verify_assets(out, platforms):
                 raise ValueError(f'checksum mismatch: {name}')
         if found != assets:
             raise ValueError(f'incomplete artifacts for {platform}')
-        verify_metadata(json.loads((out / (base + '.json')).read_text()), platform, current)
+        metadata = json.loads((out / (base + '.json')).read_text())
+        verify_metadata(metadata, platform, current)
         verify_vsix(out / (base + '.vsix'), platform, current)
         archive_path = out / (base + ('.zip' if platform.startswith('win32-') else '.tar.gz'))
         if platform.startswith('win32-'):
@@ -139,13 +145,19 @@ def verify_assets(out, platforms):
         wanted = {f'{base}/{name}' for name in binary_names(platform) | {'README.md', 'LICENSE', 'release.json'}}
         if contents.keys() != wanted:
             raise ValueError(f'unexpected CLI archive contents: {archive_path}')
-        verify_metadata(json.loads(contents[f'{base}/release.json']), platform, current)
+        if json.loads(contents[f'{base}/release.json']) != metadata:
+            raise ValueError(f'CLI archive metadata mismatch for {platform}')
         with zipfile.ZipFile(out / (base + '.vsix')) as stream:
+            if json.loads(stream.read('extension/server/release.json')) != metadata:
+                raise ValueError(f'VSIX metadata mismatch for {platform}')
             for name in binary_names(platform):
                 if stream.read('extension/server/' + name) != contents[f'{base}/{name}']:
                     raise ValueError(f'CLI/VSIX executable mismatch for {platform}/{name}')
         expected_files |= assets | {manifest}
     if platforms == [row['id'] for row in MATRIX]:
+        commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
+        for platform in platforms:
+            verify_provenance(json.loads((out / (stem(platform, current) + '.json')).read_text()), commit)
         if {file.name for file in out.iterdir()} - {'SHA256SUMS.txt'} != expected_files:
             raise ValueError('unexpected or missing release assets')
         (out / 'SHA256SUMS.txt').write_text(''.join((out / f'SHA256SUMS-{platform}.txt').read_text() for platform in platforms))

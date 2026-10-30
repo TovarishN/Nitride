@@ -166,9 +166,13 @@ fn deep_selection_is_fast() {
         json!({"positions":[{"line":0,"character":6 + depth}]}),
     );
     assert!(!ranges[0].is_null());
-    assert!(
-        started.elapsed() < std::time::Duration::from_secs(2),
-        "{:?}",
-        started.elapsed()
-    );
+    // CPU emulation cannot establish native performance. Keep the correctness
+    // check above on emulated runners, and enforce timing on all other runs.
+    if std::env::var("NITRIDE_TEST_EMULATED").as_deref() != Ok("1") {
+        assert!(
+            started.elapsed() < std::time::Duration::from_secs(2),
+            "{:?}",
+            started.elapsed()
+        );
+    }
 }

@@ -24,6 +24,12 @@ runs the full matrix without publishing. A manual run on a tag publishes only
 when its Publish input is selected. A version/tag/lockfile mismatch stops
 the build before the matrix starts. The first release uses `v0.1.0`.
 
+A tag can promote a successful rehearsal's artifacts when the commit matches
+exactly and all nine artifact bundles are still available. The workflow validates
+the contents, checksums and clean source commit again before publication.
+Otherwise it builds the complete matrix. Artifact promotion keeps the binaries
+that passed verification and avoids repeating PGO training just to add a tag.
+
 Each release includes nine platform-specific VSIXs, nine CLI archives
 (`.zip` on Windows, `.tar.gz` elsewhere), per-platform optimization metadata,
 per-platform SHA-256 manifests and a combined `SHA256SUMS.txt`. The workflow
@@ -45,8 +51,10 @@ install a downloaded VSIX using VS Code's “Install from VSIX” command.
 | darwin-arm64 | aarch64-apple-darwin | PGO, full LTO, Apple M1 CPU tuning |
 
 All payloads use optimization level 3, one codegen unit and abort-on-panic.
-The toolchain is pinned to Rust 1.99.1. ARMv7 training runs in its own
-Debian userspace under QEMU; Alpine runs in architecture-matched musl
+The toolchain is pinned to Rust 1.99.1. ARMv7 is cross-compiled by native ARM64
+Rust in Debian Bookworm, then tested and trained as ARMv7 under QEMU with its
+ARMv7 glibc sysroot. Functional assertions remain enabled; native wall-clock
+performance limits are disabled under emulation. Alpine runs in architecture-matched musl
 containers. Other targets train on native runners. PGO generation and use
 keep the same CPU/LTO/target flags and use that compiler's `llvm-profdata`.
 Empty/missing profiles fail the build. Every optimized payload is exercised

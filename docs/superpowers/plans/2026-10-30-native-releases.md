@@ -51,3 +51,10 @@
 - Independent review found container output ownership would prevent packaging. Reproduced PermissionError, then moved staging to a host-owned temporary directory; regression passes.
 - Decision: glibc x64/ARM64 releases require glibc 2.39 (Ubuntu 24.04); ARMv7 requires glibc 2.36 (Bookworm). Documented rather than claiming every VS Code-supported Linux distribution. Cost: older glibc distributions need a source build or Alpine/musl environment.
 - Hosted verification and first GitHub release remain pending.
+
+## Hosted validation follow-up
+
+- Seven native targets passed end to end. Windows x64 exposed an extra launcher PDB in the staging directory; launcher compilation now happens outside the payload and only the executable is copied.
+- ARMv7 correctness passed until a native wall-clock limit failed under QEMU. Its functional assertions remain enabled; only the timing limit is disabled explicitly under emulation. Native ARM64 Rust now cross-compiles ARMv7, with ARMv7 tests/training still executed through QEMU and the Bookworm ARMv7 sysroot.
+- Tags may promote complete, unexpired rehearsal artifacts from the exact same clean commit. Tests reject wrong commits, unsuccessful runs, incomplete/duplicate/expired artifacts and dirty provenance. The tag workflow still verifies checksums, every package, and embedded metadata before publishing. Independent review found no blocker; dirty detection was expanded to include staged and untracked files.
+- Current local verification: 579 workspace tests, 315 native-only tests, 18 extension tests, ten release-tooling tests, launcher CPU dispatch test, clippy and actionlint pass. Final hosted matrix remains required before tagging.
