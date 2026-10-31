@@ -7,7 +7,7 @@
       "include": "#comments"
     },
     {
-      "include": "#keywords"
+      "include": "#statements"
     }
   ],
   "repository": {
@@ -24,15 +24,36 @@
         }
       ]
     },
-    "keywords": {
+    "statements": {
+      "comment": "A keyword only opens a statement; the rest of it (names, paths such as languages/grammar) is not keywords.",
       "patterns": [
         {
-          "name": "storage.type.nproj",
-          "match": "\\b(workspace|language|nitrogen)\\b"
+          "begin": "\\b(workspace|language|nitrogen)\\b",
+          "beginCaptures": {
+            "1": {
+              "name": "storage.type.nproj"
+            }
+          },
+          "end": "(?=[;{}])",
+          "patterns": [
+            {
+              "include": "#comments"
+            }
+          ]
         },
         {
-          "name": "keyword.other.nproj",
-          "match": "\\b(include|extensions|grammar|start|catalog|binding|namespace|source)\\b"
+          "begin": "\\b(include|extensions|grammar|start|catalog|binding|namespace|source)\\b",
+          "beginCaptures": {
+            "1": {
+              "name": "keyword.other.nproj"
+            }
+          },
+          "end": "(?=[;{}])",
+          "patterns": [
+            {
+              "include": "#comments"
+            }
+          ]
         }
       ]
     }

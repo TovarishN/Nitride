@@ -137,3 +137,36 @@ fn nproj_semantic_tokens() {
     assert!(starts.contains(&8), "{data:?}");
     assert!(data.len() >= 5 * 5, "{data:?}");
 }
+
+#[test]
+fn nproj_path_segments_are_not_keywords() {
+    let (dir, _) = dates("nproj-path-keywords");
+    let file = dir.join("nitride.nproj");
+    let text = "workspace\n{\n  include languages/grammar;\n}\n";
+    std::fs::write(&file, text).unwrap();
+    let tokens = ask(&dir, &file, text, "textDocument/semanticTokens/full", json!({}));
+    let data: Vec<u64> = tokens["data"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|v| v.as_u64().unwrap())
+        .collect();
+    // Absolute (line, start, length) of each token.
+    let (mut line, mut start) = (0, 0);
+    let spans: Vec<_> = data
+        .chunks(5)
+        .map(|t| {
+            if t[0] > 0 {
+                start = 0;
+            }
+            line += t[0];
+            start += t[1];
+            (line, start, t[2], t[3])
+        })
+        .collect();
+    let (_, keyword) = find(text, "grammar");
+    assert!(
+        !spans.iter().any(|&(l, s, _, _)| l == 2 && s == keyword as u64),
+        "{spans:?}"
+    );
+}
