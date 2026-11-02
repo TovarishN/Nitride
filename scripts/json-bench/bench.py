@@ -11,8 +11,9 @@ HERE = pathlib.Path(__file__).resolve().parent
 INPUTS = HERE / "target/json-bench"
 ENGINES = {
     "nitride": [str(HERE / "target/release/nitride-json-bench"), "bench"],
-    # Built by pgo.py; skipped when absent.
-    "nitride-pgo": [str(HERE / "target/pgo/release/nitride-json-bench"), "bench"],
+    # Built by pgo.py under target/pgo/<host>/release; skipped when absent.
+    "nitride-pgo": [str(next(HERE.glob("target/pgo/*/release/nitride-json-bench"), HERE / "target/pgo/missing")),
+                    "bench"],
     "stj-document": [str(HERE / "dotnet/bin/Release/net10.0/JsonBench"), "document"],
     "stj-reader": [str(HERE / "dotnet/bin/Release/net10.0/JsonBench"), "reader"],
 }

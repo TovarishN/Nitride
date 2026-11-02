@@ -181,6 +181,10 @@ outside the admitted native profiles. Native execution uses finite `f64`;
 Nitrogen's numeric literal representation differs, so broad floating-point parity
 is not claimed. Embedded targets and `no_std` are not current requirements.
 
+A parser generated into your own crate takes that crate's build settings.
+[Optimizing a generated parser](docs/optimizing-generated-parsers.md) covers
+the recommended profile and a PGO build script for it.
+
 ## Editor support
 
 `nitride lsp` serves LSP over stdio. The [VS Code extension](editors/vscode/README.md)
@@ -249,6 +253,7 @@ and corpus provenance remain versioned for independent compatibility checks.
 | [Three-way comparison](docs/stage30-comparison.md) | Full-parse timing and memory methodology, 2026-10-27 |
 | [Refreshed comparison](docs/stage45-comparison.md) | Full-parse and edit timing, memory, change since stage30 |
 | [PGO and SIMD reassessment](docs/compiler-assessment-2026-10-30.md) | Apple M4 Pro compiler configurations, fresh .NET comparison, ARM SIMD boundary |
+| [JSON comparison](docs/json-comparison.md) | Generated JSON parser against System.Text.Json, throughput work, warm-up on other files |
 | [Incremental checkpoint](docs/stage34-evidence.md) | Edit measurements and Roslyn baseline |
 | [Latest recorded parser checkpoint](docs/stage44-evidence.md) | Paired timings, recovery filtering, validation |
 
