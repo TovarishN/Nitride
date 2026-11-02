@@ -434,11 +434,9 @@ pub fn generate(input: &str) -> Result<String, String> {
     let capture = |p: &Value| -> Result<(String, u16, Option<u16>, bool), String> {
         let (name, category) = hole(p)?;
         let pattern = match p.get("pattern").and_then(Value::as_str) {
-            Some(pattern) => Some(
-                *pattern_ids
-                    .get(pattern)
-                    .ok_or_else(|| format!("unknown named pattern {pattern}"))?,
-            ),
+            Some(pattern) => Some(*pattern_ids.get(pattern).ok_or_else(|| {
+                format!("NQP0007: '{pattern}' is not a named pattern of this language.")
+            })?),
             None => None,
         };
         Ok((name, category, pattern, p["descendant"] == true))
