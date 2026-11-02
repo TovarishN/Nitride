@@ -51,6 +51,7 @@ fn borrowed_language_parses() {
         checks: &[],
         helpers: &[],
         rule_checks: &[],
+        patterns: &[],
         source_hash: "",
     };
     let tree = parse(&language, "12 34", Limits::default()).unwrap();

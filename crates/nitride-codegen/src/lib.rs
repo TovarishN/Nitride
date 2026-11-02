@@ -410,11 +410,67 @@ pub fn generate(input: &str) -> Result<String, String> {
     let emit_holes = |holes: &[(String, u16)]| {
         list(holes.iter().map(|(name, category)| {
             format!(
-                "nitride_core::Hole {{name:{},category:{category}}}",
+                "nitride_core::Hole {{name:{},category:{category},pattern:None,descendant:false}}",
                 quoted(name)
             )
         }))
     };
+    // Named patterns: ids first, so alternatives and captures may refer to any.
+    let no_patterns = Vec::new();
+    let pattern_list = match data.get("patterns") {
+        Some(patterns) => array(patterns)?,
+        None => &no_patterns,
+    };
+    let mut pattern_ids: HashMap<&str, u16> = HashMap::new();
+    for (index, pattern) in pattern_list.iter().enumerate() {
+        if pattern_ids
+            .insert(text(&pattern["name"])?, index as u16)
+            .is_some()
+        {
+            return Err("duplicate named pattern".into());
+        }
+    }
+    // A capture: a hole that may name a pattern, searched below with `..`.
+    let capture = |p: &Value| -> Result<(String, u16, Option<u16>, bool), String> {
+        let (name, category) = hole(p)?;
+        let pattern = match p.get("pattern").and_then(Value::as_str) {
+            Some(pattern) => Some(
+                *pattern_ids
+                    .get(pattern)
+                    .ok_or_else(|| format!("unknown named pattern {pattern}"))?,
+            ),
+            None => None,
+        };
+        Ok((name, category, pattern, p["descendant"] == true))
+    };
+    let emit_captures = |captures: &[(String, u16, Option<u16>, bool)]| {
+        list(captures.iter().map(|(name, category, pattern, descendant)| {
+            let pattern = pattern.map_or("None".to_owned(), |p| format!("Some({p})"));
+            format!(
+                "nitride_core::Hole {{name:{},category:{category},pattern:{pattern},descendant:{descendant}}}",
+                quoted(name)
+            )
+        }))
+    };
+    let captures_of =
+        |value: &Value| -> Result<Vec<_>, String> { array(value)?.iter().map(capture).collect() };
+    let mut pattern_tables = Vec::new();
+    for pattern in pattern_list {
+        let mut alternatives = Vec::new();
+        for alternative in array(&pattern["alternatives"])? {
+            alternatives.push(format!(
+                "nitride_core::PatternAlternative {{captures:{},pattern:{}}}",
+                emit_captures(&captures_of(&alternative["captures"])?),
+                quoted(text(&alternative["pattern"])?)
+            ));
+        }
+        pattern_tables.push(format!(
+            "nitride_core::NamedPattern {{name:{},category:{},alternatives:{}}}",
+            quoted(text(&pattern["name"])?),
+            syntax_category(text(&pattern["category"])?)?,
+            list(alternatives)
+        ));
+    }
     let mut helper_ids = HashMap::new();
     let mut helper_signatures = Vec::new();
     let mut helper_tables = Vec::new();
@@ -445,17 +501,14 @@ pub fn generate(input: &str) -> Result<String, String> {
                 .ok_or("match selector must be a parameter")?;
             let mut arms = Vec::new();
             for arm in array(&helper["match"]["arms"])? {
-                let captures = array(&arm["captures"])?
-                    .iter()
-                    .map(hole)
-                    .collect::<Result<Vec<_>, _>>()?;
+                let captures = captures_of(&arm["captures"])?;
                 let mut taken = names.clone();
-                if captures.iter().any(|(n, _)| !taken.insert(n.clone())) {
+                if captures.iter().any(|(n, ..)| !taken.insert(n.clone())) {
                     return Err("duplicate match capture".into());
                 }
                 arms.push(format!(
                     "nitride_core::Arm {{captures:{},pattern:{},result:{}}}",
-                    emit_holes(&captures),
+                    emit_captures(&captures),
                     quoted(text(&arm["pattern"])?),
                     quoted(text(&arm["result"])?)
                 ));
@@ -510,19 +563,37 @@ pub fn generate(input: &str) -> Result<String, String> {
                     check["equal"].as_bool().ok_or("compare requires equal")?
                 ),
                 "match" => {
-                    let captures = array(&check["captures"])?
-                        .iter()
-                        .map(hole)
-                        .collect::<Result<Vec<_>, _>>()?;
-                    for (name, _) in &captures {
+                    let mut captures = captures_of(&check["captures"])?;
+                    let context = match check.get("context").filter(|v| !v.is_null()) {
+                        Some(context) => {
+                            let parent_only = match text(&context["kind"])? {
+                                "inside" => false,
+                                "parent" => true,
+                                _ => return Err("unknown match context".into()),
+                            };
+                            let own = captures_of(&context["captures"])?;
+                            let table = format!(
+                                "Some(nitride_core::MatchContext {{parent_only:{parent_only},category:{},captures:{},pattern:{}}})",
+                                syntax_category(text(&context["category"])?)?,
+                                emit_captures(&own),
+                                quoted(text(&context["pattern"])?)
+                            );
+                            // Context captures join the message's names.
+                            captures.extend(own);
+                            table
+                        }
+                        None => "None".into(),
+                    };
+                    for (name, ..) in &captures {
                         if known.contains(name) {
                             return Err("duplicate match capture".into());
                         }
                         known.push(name.clone());
                     }
+                    let own = array(&check["captures"])?.len();
                     format!(
-                        "nitride_core::RuleTest::Match {{captures:{},pattern:{}}}",
-                        emit_holes(&captures),
+                        "nitride_core::RuleTest::Match {{captures:{},pattern:{},context:{context}}}",
+                        emit_captures(&captures[..own]),
                         quoted(text(&check["pattern"])?)
                     )
                 }
@@ -900,7 +971,7 @@ pub fn generate(input: &str) -> Result<String, String> {
     let lexers = lexical::generate(rules, &ids)?;
     let parser = syntax::generate(rules, &ids)?;
     Ok(format!(
-        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},helpers:{},rule_checks:{},source_hash:{},profile:Profile::{}}};\n{lexers}{parser}",
+        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},helpers:{},rule_checks:{},patterns:{},source_hash:{},profile:Profile::{}}};\n{lexers}{parser}",
         list(output_rules),
         list(types.into_iter().map(quoted)),
         list(signatures),
@@ -908,6 +979,7 @@ pub fn generate(input: &str) -> Result<String, String> {
         list(check_tables),
         list(helper_tables),
         list(rule_check_tables),
+        list(pattern_tables),
         quoted(text(&data["source_hash"])?),
         if syntax_only { "SyntaxOnly" } else { "Typed" }
     ))

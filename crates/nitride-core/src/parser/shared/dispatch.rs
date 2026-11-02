@@ -1327,6 +1327,7 @@ mod tests {
             checks: &[],
             helpers: &[],
             rule_checks: &[],
+            patterns: &[],
             source_hash: "choice",
         };
         let plan = Dispatch::new(&language);
@@ -1434,6 +1435,7 @@ mod tests {
             checks: &[],
             helpers: &[],
             rule_checks: &[],
+            patterns: &[],
             source_hash: "starts",
         };
         let plan = Dispatch::new(&language);
@@ -1482,6 +1484,7 @@ mod tests {
             checks: &[],
             helpers: &[],
             rule_checks: &[],
+            patterns: &[],
             source_hash: "leads",
         }));
         (Dispatch::new(language), language)

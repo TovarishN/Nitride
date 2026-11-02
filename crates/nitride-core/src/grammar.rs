@@ -128,6 +128,38 @@ pub struct Check<'g> {
 pub struct Hole<'g> {
     pub name: &'g str,
     pub category: u16,
+    /// The named pattern (an index into `Language::patterns`) the node must
+    /// match; `category` is then that pattern's category.
+    pub pattern: Option<u16>,
+    /// `..Pattern`: the pattern is searched at or below the hole's node, and
+    /// the capture binds the node found.
+    pub descendant: bool,
+}
+
+/// A named pattern: ordered alternatives over one syntax category, the first
+/// that matches committed. Each alternative's captures are its own.
+#[derive(Debug)]
+pub struct NamedPattern<'g> {
+    /// Qualified, as `Xml.Secret`.
+    pub name: &'g str,
+    pub category: u16,
+    pub alternatives: &'g [PatternAlternative<'g>],
+}
+
+#[derive(Debug)]
+pub struct PatternAlternative<'g> {
+    pub captures: &'g [Hole<'g>],
+    pub pattern: &'g str,
+}
+
+/// A match check's `inside` (any ancestor) or `parent` clause: the quote, in
+/// `category`, an ancestor of the matched node must match.
+#[derive(Debug)]
+pub struct MatchContext<'g> {
+    pub parent_only: bool,
+    pub category: u16,
+    pub captures: &'g [Hole<'g>],
+    pub pattern: &'g str,
 }
 
 /// An ordered match arm: captures, the pattern quote and the result quote.
@@ -171,6 +203,9 @@ pub enum RuleTest<'g> {
     Match {
         captures: &'g [Hole<'g>],
         pattern: &'g str,
+        /// An `inside`/`parent` clause: the match also needs an ancestor that
+        /// matches it, and its captures join the message's.
+        context: Option<MatchContext<'g>>,
     },
 }
 
@@ -229,5 +264,6 @@ pub struct Language<'g> {
     pub checks: &'g [Check<'g>],
     pub helpers: &'g [Helper<'g>],
     pub rule_checks: &'g [RuleCheck<'g>],
+    pub patterns: &'g [NamedPattern<'g>],
     pub source_hash: &'g str,
 }

@@ -328,6 +328,7 @@ mod tests {
             checks: &[],
             helpers: &[],
             rule_checks: &[],
+            patterns: &[],
             source_hash: "fixture",
             rules: Box::leak(
                 vec![Rule {

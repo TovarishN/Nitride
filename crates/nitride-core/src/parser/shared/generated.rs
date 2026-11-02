@@ -221,6 +221,7 @@ mod tests {
         checks: &[],
         helpers: &[],
         rule_checks: &[],
+        patterns: &[],
         source_hash: "syntax-context-test",
         rules: &[Rule {
             name: "Item",

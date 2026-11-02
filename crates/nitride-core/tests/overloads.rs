@@ -22,6 +22,7 @@ fn language(candidates: &'static [u16]) -> &'static Language<'static> {
         checks: &[],
         helpers: &[],
         rule_checks: &[],
+        patterns: &[],
         operations: &[
             Signature {
                 id: "A",

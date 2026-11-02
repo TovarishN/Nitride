@@ -90,7 +90,10 @@ pub fn rule_diagnostics(language: &Language<'_>, tree: &SyntaxTree<'_>) -> Vec<D
 /// Each rule check's pattern parses as its rule, or the first that does not.
 pub fn validate_rule_checks(language: &Language<'_>) -> Result<(), String> {
     for check in language.rule_checks {
-        if let RuleTest::Match { captures, pattern } = &check.test {
+        if let RuleTest::Match {
+            captures, pattern, ..
+        } = &check.test
+        {
             let (text, names) = spreads(pattern);
             let holes = spread_holes(language, &names);
             Pattern::parse(language, check.rule, captures, &text, &names, &holes).map_err(|e| {
@@ -144,6 +147,8 @@ fn spread_holes<'n>(language: &Language<'_>, names: &[&'n str]) -> Vec<Hole<'n>>
                 .map(move |(category, _)| Hole {
                     name,
                     category: category as u16,
+                    pattern: None,
+                    descendant: false,
                 })
         })
         .collect()

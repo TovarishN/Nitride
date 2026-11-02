@@ -251,6 +251,7 @@ fn native_depth_facts_do_not_reject_lower_budget_interpreted_edits() {
         checks: &[],
         helpers: &[],
         rule_checks: &[],
+        patterns: &[],
         source_hash: "native-depth-test",
         rules: Box::leak(
             vec![
