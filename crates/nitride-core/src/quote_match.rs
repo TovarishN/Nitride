@@ -184,7 +184,17 @@ impl<'a> Quote<'a> {
             }
         }
         for &name in &spreads {
-            holes.extend(every(name, None, false));
+            // A capture used as a spread: a pattern applies to each item taken;
+            // a descendant search finds one node, so it cannot be one.
+            let capture = captures.iter().find(|c| c.name == name);
+            if capture.is_some_and(|c| c.descendant) {
+                return Err(Diagnostic::new(
+                    "check",
+                    [0, 0],
+                    "NQP0009: A descendant search captures one node, not a list.",
+                ));
+            }
+            holes.extend(every(name, capture.and_then(|c| c.pattern), false));
         }
         let refs: Vec<&Hole<'_>> = holes.iter().collect();
         let (tree, found) = parse_quote(language, &text, category, &refs, Limits::default())?;
@@ -316,7 +326,13 @@ impl<'a> Quote<'a> {
                 }
                 return Ok(false);
             }
-            if !self.accepts(hole.category, target.rule) {
+            // A pattern capture takes the pattern's category, as in Nitrogen,
+            // whichever matcher's rules the quote keeps.
+            let accepted = match hole.pattern {
+                Some(_) => stands_for(self.language, hole.category, target.rule),
+                None => self.accepts(hole.category, target.rule),
+            };
+            if !accepted {
                 return Ok(false);
             }
             if let Some(pattern) = hole.pattern
@@ -380,11 +396,18 @@ impl<'a> Quote<'a> {
             return Ok(ts.is_empty());
         };
         let label = self.tree.label(first);
-        if self.hole(first.node).is_some_and(|h| h.spread) {
-            // A spread takes any run of siblings under its own field label.
+        if let Some(spread) = self.hole(first.node).filter(|h| h.spread) {
+            // A spread takes any run of siblings under its own field label; a
+            // pattern capture's spread takes only items the pattern matches.
             let run = ts.iter().take_while(|e| tree.label(e) == label).count();
             for taken in 0..=run {
                 budget.step()?;
+                if taken > 0
+                    && let Some(pattern) = spread.pattern
+                    && !patterns.matches_at(pattern, tree, ts[taken - 1].node, budget)?
+                {
+                    break;
+                }
                 let kept = bindings.len();
                 if self.list(patterns, tree, rest, &ts[taken..], budget, bindings)? {
                     return Ok(true);

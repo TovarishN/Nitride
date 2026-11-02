@@ -942,8 +942,22 @@ impl Decoder<'_> {
     fn pattern_captures(&self, captures: u32, quote: u32) -> Result<Vec<Parameter>, PrepareError> {
         let captures = self.parameters(self.fields(captures, "Items"))?;
         for capture in captures.iter().filter(|c| c.descendant) {
-            let uses = self
-                .holes(quote)
+            let holes = self.holes(quote);
+            // `..$s`: a run of nodes, while a descendant search finds one.
+            let spread = holes.iter().any(|(name, span)| {
+                *name == capture.name && self.source.text[..span[0]].ends_with("..$")
+            });
+            if spread {
+                return Err(self.source.coded(
+                    capture.span,
+                    "NGR0166",
+                    format!(
+                        "descendant capture '{}' finds one node; it cannot be a list",
+                        capture.name
+                    ),
+                ));
+            }
+            let uses = holes
                 .iter()
                 .filter(|(name, _)| *name == capture.name)
                 .count();

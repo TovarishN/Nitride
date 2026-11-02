@@ -740,8 +740,10 @@ fn named_patterns(
                 for item in &mut captures {
                     capture(item, module)?;
                     let whole = text.trim() == format!("${}", item["name"].as_str().unwrap());
+                    // Only a whole-alternative reference (plain or `..`) stays on its
+                    // node; anywhere else it sits inside structure, a level down.
                     if let Some(target) = item["pattern"].as_str()
-                        && (whole || item["descendant"] == true)
+                        && whole
                     {
                         targets.push(target.to_owned());
                     }

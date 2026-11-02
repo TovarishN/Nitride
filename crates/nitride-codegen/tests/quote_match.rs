@@ -393,27 +393,29 @@ fn nearest_ancestor_supplies_captures() {
 fn broken_ancestor_is_skipped() {
     let language = language(XML1003, "");
     let language = language.language();
-    // A missing attribute value is recovered syntax inside the service.
-    let source = r#"<application><service name="search"><api-key>k</api-key><x a=></x></service></application>"#;
-    let parsed = parse_recovering(
-        language,
-        source,
-        Limits::default(),
-        RecoveryOptions::default(),
-    );
-    assert!(
-        parsed
-            .tree
-            .recovery()
-            .is_some_and(|r| !r.damaged_nodes.is_empty())
-    );
-    let diagnostics = rule_diagnostics(language, &parsed.tree);
-    assert!(
-        diagnostics
-            .iter()
-            .all(|d| d.code.as_deref() != Some("XML1003") && d.code.as_deref() != Some("NS0002")),
-        "{diagnostics:?}"
-    );
+    for source in [
+        // A missing attribute value: a damaged node.
+        r#"<application><service name="search"><api-key>k</api-key><x a=></x></service></application>"#,
+        // An unquoted value: recovery inserts the missing `>`.
+        r#"<application><service name=search><api-key>k</api-key></service></application>"#,
+        // An unterminated quote: recovery skips text.
+        r#"<application><service name="s"><api-key>k</api-key><settings name="x></settings></service></application>"#,
+    ] {
+        let parsed = parse_recovering(
+            language,
+            source,
+            Limits::default(),
+            RecoveryOptions::default(),
+        );
+        assert!(parsed.tree.recovery().is_some(), "{source}");
+        let diagnostics = rule_diagnostics(language, &parsed.tree);
+        assert!(
+            diagnostics.iter().all(
+                |d| d.code.as_deref() != Some("XML1003") && d.code.as_deref() != Some("NS0002")
+            ),
+            "{source}: {diagnostics:?}"
+        );
+    }
 }
 
 #[test]
@@ -434,5 +436,58 @@ fn context_budget_exhaustion_reports_ns0002() {
     assert_eq!(
         failed[0].message,
         "check XML1003 failed: InvalidOperationException: NQP0006: The syntax-pattern match exceeded its work limit."
+    );
+}
+
+/// A pattern capture used as a spread takes only items the pattern matches.
+#[test]
+fn pattern_capture_spread_checks_each_item() {
+    let checks = r#"    match (s: Secret) <[ <vault>..$s</vault> ]> => warning X6 : "secrets";"#;
+    let language = language(checks, SECRET);
+    assert!(found_codes(&language, "<vault><other/></vault>").is_empty());
+    assert_eq!(
+        found_codes(
+            &language,
+            "<vault><password>p</password><api-key>k</api-key></vault>"
+        ),
+        ["X6"]
+    );
+    assert!(found_codes(&language, "<vault><password>p</password><other/></vault>").is_empty());
+}
+
+/// In an arm, a pattern capture is accepted by the pattern's category, as in
+/// a check, even when that category is an alias.
+#[test]
+fn arm_flavor_pattern_capture_over_alias() {
+    let language = language("", SECRET);
+    let language = language.language();
+    let rule = |name: &str| language.rules.iter().position(|r| r.name == name).unwrap() as u16;
+    let holes: &'static [Hole<'static>] = Box::leak(Box::new([Hole {
+        name: "t",
+        category: rule("Xml.Element"),
+        pattern: Some(0),
+        descendant: false,
+    }]));
+    let patterns = Patterns::compile(language).unwrap();
+    let quote = Quote::compile(
+        language,
+        rule("Xml.Paired"),
+        holes,
+        "<vault>$t</vault>",
+        Flavor::Arm,
+    )
+    .unwrap();
+    let tree = parse(
+        language,
+        "<vault><password>p</password></vault>",
+        Limits::default(),
+    )
+    .unwrap();
+    let mut budget = Budget::new(MAX_WORK_STEPS);
+    let vault = outer(language, &tree);
+    assert!(
+        quote
+            .matches(&patterns, &tree, vault, &mut budget, &mut Vec::new())
+            .unwrap()
     );
 }

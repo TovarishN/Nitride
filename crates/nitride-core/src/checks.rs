@@ -130,9 +130,20 @@ impl Ancestry {
             }
         }
         let mut broken = vec![false; tree.nodes.len()];
-        for &damaged in tree.recovery().map_or(&[][..], |r| &r.damaged_nodes) {
-            if let Some(flag) = broken.get_mut(damaged as usize) {
-                *flag = true;
+        if let Some(recovery) = tree.recovery() {
+            for &damaged in &recovery.damaged_nodes {
+                if let Some(flag) = broken.get_mut(damaged as usize) {
+                    *flag = true;
+                }
+            }
+            // Text recovery inserted or skipped inside a node also breaks it,
+            // as Nitrogen's invalid subtrees count missing and skipped syntax.
+            for (id, node) in tree.nodes.iter().enumerate() {
+                let [start, end] = node.span;
+                broken[id] |= recovery.repairs.iter().any(|repair| match repair {
+                    Repair::Missing { at, .. } => start <= *at && *at <= end,
+                    Repair::Skipped { span } => span[0] < end && start < span[1],
+                });
             }
         }
         // Postorder ids: every child comes before its parent.

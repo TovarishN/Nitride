@@ -240,3 +240,23 @@ fn existing_grammars_prepare_unchanged() {
         assert_eq!(prepared, fixture, "{profile}");
     }
 }
+
+/// A descendant search inside structure steps into a child first, so it is
+/// no cycle (Nitrogen counts only a reference that is a whole alternative).
+#[test]
+fn consuming_descendant_recursion_is_accepted() {
+    let members = "  pattern Deep : Element =
+    | (s: ..Deep) <[ <box>$s</box> ]>
+    | <[ <leaf/> ]>;";
+    prepare("", members).unwrap();
+}
+
+#[test]
+fn ngr0166_descendant_spread() {
+    let checks = r#"    match (s: ..Secret) <[ <vault>..$s</vault> ]> => warning X1 : "x";"#;
+    assert_code(
+        &error(checks, SECRET),
+        "NGR0166",
+        "descendant capture 's' finds one node; it cannot be a list",
+    );
+}
