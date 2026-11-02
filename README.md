@@ -166,6 +166,9 @@ Unsupported constructs and incompatible catalogs fail preparation.
 - Admitted typed profiles for separate symbol namespaces, inferred declarations,
   exact nominal overloads, built-in calls and values, template bodies, checked
   dates, and quote rewrites. See the examples under [languages](languages).
+- Rule checks and structural `match` diagnostics with Nitrogen's named patterns,
+  descendant search and `inside`/`parent` context; see
+  [structural checks and named patterns](docs/structural-patterns.md).
 - Immutable syntax snapshots with shared subtrees and bounded recovery. Older
   snapshots remain readable. Export and semantic recomputation have separate
   costs; incremental syntax does not imply incremental binding.

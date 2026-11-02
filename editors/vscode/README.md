@@ -41,8 +41,8 @@ languages are syntax-only.
 - Diagnostics, semantic coloring with the theme's TextMate palette (as the
   Nitrogen extension colours), outline, folding and expand-selection.
 - Hover with types (typed languages), go to definition, find references,
-  highlights and rename, for program names and grammar rules. Rule renames
-  update every grammar file of the language.
+  highlights and rename, for program names, grammar rules and named patterns.
+  Rule renames update every grammar file of the language.
 - Workspace symbol search over grammar rules and open documents.
 - Completion, signature help for built-in calls, and formatting (document,
   selection, and on typing `}`); formatting changes only whitespace.

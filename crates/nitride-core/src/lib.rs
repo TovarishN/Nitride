@@ -112,7 +112,8 @@ impl Default for Limits {
 }
 
 mod checks;
-pub use checks::{placeholders, rule_diagnostics, validate_rule_checks};
+pub use checks::{placeholders, rule_diagnostics, rule_diagnostics_with, validate_rule_checks};
+pub mod quote_match;
 mod templates;
 
 mod incremental;

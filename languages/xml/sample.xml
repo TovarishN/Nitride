@@ -1,9 +1,25 @@
-<?xml version="1.0"?>
-<configuration>
-  <service name="worker" enabled="true">
-    <endpoint url="https://example.invalid/api"/>
+<?xml version="1.0" encoding="utf-8"?>
+<application name="Inventory">
+  <!-- Arbitrary surrounding structure does not affect the match. -->
+  <service name="catalog" port="8080">
+    <endpoint path="/items" />
+    <credentials source="local">
+      <dsdfs />
+      <password encoding="plain">example-only-password</password>
+      <sdfdf />
+    </credentials>
   </service>
-  <credentials>
-  <password>sdfsfd</password>
-  </credentials>
-</configuration>
+  <service name="reports">
+    <credentials><secret-ref key="reports-password" /></credentials>
+  </service>
+  <service name="search">
+    <settings><api-key>nested-example-key</api-key></settings>
+    <api-key>direct-example-key</api-key>
+  </service>
+  <vault name="operations">
+    <folder><password>nested-example</password></folder>
+  </vault>
+  <documentation>
+    <password>This tag is outside credentials, so it does not match.</password>
+  </documentation>
+</application>

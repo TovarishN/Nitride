@@ -262,7 +262,7 @@ fn xml_password_inside_credentials() {
         found[0]["message"]
             .as_str()
             .unwrap()
-            .ends_with("secret-ref instead. sdfsfd"),
+            .ends_with("secret-ref instead. example-only-password"),
         "{diagnostics}"
     );
     assert!(coded(&diagnostics, "XML0001").is_empty(), "{diagnostics}");
@@ -311,4 +311,59 @@ fn unlisted_grammar_uses_the_language_beside_it() {
     let messages = Session::run(&dir, vec![open(&file, &text)]);
     let found = diagnostics(&messages, &file);
     assert!(found.to_string().contains("unknown module Nope"), "{found}");
+}
+
+/// Preparation problems keep Nitrogen's code (here a duplicate named pattern).
+#[test]
+fn grammar_problems_carry_nitrogen_codes() {
+    let dir = scratch("grammar-codes");
+    let file = dir.join("Dup.ngr");
+    let text = "syntax module Dup\n{\n  token N = ['0'..'9']+;\n  syntax Start = Items:Item*;\n  syntax Item = Value:N;\n  pattern P : Item = <[ 1 ]>;\n  pattern P : Item = <[ 2 ]>;\n}\n";
+    std::fs::write(&file, text).unwrap();
+    let messages = Session::run(&dir, vec![open(&file, text)]);
+    let found = diagnostics(&messages, &file);
+    assert_eq!(found[0]["code"], "NGR0164", "{found}");
+    assert_eq!(found[0]["message"], "duplicate rule/helper/pattern 'P'");
+}
+
+/// Nitrogen's named-pattern XML example reports in Nitride what Nitrogen's
+/// PR 92 reports. Reference, at TovarishN/Nitrogen f725bd3 (PR 92's merge):
+/// `dotnet run --project Nitrogen.Cli -c Release -- check examples/XmlPatterns/sample.xml`
+///   sample.xml(6,5): warning XML1001: A password is stored directly inside credentials; use a secret-ref instead. example-only-password
+///   sample.xml(16,15): warning XML1003: An API key is embedded in a service definition; reference it instead.
+///   sample.xml(17,5): warning XML1003: An API key is embedded in a service definition; reference it instead.
+///   sample.xml(19,3): warning XML1002: A vault stores a plaintext secret: <password>nested-example</password>
+#[test]
+fn xml_sample_matches_nitrogen() {
+    let dir = xml_workspace("xml-nitrogen-parity");
+    let document = dir.join("sample.xml");
+    let sample = std::fs::read_to_string(lang("xml/sample.xml")).unwrap();
+    let messages = Session::run(&dir, vec![open(&document, &sample)]);
+    let diagnostics = diagnostics(&messages, &document);
+    let mut found: Vec<(String, u64, u64, String, u64)> = diagnostics
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|d| d["code"].is_string())
+        .map(|d| {
+            let start = &d["range"]["start"];
+            (
+                d["code"].as_str().unwrap().to_owned(),
+                start["line"].as_u64().unwrap() + 1,
+                start["character"].as_u64().unwrap() + 1,
+                d["message"].as_str().unwrap().to_owned(),
+                d["severity"].as_u64().unwrap(),
+            )
+        })
+        .collect();
+    found.sort_by_key(|f| (f.1, f.2));
+    let key = "An API key is embedded in a service definition; reference it instead.";
+    let expected = [
+        ("XML1001", 6, 5, "A password is stored directly inside credentials; use a secret-ref instead. example-only-password"),
+        ("XML1003", 16, 15, key),
+        ("XML1003", 17, 5, key),
+        ("XML1002", 19, 3, "A vault stores a plaintext secret: <password>nested-example</password>"),
+    ]
+    .map(|(code, line, column, message)| (code.to_owned(), line, column, message.to_owned(), 2));
+    assert_eq!(found, expected, "{diagnostics}");
 }

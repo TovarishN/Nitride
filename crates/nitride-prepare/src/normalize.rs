@@ -95,6 +95,77 @@ pub fn prepare(
             Err(error())
         }
     };
+    // Named patterns (Nitrogen PR 92), by qualified name: (module, pattern).
+    let mut pattern_names: HashMap<String, (usize, usize)> = HashMap::new();
+    for (mi, module) in modules.iter().enumerate() {
+        let taken: HashSet<&str> = module
+            .rules
+            .iter()
+            .map(|r| r.name.as_str())
+            .chain(module.helpers.iter().map(|h| h.name.as_str()))
+            .collect();
+        for (pi, pattern) in module.patterns.iter().enumerate() {
+            let qualified = format!("{}.{}", module.name, pattern.name);
+            if taken.contains(pattern.name.as_str())
+                || pattern_names.insert(qualified, (mi, pi)).is_some()
+            {
+                return Err(sources[module.source].coded(
+                    pattern.name_span,
+                    "NGR0164",
+                    format!("duplicate rule/helper/pattern '{}'", pattern.name),
+                ));
+            }
+        }
+    }
+    // A pattern visible from `module`: qualified, its own, or one import's.
+    let find_pattern = |name: &str, module: &Module| -> Option<String> {
+        if name.contains('.') {
+            return pattern_names.contains_key(name).then(|| name.into());
+        }
+        let local = format!("{}.{name}", module.name);
+        if pattern_names.contains_key(&local) {
+            return Some(local);
+        }
+        let found: Vec<_> = module
+            .imports
+            .iter()
+            .map(|m| format!("{m}.{name}"))
+            .filter(|n| pattern_names.contains_key(n))
+            .collect();
+        (found.len() == 1).then(|| found[0].clone())
+    };
+    let syntax_category = |name: &str, module: &Module, at: [usize; 2], what: &str| {
+        let resolved = resolve(name, module, None, at)?;
+        let (mi, ri) = symbols[&resolved];
+        if modules[mi].rules[ri].lexical {
+            return Err(sources[module.source].error(at, format!("{what} must be syntax rules")));
+        }
+        Ok(resolved)
+    };
+    // A capture's category, resolved: a named pattern's category (and the
+    // pattern, qualified) when it names one, else a syntax rule.
+    let capture = |capture: &mut Value, module: &Module| -> Result<(), PrepareError> {
+        let at: [usize; 2] = serde_json::from_value(capture["span"].clone()).unwrap_or(module.span);
+        let written = capture["category"].as_str().unwrap().to_owned();
+        if let Some(pattern) = find_pattern(&written, module) {
+            let (mi, pi) = pattern_names[&pattern];
+            let (category, span) = &modules[mi].patterns[pi].category;
+            let category = syntax_category(category, &modules[mi], *span, "pattern categories")?;
+            capture["category"] = json!(category);
+            capture["pattern"] = json!(pattern);
+        } else if capture["descendant"] == true {
+            return Err(sources[module.source].coded(
+                at,
+                "NGR0163",
+                format!("'{written}' is not a named pattern; a descendant capture needs one"),
+            ));
+        } else {
+            capture["category"] =
+                json!(syntax_category(&written, module, at, "capture categories")?);
+        }
+        capture.as_object_mut().unwrap().remove("span");
+        Ok(())
+    };
     let mut points: HashMap<String, Vec<(usize, Rule, String)>> = HashMap::new();
     for (mi, module) in modules.iter().enumerate() {
         for rule in &module.rules {
@@ -185,7 +256,15 @@ pub fn prepare(
                 let mut arms = Vec::new();
                 for arm in &helper.arms {
                     let mut names = taken.clone();
-                    arms.push(json!({"captures":parameters(&arm.captures, &mut names)?,
+                    // Arm captures may name patterns, as check captures do.
+                    let mut captures = crate::parser::captures_json(&arm.captures);
+                    for (item, written) in captures.iter_mut().zip(&arm.captures) {
+                        if !names.insert(written.name.clone()) {
+                            return Err(source.error(written.span, "duplicate helper parameter"));
+                        }
+                        capture(item, module)?;
+                    }
+                    arms.push(json!({"captures":captures,
                         "pattern":arm.pattern,"result":arm.result}));
                 }
                 value["match"] = json!({"selector":selector,"arms":arms});
@@ -306,15 +385,35 @@ pub fn prepare(
             };
             let mut check = check.clone();
             let captures = check.get_mut("captures").and_then(Value::as_array_mut);
-            for capture in captures.into_iter().flatten() {
-                let at = span(capture);
-                let resolved = resolve(capture["category"].as_str().unwrap(), module, None, at)?;
-                let (mi, ri) = symbols[&resolved];
-                if modules[mi].rules[ri].lexical {
-                    return Err(source.error(at, "capture categories must be syntax rules"));
+            let mut names = Vec::new();
+            for item in captures.into_iter().flatten() {
+                names.push(item["name"].as_str().unwrap().to_owned());
+                capture(item, module)?;
+            }
+            if let Some(context) = check.get_mut("context") {
+                let category = match context["category"].as_str() {
+                    Some(written) => syntax_category(
+                        written,
+                        module,
+                        span(&json!({"span":context["category_span"]})),
+                        "context categories",
+                    )?,
+                    None => name.clone(),
+                };
+                context["category"] = json!(category);
+                context.as_object_mut().unwrap().remove("category_span");
+                for item in context["captures"].as_array_mut().into_iter().flatten() {
+                    let own = item["name"].as_str().unwrap().to_owned();
+                    if names.contains(&own) {
+                        return Err(source.coded(
+                            span(item),
+                            "NGR0165",
+                            format!("capture '{own}' is already a capture of the matched pattern; rename one"),
+                        ));
+                    }
+                    names.push(own);
+                    capture(item, module)?;
                 }
-                capture["category"] = json!(resolved);
-                capture.as_object_mut().unwrap().remove("span");
             }
             let mut labels = Vec::new();
             crate::expr_labels(&rule.body, &mut labels);
@@ -327,12 +426,7 @@ pub fn prepare(
                     );
                 }
             }
-            let captures: Vec<&str> = check["captures"]
-                .as_array()
-                .into_iter()
-                .flatten()
-                .filter_map(|c| c["name"].as_str())
-                .collect();
+            let captures: Vec<&str> = names.iter().map(String::as_str).collect();
             for placeholder in nitride_core::placeholders(check["message"].as_str().unwrap()) {
                 let known = match placeholder.strip_suffix(".Text") {
                     Some(field) => labels.contains(&field),
@@ -456,6 +550,10 @@ pub fn prepare(
     // Helpers are validated in both modes; syntax-only admission omits them.
     if !helpers.is_empty() && mode == "typed" {
         output["helpers"] = json!(helpers);
+    }
+    let patterns = named_patterns(&modules, sources, &capture, &syntax_category)?;
+    if !patterns.is_empty() {
+        output["patterns"] = json!(patterns);
     }
     check(&output)?;
     nitride_codegen::generate(&output.to_string())
@@ -605,4 +703,100 @@ fn validate_fields(rule: &Rule, source: &Source, plain: bool) -> Result<(), Prep
         }
     }
     Ok(())
+}
+
+/// Resolves a capture in place (category, pattern) against its module.
+type CaptureResolver<'a> = dyn Fn(&mut Value, &Module) -> Result<(), PrepareError> + 'a;
+/// Resolves a category that must be a syntax rule; the last argument names it for errors.
+type CategoryResolver<'a> =
+    dyn Fn(&str, &Module, [usize; 2], &str) -> Result<String, PrepareError> + 'a;
+/// A pattern's non-consuming references and where it is declared.
+type Edges = Vec<(String, Vec<String>, (usize, [usize; 2]))>;
+
+/// Every module's named patterns as prepared data, after rejecting reference
+/// cycles that never step into a child (NQP0008), as Nitrogen does.
+fn named_patterns(
+    modules: &[Module],
+    sources: &[Source],
+    capture: &CaptureResolver<'_>,
+    syntax_category: &CategoryResolver<'_>,
+) -> Result<Vec<Value>, PrepareError> {
+    let mut patterns = Vec::new();
+    // Non-consuming references: a whole alternative that is one capture, or a descendant search.
+    let mut edges: Edges = Vec::new();
+    for module in modules {
+        for pattern in &module.patterns {
+            let name = format!("{}.{}", module.name, pattern.name);
+            let category = syntax_category(
+                &pattern.category.0,
+                module,
+                pattern.category.1,
+                "pattern categories",
+            )?;
+            let mut targets = Vec::new();
+            let mut alternatives = Vec::new();
+            for (captures, text) in &pattern.alternatives {
+                let mut captures = crate::parser::captures_json(captures);
+                for item in &mut captures {
+                    capture(item, module)?;
+                    let whole = text.trim() == format!("${}", item["name"].as_str().unwrap());
+                    // Only a whole-alternative reference (plain or `..`) stays on its
+                    // node; anywhere else it sits inside structure, a level down.
+                    if let Some(target) = item["pattern"].as_str()
+                        && whole
+                    {
+                        targets.push(target.to_owned());
+                    }
+                }
+                alternatives.push(json!({"captures":captures,"pattern":text}));
+            }
+            edges.push((name.clone(), targets, (module.source, pattern.name_span)));
+            patterns.push(json!({"name":name,"category":category,"alternatives":alternatives}));
+        }
+    }
+    // Depth-first, in declaration order: 1 on the path, 2 done.
+    let mut state: HashMap<&str, u8> = HashMap::new();
+    let mut path: Vec<&str> = Vec::new();
+    fn visit<'a>(
+        name: &'a str,
+        edges: &'a Edges,
+        state: &mut HashMap<&'a str, u8>,
+        path: &mut Vec<&'a str>,
+    ) -> Option<(String, (usize, [usize; 2]))> {
+        state.insert(name, 1);
+        path.push(name);
+        let (_, targets, at) = edges.iter().find(|(n, ..)| n == name)?;
+        for target in targets {
+            match state.get(target.as_str()) {
+                Some(1) => {
+                    let start = path.iter().position(|p| p == target).unwrap();
+                    let mut cycle: Vec<&str> = path[start..].to_vec();
+                    cycle.push(target);
+                    return Some((cycle.join(" -> "), *at));
+                }
+                Some(_) => {}
+                None => {
+                    if let Some(found) = visit(target, edges, state, path) {
+                        return Some(found);
+                    }
+                }
+            }
+        }
+        path.pop();
+        state.insert(name, 2);
+        None
+    }
+    for (name, ..) in &edges {
+        if state.contains_key(name.as_str()) {
+            continue;
+        }
+        if let Some((cycle, (source, span))) = visit(name, &edges, &mut state, &mut path) {
+            return Err(sources[source].coded(
+                span,
+                "NQP0008",
+                format!("Named patterns refer to each other without consuming syntax: {cycle}."),
+            ));
+        }
+    }
+    Ok(patterns)
 }

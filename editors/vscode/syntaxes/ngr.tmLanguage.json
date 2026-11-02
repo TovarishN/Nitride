@@ -674,6 +674,9 @@
           "include": "#check"
         },
         {
+          "include": "#match-check"
+        },
+        {
           "include": "#property-decl"
         },
         {
@@ -881,7 +884,7 @@
           "include": "#comments"
         },
         {
-          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*(\\*)?",
+          "match": "\\b([A-Za-z_][A-Za-z0-9_]*)\\s*(:)\\s*(\\.\\.)?\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*(\\*)?",
           "captures": {
             "1": {
               "name": "variable.parameter.ngr"
@@ -890,9 +893,12 @@
               "name": "punctuation.separator.type.ngr"
             },
             "3": {
-              "name": "entity.name.type.ngr"
+              "name": "keyword.operator.descendant.ngr"
             },
             "4": {
+              "name": "entity.name.type.ngr"
+            },
+            "5": {
               "name": "keyword.operator.list.ngr"
             }
           }
@@ -1156,6 +1162,9 @@
           "include": "#comments"
         },
         {
+          "include": "#named-pattern"
+        },
+        {
           "include": "#using"
         },
         {
@@ -1277,6 +1286,116 @@
               "match": ";"
             }
           ]
+        }
+      ]
+    },
+    "match-check": {
+      "comment": "A rule's `match` diagnostic: captures, a quote, an optional `inside`/`parent` context, severity, code and message.",
+      "name": "meta.check.match.ngr",
+      "begin": "\\b(match)\\b(?=\\s*(?:[(<]|$))",
+      "end": ";",
+      "beginCaptures": {
+        "1": {
+          "name": "keyword.other.check.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.terminator.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#parameters"
+        },
+        {
+          "include": "#template"
+        },
+        {
+          "name": "keyword.other.context.ngr",
+          "match": "\\b(inside|parent)\\b"
+        },
+        {
+          "name": "keyword.operator.arrow.ngr",
+          "match": "=>"
+        },
+        {
+          "name": "keyword.other.severity.ngr",
+          "match": "\\b(warning|error)\\b"
+        },
+        {
+          "include": "#check-code"
+        },
+        {
+          "name": "punctuation.separator.message.ngr",
+          "match": ":(?!:)"
+        },
+        {
+          "name": "string.quoted.double.interpolated.ngr",
+          "begin": "\\$\"",
+          "end": "\"",
+          "patterns": [
+            {
+              "include": "#escape"
+            },
+            {
+              "name": "variable.other.placeholder.ngr",
+              "match": "\\{[A-Za-z_][A-Za-z0-9_.]*\\}"
+            }
+          ]
+        },
+        {
+          "include": "#string"
+        },
+        {
+          "name": "entity.name.type.ngr",
+          "match": "[A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*"
+        }
+      ]
+    },
+    "named-pattern": {
+      "comment": "`pattern Name : Category = | <[ ... ]> | ...;` (Nitrogen PR 92).",
+      "name": "meta.pattern.ngr",
+      "begin": "\\b(pattern)\\s+([A-Za-z_][A-Za-z0-9_]*)\\s*(:)\\s*([A-Za-z_][A-Za-z0-9_]*(?:\\.[A-Za-z_][A-Za-z0-9_]*)*)\\s*(=)",
+      "end": ";",
+      "beginCaptures": {
+        "1": {
+          "name": "storage.type.pattern.ngr"
+        },
+        "2": {
+          "name": "entity.name.type.pattern.ngr"
+        },
+        "3": {
+          "name": "punctuation.separator.type.ngr"
+        },
+        "4": {
+          "name": "entity.name.type.ngr"
+        },
+        "5": {
+          "name": "keyword.operator.assignment.ngr"
+        }
+      },
+      "endCaptures": {
+        "0": {
+          "name": "punctuation.terminator.ngr"
+        }
+      },
+      "patterns": [
+        {
+          "include": "#comments"
+        },
+        {
+          "include": "#parameters"
+        },
+        {
+          "include": "#template"
+        },
+        {
+          "name": "keyword.operator.alternative.ngr",
+          "match": "\\|"
         }
       ]
     }

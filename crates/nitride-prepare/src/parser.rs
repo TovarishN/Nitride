@@ -9,6 +9,7 @@ pub struct Module {
     pub builtins: Vec<(String, String)>,
     pub helpers: Vec<Helper>,
     pub functions: Vec<Function>,
+    pub patterns: Vec<NamedPatternDecl>,
     pub rules: Vec<Rule>,
     pub extensions: Vec<(String, Vec<Rule>)>,
     pub source: usize,
@@ -40,6 +41,16 @@ pub struct Parameter {
     pub name: String,
     pub category: String,
     pub span: [usize; 2],
+    /// `name: ..Pattern`: searched at or below the hole.
+    pub descendant: bool,
+}
+/// `pattern Name : Category = | (captures) <[ ... ]> | ...;` (Nitrogen PR 92).
+pub struct NamedPatternDecl {
+    pub name: String,
+    pub name_span: [usize; 2],
+    pub category: (String, [usize; 2]),
+    /// Each alternative's captures and quote text.
+    pub alternatives: Vec<(Vec<Parameter>, String)>,
 }
 pub struct Arm {
     pub captures: Vec<Parameter>,
@@ -160,6 +171,19 @@ pub(crate) fn tolerant_with(
     source: &Source,
     syntax: fn(&Source) -> Result<SyntaxTree<'static>, PrepareError>,
 ) -> Result<Source, PrepareError> {
+    // An unfinished member (`pattern Secr`, being typed) fails where the next
+    // line starts; when blanking error lines gives up, blank the line before.
+    blank_errors(source, syntax, false)
+        .or_else(|error| blank_errors(source, syntax, true).map_err(|_| error))
+}
+
+/// Blanks the line of each syntax error (or, with `previous`, the last
+/// nonblank line before an error that starts its line) until `syntax` parses.
+fn blank_errors(
+    source: &Source,
+    syntax: fn(&Source) -> Result<SyntaxTree<'static>, PrepareError>,
+    previous: bool,
+) -> Result<Source, PrepareError> {
     let mut text = source.text.clone();
     let mut first = None;
     for _ in 0..32 {
@@ -170,8 +194,15 @@ pub(crate) fn tolerant_with(
         match syntax(&attempt) {
             Ok(_) => return Ok(attempt),
             Err(error) => {
-                let at = error.span[0].min(text.len());
-                let start = text[..at].rfind('\n').map_or(0, |i| i + 1);
+                let mut at = error.span[0].min(text.len());
+                let mut start = text[..at].rfind('\n').map_or(0, |i| i + 1);
+                if previous && start > 0 && text[start..at].trim().is_empty() {
+                    let before = text[..start].trim_end();
+                    if !before.is_empty() {
+                        at = before.len();
+                        start = text[..at].rfind('\n').map_or(0, |i| i + 1);
+                    }
+                }
                 let end = text[at..].find('\n').map_or(text.len(), |i| at + i);
                 let blanked: String = text[start..end]
                     .chars()
@@ -410,6 +441,7 @@ pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError>
                                 "Extend" => "extend",
                                 "Function" => "function",
                                 "Helper" => "helper",
+                                "NamedPattern" => "pattern",
                                 _ => return None,
                             };
                             // Named alternatives are rules too.
@@ -701,6 +733,7 @@ impl Decoder<'_> {
                     builtins: vec![],
                     helpers: vec![],
                     functions: vec![],
+                    patterns: vec![],
                     rules: vec![],
                     extensions: vec![],
                     source: index,
@@ -725,6 +758,7 @@ impl Decoder<'_> {
                             );
                         }
                         "Helper" => module.helpers.push(self.helper(m)?),
+                        "NamedPattern" => module.patterns.push(self.named_pattern(m)?),
                         "Function" => module.functions.push(self.function(m)?),
                         "Extend" => {
                             let alternatives = self
@@ -881,16 +915,82 @@ impl Decoder<'_> {
     fn parameters(&self, ids: Vec<u32>) -> Result<Vec<Parameter>, PrepareError> {
         ids.into_iter()
             .map(|n| {
+                let name = self.named(n, "Name");
+                let descendant = self.tree.field(n, "Descendant").is_some();
                 if self.tree.field(n, "List").is_some() {
+                    if descendant {
+                        return Err(self.source.coded(
+                            self.span(n),
+                            "NGR0166",
+                            format!(
+                                "descendant capture '{name}' finds one node; it cannot be a list"
+                            ),
+                        ));
+                    }
                     return Err(self.error(n, "list helper parameters are not admitted"));
                 }
                 Ok(Parameter {
-                    name: self.named(n, "Name"),
+                    name,
                     category: self.named(n, "Category"),
                     span: self.span(n),
+                    descendant,
                 })
             })
             .collect()
+    }
+    /// Captures of a pattern quote: a descendant capture may occur only once in it.
+    fn pattern_captures(&self, captures: u32, quote: u32) -> Result<Vec<Parameter>, PrepareError> {
+        let captures = self.parameters(self.fields(captures, "Items"))?;
+        for capture in captures.iter().filter(|c| c.descendant) {
+            let holes = self.holes(quote);
+            // `..$s`: a run of nodes, while a descendant search finds one.
+            let spread = holes.iter().any(|(name, span)| {
+                *name == capture.name && self.source.text[..span[0]].ends_with("..$")
+            });
+            if spread {
+                return Err(self.source.coded(
+                    capture.span,
+                    "NGR0166",
+                    format!(
+                        "descendant capture '{}' finds one node; it cannot be a list",
+                        capture.name
+                    ),
+                ));
+            }
+            let uses = holes
+                .iter()
+                .filter(|(name, _)| *name == capture.name)
+                .count();
+            if uses > 1 {
+                return Err(self.source.coded(
+                    capture.span,
+                    "NGR0166",
+                    format!(
+                        "descendant capture '{}' may occur only once in a pattern",
+                        capture.name
+                    ),
+                ));
+            }
+        }
+        Ok(captures)
+    }
+    fn named_pattern(&self, id: u32) -> Result<NamedPatternDecl, PrepareError> {
+        let category = self.field(id, "Category");
+        let mut alternatives = Vec::new();
+        for alternative in self.fields(id, "Alternatives") {
+            let pattern = self.field(alternative, "Pattern");
+            let captures = match self.tree.field(alternative, "Captures") {
+                Some(c) => self.pattern_captures(c, pattern)?,
+                None => vec![],
+            };
+            alternatives.push((captures, self.quote(pattern)));
+        }
+        Ok(NamedPatternDecl {
+            name: self.named(id, "Name"),
+            name_span: self.span(self.field(id, "Name")),
+            category: (self.text(category).into(), self.span(category)),
+            alternatives,
+        })
     }
     fn helper(&self, id: u32) -> Result<Helper, PrepareError> {
         let result = self.field(id, "Result");
@@ -919,12 +1019,13 @@ impl Decoder<'_> {
                 helper.body = self.quote(self.field(form, "Result"));
                 return Ok(helper);
             }
+            let pattern = self.field(form, "Pattern");
             helper.arms.push(Arm {
                 captures: match self.tree.field(form, "Captures") {
-                    Some(c) => self.parameters(self.fields(c, "Items"))?,
+                    Some(c) => self.pattern_captures(c, pattern)?,
                     None => vec![],
                 },
-                pattern: self.quote(self.field(form, "Pattern")),
+                pattern: self.quote(pattern),
                 result: self.quote(self.field(form, "Result")),
             });
         }
@@ -1040,7 +1141,9 @@ impl Decoder<'_> {
     /// categories are resolved, and the span dropped, by normalization.
     fn rule_check(&self, id: u32) -> Result<Value, PrepareError> {
         let message = self.span(self.field(id, "Message"));
-        let message = crate::literal::decode(self.source, [message[0] + 1, message[1]], false)?;
+        // `$"..."` or, in a match, a plain `"..."`.
+        let start = message[0] + usize::from(self.source.text[message[0]..].starts_with('$'));
+        let message = crate::literal::decode(self.source, [start, message[1]], false)?;
         let code = self.named(id, "Code");
         if self.kind(id) == "CompareCheck" {
             let op = self.field(id, "Op");
@@ -1054,15 +1157,27 @@ impl Decoder<'_> {
                 "left":field("Left"),"right":field("Right"),"equal":equal,"message":message,
                 "at":self.tree.field(id, "Target").map(|t| self.named(t, "Field")),"span":self.span(id)}));
         }
+        let pattern = self.field(id, "Pattern");
         let captures = match self.tree.field(id, "Captures") {
-            Some(c) => self.parameters(self.fields(c, "Items"))?,
+            Some(c) => self.pattern_captures(c, pattern)?,
             None => vec![],
         };
-        Ok(
-            json!({"kind":"match","code":code,"severity":self.named(id, "Severity"),
-            "captures":captures.iter().map(|p| json!({"name":p.name,"category":p.category,"span":p.span})).collect::<Vec<_>>(),
-            "pattern":self.quote(self.field(id, "Pattern")),"message":message,"at":null,"span":self.span(id)}),
-        )
+        let mut check = json!({"kind":"match","code":code,"severity":self.named(id, "Severity"),
+            "captures":captures_json(&captures),
+            "pattern":self.quote(pattern),"message":message,"at":null,"span":self.span(id)});
+        if let Some(context) = self.tree.field(id, "Context") {
+            let pattern = self.field(context, "Pattern");
+            let captures = match self.tree.field(context, "Captures") {
+                Some(c) => self.pattern_captures(c, pattern)?,
+                None => vec![],
+            };
+            let category = self.tree.field(context, "Category");
+            check["context"] = json!({"kind":self.named(context, "Kind"),
+                "category":category.map(|c| self.text(c)),
+                "category_span":category.map(|c| self.span(c)),
+                "captures":captures_json(&captures),"pattern":self.quote(pattern)});
+        }
+        Ok(check)
     }
     fn expr(&self, id: u32) -> Result<Value, PrepareError> {
         let mut value = match self.kind(id) {
@@ -1275,4 +1390,18 @@ impl Decoder<'_> {
         }
         value
     }
+}
+
+/// Captures as prepared data, with spans for normalization to report at.
+pub(crate) fn captures_json(captures: &[Parameter]) -> Vec<Value> {
+    captures
+        .iter()
+        .map(|p| {
+            let mut capture = json!({"name":p.name,"category":p.category,"span":p.span});
+            if p.descendant {
+                capture["descendant"] = json!(true);
+            }
+            capture
+        })
+        .collect()
 }

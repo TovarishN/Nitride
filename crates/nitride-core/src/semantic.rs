@@ -1,3 +1,4 @@
+use crate::quote_match::{Budget, Flavor, MAX_WORK_STEPS, Patterns, Quote};
 use crate::syntax::access::SyntaxAccess;
 use crate::*;
 use std::collections::HashMap;
@@ -97,7 +98,14 @@ struct Template<'g> {
 
 struct HelperTemplates<'g> {
     body: Template<'g>,
-    arms: Vec<(Template<'g>, Template<'g>)>,
+    /// Each arm's pattern (matched with the arm flavor) and result.
+    arms: Vec<(Quote<'g>, Template<'g>)>,
+}
+
+/// Every helper's templates and the named patterns their arms may use.
+struct Templates<'g> {
+    helpers: Vec<HelperTemplates<'g>>,
+    patterns: Patterns<'g>,
 }
 
 /// The rewrite use a template tree is lowered for.
@@ -222,7 +230,7 @@ pub(crate) fn compile_mode<'g>(
         program: &mut program,
         type_errors,
         depths: Vec::new(),
-        templates: templates.as_deref(),
+        templates: templates.as_ref(),
         origins: templates.as_ref().map(|_| Vec::new()),
         active: Vec::new(),
         work: tree.nodes().len() as u64,
@@ -417,7 +425,7 @@ fn bind<'g>(
 fn parse_templates<'g>(
     language: &'g Language<'g>,
     limits: Limits,
-) -> Result<Vec<HelperTemplates<'g>>, Diagnostic> {
+) -> Result<Templates<'g>, Diagnostic> {
     let template = |helper: &'g Helper<'g>,
                     text: &str,
                     category: u16,
@@ -460,12 +468,22 @@ fn parse_templates<'g>(
                 .and_then(|s| helper.parameters.get(s as usize))
                 .ok_or_else(|| Diagnostic::new("grammar", [0, 0], "invalid match selector"))?;
             let captures: Vec<_> = arm.captures.iter().collect();
-            let pattern = template(helper, arm.pattern, selector.category, &captures, false)?;
+            let pattern = Quote::compile(
+                language,
+                selector.category,
+                arm.captures,
+                arm.pattern,
+                Flavor::Arm,
+            )
+            .map_err(|e| {
+                Diagnostic::new(
+                    "grammar",
+                    [0, 0],
+                    format!("invalid template in {}: {}", helper.name, e.message),
+                )
+            })?;
             // Every declared capture must occur as a parsed hole.
-            if captures
-                .iter()
-                .any(|c| !pattern.holes.iter().any(|(_, h)| std::ptr::eq(*h, *c)))
-            {
+            if captures.iter().any(|c| !pattern.binds(c.name)) {
                 return Err(Diagnostic::new(
                     "grammar",
                     [0, 0],
@@ -478,71 +496,11 @@ fn parse_templates<'g>(
         }
         result.push(HelperTemplates { body, arms });
     }
-    Ok(result)
-}
-
-/// Structural syntax equality: rules, labels and children; token text for lexical nodes.
-fn same_syntax(
-    language: &Language,
-    a: &dyn SyntaxAccess<'_>,
-    x: u32,
-    b: &dyn SyntaxAccess<'_>,
-    y: u32,
-) -> bool {
-    let (p, q) = (a.nodes()[x as usize], b.nodes()[y as usize]);
-    if p.rule != q.rule {
-        return false;
-    }
-    if language.rules[p.rule as usize].lexical {
-        return a.text(x) == b.text(y);
-    }
-    let (left, right) = (a.children(x), b.children(y));
-    left.len() == right.len()
-        && left
-            .iter()
-            .zip(right)
-            .all(|(l, r)| a.label(l) == b.label(r) && same_syntax(language, a, l.node, b, r.node))
-}
-
-/// Matches original caller syntax against a pattern, binding captures.
-fn match_pattern<'g>(
-    language: &Language,
-    pattern: &Template<'g>,
-    node: u32,
-    tree: &dyn SyntaxAccess<'g>,
-    target: u32,
-    captures: &mut HashMap<&'g str, u32>,
-) -> bool {
-    if let Some((_, hole)) = pattern.holes.iter().find(|(n, _)| *n == node) {
-        let rule = &language.rules[tree.nodes()[target as usize].rule as usize];
-        if tree.nodes()[target as usize].rule != hole.category && rule.owner != Some(hole.category)
-        {
-            return false;
-        }
-        return match captures.get(hole.name) {
-            Some(previous) => same_syntax(language, tree, *previous, tree, target),
-            None => {
-                captures.insert(hole.name, target);
-                true
-            }
-        };
-    }
-    let (p, q) = (
-        pattern.tree.nodes()[node as usize],
-        tree.nodes()[target as usize],
-    );
-    if p.rule != q.rule {
-        return false;
-    }
-    if language.rules[p.rule as usize].lexical {
-        return pattern.tree.text(node) == tree.text(target);
-    }
-    let (left, right) = (pattern.tree.children(node), tree.children(target));
-    left.len() == right.len()
-        && left.iter().zip(right).all(|(l, r)| {
-            pattern.tree.label(l) == tree.label(r)
-                && match_pattern(language, pattern, l.node, tree, r.node, captures)
-        })
+    let patterns = Patterns::compile(language)?;
+    Ok(Templates {
+        helpers: result,
+        patterns,
+    })
 }
 
 struct Lowerer<'g, 'p> {
@@ -552,7 +510,7 @@ struct Lowerer<'g, 'p> {
     program: &'p mut Program<'g>,
     type_errors: Vec<Diagnostic>,
     depths: Vec<u32>,
-    templates: Option<&'p [HelperTemplates<'g>]>,
+    templates: Option<&'p Templates<'g>>,
     // Provisional origins per HIR node, rewrite profiles only.
     origins: Option<Vec<Vec<Origin>>>,
     active: Vec<u16>,
@@ -1015,9 +973,10 @@ impl<'g> Lowerer<'g, '_> {
             .helpers
             .get(helper_index as usize)
             .ok_or_else(|| Diagnostic::new("grammar", node.span, "unknown rewrite helper"))?;
-        let templates = &self.templates.ok_or_else(|| {
+        let all = self.templates.ok_or_else(|| {
             Diagnostic::new("grammar", node.span, "rewrite outside a helper profile")
-        })?[helper_index as usize];
+        })?;
+        let templates = &all.helpers[helper_index as usize];
         let args = fields
             .iter()
             .map(|label| {
@@ -1063,15 +1022,20 @@ impl<'g> Lowerer<'g, '_> {
             // Ordered arms; the fallback (the helper body) binds no captures.
             let mut matched = false;
             for (pattern, result) in &templates.arms {
-                captures.clear();
-                if match_pattern(
-                    language,
-                    pattern,
-                    pattern.tree.root(),
-                    tree,
-                    subject,
-                    &mut captures,
-                ) {
+                let mut bindings = Vec::new();
+                let mut budget = Budget::new(MAX_WORK_STEPS);
+                // Running out fails the rewrite at its use, as in Nitrogen.
+                let found = pattern
+                    .matches_in(&all.patterns, tree, subject, &mut budget, &mut bindings)
+                    .map_err(|_| {
+                        Diagnostic::new(
+                            "limit",
+                            use_span,
+                            "NQP0006: The syntax-pattern match exceeded its work limit.",
+                        )
+                    })?;
+                if found {
+                    captures = bindings.into_iter().collect();
                     selected = result;
                     matched = true;
                     break;

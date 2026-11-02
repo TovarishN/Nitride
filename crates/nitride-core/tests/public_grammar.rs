@@ -38,6 +38,7 @@ fn invalid_pratt_rule_ids_return_diagnostics() {
             checks: &[],
             helpers: &[],
             rule_checks: &[],
+            patterns: &[],
             source_hash: "test",
         }));
         assert_eq!(

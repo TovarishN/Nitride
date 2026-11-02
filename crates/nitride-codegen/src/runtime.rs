@@ -345,6 +345,7 @@ impl Builder {
             checks: self.slice(f.get("checks")?, Self::check)?,
             helpers: self.slice(f.get("helpers")?, Self::helper)?,
             rule_checks: self.slice(f.get("rule_checks")?, Self::rule_check)?,
+            patterns: self.slice(f.get("patterns")?, Self::named_pattern)?,
             source_hash: self.str(f.get("source_hash")?)?,
         })
     }
@@ -374,6 +375,42 @@ impl Builder {
         Ok(Hole {
             name: self.str(f.get("name")?)?,
             category: int(f.get("category")?)?,
+            pattern: match f.get("pattern")? {
+                Node::Path(p) if p == "None" => None,
+                Node::Call(p, args) if p == "Some" && args.len() == 1 => Some(int(&args[0])?),
+                other => return Err(format!("generated table: bad hole pattern {other:?}")),
+            },
+            descendant: match f.get("descendant")? {
+                Node::Bool(b) => *b,
+                other => return Err(format!("generated table: bad descendant {other:?}")),
+            },
+        })
+    }
+    fn named_pattern(&mut self, node: &Node) -> Result<NamedPattern<'static>, String> {
+        let f = fields(node)?;
+        Ok(NamedPattern {
+            name: self.str(f.get("name")?)?,
+            category: int(f.get("category")?)?,
+            alternatives: self.slice(f.get("alternatives")?, Self::alternative)?,
+        })
+    }
+    fn alternative(&mut self, node: &Node) -> Result<PatternAlternative<'static>, String> {
+        let f = fields(node)?;
+        Ok(PatternAlternative {
+            captures: self.slice(f.get("captures")?, Self::hole)?,
+            pattern: self.str(f.get("pattern")?)?,
+        })
+    }
+    fn context(&mut self, node: &Node) -> Result<MatchContext<'static>, String> {
+        let f = fields(node)?;
+        Ok(MatchContext {
+            parent_only: match f.get("parent_only")? {
+                Node::Bool(b) => *b,
+                other => return Err(format!("generated table: bad context kind {other:?}")),
+            },
+            category: int(f.get("category")?)?,
+            captures: self.slice(f.get("captures")?, Self::hole)?,
+            pattern: self.str(f.get("pattern")?)?,
         })
     }
     fn arm(&mut self, node: &Node) -> Result<Arm<'static>, String> {
@@ -418,6 +455,15 @@ impl Builder {
                 RuleTest::Match {
                     captures: self.slice(t.get("captures")?, Self::hole)?,
                     pattern: self.str(t.get("pattern")?)?,
+                    context: match t.get("context")? {
+                        Node::Path(p) if p == "None" => None,
+                        Node::Call(p, args) if p == "Some" && args.len() == 1 => {
+                            Some(self.context(&args[0])?)
+                        }
+                        other => {
+                            return Err(format!("generated table: bad match context {other:?}"));
+                        }
+                    },
                 }
             }
             other => return Err(format!("generated table: bad rule test {other:?}")),

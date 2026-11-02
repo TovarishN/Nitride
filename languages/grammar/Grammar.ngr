@@ -37,7 +37,7 @@ syntax module NitrideGrammar
   syntax LanguagePresentationSetting = Kind:LanguagePresentationKind Name:QualifiedName Value:String ";";
   token LanguagePresentationKind = ("tokens" / "types") !NameTail;
   syntax Module = "syntax" "module" Name:QualifiedName "{" Members:Member* "}";
-  syntax Member = Using / Symbols / SymbolProperty / Builtin / Helper / Function / TokenRule / SyntaxRule / ExtensibleRule / Extend;
+  syntax Member = NamedPattern / Using / Symbols / SymbolProperty / Builtin / Helper / Function / TokenRule / SyntaxRule / ExtensibleRule / Extend;
   syntax Using = "using" Name:QualifiedName ";";
   syntax Symbols = "symbols" "{" Names:Identifier+ "}";
   // Nitrogen's C# semantic members. They are recognised so that tolerant
@@ -56,8 +56,13 @@ syntax module NitrideGrammar
   token CsType = (CsString / CsChar / CsComment / CsNested / [^ '(' ')' '[' ']' '{' '}' '"' '\'' ';' '='])+;
   syntax Builtin = "builtin" Kind:Identifier "{" Names:QualifiedName+ "}";
   syntax Helper = "syntax"? "function" Name:Identifier "(" Parameters:(Parameter; ",")* ")" ":" Result:QualifiedName "=" Body:HelperBody ";";
-  syntax Parameter = Name:Identifier ":" Category:QualifiedName List:ListMarker?;
+  syntax Parameter = Name:Identifier ":" Descendant:DescendantMarker? Category:QualifiedName List:ListMarker?;
   syntax ListMarker = "*";
+  // `..Pattern` in a capture searches at or below the hole (Nitrogen PR 92).
+  syntax DescendantMarker = "..";
+  // A named pattern: ordered alternatives over one category, the first that matches committed.
+  syntax NamedPattern = "pattern" Name:Identifier ":" Category:QualifiedName "=" "|"? Alternatives:(NamedPatternAlternative; "|")+ ";";
+  syntax NamedPatternAlternative = Captures:Captures? Pattern:QuoteText;
   syntax HelperBody = MatchBody / QuoteBody;
   syntax QuoteBody = Text:QuoteText;
   syntax MatchBody = "match" Selector:Identifier "{" Arms:Arm* "}";
@@ -78,7 +83,10 @@ syntax module NitrideGrammar
   syntax CompareCheck = "check" Code:Identifier Left:FieldText Op:CompareOp Right:FieldText ":" Message:Interpolated Target:CheckTarget? ";";
   syntax FieldText = Field:Identifier "." "Text";
   syntax CheckTarget = "at" Field:Identifier;
-  syntax MatchCheck = "match" Captures:Captures? Pattern:QuoteText "=>" Severity:CheckSeverity Code:Identifier ":" Message:Interpolated ";";
+  syntax MatchCheck = "match" Captures:Captures? Pattern:QuoteText Context:MatchContext? "=>" Severity:CheckSeverity Code:Identifier ":" Message:(Interpolated / String) ";";
+  // `inside` (any ancestor) or `parent`: the context the matched node must sit in.
+  syntax MatchContext = Kind:ContextKind Category:QualifiedName? Captures:Captures? Pattern:QuoteText;
+  token ContextKind = ("inside" / "parent") !NameTail;
   token CheckSeverity = ("error" / "warning") !NameTail;
   token Interpolated = "$" String;
   syntax Terminator = ";";

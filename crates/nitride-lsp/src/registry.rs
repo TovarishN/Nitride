@@ -347,6 +347,7 @@ fn located(path: &Path, text: &str, span: [usize; 2], message: String) -> Prepar
         column: prefix.rsplit('\n').next().unwrap_or("").chars().count() + 1,
         message,
         project: false,
+        code: None,
     }
 }
 
@@ -497,6 +498,7 @@ pub(crate) fn prepare(
         column: 1,
         message,
         project: true,
+        code: None,
     };
     let mut sources = Vec::new();
     for grammar in &state.entry.grammars {

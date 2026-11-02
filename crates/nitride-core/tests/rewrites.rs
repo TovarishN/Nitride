@@ -3,6 +3,8 @@ use nitride_core::*;
 static INNER: Hole = Hole {
     name: "Inner",
     category: 1,
+    pattern: None,
+    descendant: false,
 };
 
 fn language(extra: &'static [Helper<'static>]) -> &'static Language<'static> {
@@ -46,6 +48,7 @@ fn language(extra: &'static [Helper<'static>]) -> &'static Language<'static> {
         checks: &[],
         helpers: Box::leak(helpers.into_boxed_slice()),
         rule_checks: &[],
+        patterns: &[],
         operations: &[Signature {
             id: "Add",
             inputs: &["Core.Scalar", "Core.Scalar"],

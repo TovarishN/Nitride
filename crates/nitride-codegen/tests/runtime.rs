@@ -186,3 +186,70 @@ fn unparseable_rule_check_patterns_fail_to_load() {
     let error = load_grammar(grammar).err().unwrap();
     assert!(error.contains("pattern of check T1"), "{error}");
 }
+
+/// Named patterns, pattern-referencing captures and match contexts survive
+/// prepared JSON → generated table → loaded language.
+#[test]
+fn named_patterns_round_trip() {
+    let manifest = root().join("languages/xml/project.json");
+    let mut data = nitride_prepare::prepare_project(&manifest).unwrap().data;
+    data["patterns"] = serde_json::json!([{
+        "name": "Xml.Secret",
+        "category": "Xml.Element",
+        "alternatives": [
+            {"captures": [], "pattern": " <password ..$_>..$_</password> "},
+            {"captures": [], "pattern": " <api-key ..$_>..$_</api-key> "}
+        ]
+    }]);
+    let paired = data["rules"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|r| r["name"] == "Xml.Paired")
+        .unwrap();
+    let check = paired["checks"]
+        .as_array_mut()
+        .unwrap()
+        .iter_mut()
+        .find(|c| c["code"] == "XML1001")
+        .unwrap();
+    check["captures"][0] = serde_json::json!(
+        {"name": "pass", "category": "Xml.Element", "pattern": "Xml.Secret", "descendant": true}
+    );
+    check["context"] = serde_json::json!({
+        "kind": "inside",
+        "category": "Xml.Paired",
+        "captures": [],
+        "pattern": " <service ..$_>..$_</service> "
+    });
+    let loaded = LoadedLanguage::load(&data.to_string()).unwrap();
+    let language = loaded.language();
+    assert_eq!(language.patterns.len(), 1);
+    let secret = &language.patterns[0];
+    assert_eq!(secret.name, "Xml.Secret");
+    let patterns: Vec<_> = secret.alternatives.iter().map(|a| a.pattern).collect();
+    assert_eq!(
+        patterns,
+        [
+            " <password ..$_>..$_</password> ",
+            " <api-key ..$_>..$_</api-key> "
+        ]
+    );
+    let check = language
+        .rule_checks
+        .iter()
+        .find(|c| c.code == "XML1001")
+        .unwrap();
+    let RuleTest::Match {
+        captures, context, ..
+    } = &check.test
+    else {
+        panic!("XML1001 is a match check");
+    };
+    assert_eq!(captures[0].pattern, Some(0));
+    assert!(captures[0].descendant);
+    assert_eq!(captures[0].category, secret.category);
+    let context = context.as_ref().expect("an inside context");
+    assert!(!context.parent_only);
+    assert_eq!(context.pattern, " <service ..$_>..$_</service> ");
+}

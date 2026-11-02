@@ -71,6 +71,41 @@ pub fn parse_template<'g>(
     Ok((tree, found))
 }
 
+/// A quote parsed as `category`, with each hole node and the index in
+/// `holes` of the hole it stands for. Unlike [`parse_template`], the holes
+/// need only outlive the call.
+pub(crate) fn parse_quote<'g>(
+    language: &'g Language<'g>,
+    text: &str,
+    category: u16,
+    holes: &[&Hole<'_>],
+    limits: Limits,
+) -> Result<(SyntaxTree<'g>, Vec<(u32, usize)>), Diagnostic> {
+    let tree = parse_from(
+        language,
+        text.trim(),
+        limits,
+        ParseOptions::default(),
+        category,
+        holes,
+    )?;
+    let found = (0..tree.nodes.len() as u32)
+        .filter_map(|id| {
+            let node = tree.nodes[id as usize];
+            let name = tree.text(id)?.strip_prefix('$')?;
+            (node.child_count == 0 && !language.rules[node.rule as usize].lexical)
+                .then(|| {
+                    holes
+                        .iter()
+                        .position(|h| h.name == name && h.category == node.rule)
+                })
+                .flatten()
+                .map(|index| (id, index))
+        })
+        .collect();
+    Ok((tree, found))
+}
+
 const STACK_EXHAUSTED: &str = "parser stack limit exceeded";
 
 /// The address of a local: the current stack position.
@@ -96,7 +131,7 @@ fn parse_from<'g>(
     limits: Limits,
     options: ParseOptions,
     start: u16,
-    holes: &[&'g Hole<'g>],
+    holes: &[&Hole<'_>],
 ) -> Result<SyntaxTree<'g>, Diagnostic> {
     match parse_on_stack(
         language,
@@ -137,7 +172,7 @@ fn parse_on_stack<'g>(
     limits: Limits,
     options: ParseOptions,
     start: u16,
-    holes: &[&'g Hole<'g>],
+    holes: &[&Hole<'_>],
     stack_budget: usize,
 ) -> Result<SyntaxTree<'g>, Diagnostic> {
     if source.len() > u32::MAX as usize {
@@ -203,7 +238,7 @@ struct Parser<'g, 'a> {
     edge_buffers: Vec<Vec<Edge>>,
     node_buffers: Vec<Vec<Node>>,
     // Template mode only: `$Name` stands for one node of the hole's category.
-    holes: &'a [&'g Hole<'g>],
+    holes: &'a [&'a Hole<'a>],
     in_token: u32,
     work_budget: u64,
     // Extension-point results by (point, position, minimum precedence).
@@ -249,7 +284,7 @@ impl<'g, 'a> Parser<'g, 'a> {
         source: &'a str,
         limits: Limits,
         options: ParseOptions,
-        holes: &'a [&'g Hole<'g>],
+        holes: &'a [&'a Hole<'a>],
         stack_budget: usize,
     ) -> Self {
         Self {

@@ -41,6 +41,8 @@ pub struct PrepareError {
     /// profile) rather than a place in a grammar; `path` is then only the
     /// first grammar, or the manifest that failed to read.
     pub project: bool,
+    /// Nitrogen's diagnostic code, where this problem has one (`NGR0163`).
+    pub code: Option<String>,
 }
 
 impl Source {
@@ -53,6 +55,19 @@ impl Source {
             column: prefix.rsplit('\n').next().unwrap_or("").chars().count() + 1,
             message: message.into(),
             project: false,
+            code: None,
+        }
+    }
+    /// An error with Nitrogen's diagnostic `code`.
+    pub(crate) fn coded(
+        &self,
+        span: [usize; 2],
+        code: &str,
+        message: impl Into<String>,
+    ) -> PrepareError {
+        PrepareError {
+            code: Some(code.into()),
+            ..self.error(span, message)
         }
     }
     /// An error about the project inputs, reported against this source.

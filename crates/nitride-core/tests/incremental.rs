@@ -54,6 +54,7 @@ fn language(lookahead: bool) -> &'static Language<'static> {
         checks: &[],
         helpers: &[],
         rule_checks: &[],
+        patterns: &[],
         source_hash: "dependency-test",
     }))
 }
@@ -128,6 +129,7 @@ fn append_at_eof_invalidates_negative_predicate() {
         checks: &[],
         helpers: &[],
         rule_checks: &[],
+        patterns: &[],
         source_hash: "eof-test",
     }));
     let old = parse_snapshot(
@@ -190,6 +192,7 @@ fn nested_token_visibility_is_part_of_memo_context() {
         checks: &[],
         helpers: &[],
         rule_checks: &[],
+        patterns: &[],
         source_hash: "token-context",
     }));
     let old = parse(language, "x", Limits::default()).unwrap();
