@@ -472,7 +472,7 @@ fn read(path: &Path, open: &dyn Fn(&Path) -> Option<String>) -> Result<String, S
         .map_err(|e| format!("cannot read {}: {e}", path.display()))
 }
 
-fn prepare(
+pub(crate) fn prepare(
     entry: Entry,
     manifest: &Path,
     old: Option<LanguageState>,

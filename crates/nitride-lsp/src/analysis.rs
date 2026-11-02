@@ -398,14 +398,15 @@ fn declared_names(loaded: &Loaded, tree: &SyntaxTree<'_>) -> Vec<DeclaredName> {
     names
 }
 
-/// A grammar file: preparation problems of every language built from it (or
-/// of the file alone), and the frontend's tree for structure and colour.
+/// A grammar file: preparation problems of every language built from it (else
+/// of the language file beside it, else of the file alone), and the frontend's
+/// tree for structure and colour.
 fn grammar(
     registry: &Registry,
     path: &Path,
     text: &str,
     source: &str,
-    _open: &dyn Fn(&Path) -> Option<String>,
+    open: &dyn Fn(&Path) -> Option<String>,
 ) -> Analysis {
     let lines = LineIndex::new(text);
     let parsed = parse_recovering(
@@ -425,6 +426,11 @@ fn grammar(
                 reported.push((warning.clone(), 2));
             }
         }
+    } else if let Some((manifest, entry)) = crate::manifest::language_beside(path, open) {
+        // Prepared with its own modules, as the workspace would if it listed it.
+        let state = crate::registry::prepare(entry, &manifest, None, open);
+        reported.extend(state.errors.into_iter().map(|e| (e, 1)));
+        reported.extend(state.warnings.into_iter().map(|w| (w, 2)));
     } else {
         let source = Source {
             path: path.to_string_lossy().into_owned(),

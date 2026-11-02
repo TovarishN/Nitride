@@ -144,7 +144,13 @@ fn nproj_path_segments_are_not_keywords() {
     let file = dir.join("nitride.nproj");
     let text = "workspace\n{\n  include languages/grammar;\n}\n";
     std::fs::write(&file, text).unwrap();
-    let tokens = ask(&dir, &file, text, "textDocument/semanticTokens/full", json!({}));
+    let tokens = ask(
+        &dir,
+        &file,
+        text,
+        "textDocument/semanticTokens/full",
+        json!({}),
+    );
     let data: Vec<u64> = tokens["data"]
         .as_array()
         .unwrap()
@@ -166,7 +172,9 @@ fn nproj_path_segments_are_not_keywords() {
         .collect();
     let (_, keyword) = find(text, "grammar");
     assert!(
-        !spans.iter().any(|&(l, s, _, _)| l == 2 && s == keyword as u64),
+        !spans
+            .iter()
+            .any(|&(l, s, _, _)| l == 2 && s == keyword as u64),
         "{spans:?}"
     );
 }
