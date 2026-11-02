@@ -134,6 +134,28 @@ class PackageTests(unittest.TestCase):
             finally:
                 parent.chmod(0o755)
 
+    def test_payload_without_pgo_packages_apart_and_never_passes_as_a_release(self):
+        from unittest.mock import patch
+        sys.path.insert(0, str(ROOT / 'scripts'))
+        from release import package as packaging
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            payload = root / 'target/native-release/darwin-arm64-no-pgo/payload'
+            payload.mkdir(parents=True)
+            (payload / 'nitride').write_bytes(b'plain executable fixture')
+            (payload / 'release.json').write_text(json.dumps({
+                'version': packaging.version.check(), 'platform': 'darwin-arm64', 'wasmtime': False,
+                'variants': {'baseline': {'pgo': False, 'bolt': False}}}))
+            (root / 'editors').mkdir()
+            (root / 'editors/vscode').symlink_to(ROOT / 'editors/vscode')
+            shutil.copy2(ROOT / 'README.md', root / 'README.md')
+            with patch.object(packaging, 'ROOT', root):
+                with self.assertRaises(FileNotFoundError):
+                    packaging.package('darwin-arm64', root / 'dist')
+                packaging.package('darwin-arm64', root / 'dist/no-pgo', pgo=False)
+                with self.assertRaisesRegex(ValueError, 'missing PGO'):
+                    packaging.verify_assets(root / 'dist/no-pgo', ['darwin-arm64'])
+
 
 class PromotionTests(unittest.TestCase):
     def test_only_successful_rehearsals_of_the_exact_commit_are_eligible(self):
