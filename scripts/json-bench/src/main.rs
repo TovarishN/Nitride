@@ -5,22 +5,28 @@ mod json {
     include!(concat!(env!("OUT_DIR"), "/json.rs"));
 }
 
-struct Counting;
-static LIVE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-static PEAK: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
-unsafe impl std::alloc::GlobalAlloc for Counting {
-    unsafe fn alloc(&self, l: std::alloc::Layout) -> *mut u8 {
-        let n = LIVE.fetch_add(l.size(), std::sync::atomic::Ordering::Relaxed) + l.size();
-        PEAK.fetch_max(n, std::sync::atomic::Ordering::Relaxed);
-        unsafe { std::alloc::System.alloc(l) }
+// Counts live and peak heap bytes for the `heap` mode. Off in timing builds.
+#[cfg(feature = "heap")]
+mod heap {
+    use std::alloc::{GlobalAlloc, Layout, System};
+    use std::sync::atomic::{AtomicUsize, Ordering::Relaxed};
+    pub static LIVE: AtomicUsize = AtomicUsize::new(0);
+    pub static PEAK: AtomicUsize = AtomicUsize::new(0);
+    struct Counting;
+    unsafe impl GlobalAlloc for Counting {
+        unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+            let live = LIVE.fetch_add(layout.size(), Relaxed) + layout.size();
+            PEAK.fetch_max(live, Relaxed);
+            unsafe { System.alloc(layout) }
+        }
+        unsafe fn dealloc(&self, ptr: *mut u8, layout: Layout) {
+            LIVE.fetch_sub(layout.size(), Relaxed);
+            unsafe { System.dealloc(ptr, layout) }
+        }
     }
-    unsafe fn dealloc(&self, p: *mut u8, l: std::alloc::Layout) {
-        LIVE.fetch_sub(l.size(), std::sync::atomic::Ordering::Relaxed);
-        unsafe { std::alloc::System.dealloc(p, l) }
-    }
+    #[global_allocator]
+    static ALLOCATOR: Counting = Counting;
 }
-#[global_allocator]
-static A: Counting = Counting;
 
 fn parse(source: &str) -> Result<ParseSnapshot, Diagnostic> {
     parse_snapshot_generated(
@@ -74,12 +80,61 @@ fn main() {
                 })
             );
         }
+        // Parse counters and retained storage of one parse.
         Some("stats") => {
             let source = std::fs::read_to_string(&args[1]).unwrap();
             let snapshot = parse(&source).expect("parse");
             eprintln!("{:#?}\n{:#?}", snapshot.stats(), snapshot.storage_stats());
-            eprintln!("live {} MB peak {} MB source {} MB", LIVE.load(std::sync::atomic::Ordering::Relaxed) >> 20, PEAK.load(std::sync::atomic::Ordering::Relaxed) >> 20, source.len() >> 20);
         }
+        // Peak heap during one parse and the heap the snapshot keeps.
+        #[cfg(feature = "heap")]
+        Some("heap") => {
+            use std::sync::atomic::Ordering::Relaxed;
+            let source = std::fs::read_to_string(&args[1]).unwrap();
+            let before = heap::LIVE.load(Relaxed);
+            heap::PEAK.store(before, Relaxed);
+            let snapshot = parse(&source).expect("parse");
+            println!(
+                "{}",
+                serde_json::json!({
+                    "source_bytes": source.len(),
+                    "peak_bytes": heap::PEAK.load(Relaxed) - before,
+                    "live_after_bytes": heap::LIVE.load(Relaxed) - before,
+                })
+            );
+            drop(snapshot);
+        }
+        // Successive one-digit edits, each on the previous snapshot.
+        Some("edit") if args.len() == 3 => {
+            let mut source = std::fs::read_to_string(&args[1]).unwrap();
+            let count: usize = args[2].parse().unwrap();
+            let mut snapshot = parse(&source).expect("parse");
+            let mut samples = Vec::with_capacity(count);
+            for i in 0..count {
+                let from = i * source.len() / count;
+                let at = from + source[from..].find(|c: char| c.is_ascii_digit()).unwrap();
+                let digit = if &source[at..=at] == "1" { "2" } else { "1" };
+                let edit = TextEdit {
+                    range: [at as u32, at as u32 + 1],
+                    replacement: digit.into(),
+                };
+                let start = Instant::now();
+                snapshot = snapshot.edit(&edit, Limits::default()).expect("edit");
+                samples.push(start.elapsed().as_nanos() as u64);
+                assert_eq!(snapshot.diagnostic_count(), 0);
+                source.replace_range(at..=at, digit);
+            }
+            let first = samples[0];
+            samples.sort_unstable();
+            println!(
+                "{}",
+                serde_json::json!({
+                    "edits": count, "first_edit_ns": first,
+                    "median_edit_ns": samples[samples.len() / 2],
+                })
+            );
+        }
+        // Repeated parses, for profilers.
         Some("loop") => {
             let source = std::fs::read_to_string(&args[1]).unwrap();
             for _ in 0..args[2].parse::<usize>().unwrap() {

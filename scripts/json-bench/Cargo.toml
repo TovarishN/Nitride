@@ -10,6 +10,10 @@ publish = false
 nitride-core = { path = "../../crates/nitride-core" }
 serde_json = "1"
 
+[features]
+# A counting allocator for the `heap` mode.
+heap = []
+
 [build-dependencies]
 nitride-prepare = { path = "../../crates/nitride-prepare" }
 nitride-codegen = { path = "../../crates/nitride-codegen" }

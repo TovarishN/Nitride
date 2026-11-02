@@ -14,6 +14,7 @@ ENGINES = {
     "stj-document": [str(HERE / "dotnet/bin/Release/net10.0/JsonBench"), "document"],
     "stj-reader": [str(HERE / "dotnet/bin/Release/net10.0/JsonBench"), "reader"],
 }
+HEAP = HERE / "target/heap/release/nitride-json-bench"
 PROCESSES, WARM = 5, 10
 
 
@@ -23,6 +24,17 @@ def run(command):
     sample = json.loads(done.stdout)
     sample["peak_rss_bytes"] = int(re.search(r"(\d+)\s+maximum resident set size", done.stderr)[1])
     return sample
+
+
+def extras():
+    """Edit timings and heap use; `heap` needs `cargo build --release --features heap --target-dir target/heap`."""
+    edits = [{"input": name, **json.loads(subprocess.run([ENGINES["nitride"][0], "edit", str(INPUTS / f"{name}.json"), "20"],
+                                                          capture_output=True, text=True, check=True).stdout)}
+             for name in ("numbers-1m", "records-16m")]
+    heap = [{"input": name, **json.loads(subprocess.run([str(HEAP), "heap", str(INPUTS / f"{name}.json")],
+                                                         capture_output=True, text=True, check=True).stdout)}
+            for name in ("records-16m", "numbers-16m", "strings-16m")]
+    return {"edit": edits, "heap": heap}
 
 
 def main():
@@ -41,7 +53,8 @@ def main():
     dotnet = subprocess.run(["dotnet", "--version"], capture_output=True, text=True).stdout.strip()
     rustc = subprocess.run(["rustc", "--version"], capture_output=True, text=True).stdout.strip()
     print(json.dumps({"cpu": cpu, "os": platform.platform(), "dotnet_sdk": dotnet, "rustc": rustc,
-                      "processes": PROCESSES, "warm_iterations": WARM, "rows": rows}, indent=1))
+                      "processes": PROCESSES, "warm_iterations": WARM, "rows": rows,
+                      **({"extras": extras()} if "--extras" in sys.argv else {})}, indent=1))
 
 
 main()
