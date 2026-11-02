@@ -1198,6 +1198,14 @@ impl<'a> Parser<'a> {
                     self.pending_failures -= usize::from(old.root == SubtreeId::NONE);
                     self.arena.release_cache(old.root);
                 } else {
+                    // Grow in step with the fact log rather than doubling.
+                    let spare = self
+                        .facts
+                        .capacity()
+                        .saturating_sub(self.pending_order.len());
+                    if self.pending_order.len() == self.pending_order.capacity() && spare > 0 {
+                        self.pending_order.reserve_exact(spare);
+                    }
                     self.pending_order.push_back((at, key));
                 }
                 self.pending_failures += usize::from(root == NO_NODE);
@@ -4741,5 +4749,34 @@ mod tests {
                 .or((id == kept).then_some(moved))
         });
         assert!(facts == vec![(0, key, hit(moved)), (1, key, hit(SubtreeId::NONE))]);
+    }
+    #[test]
+    fn eviction_order_grows_with_the_fact_log() {
+        // Fact counts just past a power of two, where doubling overshoots.
+        for items in [1700, 3200, 6200] {
+            let source = list_source(items);
+            let text = SourceText::new(&source).unwrap();
+            let mut parser = Parser::new(
+                backtracking_list(),
+                Input {
+                    compiled: None,
+                    lexers: None,
+                    text: &text,
+                    contiguous: Some(&source),
+                },
+                Limits::default(),
+                ParseOptions::default(),
+                Limits::default().parser_stack_bytes,
+                None,
+                Index::default(),
+            );
+            parser.rule(0, 0, 0).unwrap().unwrap();
+            assert!(
+                parser.pending_order.capacity() <= parser.facts.capacity().max(4),
+                "{items} items: order {} facts {}",
+                parser.pending_order.capacity(),
+                parser.facts.capacity()
+            );
+        }
     }
 }

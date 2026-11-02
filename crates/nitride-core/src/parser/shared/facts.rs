@@ -85,6 +85,10 @@ impl FactLog {
         self.entries.clear();
         self.slots.clear();
     }
+    /// Facts the list holds before it next grows.
+    pub(crate) fn capacity(&self) -> usize {
+        self.entries.capacity()
+    }
     pub(crate) fn into_entries(self) -> Vec<(u32, Key, Hit)> {
         self.entries
     }
