@@ -473,7 +473,7 @@ fn in_file(reported: Vec<(PrepareError, u8)>, path: &Path) -> Vec<Problem> {
             span: [error.span[0] as u32, error.span[1] as u32],
             severity,
             message: error.message,
-            code: None,
+            code: error.code,
         };
         if !problems.contains(&problem) {
             problems.push(problem);
@@ -635,6 +635,7 @@ fn binding(
                     column: 1,
                     message: "no language lists this binding".into(),
                     project: false,
+                    code: None,
                 },
                 2,
             ));

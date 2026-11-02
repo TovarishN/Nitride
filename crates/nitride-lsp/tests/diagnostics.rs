@@ -312,3 +312,16 @@ fn unlisted_grammar_uses_the_language_beside_it() {
     let found = diagnostics(&messages, &file);
     assert!(found.to_string().contains("unknown module Nope"), "{found}");
 }
+
+/// Preparation problems keep Nitrogen's code (here a duplicate named pattern).
+#[test]
+fn grammar_problems_carry_nitrogen_codes() {
+    let dir = scratch("grammar-codes");
+    let file = dir.join("Dup.ngr");
+    let text = "syntax module Dup\n{\n  token N = ['0'..'9']+;\n  syntax Start = Items:Item*;\n  syntax Item = Value:N;\n  pattern P : Item = <[ 1 ]>;\n  pattern P : Item = <[ 2 ]>;\n}\n";
+    std::fs::write(&file, text).unwrap();
+    let messages = Session::run(&dir, vec![open(&file, text)]);
+    let found = diagnostics(&messages, &file);
+    assert_eq!(found[0]["code"], "NGR0164", "{found}");
+    assert_eq!(found[0]["message"], "duplicate rule/helper/pattern 'P'");
+}
