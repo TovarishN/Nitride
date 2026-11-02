@@ -134,6 +134,29 @@ fn main() {
                 })
             );
         }
+        // `warm` parses of one file, then the first and later parses of another:
+        // whether warming up on one input helps a different one.
+        Some("cross") if args.len() == 4 => {
+            let warmup = std::fs::read_to_string(&args[1]).unwrap();
+            let target = std::fs::read_to_string(&args[3]).unwrap();
+            let warm: usize = args[2].parse().unwrap();
+            for _ in 0..warm {
+                std::hint::black_box(parse(&warmup).expect("parse"));
+            }
+            let mut samples = Vec::with_capacity(11);
+            for _ in 0..11 {
+                let start = Instant::now();
+                let snapshot = parse(&target).expect("parse");
+                samples.push(start.elapsed().as_nanos() as u64);
+                assert_eq!(snapshot.diagnostic_count(), 0);
+            }
+            let first = samples[0];
+            samples[1..].sort_unstable();
+            println!(
+                "{}",
+                serde_json::json!({ "first_ns": first, "repeat_median_ns": samples[6] })
+            );
+        }
         // Repeated parses, for profilers.
         Some("loop") => {
             let source = std::fs::read_to_string(&args[1]).unwrap();

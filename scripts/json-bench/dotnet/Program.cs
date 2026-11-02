@@ -21,6 +21,38 @@ if (mode is "check" or "check-comments")
     return;
 }
 
+// `cross-document|cross-reader <warm-file> <warm> <target-file>`: warm parses of
+// one file, then the first and later parses of another.
+if (mode.StartsWith("cross-"))
+{
+    var warmup = File.ReadAllBytes(args[1]);
+    var target = File.ReadAllBytes(args[3]);
+    var document = mode == "cross-document";
+    long Run(byte[] bytes)
+    {
+        if (document) { using var d = JsonDocument.Parse(bytes, options); return d.RootElement.GetArrayLength(); }
+        var reader = new Utf8JsonReader(bytes, new JsonReaderOptions { MaxDepth = 100_000 });
+        long tokens = 0;
+        while (reader.Read()) tokens++;
+        return tokens;
+    }
+    for (var i = 0; i < int.Parse(args[2]); i++) Run(warmup);
+    var times = new long[11];
+    for (var i = 0; i < times.Length; i++)
+    {
+        var start = Stopwatch.GetTimestamp();
+        Run(target);
+        times[i] = (long)Stopwatch.GetElapsedTime(start).TotalNanoseconds;
+    }
+    var later = times[1..];
+    Array.Sort(later);
+    Console.WriteLine(JsonSerializer.Serialize(new Dictionary<string, object?>
+    {
+        ["first_ns"] = times[0], ["repeat_median_ns"] = later[later.Length / 2],
+    }));
+    return;
+}
+
 var source = File.ReadAllBytes(args[1]);
 var warm = int.Parse(args[2]);
 Func<long> parse = mode switch

@@ -87,5 +87,5 @@ def write_inputs(sizes):
 
 if __name__ == "__main__":
     write_cases()
-    write_inputs([("64k", 64 << 10), ("1m", 1 << 20), ("16m", 16 << 20)])
+    write_inputs([("64k", 64 << 10), ("256k", 256 << 10), ("1m", 1 << 20), ("16m", 16 << 20)])
     print(OUT)

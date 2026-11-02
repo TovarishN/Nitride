@@ -48,6 +48,47 @@ Peak resident memory of the whole process (11 parses), MiB:
 | strings 16 MiB | 64 | 63 | 63 |
 | any 64 KiB | 3–5 | 47 | 47 |
 
+## Warming up on a different file
+
+The warm column above re-parses the same file. The `cross` mode in both
+harnesses measures warm-up on a different file instead: it parses one file 10
+times, then times the first parse of a 256 KiB target. Targets are written by
+`corpus.py`'s generator at 256 KiB; each cell is the median of 5 fresh
+processes, in milliseconds.
+
+| Target | Engine | Fresh process | After 1 MiB of another shape | After 1 MiB of the same shape | After the same file |
+|---|---|---:|---:|---:|---:|
+| records | Nitride | 5.01 | 4.89 | 4.86 | 4.79 |
+| | Nitride PGO | 3.57 | 3.00 | 2.99 | 2.94 |
+| | STJ document | 4.44 | 3.78 | 1.15 | 1.04 |
+| | STJ reader | 4.43 | 3.44 | 0.63 | 0.62 |
+| numbers | Nitride | 5.35 | 5.17 | 5.27 | 5.32 |
+| | Nitride PGO | 3.52 | 3.24 | 3.21 | 3.17 |
+| | STJ document | 1.88 | 0.98 | 0.92 | 0.87 |
+| | STJ reader | 1.80 | 0.74 | 0.71 | 0.72 |
+| strings | Nitride | 0.70 | 0.71 | 0.67 | 0.71 |
+| | Nitride PGO | 0.59 | 0.53 | 0.53 | 0.52 |
+| | STJ document | 3.69 | 0.10 | 0.08 | 0.07 |
+| | STJ reader | 3.22 | 0.07 | 0.07 | 0.07 |
+
+"Another shape" means numbers before records, and records before numbers or
+strings.
+
+- **STJ's warm speed belongs to its compiled code, not to the file.** Warming
+  up on a different file of the same kind is almost as good as re-parsing
+  the same file.
+- **It only covers code that has run.** Warming up on numbers leaves records
+  only partly warm, because objects and property names have not been
+  compiled yet. Records already contain strings, so warming up on records
+  makes strings fully warm.
+- **Nitride barely warms up.** The gain is 3–5% for the plain build and about
+  10–17% with PGO, and a different file does as well as the same one.
+
+So a long-running process that parses many similar documents gets STJ's warm
+numbers on new files after its first few parses. A one-shot tool sees the
+fresh-process column instead. There, at 256 KiB, Nitride with PGO is faster
+on records and strings and slower on numbers.
+
 ## Before and after the throughput work
 
 The changes (see the [design](superpowers/specs/2026-11-02-parse-throughput-design.md)):
@@ -153,6 +194,9 @@ python3 -I corpus.py target/json-bench
 ./target/release/nitride-json-bench check target/json-bench/cases/*.json
 ./dotnet/bin/Release/net10.0/JsonBench check target/json-bench/cases/*.json
 python3 -I bench.py --extras > ../../docs/json-comparison.json
+# Warm-up on one file, then the first parse of another, for example:
+./target/release/nitride-json-bench cross target/json-bench/numbers-1m.json 10 target/json-bench/records-256k.json
+./dotnet/bin/Release/net10.0/JsonBench cross-document target/json-bench/numbers-1m.json 10 target/json-bench/records-256k.json
 ```
 
 One synthetic corpus on one host; real payloads and other machines will differ.
