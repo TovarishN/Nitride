@@ -276,3 +276,39 @@ fn xml_checks_stay_quiet_on_clean_documents() {
     let messages = Session::run(&dir, vec![open(&document, text)]);
     assert_eq!(diagnostics(&messages, &document), json!([]));
 }
+
+/// A grammar no workspace language lists (a copy in a nested worktree, say) is
+/// checked with the language file beside it, so its `using` modules resolve.
+#[test]
+fn unlisted_grammar_uses_the_language_beside_it() {
+    let dir = scratch("unlisted-grammar");
+    let composition = repo().join("languages/composition");
+    for folder in ["languages/composition", "copy/languages/composition"] {
+        std::fs::create_dir_all(dir.join(folder)).unwrap();
+        for file in ["Base.ngr", "Uses.ngr", "Composition.nproj"] {
+            std::fs::copy(composition.join(file), dir.join(folder).join(file)).unwrap();
+        }
+    }
+    std::fs::write(
+        dir.join("nitride.nproj"),
+        "workspace { include languages/composition; }\n",
+    )
+    .unwrap();
+    for file in [
+        dir.join("languages/composition/Uses.ngr"),
+        dir.join("copy/languages/composition/Uses.ngr"),
+    ] {
+        let text = std::fs::read_to_string(&file).unwrap();
+        let messages = Session::run(&dir, vec![open(&file, &text)]);
+        let found = diagnostics(&messages, &file);
+        assert_eq!(found, json!([]), "{}: {found}", file.display());
+    }
+    // Its own problems are still reported.
+    let file = dir.join("copy/languages/composition/Uses.ngr");
+    let text = std::fs::read_to_string(&file)
+        .unwrap()
+        .replace("using Base;", "using Nope;");
+    let messages = Session::run(&dir, vec![open(&file, &text)]);
+    let found = diagnostics(&messages, &file);
+    assert!(found.to_string().contains("unknown module Nope"), "{found}");
+}

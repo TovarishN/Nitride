@@ -14,7 +14,7 @@ import zipfile
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import version
-from release.build import MATRIX, ROOT
+from release.build import MATRIX, ROOT, release_folder
 
 
 def binary_names(platform):
@@ -23,13 +23,15 @@ def binary_names(platform):
     return {name + suffix for name in variants}
 
 
-def verify_metadata(data, platform, current):
+def verify_metadata(data, platform, current, pgo=True):
     if data['platform'] != platform or data['version'] != current or data['wasmtime'] is not False:
         raise ValueError(f'invalid release metadata for {platform}')
     wanted = {'baseline', 'avx2'} if platform.endswith('-x64') else {'baseline'}
-    if data['variants'].keys() != wanted or any(not row['pgo'] for row in data['variants'].values()):
-        raise ValueError(f'missing PGO variants for {platform}')
-    needs_bolt = next(row for row in MATRIX if row['id'] == platform).get('bolt', False)
+    if data['variants'].keys() != wanted:
+        raise ValueError(f'missing variants for {platform}')
+    if any(row['pgo'] != pgo for row in data['variants'].values()):
+        raise ValueError(f'{"missing" if pgo else "unexpected"} PGO variants for {platform}')
+    needs_bolt = pgo and next(row for row in MATRIX if row['id'] == platform).get('bolt', False)
     if any(row['bolt'] != needs_bolt for row in data['variants'].values()):
         raise ValueError(f'wrong BOLT optimization for {platform}')
 
@@ -39,7 +41,7 @@ def verify_provenance(data, commit):
         raise ValueError('release assets must come from the exact clean tagged commit')
 
 
-def verify_vsix(path, platform, current):
+def verify_vsix(path, platform, current, pgo=True):
     with zipfile.ZipFile(path) as archive:
         names = archive.namelist()
         if len(set(names)) != len(names) or any(name.endswith('.wasm') for name in names):
@@ -55,7 +57,7 @@ def verify_vsix(path, platform, current):
         identity = next(element for element in manifest.iter() if element.tag.endswith('Identity'))
         if identity.attrib.get('TargetPlatform') != platform or identity.attrib['Version'] != current:
             raise ValueError('VSIX target/version mismatch')
-        verify_metadata(json.loads(archive.read('extension/server/release.json')), platform, current)
+        verify_metadata(json.loads(archive.read('extension/server/release.json')), platform, current, pgo)
         for name in binary_names(platform):
             if not archive.getinfo('extension/server/' + name).file_size:
                 raise ValueError('empty executable in VSIX')
@@ -65,18 +67,18 @@ def stem(platform, current):
     return f'nitride-{current}-{platform}'
 
 
-def package(platform, out):
+def package(platform, out, pgo=True):
     # Container builds leave root-owned payload directories on hosted Linux.
     # Stage on the packaging host instead of writing into that directory.
     with tempfile.TemporaryDirectory(prefix='nitride-package-') as directory:
-        package_in(platform, out, Path(directory))
+        package_in(platform, out, Path(directory), pgo)
 
 
-def package_in(platform, out, work):
+def package_in(platform, out, work, pgo=True):
     current = version.check()
-    payload = ROOT / 'target/native-release' / platform / 'payload'
+    payload = ROOT / 'target/native-release' / release_folder(platform, pgo) / 'payload'
     metadata = json.loads((payload / 'release.json').read_text())
-    verify_metadata(metadata, platform, current)
+    verify_metadata(metadata, platform, current, pgo)
     if {p.name for p in payload.iterdir()} != binary_names(platform) | {'release.json'}:
         raise ValueError(f'stale or unexpected payload files in {payload}')
     out.mkdir(parents=True, exist_ok=True)
@@ -93,7 +95,7 @@ def package_in(platform, out, work):
     subprocess.run(['node', str(source / 'node_modules/@vscode/vsce/vsce'), 'package',
                     '--no-dependencies', '--allow-missing-repository', '--target', platform,
                     '--out', str(vsix)], cwd=extension, check=True)
-    verify_vsix(vsix, platform, current)
+    verify_vsix(vsix, platform, current, pgo)
     folder = work / stem(platform, current)
     shutil.copytree(payload, folder)
     shutil.copy2(ROOT / 'README.md', folder / 'README.md')
@@ -111,10 +113,10 @@ def package_in(platform, out, work):
     assets = [vsix, archive, metadata_file]
     checksums = out / f'SHA256SUMS-{platform}.txt'
     checksums.write_text(''.join(f'{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}\n' for path in assets))
-    verify_assets(out, [platform])
+    verify_assets(out, [platform], pgo)
 
 
-def verify_assets(out, platforms):
+def verify_assets(out, platforms, pgo=True):
     current = version.check()
     expected_files = set()
     for platform in platforms:
@@ -133,8 +135,8 @@ def verify_assets(out, platforms):
         if found != assets:
             raise ValueError(f'incomplete artifacts for {platform}')
         metadata = json.loads((out / (base + '.json')).read_text())
-        verify_metadata(metadata, platform, current)
-        verify_vsix(out / (base + '.vsix'), platform, current)
+        verify_metadata(metadata, platform, current, pgo)
+        verify_vsix(out / (base + '.vsix'), platform, current, pgo)
         archive_path = out / (base + ('.zip' if platform.startswith('win32-') else '.tar.gz'))
         if platform.startswith('win32-'):
             with zipfile.ZipFile(archive_path) as stream:
@@ -154,7 +156,7 @@ def verify_assets(out, platforms):
                 if stream.read('extension/server/' + name) != contents[f'{base}/{name}']:
                     raise ValueError(f'CLI/VSIX executable mismatch for {platform}/{name}')
         expected_files |= assets | {manifest}
-    if platforms == [row['id'] for row in MATRIX]:
+    if pgo and platforms == [row['id'] for row in MATRIX]:
         commit = subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip()
         for platform in platforms:
             verify_provenance(json.loads((out / (stem(platform, current) + '.json')).read_text()), commit)
@@ -166,13 +168,15 @@ def verify_assets(out, platforms):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('platform', choices=[row['id'] for row in MATRIX] + ['verify'])
-    parser.add_argument('--out', type=Path, default=ROOT / 'dist')
+    parser.add_argument('--no-pgo', dest='pgo', action='store_false',
+                        help='package a build.py --no-pgo payload; not for releases')
+    parser.add_argument('--out', type=Path, help='default: dist, or dist/no-pgo with --no-pgo')
     args = parser.parse_args()
-    out = args.out.resolve()
+    out = (args.out or ROOT / ('dist' if args.pgo else 'dist/no-pgo')).resolve()
     if args.platform == 'verify':
-        verify_assets(out, [row['id'] for row in MATRIX])
+        verify_assets(out, [row['id'] for row in MATRIX], args.pgo)
     else:
-        package(args.platform, out)
+        package(args.platform, out, args.pgo)
 
 
 if __name__ == '__main__':
