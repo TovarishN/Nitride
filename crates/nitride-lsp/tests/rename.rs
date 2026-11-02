@@ -219,3 +219,75 @@ fn rename_refuses_when_sibling_damaged() {
         "{result}"
     );
 }
+
+/// Renaming a named pattern renames its declaration and every use, keeping
+/// a qualifier.
+#[test]
+fn pattern_rename() {
+    let dir = scratch("pattern-rename");
+    manifest(
+        &dir,
+        "nitride.nproj",
+        "Xml",
+        ".xml",
+        &[lang("xml/Xml.ngr")],
+        "Xml.Document",
+        None,
+    );
+    let path = lang("xml/Xml.ngr");
+    let text = std::fs::read_to_string(&path)
+        .unwrap()
+        .replace("(secret: ..Secret)", "(secret: ..Xml.Secret)")
+        .replacen(
+            "  }\n  pattern Secret",
+            "    match (s: Secret) <[ <keep>$s</keep> ]> => warning X9 : \"kept\";\n  }\n  pattern Secret",
+            1,
+        );
+    let line = text
+        .lines()
+        .position(|l| l.contains("pattern Secret"))
+        .unwrap() as u32;
+    let character = text
+        .lines()
+        .nth(line as usize)
+        .unwrap()
+        .find("Secret")
+        .unwrap() as u32;
+    let result = send(
+        &dir,
+        &path,
+        &text,
+        "textDocument/rename",
+        line,
+        character + 1,
+        json!({"newName":"Hidden"}),
+    );
+    let edits = result["result"]["changes"][uri(&path)]
+        .as_array()
+        .cloned()
+        .unwrap_or_default();
+    assert_eq!(edits.len(), 3, "{result}");
+    assert!(edits.iter().all(|e| e["newText"] == "Hidden"), "{result}");
+    let renamed = {
+        let mut lines: Vec<String> = text.lines().map(str::to_owned).collect();
+        let mut sorted = edits.clone();
+        sorted.sort_by_key(|e| {
+            std::cmp::Reverse((
+                e["range"]["start"]["line"].as_u64(),
+                e["range"]["start"]["character"].as_u64(),
+            ))
+        });
+        for edit in sorted {
+            let line = edit["range"]["start"]["line"].as_u64().unwrap() as usize;
+            let (start, end) = (
+                edit["range"]["start"]["character"].as_u64().unwrap() as usize,
+                edit["range"]["end"]["character"].as_u64().unwrap() as usize,
+            );
+            lines[line].replace_range(start..end, "Hidden");
+        }
+        lines.join("\n")
+    };
+    assert!(renamed.contains("pattern Hidden : Element"), "{renamed}");
+    assert!(renamed.contains("(secret: ..Xml.Hidden)"), "{renamed}");
+    assert!(renamed.contains("match (s: Hidden)"), "{renamed}");
+}

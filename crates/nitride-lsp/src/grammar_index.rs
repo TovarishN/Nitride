@@ -36,13 +36,14 @@ pub struct RuleDef {
 }
 
 /// Rule kinds that define a name (an `extend` item names its target instead).
-pub const DEFINING: [&str; 6] = [
+pub const DEFINING: [&str; 7] = [
     "syntax",
     "token",
     "extensible",
     "function",
     "helper",
     "alternative",
+    "pattern",
 ];
 
 /// Catalog member kinds that define a name.

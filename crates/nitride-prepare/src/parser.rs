@@ -171,6 +171,19 @@ pub(crate) fn tolerant_with(
     source: &Source,
     syntax: fn(&Source) -> Result<SyntaxTree<'static>, PrepareError>,
 ) -> Result<Source, PrepareError> {
+    // An unfinished member (`pattern Secr`, being typed) fails where the next
+    // line starts; when blanking error lines gives up, blank the line before.
+    blank_errors(source, syntax, false)
+        .or_else(|error| blank_errors(source, syntax, true).map_err(|_| error))
+}
+
+/// Blanks the line of each syntax error (or, with `previous`, the last
+/// nonblank line before an error that starts its line) until `syntax` parses.
+fn blank_errors(
+    source: &Source,
+    syntax: fn(&Source) -> Result<SyntaxTree<'static>, PrepareError>,
+    previous: bool,
+) -> Result<Source, PrepareError> {
     let mut text = source.text.clone();
     let mut first = None;
     for _ in 0..32 {
@@ -181,8 +194,15 @@ pub(crate) fn tolerant_with(
         match syntax(&attempt) {
             Ok(_) => return Ok(attempt),
             Err(error) => {
-                let at = error.span[0].min(text.len());
-                let start = text[..at].rfind('\n').map_or(0, |i| i + 1);
+                let mut at = error.span[0].min(text.len());
+                let mut start = text[..at].rfind('\n').map_or(0, |i| i + 1);
+                if previous && start > 0 && text[start..at].trim().is_empty() {
+                    let before = text[..start].trim_end();
+                    if !before.is_empty() {
+                        at = before.len();
+                        start = text[..at].rfind('\n').map_or(0, |i| i + 1);
+                    }
+                }
                 let end = text[at..].find('\n').map_or(text.len(), |i| at + i);
                 let blanked: String = text[start..end]
                     .chars()
@@ -421,6 +441,7 @@ pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError>
                                 "Extend" => "extend",
                                 "Function" => "function",
                                 "Helper" => "helper",
+                                "NamedPattern" => "pattern",
                                 _ => return None,
                             };
                             // Named alternatives are rules too.

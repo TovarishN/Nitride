@@ -73,7 +73,11 @@ pub fn items(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
         return Value::Array(vec![]);
     }
     let text = analysis.lines.text();
-    let start = word_start(text, offset as usize);
+    let mut start = word_start(text, offset as usize);
+    // `..Pattern`: the dots search below a hole; they are not part of the name.
+    if text[start..].starts_with("..") {
+        start += 2;
+    }
     let typed = text[start..(offset as usize).min(text.len())].to_lowercase();
     let mut names: Vec<Value> = Vec::new();
     if let Some(GrammarAt { index, file }) = grammar {

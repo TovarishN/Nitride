@@ -596,3 +596,131 @@ fn rule_check_names_navigate_to_their_binders() {
         );
     }
 }
+
+/// The XML grammar (Nitrogen's named-pattern example) in a workspace, its
+/// text and the (line, character) of `needle` on the first line holding `line`.
+fn secret_grammar(name: &str) -> (PathBuf, PathBuf, String) {
+    let dir = scratch(name);
+    manifest(
+        &dir,
+        "nitride.nproj",
+        "Xml",
+        ".xml",
+        &[lang("xml/Xml.ngr")],
+        "Xml.Document",
+        None,
+    );
+    let path = lang("xml/Xml.ngr");
+    let text = std::fs::read_to_string(&path).unwrap();
+    (dir, path, text)
+}
+
+fn find_in(text: &str, line: &str, needle: &str) -> (u32, u32) {
+    let n = text.lines().position(|l| l.contains(line)).unwrap();
+    let c = text.lines().nth(n).unwrap().find(needle).unwrap();
+    (n as u32, c as u32)
+}
+
+#[test]
+fn pattern_definition() {
+    let (dir, path, text) = secret_grammar("pattern-definition");
+    let (line, character) = find_in(&text, "(secret: ..Secret)", "Secret)");
+    let result = at(
+        &dir,
+        &path,
+        &text,
+        "textDocument/definition",
+        line,
+        character + 1,
+        json!({}),
+    );
+    let (line, start) = find_in(&text, "pattern Secret", "Secret");
+    assert_eq!(
+        result["result"]["range"],
+        location(line, start, start + 6),
+        "{result}"
+    );
+}
+
+#[test]
+fn pattern_references() {
+    let (dir, path, text) = secret_grammar("pattern-references");
+    let (line, character) = find_in(&text, "pattern Secret", "Secret");
+    let result = at(
+        &dir,
+        &path,
+        &text,
+        "textDocument/references",
+        line,
+        character + 1,
+        json!({"context":{"includeDeclaration":true}}),
+    );
+    let lines: Vec<u64> = result["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|l| l["range"]["start"]["line"].as_u64().unwrap())
+        .collect();
+    let declaration = find_in(&text, "pattern Secret", "Secret").0 as u64;
+    let usage = find_in(&text, "(secret: ..Secret)", "Secret)").0 as u64;
+    assert_eq!(lines.len(), 2, "{result}");
+    assert!(
+        lines.contains(&declaration) && lines.contains(&usage),
+        "{result}"
+    );
+}
+
+#[test]
+fn pattern_hover() {
+    let (dir, path, text) = secret_grammar("pattern-hover");
+    let (line, character) = find_in(&text, "(secret: ..Secret)", "Secret)");
+    let result = hover(&dir, &path, &text, line, character + 1);
+    let value = result["contents"]["value"].as_str().unwrap_or_default();
+    assert!(value.contains("pattern Secret : Element"), "{result}");
+    assert!(value.contains("*named pattern* `Xml.Secret`"), "{result}");
+}
+
+#[test]
+fn pattern_completion_after_dots() {
+    let (dir, path, text) = secret_grammar("pattern-completion");
+    let (line, character) = find_in(&text, "(secret: ..Secret)", "..Secret");
+    let result = at(
+        &dir,
+        &path,
+        &text,
+        "textDocument/completion",
+        line,
+        character + 2,
+        json!({}),
+    );
+    let items = result["result"]["items"]
+        .as_array()
+        .or(result["result"].as_array())
+        .cloned()
+        .unwrap_or_default();
+    assert!(items.iter().any(|i| i["label"] == "Secret"), "{result}");
+}
+
+#[test]
+fn incomplete_pattern_keeps_outline() {
+    let (dir, path, text) = secret_grammar("pattern-incomplete");
+    let edited = text.replacen(
+        "  syntax Attribute",
+        "  pattern Secr\n  syntax Attribute",
+        1,
+    );
+    let messages = Session::run(
+        &dir,
+        vec![
+            open(&path, &edited),
+            request(
+                5,
+                "textDocument/documentSymbol",
+                json!({"textDocument":{"uri":uri(&path)}}),
+            ),
+        ],
+    );
+    assert!(!diagnostics(&messages, &path).as_array().unwrap().is_empty());
+    let symbols = response(&messages, 5)["result"].to_string();
+    assert!(symbols.contains("Paired"), "{symbols}");
+}

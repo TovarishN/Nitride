@@ -20,6 +20,7 @@ fn rule_word(kind: &str) -> &'static str {
         "alternative" => "alternative",
         "function" => "function",
         "helper" => "helper",
+        "pattern" => "named pattern",
         "module" => "syntax module",
         "catalog" => "catalog module",
         "type" => "type",
