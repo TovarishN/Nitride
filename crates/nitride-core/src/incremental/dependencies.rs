@@ -413,14 +413,15 @@ impl Index {
         }
     }
     /// [`Index::from_entries`] for facts in any order at positions up to
-    /// `text_len`: a counting sort by position, then keys within a position,
-    /// so building takes linear time.
+    /// `text_len`: a counting sort into 16-byte blocks of positions, then a
+    /// sort within each block's few facts, so building takes linear time.
     pub(crate) fn from_unsorted(mut entries: Vec<(u32, Key, Hit)>, text_len: u32) -> Self {
-        // Each entry's place in position order, then the permutation applied
-        // in place by following its cycles, so no second copy is made.
-        let mut starts = vec![0_u32; text_len as usize + 2];
+        const BLOCK: u32 = 4;
+        // Each entry's place in block order, then the permutation applied in
+        // place by following its cycles, so no second copy is made.
+        let mut starts = vec![0_u32; (text_len >> BLOCK) as usize + 2];
         for &(at, ..) in &entries {
-            starts[at as usize + 1] += 1;
+            starts[(at >> BLOCK) as usize + 1] += 1;
         }
         for i in 1..starts.len() {
             starts[i] += starts[i - 1];
@@ -428,7 +429,7 @@ impl Index {
         let mut places: Vec<u32> = entries
             .iter()
             .map(|&(at, ..)| {
-                let slot = &mut starts[at as usize];
+                let slot = &mut starts[(at >> BLOCK) as usize];
                 *slot += 1;
                 *slot - 1
             })
@@ -442,12 +443,15 @@ impl Index {
             }
         }
         drop(places);
-        // Each position holds a few facts; order them by key as `from_entries` does.
         let mut from = 0;
         while from < entries.len() {
-            let at = entries[from].0;
-            let to = from + entries[from..].iter().take_while(|e| e.0 == at).count();
-            entries[from..to].sort_unstable_by_key(|e| e.1);
+            let block = entries[from].0 >> BLOCK;
+            let to = from
+                + entries[from..]
+                    .iter()
+                    .take_while(|e| e.0 >> BLOCK == block)
+                    .count();
+            entries[from..to].sort_unstable_by_key(|e| (e.0, e.1));
             from = to;
         }
         Self {

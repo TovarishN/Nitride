@@ -240,3 +240,57 @@ fn local_edit_does_not_allocate_a_temporary_wide_child_list() {
         assert_eq!(old.materialize().unwrap().source, source);
     }
 }
+#[test]
+fn cold_parse_sorts_facts_without_a_per_byte_table() {
+    let language = Box::leak(Box::new(Language {
+        profile: Profile::SyntaxOnly,
+        start: 0,
+        types: &[],
+        operations: &[],
+        handlers: &[],
+        checks: &[],
+        helpers: &[],
+        rule_checks: &[],
+        patterns: &[],
+        source_hash: "sparse-facts",
+        rules: Box::leak(
+            vec![
+                rule(
+                    "Root",
+                    Expr::Repeat {
+                        inner: &Expr::Ref(1),
+                        min: 1,
+                        max: u32::MAX,
+                    },
+                    false,
+                ),
+                rule(
+                    "Item",
+                    Expr::Sequence(&[Expr::Ref(2), Expr::Literal(";")]),
+                    false,
+                ),
+                rule("Number", Expr::Class(&[('0', '9')]), true),
+            ]
+            .into_boxed_slice(),
+        ),
+    }));
+    // Few facts across a megabyte of trivia: sorting them must not allocate
+    // a table as large as the text.
+    let source = format!("1;{}2;", " ".repeat(1 << 20));
+    MAX.store(0, Relaxed);
+    ENABLED.store(true, Relaxed);
+    let snapshot = parse_snapshot(
+        language,
+        &source,
+        Limits::default(),
+        SnapshotMode::Strict(ParseOptions::default()),
+    );
+    ENABLED.store(false, Relaxed);
+    snapshot.unwrap();
+    assert!(
+        MAX.load(Relaxed) <= 2 * source.len(),
+        "largest allocation {} bytes for {} bytes of source",
+        MAX.load(Relaxed),
+        source.len()
+    );
+}
