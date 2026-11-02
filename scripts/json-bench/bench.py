@@ -11,6 +11,8 @@ HERE = pathlib.Path(__file__).resolve().parent
 INPUTS = HERE / "target/json-bench"
 ENGINES = {
     "nitride": [str(HERE / "target/release/nitride-json-bench"), "bench"],
+    # Built by pgo.py; skipped when absent.
+    "nitride-pgo": [str(HERE / "target/pgo/release/nitride-json-bench"), "bench"],
     "stj-document": [str(HERE / "dotnet/bin/Release/net10.0/JsonBench"), "document"],
     "stj-reader": [str(HERE / "dotnet/bin/Release/net10.0/JsonBench"), "reader"],
 }
@@ -43,6 +45,8 @@ def main():
         for size in ("64k", "1m", "16m"):
             path = INPUTS / f"{shape}-{size}.json"
             for engine, command in ENGINES.items():
+                if not pathlib.Path(command[0]).exists():
+                    continue
                 samples = [run([*command, str(path), str(WARM)]) for _ in range(PROCESSES)]
                 med = lambda key: statistics.median(s[key] for s in samples)
                 rows.append({"shape": shape, "size": size, "engine": engine, "source_bytes": samples[0]["source_bytes"],
