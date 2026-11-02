@@ -1,5 +1,5 @@
 //! Rule checks: diagnostics a syntax rule declares over its own nodes.
-use crate::quote_match::{Budget, Flavor, MAX_WORK_STEPS, Patterns, Quote};
+use crate::quote_match::{Budget, Flavor, LimitExceeded, MAX_WORK_STEPS, Patterns, Quote, derives};
 use crate::*;
 
 /// The `{Name}` placeholders of a check message, in order.
@@ -26,19 +26,29 @@ pub fn rule_diagnostics_with(
     // `validate_rule_checks` reports patterns that do not compile when the
     // language loads; here their checks are skipped.
     let patterns = Patterns::compile(language).ok();
+    let mut ancestry: Option<Ancestry> = None;
     for check in language.rule_checks {
-        let quote = match &check.test {
+        let (quote, context) = match &check.test {
             RuleTest::Match {
-                captures, pattern, ..
-            } => match (
-                &patterns,
-                Quote::compile(language, check.rule, captures, pattern, Flavor::Check),
-            ) {
-                (Some(_), Ok(quote)) => Some(quote),
-                _ => continue,
-            },
-            RuleTest::Compare { .. } => None,
+                captures,
+                pattern,
+                context,
+            } => {
+                let quote = Quote::compile(language, check.rule, captures, pattern, Flavor::Check);
+                let context = context.as_ref().map(|c| {
+                    Quote::compile(language, c.category, c.captures, c.pattern, Flavor::Check)
+                        .map(|quote| (quote, c))
+                });
+                match (&patterns, quote, context.transpose()) {
+                    (Some(_), Ok(quote), Ok(context)) => (Some(quote), context),
+                    _ => continue,
+                }
+            }
+            RuleTest::Compare { .. } => (None, None),
         };
+        if context.is_some() && ancestry.is_none() {
+            ancestry = Some(Ancestry::new(tree));
+        }
         for id in 0..tree.nodes.len() as u32 {
             if tree.nodes[id as usize].rule != check.rule {
                 continue;
@@ -55,12 +65,12 @@ pub fn rule_diagnostics_with(
                     Vec::new()
                 }
                 (RuleTest::Match { .. }, Some(quote), Some(patterns)) => {
-                    let mut bindings = Vec::new();
                     let mut budget = Budget::new(steps);
-                    match quote.matches(patterns, tree, id, &mut budget, &mut bindings) {
-                        Ok(true) => bindings,
-                        Ok(false) => continue,
-                        Err(_) => {
+                    let context = context.as_ref().zip(ancestry.as_ref());
+                    match matched(language, patterns, tree, id, quote, context, &mut budget) {
+                        Ok(Some(bindings)) => bindings,
+                        Ok(None) => continue,
+                        Err(LimitExceeded) => {
                             found.push(failure(check, tree.nodes[id as usize].span));
                             continue;
                         }
@@ -103,6 +113,76 @@ pub fn rule_diagnostics_with(
     found
 }
 
+/// Each node's parent, and whether its subtree holds recovered syntax.
+struct Ancestry {
+    parents: Vec<Option<u32>>,
+    broken: Vec<bool>,
+}
+
+impl Ancestry {
+    fn new(tree: &SyntaxTree<'_>) -> Self {
+        let mut parents = vec![None; tree.nodes.len()];
+        for id in 0..tree.nodes.len() as u32 {
+            for edge in tree.children(id) {
+                parents[edge.node as usize] = Some(id);
+            }
+        }
+        let mut broken = vec![false; tree.nodes.len()];
+        for &damaged in tree.recovery().map_or(&[][..], |r| &r.damaged_nodes) {
+            if let Some(flag) = broken.get_mut(damaged as usize) {
+                *flag = true;
+            }
+        }
+        // Postorder ids: every child comes before its parent.
+        for id in 0..tree.nodes.len() {
+            if broken[id]
+                && let Some(parent) = parents[id]
+            {
+                broken[parent as usize] = true;
+            }
+        }
+        Self { parents, broken }
+    }
+}
+
+/// The captures of a match of `quote` at `id`, or none. With a context, an
+/// ancestor (the nearest first; only the parent for `parent`) must also
+/// match it, and the nearest that does adds its captures. Ancestors of
+/// another category, or whose syntax was recovered, are passed over.
+fn matched<'a>(
+    language: &Language<'_>,
+    patterns: &Patterns<'a>,
+    tree: &SyntaxTree<'_>,
+    id: u32,
+    quote: &Quote<'a>,
+    context: Option<(&(Quote<'a>, &MatchContext<'_>), &Ancestry)>,
+    budget: &mut Budget,
+) -> Result<Option<Vec<(&'a str, u32)>>, LimitExceeded> {
+    let mut bindings = Vec::new();
+    if !quote.matches(patterns, tree, id, budget, &mut bindings)? {
+        return Ok(None);
+    }
+    let Some(((quote, context), ancestry)) = context else {
+        return Ok(Some(bindings));
+    };
+    let mut ancestor = ancestry.parents[id as usize];
+    while let Some(at) = ancestor {
+        budget.step()?;
+        let rule = tree.nodes[at as usize].rule;
+        if derives(language, context.category, rule, &mut Vec::new())
+            && !ancestry.broken[at as usize]
+            && quote.matches(patterns, tree, at, budget, &mut bindings)?
+        {
+            return Ok(Some(bindings));
+        }
+        if context.parent_only {
+            break;
+        }
+        ancestor = ancestry.parents[at as usize];
+    }
+    Ok(None)
+}
+
 /// A check that ran out of work, reported as Nitrogen reports it: `NS0002`
 /// on the checked node, an error.
 fn failure(check: &RuleCheck<'_>, span: [u32; 2]) -> Diagnostic {
@@ -124,7 +204,9 @@ pub fn validate_rule_checks(language: &Language<'_>) -> Result<(), String> {
     Patterns::compile(language).map_err(|e| e.message)?;
     for check in language.rule_checks {
         if let RuleTest::Match {
-            captures, pattern, ..
+            captures,
+            pattern,
+            context,
         } = &check.test
         {
             Quote::compile(language, check.rule, captures, pattern, Flavor::Check).map_err(
@@ -135,6 +217,21 @@ pub fn validate_rule_checks(language: &Language<'_>) -> Result<(), String> {
                     )
                 },
             )?;
+            if let Some(context) = context {
+                Quote::compile(
+                    language,
+                    context.category,
+                    context.captures,
+                    context.pattern,
+                    Flavor::Check,
+                )
+                .map_err(|e| {
+                    format!(
+                        "the context of check {} does not parse as {}: {}",
+                        check.code, language.rules[context.category as usize].name, e.message
+                    )
+                })?;
+            }
         }
     }
     Ok(())

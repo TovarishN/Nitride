@@ -343,3 +343,96 @@ fn compile_rejects_repeated_descendant_nqp0009() {
     let error = LoadedLanguage::load(&data.to_string()).err().unwrap();
     assert!(error.contains("NQP0009"), "{error}");
 }
+
+const XML1003: &str = r#"    match <[ <api-key ..$_>..$_</api-key> ]>
+      inside <[ <service ..$_>..$_</service> ]>
+      => warning XML1003 : "An API key is embedded in a service definition; reference it instead.";"#;
+
+const SERVICES: &str = r#"<application><service name="search"><settings><api-key>nested</api-key></settings><api-key>direct</api-key></service><vault><api-key>kept</api-key></vault></application>"#;
+
+#[test]
+fn inside_reports_once_per_inner_item() {
+    let language = language(XML1003, "");
+    let found = found(&language, SERVICES);
+    assert_eq!(
+        found,
+        [
+            ("XML1003".to_owned(), "<api-key>nested</api-key>".to_owned()),
+            ("XML1003".to_owned(), "<api-key>direct</api-key>".to_owned()),
+        ]
+    );
+}
+
+#[test]
+fn parent_checks_only_the_semantic_parent() {
+    let checks = r#"    match <[ <api-key ..$_>..$_</api-key> ]>
+      parent <[ <service ..$_>..$_</service> ]>
+      => warning X4 : "direct";"#;
+    let language = language(checks, "");
+    let found = found(&language, SERVICES);
+    assert_eq!(
+        found,
+        [("X4".to_owned(), "<api-key>direct</api-key>".to_owned())]
+    );
+}
+
+#[test]
+fn nearest_ancestor_supplies_captures() {
+    let checks = r#"    match <[ <api-key ..$_>..$_</api-key> ]>
+      inside (t: Text) <[ <group ..$_>$t ..$_</group> ]>
+      => warning X5 : $"in {t}";"#;
+    let language = language(checks, "");
+    let source = "<group>outer<group>inner<api-key>k</api-key></group></group>";
+    let tree = parse(language.language(), source, Limits::default()).unwrap();
+    let diagnostics = rule_diagnostics(language.language(), &tree);
+    assert_eq!(diagnostics.len(), 1);
+    assert_eq!(diagnostics[0].message, "in inner");
+}
+
+#[test]
+fn broken_ancestor_is_skipped() {
+    let language = language(XML1003, "");
+    let language = language.language();
+    // A missing attribute value is recovered syntax inside the service.
+    let source = r#"<application><service name="search"><api-key>k</api-key><x a=></x></service></application>"#;
+    let parsed = parse_recovering(
+        language,
+        source,
+        Limits::default(),
+        RecoveryOptions::default(),
+    );
+    assert!(
+        parsed
+            .tree
+            .recovery()
+            .is_some_and(|r| !r.damaged_nodes.is_empty())
+    );
+    let diagnostics = rule_diagnostics(language, &parsed.tree);
+    assert!(
+        diagnostics
+            .iter()
+            .all(|d| d.code.as_deref() != Some("XML1003") && d.code.as_deref() != Some("NS0002")),
+        "{diagnostics:?}"
+    );
+}
+
+#[test]
+fn context_budget_exhaustion_reports_ns0002() {
+    let language = language(XML1003, "");
+    let deep = format!(
+        "<service>{}<api-key>k</api-key>{}</service>",
+        "<box>".repeat(300),
+        "</box>".repeat(300)
+    );
+    let tree = parse(language.language(), &deep, Limits::default()).unwrap();
+    let diagnostics = nitride_core::rule_diagnostics_with(language.language(), &tree, 100);
+    let failed: Vec<_> = diagnostics
+        .iter()
+        .filter(|d| d.code.as_deref() == Some("NS0002"))
+        .collect();
+    assert_eq!(failed.len(), 1, "{diagnostics:?}");
+    assert_eq!(
+        failed[0].message,
+        "check XML1003 failed: InvalidOperationException: NQP0006: The syntax-pattern match exceeded its work limit."
+    );
+}
