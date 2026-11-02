@@ -6,7 +6,7 @@
 
 Each --train is the instrumented binary's arguments, run from the crate folder
 on inputs like the ones it will parse in use. The optimized binary is built
-under <crate>/target/pgo/<host>/release/ and its path is printed last.
+under <crate>/target/pgo/release/ and its path is printed last.
 """
 import argparse
 from dataclasses import dataclass
@@ -26,6 +26,7 @@ class Build:
     command: list
     target_dir: Path
     rustflags: list
+    env: dict
 
 
 @dataclass
@@ -38,25 +39,26 @@ class Plan:
     binary: Path
 
 
-def plan(crate, bin_name, host):
-    """The two builds. Both name the host as --target, so RUSTFLAGS reach only
-    the target's code: build scripts, such as one that runs the parser
-    generator, are neither instrumented nor profiled."""
+def plan(crate, bin_name):
+    """The two builds. The instrumented one also instruments build scripts and
+    keeps their profiles: a build script that runs the parser generator parses
+    the grammar with the same runtime, and that profile made the JSON bench
+    1.5-3.7% faster than training alone (docs/optimizing-generated-parsers.md)."""
     crate = Path(crate)
     raw = crate / 'target/pgo-raw'
     merged = raw / 'merged.profdata'
 
-    def build(folder, flags):
+    def build(folder, flags, env):
         target_dir = crate / 'target' / folder
-        command = ['cargo', 'build', '--release', '--bin', bin_name, '--target', host,
-                   '--target-dir', str(target_dir)]
-        return Build(command, target_dir, flags)
+        command = ['cargo', 'build', '--release', '--bin', bin_name, '--target-dir', str(target_dir)]
+        return Build(command, target_dir, flags, env)
 
-    instrument = build('pgo-gen', [f'-Cprofile-generate={raw}'])
-    optimize = build('pgo', [f'-Cprofile-use={merged}', '-Cllvm-args=-pgo-warn-missing-function'])
+    instrument = build('pgo-gen', [f'-Cprofile-generate={raw}'],
+                       {'LLVM_PROFILE_FILE': str(raw / 'build-%m-%p.profraw')})
+    optimize = build('pgo', [f'-Cprofile-use={merged}', '-Cllvm-args=-pgo-warn-missing-function'], {})
     return Plan(raw, merged, instrument, optimize,
-                instrument.target_dir / host / 'release' / bin_name,
-                optimize.target_dir / host / 'release' / bin_name)
+                instrument.target_dir / 'release' / bin_name,
+                optimize.target_dir / 'release' / bin_name)
 
 
 def training(plan, runs):
@@ -67,12 +69,8 @@ def cargo(build, crate):
     env = os.environ.copy()
     env.pop('RUSTFLAGS', None)
     env['CARGO_ENCODED_RUSTFLAGS'] = '\x1f'.join(build.rustflags)
+    env.update(build.env)
     subprocess.run(build.command, cwd=crate, env=env, check=True)
-
-
-def host_triple():
-    info = subprocess.check_output(['rustc', '-vV'], text=True)
-    return next(line.removeprefix('host: ') for line in info.splitlines() if line.startswith('host: '))
 
 
 def main():
@@ -85,7 +83,7 @@ def main():
     args = parser.parse_args()
     crate = args.crate.resolve()
     profdata = profdata_tool(args.llvm_profdata)
-    steps = plan(crate, args.bin, host_triple())
+    steps = plan(crate, args.bin)
     shutil.rmtree(steps.raw, ignore_errors=True)
     steps.raw.mkdir(parents=True)
     cargo(steps.instrument, crate)

@@ -1,7 +1,7 @@
 """Build the bench with profile-guided optimization through scripts/pgo_generated.py.
 
 Trains on the 1 MiB inputs and an edit run; the binary lands under
-target/pgo/<host>/release/, where bench.py looks for it.
+target/pgo/release/, where bench.py looks for it.
 """
 import pathlib
 import subprocess

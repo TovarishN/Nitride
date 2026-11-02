@@ -48,11 +48,38 @@ python3 -I scripts/pgo_generated.py --crate path/to/your-crate --bin your-bin \
 ```
 
 Each `--train` holds the binary's own arguments. The optimized binary is built
-under `<crate>/target/pgo/<host>/release/`, and the script prints its path.
-Both builds pass the host as `--target`, so the profile flags reach your
-binary's code and not build scripts, such as a `build.rs` that runs the
-parser generator. [`scripts/json-bench/pgo.py`](../scripts/json-bench/pgo.py)
-is a worked example.
+under `<crate>/target/pgo/release/`, and the script prints its path.
+[`scripts/json-bench/pgo.py`](../scripts/json-bench/pgo.py) is a worked
+example.
+
+The instrumented build also instruments build scripts, and their profiles are
+merged with the training runs. A `build.rs` that runs the parser generator
+parses the grammar with the same runtime code your parser uses, so its run is
+extra training. On the JSON bench, leaving those profiles out made the PGO
+binary slower (see below).
+
+### Build-script profiles help
+
+Three ways of building the JSON bench with PGO were compared. All used the
+same training runs. Each figure is the median of the best warm parse over
+6–8 rounds, with the binaries run in alternating order. Figures are relative
+to the build that keeps build-script profiles (lower is better):
+
+| Input | Build scripts not instrumented (`--target`) | Instrumented, profiles left out | Instrumented, profiles kept |
+|---|---:|---:|---:|
+| records 64 KiB | +3.1–3.7% | +3.1% | 0 |
+| records 1 MiB | +2.2–3.0% | +4.0% | 0 |
+| numbers 1 MiB | +1.4–2.7% | +2.4% | 0 |
+| strings 1 MiB | −0.5 to +2.3% | −0.6% | 0 |
+| records 16 MiB | +2.3–2.7% | +3.1% | 0 |
+| numbers 16 MiB | +0.3–1.5% | +1.1% | 0 |
+
+The kept-profile build was faster on every structured input in all 8 rounds.
+Leaving the build-script profiles out costs as much as not instrumenting build
+scripts at all, so `--target` is not the cause; the generator's run is.
+Strings vary by about ±3% from run to run, so they show no difference.
+Rebuilding with the final script came within 1% of the first kept-profile
+build on structured input.
 
 ### Training input
 
