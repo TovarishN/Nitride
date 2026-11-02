@@ -5,10 +5,51 @@
 //! values between `Datum` and the component model.
 use nitride_core::{Datum, Failure, HostBinding, Inputs, Language};
 use serde_json::Value;
-use std::path::Path;
-use std::sync::{Arc, Mutex};
+use std::collections::HashMap;
+use std::path::{Path, PathBuf};
+use std::sync::{Arc, Mutex, OnceLock};
+use std::time::SystemTime;
 use wasmtime::component::{Component, Func, Linker, Val};
 use wasmtime::{Engine, Store};
+
+/// The engine components compile for: one that meters fuel, so a run can be
+/// bounded, and one that does not, which runs faster.
+fn engine(metered: bool) -> &'static Engine {
+    static ENGINES: [OnceLock<Engine>; 2] = [OnceLock::new(), OnceLock::new()];
+    ENGINES[usize::from(metered)].get_or_init(|| {
+        let mut config = wasmtime::Config::new();
+        config.consume_fuel(metered);
+        Engine::new(&config).expect("a wasmtime engine")
+    })
+}
+
+/// The file's version: its modification time and length.
+type Version = (Option<SystemTime>, u64);
+
+/// Compiled components by path and whether their engine meters fuel.
+type Cache = Mutex<HashMap<(PathBuf, bool), (Version, Component)>>;
+
+/// `component` compiled for `engine`, once per version of the file: an editor
+/// loads the same component on every run.
+fn compiled(
+    engine: &'static Engine,
+    metered: bool,
+    component: &Path,
+) -> wasmtime::Result<Component> {
+    static CACHE: OnceLock<Cache> = OnceLock::new();
+    let metadata = std::fs::metadata(component)?;
+    let version = (metadata.modified().ok(), metadata.len());
+    let key = (component.to_owned(), metered);
+    let cache = CACHE.get_or_init(Mutex::default);
+    if let Some((cached, loaded)) = cache.lock().unwrap().get(&key)
+        && *cached == version
+    {
+        return Ok(loaded.clone());
+    }
+    let loaded = Component::from_file(engine, component)?;
+    cache.lock().unwrap().insert(key, (version, loaded.clone()));
+    Ok(loaded)
+}
 
 /// How a catalog type's values cross into the component.
 fn to_val(catalog: &Value, ty: &str, datum: &Datum) -> Result<Val, String> {
@@ -269,12 +310,28 @@ pub fn bindings<'g>(
     binding: &Value,
     component: &Path,
 ) -> Result<Vec<HostBinding<'g>>, String> {
+    bounded_bindings(language, prepared, binding, component, None)
+}
+
+/// [`bindings`] whose calls together may spend at most `fuel` (about one unit
+/// per WebAssembly instruction); a call past it fails, so a component that
+/// loops cannot hang its caller.
+pub fn bounded_bindings<'g>(
+    language: &Language<'g>,
+    prepared: &Value,
+    binding: &Value,
+    component: &Path,
+    fuel: Option<u64>,
+) -> Result<Vec<HostBinding<'g>>, String> {
     let catalog = Arc::new(prepared["catalog"].clone());
     let read = |e: wasmtime::Error| format!("{}: {e:#}", component.display());
-    let engine = Engine::default();
-    let loaded = Component::from_file(&engine, component).map_err(read)?;
-    let mut store = Store::new(&engine, ());
-    let instance = Linker::new(&engine)
+    let engine = engine(fuel.is_some());
+    let loaded = compiled(engine, fuel.is_some(), component).map_err(read)?;
+    let mut store = Store::new(engine, ());
+    if let Some(fuel) = fuel {
+        store.set_fuel(fuel).map_err(read)?;
+    }
+    let instance = Linker::new(engine)
         .instantiate(&mut store, &loaded)
         .map_err(read)?;
     let export = binding["export"].as_str().ok_or("binding has no export")?;

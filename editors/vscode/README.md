@@ -46,7 +46,12 @@ languages are syntax-only.
 - Workspace symbol search over grammar rules and open documents.
 - Completion, signature help for built-in calls, and formatting (document,
   selection, and on typing `}`); formatting changes only whitespace.
-- Inlay hints with each statement's computed value (`= 42`).
+- Inlay hints with each statement's computed value (`= 42`). Operations bound to
+  a process, or needing an effect such as reading the clock, never run from the
+  editor and leave no hints. The bundled server leaves out the WebAssembly
+  runtime to stay small, so operations bound to a component have hints only when
+  `nitride.server.path` names a `nitride` built with its default features
+  (`cargo build --release -p nitride-cli`).
 - Nitrogen signatures: a file can pick its language with
   `#!nitrogen language "./Calc.syntax"` or `#!nitrogen language Calc`, and a
   `#!nitrogen grammar` file declares one with `language Calc { … }`. A

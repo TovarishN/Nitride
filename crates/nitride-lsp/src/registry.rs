@@ -16,6 +16,9 @@ pub const EMPTY_CATALOG: &str = r#"{"types":[],"operations":[],"statements":{}}"
 pub struct Loaded {
     pub language: LoadedLanguage,
     pub prepared: Prepared,
+    /// Each binding to a WebAssembly component, from the language's `.nbind`
+    /// files (prepared data's form), with the component's path.
+    pub components: Vec<(serde_json::Value, PathBuf)>,
     /// Each (rule, literal)'s palette role.
     pub roles: Arc<HashMap<(u16, String), Role>>,
 }
@@ -522,8 +525,21 @@ pub(crate) fn prepare(
             }
         }
     }
+    // A binding file that cannot be read is reported on the manifest; values
+    // just go without its operations.
+    let bindings: Vec<Source> = state
+        .entry
+        .bindings
+        .iter()
+        .filter_map(|path| {
+            Some(Source {
+                path: path.to_string_lossy().into_owned(),
+                text: read(path, open).ok()?,
+            })
+        })
+        .collect();
     let mut hasher = DefaultHasher::new();
-    for source in sources.iter().chain(&catalogs) {
+    for source in sources.iter().chain(&catalogs).chain(&bindings) {
         source.text.hash(&mut hasher);
     }
     (&state.entry.start, state.entry.mode == Mode::Typed).hash(&mut hasher);
@@ -550,9 +566,11 @@ pub(crate) fn prepare(
                 state.warnings = prepared.warnings.clone();
                 let declares = |rule: &str| prepared.declarations.iter().any(|d| d.rule == rule);
                 let roles = Arc::new(crate::roles::roles(language.language(), &declares));
+                let components = components(&bindings, &catalog.value);
                 state.current = Some(Arc::new(Loaded {
                     language,
                     prepared,
+                    components,
                     roles,
                 }));
             }
@@ -561,4 +579,26 @@ pub(crate) fn prepare(
         Err(error) => state.errors.push(error),
     }
     state
+}
+
+/// The component bindings of `.nbind` sources, each with its component's
+/// path (written relative to its `.nbind`). A file whose bindings do not check
+/// adds none; its problems are its own diagnostics.
+fn components(
+    sources: &[Source],
+    catalog: &serde_json::Value,
+) -> Vec<(serde_json::Value, PathBuf)> {
+    let mut found = Vec::new();
+    for source in sources {
+        let Ok(bindings) = nitride_prepare::bindings(std::slice::from_ref(source), catalog) else {
+            continue;
+        };
+        let folder = Path::new(&source.path).parent().unwrap_or(Path::new(""));
+        for binding in bindings.as_array().into_iter().flatten() {
+            if let Some(component) = binding["component"].as_str() {
+                found.push((binding.clone(), folder.join(component)));
+            }
+        }
+    }
+    found
 }
