@@ -7,6 +7,8 @@ struct Allocator;
 static ENABLED: AtomicBool = AtomicBool::new(false);
 static MAX: AtomicUsize = AtomicUsize::new(0);
 static TOTAL: AtomicUsize = AtomicUsize::new(0);
+/// The counters are process-wide, so tests that read them run one at a time.
+static SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
 fn allocated(size: usize) {
     if ENABLED.load(Relaxed) {
         MAX.fetch_max(size, Relaxed);
@@ -44,6 +46,7 @@ fn rule(name: &'static str, expr: Expr<'static>, lexical: bool) -> Rule<'static>
 }
 #[test]
 fn local_edit_does_not_allocate_a_temporary_wide_child_list() {
+    let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
     for variant in 0..3 {
         let root = match variant {
             0 => Expr::Label(
@@ -242,6 +245,7 @@ fn local_edit_does_not_allocate_a_temporary_wide_child_list() {
 }
 #[test]
 fn cold_parse_sorts_facts_without_a_per_byte_table() {
+    let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
     let language = Box::leak(Box::new(Language {
         profile: Profile::SyntaxOnly,
         start: 0,
@@ -292,5 +296,67 @@ fn cold_parse_sorts_facts_without_a_per_byte_table() {
         "largest allocation {} bytes for {} bytes of source",
         MAX.load(Relaxed),
         source.len()
+    );
+}
+#[test]
+fn edit_near_the_start_of_a_large_file_allocates_for_the_edit() {
+    let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+    let language = Box::leak(Box::new(Language {
+        profile: Profile::SyntaxOnly,
+        start: 0,
+        types: &[],
+        operations: &[],
+        handlers: &[],
+        checks: &[],
+        helpers: &[],
+        rule_checks: &[],
+        patterns: &[],
+        source_hash: "paste-near-start",
+        rules: Box::leak(
+            vec![
+                rule(
+                    "Root",
+                    Expr::Repeat {
+                        inner: &Expr::Ref(1),
+                        min: 1,
+                        max: u32::MAX,
+                    },
+                    false,
+                ),
+                rule(
+                    "Item",
+                    Expr::Sequence(&[Expr::Ref(2), Expr::Literal(";")]),
+                    false,
+                ),
+                rule("Number", Expr::Class(&[('0', '9')]), true),
+            ]
+            .into_boxed_slice(),
+        ),
+    }));
+    let source = "1;".repeat(1 << 19);
+    let old = parse_snapshot(
+        language,
+        &source,
+        Limits::default(),
+        SnapshotMode::Strict(ParseOptions::default()),
+    )
+    .unwrap();
+    // A few kilobytes pasted past the first 4 KiB of a megabyte file: the
+    // reparse must not size its fact log as if the whole prefix were parsed.
+    let edit = TextEdit {
+        range: [6000, 6000],
+        replacement: "3;".repeat(3000),
+    };
+    TOTAL.store(0, Relaxed);
+    ENABLED.store(true, Relaxed);
+    let result = old.edit(&edit, Limits::default());
+    ENABLED.store(false, Relaxed);
+    result.unwrap();
+    assert!(
+        // The edit itself costs about 23 MiB here (source and index copies);
+        // sizing the log from the absolute position added 13 MiB more.
+        TOTAL.load(Relaxed) < 28 << 20,
+        "edit allocated {} bytes",
+        TOTAL.load(Relaxed)
     );
 }

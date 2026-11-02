@@ -483,7 +483,7 @@ fn publish(
     parser.arena.restore(0);
     parser
         .facts
-        .retain(|_, hit| hit.root == SubtreeId::NONE || parser.arena.node(hit.root).is_some());
+        .retain_entries(|hit| hit.root == SubtreeId::NONE || parser.arena.node(hit.root).is_some());
     drop(parser.memo);
     drop(parser.edge_buffers);
     let copied_bytes = parser.arena.copied_bytes();
@@ -662,7 +662,13 @@ impl<'a> Parser<'a> {
             checkpoint_next: true,
             failure_checkpoint: None,
             pending_failures: 0,
-            facts: facts::FactLog::for_text(text.len()),
+            // An edit records facts only in the reparsed window, so its
+            // log grows by doubling instead of predicting from the position.
+            facts: if base.is_none() {
+                facts::FactLog::for_text(text.len())
+            } else {
+                Default::default()
+            },
             prior: base.map_or_else(Index::default, |b| b.recognitions.clone()),
             prior_nodes: root_hint.into_iter().collect(),
             prior_paths: FastMap::default(),

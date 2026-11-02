@@ -2,9 +2,9 @@
 use super::hash::FastMap;
 use crate::incremental::dependencies::{Hit, Key};
 
-/// A map from position and rule to a fact, kept as a flat list so that a
-/// cold snapshot can take the list as is and sort it by position only when
-/// it is first edited. The map holds only each fact's place in the list.
+/// A map from position and rule to a fact, kept as a flat list so that
+/// publishing can take the list as is and sort it by position in linear
+/// time. The map holds only each fact's place in the list.
 #[derive(Clone, Default)]
 pub(crate) struct FactLog {
     entries: Vec<(u32, Key, Hit)>,
@@ -33,7 +33,7 @@ impl FactLog {
     /// Records `hit`, replacing and returning a fact at the same position and rule.
     pub(crate) fn insert(&mut self, key: (u32, Key), hit: Hit) -> Option<Hit> {
         let next = self.entries.len() as u32;
-        if self.entries.len() == self.entries.capacity() && key.0 > 4096 {
+        if self.entries.len() == self.entries.capacity() && self.text_len != 0 && key.0 > 4096 {
             // Facts per byte so far, over the whole text, with a margin.
             let predicted = (self.entries.len() as u64 * u64::from(self.text_len)
                 / u64::from(key.0))
@@ -75,6 +75,12 @@ impl FactLog {
                 self.slots.insert((at, key), i as u32);
             }
         }
+    }
+    /// Keeps the facts `keep` accepts, leaving the map stale: for the list
+    /// that [`FactLog::into_entries`] hands on next.
+    pub(crate) fn retain_entries(&mut self, mut keep: impl FnMut(&Hit) -> bool) {
+        self.entries.retain(|(.., hit)| keep(hit));
+        self.slots.clear();
     }
     pub(crate) fn values(&self) -> impl Iterator<Item = &Hit> {
         self.entries.iter().map(|(_, _, hit)| hit)

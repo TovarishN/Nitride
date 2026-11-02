@@ -37,10 +37,15 @@ that are cheaper than the first.
 
    The snapshot keeps the log and packs it into
    `incremental::dependencies::Index` on its first edit, in linear time. A parse that is never edited never packs.
+   *Outcome:* the index is packed when the parse publishes, not on the
+   first edit. Measured, deferring was 3–4% faster but kept 60 MB more on a
+   16 MiB numbers file, which works against goal 3.
 2. **A reusable parser.** A parser object that is kept across parses and holds
    on to its scratch memory (memo, buffers, arena builder capacity, maps) so
    that later parses in the process allocate little. The one-shot functions
    become wrappers over it.
+   *Outcome:* built and measured, then dropped. Reused scratch made warm
+   parses 0–5% faster, which is within noise.
 3. **Less memory kept and at peak.** Shrink the published syntax per node and
    the transient peak during the parse (pre-size from input length, release
    scratch early, avoid doubling growth on the largest buffers).

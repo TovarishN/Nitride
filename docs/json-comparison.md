@@ -68,8 +68,8 @@ The changes (see the [design](superpowers/specs/2026-11-02-parse-throughput-desi
 | records 1 MiB, warm | 18.1 ms | 18.7 ms | 11.4 ms |
 | numbers 1 MiB, warm | 21.8 ms | 20.6 ms | 12.4 ms |
 | strings 16 MiB, warm | 41.2 ms | 43.5 ms | 32.1 ms |
-| records 16 MiB, heap peak / kept | 159 / 78 MiB | 135 / 78 MiB | same |
-| numbers 16 MiB, heap peak / kept | 221 / 87 MiB | 170 / 87 MiB | same |
+| records 16 MiB, heap peak / kept | 159 / 78 MiB | 135 / 78 MiB | not measured |
+| numbers 16 MiB, heap peak / kept | 221 / 87 MiB | 170 / 87 MiB | not measured |
 | records 16 MiB, process peak | 531 MiB | 407 MiB | 407 MiB |
 | numbers 16 MiB, process peak | 855 MiB | 366 MiB | 366 MiB |
 | numbers 1 MiB, edit (first / median) | 0.37 / 0.35 ms | 0.46 / 0.38 ms | — |
@@ -93,10 +93,12 @@ Tried and not kept:
 ## Assessment
 
 - **PGO is the largest lever.** It makes structured input 37–40% faster and
-  long strings 26% faster. STJ document parsing leads by 2.8–3.6× on
-  structured input up to 1 MiB and by 4.6–5.7× at 16 MiB, down from
-  4.8–6.5× and 8.4–10.1×. Without PGO, the code changes alone are worth
-  about 8% on numbers and are within noise elsewhere.
+  long strings 26% faster. With PGO, STJ document parsing leads by 2.8–3.6×
+  on structured input up to 1 MiB and by 4.6–5.7× at 16 MiB. Before this
+  work, the plain build trailed by 4.8–6.5× and 8.4–10.1×. Without PGO, the
+  code changes alone are worth about 8% on numbers 16 MiB and 5% on numbers
+  1 MiB. They are within noise on records. Long strings measured 6% slower,
+  about as much as STJ's own times moved between the two runs.
 - **The gap still grows with size.** From 1 MiB to 16 MiB the warm ratio goes
   from 4.6× to 9.1× on records (2.8× to 5.7× with PGO) and from 5.6× to 7.4×
   on numbers. Nitride's time per node stays nearly flat, while STJ gets
@@ -104,11 +106,14 @@ Tried and not kept:
   cheaper tree or snapshot per node, which this work did not change.
 - **Memory improved most at peak.** The process peak on numbers 16 MiB fell
   from 855 to 366 MiB (−57%) and on records from 531 to 407 MiB (−23%).
-  What a snapshot keeps is unchanged, at 4.7–5.2× the source; STJ's whole
+  What a snapshot keeps is unchanged, at 4.9–5.4× the source; STJ's whole
   process stays near 90 MiB. The spec's "process peak at least halved" is
   met for numbers, not for records.
-- **Cold start still favours Nitride on small inputs** (0.2–1.5 ms, or
-  0.14–0.97 ms with PGO, against STJ's 1.1–3.8 ms including JIT).
+- **Cold start still favours Nitride on small records and strings.** At
+  64 KiB Nitride takes 0.23–1.5 ms, or 0.19–0.89 ms with PGO. STJ document
+  parsing takes 3.6–3.8 ms, including JIT. On numbers 64 KiB, STJ is faster
+  even cold: 1.11 ms for the document and 0.63 ms for the reader, against
+  Nitride's 1.42 ms (0.97 ms with PGO).
 - **Not done:** making the fact list's records smaller (an estimated 10% off
   peak) and narrower per-node syntax storage. These are the next places to
   look for memory.
