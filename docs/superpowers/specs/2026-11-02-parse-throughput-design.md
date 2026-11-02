@@ -27,8 +27,8 @@ that are cheaper than the first.
    parse still records its recognition facts, since an editor may edit any
    snapshot, but in a form that is cheap to write and quick to turn into the
    index:
-   - an append-only log of compact fact records in the order rules start, so
-     the log is already nearly sorted by position;
+   - an append-only log of compact fact records, which a counting sort by
+     position (bounded by the text length) orders in linear time;
    - a slot replaced in place when a fact is re-recorded at the same position
      and rule, so the log never holds duplicates;
    - the in-parse lookups (`get`, `contains_key`, eviction order) served by a
@@ -36,8 +36,7 @@ that are cheaper than the first.
      map of full records.
 
    The snapshot keeps the log and packs it into
-   `incremental::dependencies::Index` on its first edit, in about linear time
-   because the log is nearly sorted. A parse that is never edited never packs.
+   `incremental::dependencies::Index` on its first edit, in linear time. A parse that is never edited never packs.
 2. **A reusable parser.** A parser object that is kept across parses and holds
    on to its scratch memory (memo, buffers, arena builder capacity, maps) so
    that later parses in the process allocate little. The one-shot functions
