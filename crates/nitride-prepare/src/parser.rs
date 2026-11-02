@@ -984,12 +984,13 @@ impl Decoder<'_> {
                 helper.body = self.quote(self.field(form, "Result"));
                 return Ok(helper);
             }
+            let pattern = self.field(form, "Pattern");
             helper.arms.push(Arm {
                 captures: match self.tree.field(form, "Captures") {
-                    Some(c) => self.parameters(self.fields(c, "Items"))?,
+                    Some(c) => self.pattern_captures(c, pattern)?,
                     None => vec![],
                 },
-                pattern: self.quote(self.field(form, "Pattern")),
+                pattern: self.quote(pattern),
                 result: self.quote(self.field(form, "Result")),
             });
         }

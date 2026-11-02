@@ -1,5 +1,7 @@
 //! Rule checks: diagnostics a syntax rule declares over its own nodes.
-use crate::quote_match::{Budget, Flavor, LimitExceeded, MAX_WORK_STEPS, Patterns, Quote, derives};
+use crate::quote_match::{
+    Budget, Flavor, LimitExceeded, MAX_WORK_STEPS, Patterns, Quote, stands_for,
+};
 use crate::*;
 
 /// The `{Name}` placeholders of a check message, in order.
@@ -169,7 +171,7 @@ fn matched<'a>(
     while let Some(at) = ancestor {
         budget.step()?;
         let rule = tree.nodes[at as usize].rule;
-        if derives(language, context.category, rule, &mut Vec::new())
+        if stands_for(language, context.category, rule)
             && !ancestry.broken[at as usize]
             && quote.matches(patterns, tree, at, budget, &mut bindings)?
         {

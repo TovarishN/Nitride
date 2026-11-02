@@ -256,7 +256,15 @@ pub fn prepare(
                 let mut arms = Vec::new();
                 for arm in &helper.arms {
                     let mut names = taken.clone();
-                    arms.push(json!({"captures":parameters(&arm.captures, &mut names)?,
+                    // Arm captures may name patterns, as check captures do.
+                    let mut captures = crate::parser::captures_json(&arm.captures);
+                    for (item, written) in captures.iter_mut().zip(&arm.captures) {
+                        if !names.insert(written.name.clone()) {
+                            return Err(source.error(written.span, "duplicate helper parameter"));
+                        }
+                        capture(item, module)?;
+                    }
+                    arms.push(json!({"captures":captures,
                         "pattern":arm.pattern,"result":arm.result}));
                 }
                 value["match"] = json!({"selector":selector,"arms":arms});

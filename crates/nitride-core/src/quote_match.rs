@@ -130,12 +130,7 @@ impl<'a> Patterns<'a> {
         let Some(first) = alternatives.first() else {
             return Ok(false);
         };
-        if !derives(
-            first.language,
-            *category,
-            tree.nodes()[t as usize].rule,
-            &mut Vec::new(),
-        ) {
+        if !stands_for(first.language, *category, tree.nodes()[t as usize].rule) {
             return Ok(false);
         }
         for alternative in alternatives {
@@ -193,12 +188,7 @@ impl<'a> Quote<'a> {
         }
         let refs: Vec<&Hole<'_>> = holes.iter().collect();
         let (tree, found) = parse_quote(language, &text, category, &refs, Limits::default())?;
-        if !derives(
-            language,
-            category,
-            tree.nodes[tree.root as usize].rule,
-            &mut Vec::new(),
-        ) {
+        if !stands_for(language, category, tree.nodes[tree.root as usize].rule) {
             return Err(Diagnostic::new(
                 "check",
                 [0, 0],
@@ -267,6 +257,11 @@ impl<'a> Quote<'a> {
         Ok(matched)
     }
 
+    /// Whether a hole of the quote binds `name`.
+    pub(crate) fn binds(&self, name: &str) -> bool {
+        self.holes.iter().any(|(_, h)| h.name == name)
+    }
+
     fn hole(&self, id: u32) -> Option<QuoteHole<'a>> {
         self.holes.iter().find(|h| h.0 == id).map(|h| h.1)
     }
@@ -274,7 +269,7 @@ impl<'a> Quote<'a> {
     /// Whether a node of `rule` may fill a hole of `category`.
     fn accepts(&self, category: u16, rule: u16) -> bool {
         match self.flavor {
-            Flavor::Check => derives(self.language, category, rule, &mut Vec::new()),
+            Flavor::Check => stands_for(self.language, category, rule),
             Flavor::Arm => {
                 rule == category || self.language.rules[rule as usize].owner == Some(category)
             }
@@ -448,14 +443,16 @@ fn same_syntax(language: &Language<'_>, tree: &dyn SyntaxAccess<'_>, x: u32, y: 
         })
 }
 
+/// Whether a node of `rule` can fill a check's `category`: one `derives` it,
+/// or an alternative of the extensible category (its `owner`).
+pub(crate) fn stands_for(language: &Language<'_>, category: u16, rule: u16) -> bool {
+    derives(language, category, rule, &mut Vec::new())
+        || language.rules.get(rule as usize).and_then(|r| r.owner) == Some(category)
+}
+
 /// Whether a node of `rule` can stand for `category`: the same rule, or one
 /// an alias category refers to, as an alias's one child stands in for it.
-pub(crate) fn derives(
-    language: &Language<'_>,
-    category: u16,
-    rule: u16,
-    seen: &mut Vec<u16>,
-) -> bool {
+fn derives(language: &Language<'_>, category: u16, rule: u16, seen: &mut Vec<u16>) -> bool {
     if category == rule {
         return true;
     }
