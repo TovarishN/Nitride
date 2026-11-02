@@ -346,7 +346,7 @@ fn program(state: &LanguageState, text: &str, source: &str) -> Analysis {
         .program
         .as_ref()
         .filter(|_| problems.iter().all(|p| p.severity != 1))
-        .map(crate::values::compute)
+        .map(|program| crate::values::compute(program, &loaded))
         .unwrap_or_default();
     let index = match &checked.program {
         Some(program) => SymbolIndex::typed(&declarations, program),

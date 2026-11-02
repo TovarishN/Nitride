@@ -129,3 +129,65 @@ fn failed_execution_has_no_hints() {
         json!([])
     );
 }
+
+/// A workspace whose `calendar` folder copies the Calendar language: its
+/// operations are bound to a WebAssembly component and a Python process.
+fn calendar(name: &str) -> (PathBuf, PathBuf) {
+    let dir = scratch(name);
+    let folder = dir.join("calendar");
+    std::fs::create_dir_all(&folder).unwrap();
+    for file in [
+        "Calendar.ngr",
+        "Calendar.ncatalog",
+        "Calendar.nproj",
+        "gregorian.nbind",
+        "gregorian.wasm",
+        "clock.nbind",
+        "clock.py",
+    ] {
+        std::fs::copy(lang("calendar").join(file), folder.join(file)).unwrap();
+    }
+    std::fs::write(
+        dir.join("nitride.nproj"),
+        "workspace { include calendar; }\n",
+    )
+    .unwrap();
+    (dir, folder.join("sample.calendar"))
+}
+
+fn labels(hints: &Value) -> Vec<(u64, String)> {
+    hints
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|h| {
+            let line = h["position"]["line"].as_u64().unwrap();
+            (line, h["label"].as_str().unwrap().to_owned())
+        })
+        .collect()
+}
+
+#[cfg(feature = "components")]
+#[test]
+fn component_bound_operations_have_hints() {
+    let (dir, file) = calendar("component-hints");
+    let text = "let kickoff = 2026-10-05;\nlet sprint = 14 days;\nkickoff + sprint;\nweekday(kickoff + sprint);\nleap(2028-01-01);\n";
+    let found = labels(&hints(&dir, &file, text, everything()));
+    assert_eq!(
+        found,
+        [
+            (2, "= 2026-10-19".to_owned()),
+            (3, "= \"Monday\"".to_owned()),
+            (4, "= true".to_owned())
+        ],
+        "{found:?}"
+    );
+}
+
+/// Opening a file never starts a binding's process, so what needs one has no hints.
+#[test]
+fn process_bound_operations_have_no_hints() {
+    let (dir, file) = calendar("process-hints");
+    let found = labels(&hints(&dir, &file, "today;\n", everything()));
+    assert!(found.is_empty(), "{found:?}");
+}

@@ -9,4 +9,10 @@ rust-version.workspace = true
 nitride-core = { path = "../nitride-core" }
 nitride-prepare = { path = "../nitride-prepare" }
 nitride-codegen = { path = "../nitride-codegen" }
+nitride-wasm = { path = "../nitride-wasm", optional = true }
 serde_json = "1"
+
+[features]
+default = ["components"]
+# Inlay hints run operations bound to WebAssembly components, through wasmtime.
+components = ["dep:nitride-wasm"]

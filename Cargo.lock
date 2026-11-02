@@ -588,6 +588,7 @@ dependencies = [
  "nitride-codegen",
  "nitride-core",
  "nitride-prepare",
+ "nitride-wasm",
  "serde_json",
 ]
 
