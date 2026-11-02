@@ -1,0 +1,7 @@
+{
+  "mode": "syntax",
+  "start": "Json.Document",
+  "grammars": [
+    "Json.ngr"
+  ]
+}

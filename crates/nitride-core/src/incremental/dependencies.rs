@@ -284,24 +284,33 @@ fn pack(entries: Vec<Entry>) -> Link {
 }
 /// Splits sorted entries without moving them; only leaves copy theirs.
 fn pack_slice(entries: &[Entry]) -> Link {
+    pack_by(entries, |e| e.at, Entry::clone)
+}
+/// Splits entries sorted by `at` into a balanced tree, converting only the
+/// entries of each leaf.
+fn pack_by<T>(
+    entries: &[T],
+    at: impl Fn(&T) -> i64 + Copy,
+    entry: impl Fn(&T) -> Entry + Copy,
+) -> Link {
     if entries.len() <= BUCKET {
-        return leaf(entries.to_vec());
+        return leaf(entries.iter().map(entry).collect());
     }
     let mut middle = entries.len() / 2;
-    while middle < entries.len() && entries[middle - 1].at == entries[middle].at {
+    while middle < entries.len() && at(&entries[middle - 1]) == at(&entries[middle]) {
         middle += 1;
     }
     if middle == entries.len() {
         middle = entries.len() / 2;
-        while middle > 0 && entries[middle - 1].at == entries[middle].at {
+        while middle > 0 && at(&entries[middle - 1]) == at(&entries[middle]) {
             middle -= 1;
         }
     }
     if middle == 0 {
-        return leaf(entries.to_vec());
+        return leaf(entries.iter().map(entry).collect());
     }
     let (left, right) = entries.split_at(middle);
-    join(pack_slice(left), pack_slice(right))
+    join(pack_by(left, at, entry), pack_by(right, at, entry))
 }
 fn insert(node: &Link, entry: Entry) -> Link {
     let Some(node) = node else {
@@ -400,6 +409,61 @@ impl Index {
         entries.sort_unstable_by_key(|e| (e.at, e.key));
         Self {
             root: pack(entries),
+            edit_map: None,
+        }
+    }
+    /// [`Index::from_entries`] for facts in any order at positions up to
+    /// `text_len`: a counting sort into 16-byte blocks of positions, then a
+    /// sort within each block's few facts, so building takes linear time.
+    pub(crate) fn from_unsorted(mut entries: Vec<(u32, Key, Hit)>, text_len: u32) -> Self {
+        const BLOCK: u32 = 4;
+        // Each entry's place in block order, then the permutation applied in
+        // place by following its cycles, so no second copy is made.
+        let mut starts = vec![0_u32; (text_len >> BLOCK) as usize + 2];
+        for &(at, ..) in &entries {
+            starts[(at >> BLOCK) as usize + 1] += 1;
+        }
+        for i in 1..starts.len() {
+            starts[i] += starts[i - 1];
+        }
+        let mut places: Vec<u32> = entries
+            .iter()
+            .map(|&(at, ..)| {
+                let slot = &mut starts[(at >> BLOCK) as usize];
+                *slot += 1;
+                *slot - 1
+            })
+            .collect();
+        drop(starts);
+        for i in 0..entries.len() {
+            while places[i] as usize != i {
+                let to = places[i] as usize;
+                entries.swap(i, to);
+                places.swap(i, to);
+            }
+        }
+        drop(places);
+        let mut from = 0;
+        while from < entries.len() {
+            let block = entries[from].0 >> BLOCK;
+            let to = from
+                + entries[from..]
+                    .iter()
+                    .take_while(|e| e.0 >> BLOCK == block)
+                    .count();
+            entries[from..to].sort_unstable_by_key(|e| (e.0, e.1));
+            from = to;
+        }
+        Self {
+            root: pack_by(
+                &entries,
+                |e| i64::from(e.0),
+                |&(at, key, hit)| Entry {
+                    at: i64::from(at),
+                    key,
+                    hit,
+                },
+            ),
             edit_map: None,
         }
     }
@@ -625,6 +689,50 @@ mod tests {
         let index = Index::from_entries(values.iter().copied());
         for (at, key, value) in values {
             assert_eq!(index.get(at, key).map(|h| h == value), Some(true));
+        }
+    }
+    #[test]
+    fn from_unsorted_matches_from_entries() {
+        let mut state = 0x9e37_79b9_u64;
+        let mut next = move |bound: u32| {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            (state % u64::from(bound)) as u32
+        };
+        let mut entries = Vec::new();
+        for at in 0..500 {
+            if next(3) == 0 {
+                continue;
+            }
+            for rule in 0..=next(3) as u16 {
+                let key = Key {
+                    rule,
+                    minimum: next(2),
+                    in_token: 0,
+                };
+                if !entries.iter().any(|&(a, k, _)| a == at && k == key) {
+                    entries.push((at, key, hit(at + 2 + next(20))));
+                }
+            }
+        }
+        for i in (1..entries.len()).rev() {
+            entries.swap(i, next(i as u32 + 1) as usize);
+        }
+        let eager = Index::from_entries(entries.iter().copied());
+        let deferred = Index::from_unsorted(entries.clone(), 500);
+        for &(at, key, value) in &entries {
+            assert!(deferred.get(at, key) == Some(value), "{at}");
+            assert!(eager.get(at, key) == Some(value), "{at}");
+        }
+        for _ in 0..100 {
+            let (at, rule) = (next(520), next(6) as u16);
+            let key = Key {
+                rule,
+                minimum: 0,
+                in_token: 0,
+            };
+            assert!(deferred.get(at, key) == eager.get(at, key), "{at}");
         }
     }
 }

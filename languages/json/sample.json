@@ -1,0 +1,11 @@
+{
+  "name": "nitride",
+  "version": "0.1.0",
+  "tags": ["parser", "rust", "été", "esc\"aped\\"],
+  "stars": 42,
+  "ratio": -1.5e-3,
+  "public": true,
+  "archived": false,
+  "license": null,
+  "nested": { "empty": {}, "list": [] }
+}

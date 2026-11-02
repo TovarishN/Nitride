@@ -1,0 +1,19 @@
+{
+  "catalogs": [],
+  "extensions": [
+    ".json"
+  ],
+  "grammars": [
+    "languages/json/Json.ngr"
+  ],
+  "name": "Json",
+  "nitrogen": {
+    "grammars": [
+      "languages/json/Json.ngr"
+    ],
+    "namespace": "Nitride.Json.Syntax",
+    "sources": []
+  },
+  "start": "Json.Document",
+  "typed": false
+}

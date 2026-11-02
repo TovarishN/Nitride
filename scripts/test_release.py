@@ -191,3 +191,28 @@ class PromotionTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class GeneratedPgoTests(unittest.TestCase):
+    def test_instrumented_build_profiles_build_scripts_too(self):
+        # A build script that runs the generator parses the grammar with the
+        # runtime, and its profile made the JSON bench 1.5-3.7% faster.
+        import pgo_generated
+        crate = Path('/work/app')
+        plan = pgo_generated.plan(crate, 'app')
+        for step, flag in [(plan.instrument, '-Cprofile-generate='), (plan.optimize, '-Cprofile-use=')]:
+            self.assertNotIn('--target', step.command)
+            self.assertEqual(step.command[step.command.index('--bin') + 1], 'app')
+            self.assertTrue(any(f.startswith(flag) for f in step.rustflags), step.rustflags)
+        self.assertEqual(Path(plan.instrument.env['LLVM_PROFILE_FILE']).parent, plan.raw)
+        self.assertNotIn('LLVM_PROFILE_FILE', plan.optimize.env)
+        self.assertNotEqual(plan.instrument.target_dir, plan.optimize.target_dir)
+        self.assertEqual(plan.binary, crate / 'target/pgo/release/app')
+        self.assertEqual(plan.instrumented, crate / 'target/pgo-gen/release/app')
+
+    def test_training_commands_run_the_instrumented_binary(self):
+        import pgo_generated
+        plan = pgo_generated.plan(Path('/work/app'), 'app')
+        self.assertEqual(pgo_generated.training(plan, ['loop "a b.json" 20', 'edit c.json 5']),
+                         [[str(plan.instrumented), 'loop', 'a b.json', '20'],
+                          [str(plan.instrumented), 'edit', 'c.json', '5']])
