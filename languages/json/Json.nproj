@@ -1,0 +1,11 @@
+language Json
+{
+  extensions .json;
+  grammar Json.ngr;
+  start Json.Document;
+
+  nitrogen
+  {
+    namespace Nitride.Json.Syntax;
+  }
+}

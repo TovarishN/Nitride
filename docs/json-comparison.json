@@ -1,0 +1,1522 @@
+{
+ "cpu": "Apple M4 Pro",
+ "os": "macOS-27.2-arm64-arm-64bit-Mach-O",
+ "dotnet_sdk": "11.0.100-preview.2.26159.112",
+ "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)",
+ "processes": 5,
+ "warm_iterations": 10,
+ "rows": [
+  {
+   "shape": "records",
+   "size": "64k",
+   "engine": "nitride",
+   "source_bytes": 65970,
+   "cold_ns": 1516334,
+   "warm_ns": 1325916,
+   "peak_rss_bytes": 6815744,
+   "samples": [
+    {
+     "cold_ns": 1623458,
+     "engine": "nitride",
+     "nodes": 6216,
+     "source_bytes": 65970,
+     "warm_median_ns": 1318708,
+     "warm_min_ns": 1201958,
+     "peak_rss_bytes": 6815744
+    },
+    {
+     "cold_ns": 1514667,
+     "engine": "nitride",
+     "nodes": 6216,
+     "source_bytes": 65970,
+     "warm_median_ns": 1325916,
+     "warm_min_ns": 1190667,
+     "peak_rss_bytes": 5439488
+    },
+    {
+     "cold_ns": 1516334,
+     "engine": "nitride",
+     "nodes": 6216,
+     "source_bytes": 65970,
+     "warm_median_ns": 1263750,
+     "warm_min_ns": 1185459,
+     "peak_rss_bytes": 6848512
+    },
+    {
+     "cold_ns": 1440709,
+     "engine": "nitride",
+     "nodes": 6216,
+     "source_bytes": 65970,
+     "warm_median_ns": 1342292,
+     "warm_min_ns": 1190584,
+     "peak_rss_bytes": 6946816
+    },
+    {
+     "cold_ns": 1567125,
+     "engine": "nitride",
+     "nodes": 6216,
+     "source_bytes": 65970,
+     "warm_median_ns": 1337666,
+     "warm_min_ns": 1203292,
+     "peak_rss_bytes": 6815744
+    }
+   ]
+  },
+  {
+   "shape": "records",
+   "size": "64k",
+   "engine": "stj-document",
+   "source_bytes": 65970,
+   "cold_ns": 4175300,
+   "warm_ns": 244700,
+   "peak_rss_bytes": 49643520,
+   "samples": [
+    {
+     "engine": "stj-document",
+     "source_bytes": 65970,
+     "result": 114,
+     "cold_ns": 4175300,
+     "warm_median_ns": 237700,
+     "warm_min_ns": 237100,
+     "peak_rss_bytes": 49643520
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65970,
+     "result": 114,
+     "cold_ns": 4030800,
+     "warm_median_ns": 237700,
+     "warm_min_ns": 236200,
+     "peak_rss_bytes": 49577984
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65970,
+     "result": 114,
+     "cold_ns": 3690000,
+     "warm_median_ns": 276400,
+     "warm_min_ns": 242000,
+     "peak_rss_bytes": 49709056
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65970,
+     "result": 114,
+     "cold_ns": 4297600,
+     "warm_median_ns": 259800,
+     "warm_min_ns": 235300,
+     "peak_rss_bytes": 49676288
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65970,
+     "result": 114,
+     "cold_ns": 4278000,
+     "warm_median_ns": 244700,
+     "warm_min_ns": 242600,
+     "peak_rss_bytes": 49512448
+    }
+   ]
+  },
+  {
+   "shape": "records",
+   "size": "64k",
+   "engine": "stj-reader",
+   "source_bytes": 65970,
+   "cold_ns": 3386100,
+   "warm_ns": 167000,
+   "peak_rss_bytes": 49496064,
+   "samples": [
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65970,
+     "result": 5135,
+     "cold_ns": 3419200,
+     "warm_median_ns": 174100,
+     "warm_min_ns": 162500,
+     "peak_rss_bytes": 49496064
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65970,
+     "result": 5135,
+     "cold_ns": 3701500,
+     "warm_median_ns": 162400,
+     "warm_min_ns": 159400,
+     "peak_rss_bytes": 49496064
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65970,
+     "result": 5135,
+     "cold_ns": 3386100,
+     "warm_median_ns": 167000,
+     "warm_min_ns": 157000,
+     "peak_rss_bytes": 49577984
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65970,
+     "result": 5135,
+     "cold_ns": 3350100,
+     "warm_median_ns": 164700,
+     "warm_min_ns": 160200,
+     "peak_rss_bytes": 49381376
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65970,
+     "result": 5135,
+     "cold_ns": 3317100,
+     "warm_median_ns": 183600,
+     "warm_min_ns": 158400,
+     "peak_rss_bytes": 49430528
+    }
+   ]
+  },
+  {
+   "shape": "records",
+   "size": "1m",
+   "engine": "nitride",
+   "source_bytes": 1048864,
+   "cold_ns": 20569584,
+   "warm_ns": 19542625,
+   "peak_rss_bytes": 22757376,
+   "samples": [
+    {
+     "cold_ns": 20415167,
+     "engine": "nitride",
+     "nodes": 97521,
+     "source_bytes": 1048864,
+     "warm_median_ns": 19692334,
+     "warm_min_ns": 19330584,
+     "peak_rss_bytes": 22757376
+    },
+    {
+     "cold_ns": 20569584,
+     "engine": "nitride",
+     "nodes": 97521,
+     "source_bytes": 1048864,
+     "warm_median_ns": 19518750,
+     "warm_min_ns": 19352458,
+     "peak_rss_bytes": 22986752
+    },
+    {
+     "cold_ns": 20616917,
+     "engine": "nitride",
+     "nodes": 97521,
+     "source_bytes": 1048864,
+     "warm_median_ns": 19427708,
+     "warm_min_ns": 19322917,
+     "peak_rss_bytes": 23347200
+    },
+    {
+     "cold_ns": 20214958,
+     "engine": "nitride",
+     "nodes": 97521,
+     "source_bytes": 1048864,
+     "warm_median_ns": 19542625,
+     "warm_min_ns": 19129583,
+     "peak_rss_bytes": 21823488
+    },
+    {
+     "cold_ns": 20797125,
+     "engine": "nitride",
+     "nodes": 97521,
+     "source_bytes": 1048864,
+     "warm_median_ns": 19559208,
+     "warm_min_ns": 19339708,
+     "peak_rss_bytes": 21397504
+    }
+   ]
+  },
+  {
+   "shape": "records",
+   "size": "1m",
+   "engine": "stj-document",
+   "source_bytes": 1048864,
+   "cold_ns": 7692700,
+   "warm_ns": 4061500,
+   "peak_rss_bytes": 51363840,
+   "samples": [
+    {
+     "engine": "stj-document",
+     "source_bytes": 1048864,
+     "result": 1795,
+     "cold_ns": 7809500,
+     "warm_median_ns": 4075000,
+     "warm_min_ns": 3920300,
+     "peak_rss_bytes": 51331072
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1048864,
+     "result": 1795,
+     "cold_ns": 7456900,
+     "warm_median_ns": 4061500,
+     "warm_min_ns": 3799800,
+     "peak_rss_bytes": 51363840
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1048864,
+     "result": 1795,
+     "cold_ns": 7692700,
+     "warm_median_ns": 4067000,
+     "warm_min_ns": 4007200,
+     "peak_rss_bytes": 51363840
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1048864,
+     "result": 1795,
+     "cold_ns": 7675800,
+     "warm_median_ns": 4007500,
+     "warm_min_ns": 3787500,
+     "peak_rss_bytes": 51363840
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1048864,
+     "result": 1795,
+     "cold_ns": 7726000,
+     "warm_median_ns": 4017500,
+     "warm_min_ns": 3829500,
+     "peak_rss_bytes": 51462144
+    }
+   ]
+  },
+  {
+   "shape": "records",
+   "size": "1m",
+   "engine": "stj-reader",
+   "source_bytes": 1048864,
+   "cold_ns": 6024200,
+   "warm_ns": 2572000,
+   "peak_rss_bytes": 50561024,
+   "samples": [
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1048864,
+     "result": 80504,
+     "cold_ns": 5947800,
+     "warm_median_ns": 2536600,
+     "warm_min_ns": 2465000,
+     "peak_rss_bytes": 50561024
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1048864,
+     "result": 80504,
+     "cold_ns": 6024200,
+     "warm_median_ns": 2585700,
+     "warm_min_ns": 2441500,
+     "peak_rss_bytes": 50577408
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1048864,
+     "result": 80504,
+     "cold_ns": 6051800,
+     "warm_median_ns": 2572000,
+     "warm_min_ns": 2503900,
+     "peak_rss_bytes": 50528256
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1048864,
+     "result": 80504,
+     "cold_ns": 5928800,
+     "warm_median_ns": 2538900,
+     "warm_min_ns": 2490900,
+     "peak_rss_bytes": 50380800
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1048864,
+     "result": 80504,
+     "cold_ns": 6398200,
+     "warm_median_ns": 2586400,
+     "warm_min_ns": 2360500,
+     "peak_rss_bytes": 50626560
+    }
+   ]
+  },
+  {
+   "shape": "records",
+   "size": "16m",
+   "engine": "nitride",
+   "source_bytes": 16777509,
+   "cold_ns": 342721708,
+   "warm_ns": 330315667,
+   "peak_rss_bytes": 558006272,
+   "samples": [
+    {
+     "cold_ns": 349653917,
+     "engine": "nitride",
+     "nodes": 1550685,
+     "source_bytes": 16777509,
+     "warm_median_ns": 331671666,
+     "warm_min_ns": 324405875,
+     "peak_rss_bytes": 558006272
+    },
+    {
+     "cold_ns": 340126750,
+     "engine": "nitride",
+     "nodes": 1550685,
+     "source_bytes": 16777509,
+     "warm_median_ns": 328574334,
+     "warm_min_ns": 324028708,
+     "peak_rss_bytes": 558366720
+    },
+    {
+     "cold_ns": 332188542,
+     "engine": "nitride",
+     "nodes": 1550685,
+     "source_bytes": 16777509,
+     "warm_median_ns": 333277833,
+     "warm_min_ns": 325707959,
+     "peak_rss_bytes": 558268416
+    },
+    {
+     "cold_ns": 356320417,
+     "engine": "nitride",
+     "nodes": 1550685,
+     "source_bytes": 16777509,
+     "warm_median_ns": 329499042,
+     "warm_min_ns": 322919167,
+     "peak_rss_bytes": 547405824
+    },
+    {
+     "cold_ns": 342721708,
+     "engine": "nitride",
+     "nodes": 1550685,
+     "source_bytes": 16777509,
+     "warm_median_ns": 330315667,
+     "warm_min_ns": 325639000,
+     "peak_rss_bytes": 557400064
+    }
+   ]
+  },
+  {
+   "shape": "records",
+   "size": "16m",
+   "engine": "stj-document",
+   "source_bytes": 16777509,
+   "cold_ns": 72204300,
+   "warm_ns": 33116800,
+   "peak_rss_bytes": 97959936,
+   "samples": [
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777509,
+     "result": 28461,
+     "cold_ns": 72204300,
+     "warm_median_ns": 33229800,
+     "warm_min_ns": 32309000,
+     "peak_rss_bytes": 98041856
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777509,
+     "result": 28461,
+     "cold_ns": 72013600,
+     "warm_median_ns": 32688300,
+     "warm_min_ns": 31765800,
+     "peak_rss_bytes": 97943552
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777509,
+     "result": 28461,
+     "cold_ns": 72490700,
+     "warm_median_ns": 33116800,
+     "warm_min_ns": 32731000,
+     "peak_rss_bytes": 97894400
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777509,
+     "result": 28461,
+     "cold_ns": 72352700,
+     "warm_median_ns": 34878100,
+     "warm_min_ns": 34189700,
+     "peak_rss_bytes": 97976320
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777509,
+     "result": 28461,
+     "cold_ns": 72193200,
+     "warm_median_ns": 32747400,
+     "warm_min_ns": 31444800,
+     "peak_rss_bytes": 97959936
+    }
+   ]
+  },
+  {
+   "shape": "records",
+   "size": "16m",
+   "engine": "stj-reader",
+   "source_bytes": 16777509,
+   "cold_ns": 44256000,
+   "warm_ns": 36107300,
+   "peak_rss_bytes": 66994176,
+   "samples": [
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777509,
+     "result": 1280356,
+     "cold_ns": 43931500,
+     "warm_median_ns": 36016100,
+     "warm_min_ns": 25740600,
+     "peak_rss_bytes": 66994176
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777509,
+     "result": 1280356,
+     "cold_ns": 44397800,
+     "warm_median_ns": 40068200,
+     "warm_min_ns": 26509900,
+     "peak_rss_bytes": 67043328
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777509,
+     "result": 1280356,
+     "cold_ns": 44121200,
+     "warm_median_ns": 35804700,
+     "warm_min_ns": 24952800,
+     "peak_rss_bytes": 67043328
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777509,
+     "result": 1280356,
+     "cold_ns": 44256000,
+     "warm_median_ns": 40546200,
+     "warm_min_ns": 25457000,
+     "peak_rss_bytes": 66879488
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777509,
+     "result": 1280356,
+     "cold_ns": 44426400,
+     "warm_median_ns": 36107300,
+     "warm_min_ns": 25686100,
+     "peak_rss_bytes": 66797568
+    }
+   ]
+  },
+  {
+   "shape": "numbers",
+   "size": "64k",
+   "engine": "nitride",
+   "source_bytes": 65772,
+   "cold_ns": 1587500,
+   "warm_ns": 1473209,
+   "peak_rss_bytes": 5701632,
+   "samples": [
+    {
+     "cold_ns": 1674750,
+     "engine": "nitride",
+     "nodes": 4325,
+     "source_bytes": 65772,
+     "warm_median_ns": 1473541,
+     "warm_min_ns": 1428750,
+     "peak_rss_bytes": 5701632
+    },
+    {
+     "cold_ns": 1587500,
+     "engine": "nitride",
+     "nodes": 4325,
+     "source_bytes": 65772,
+     "warm_median_ns": 1457084,
+     "warm_min_ns": 1421291,
+     "peak_rss_bytes": 5685248
+    },
+    {
+     "cold_ns": 1504583,
+     "engine": "nitride",
+     "nodes": 4325,
+     "source_bytes": 65772,
+     "warm_median_ns": 1473209,
+     "warm_min_ns": 1420542,
+     "peak_rss_bytes": 5783552
+    },
+    {
+     "cold_ns": 1712375,
+     "engine": "nitride",
+     "nodes": 4325,
+     "source_bytes": 65772,
+     "warm_median_ns": 1501458,
+     "warm_min_ns": 1370583,
+     "peak_rss_bytes": 5783552
+    },
+    {
+     "cold_ns": 1585834,
+     "engine": "nitride",
+     "nodes": 4325,
+     "source_bytes": 65772,
+     "warm_median_ns": 1453458,
+     "warm_min_ns": 1353458,
+     "peak_rss_bytes": 5701632
+    }
+   ]
+  },
+  {
+   "shape": "numbers",
+   "size": "64k",
+   "engine": "stj-document",
+   "source_bytes": 65772,
+   "cold_ns": 1222100,
+   "warm_ns": 231500,
+   "peak_rss_bytes": 49512448,
+   "samples": [
+    {
+     "engine": "stj-document",
+     "source_bytes": 65772,
+     "result": 131,
+     "cold_ns": 1171200,
+     "warm_median_ns": 242900,
+     "warm_min_ns": 221000,
+     "peak_rss_bytes": 49496064
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65772,
+     "result": 131,
+     "cold_ns": 1141300,
+     "warm_median_ns": 236200,
+     "warm_min_ns": 221900,
+     "peak_rss_bytes": 49512448
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65772,
+     "result": 131,
+     "cold_ns": 1222100,
+     "warm_median_ns": 208800,
+     "warm_min_ns": 182000,
+     "peak_rss_bytes": 49577984
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65772,
+     "result": 131,
+     "cold_ns": 1323800,
+     "warm_median_ns": 231500,
+     "warm_min_ns": 195800,
+     "peak_rss_bytes": 49545216
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65772,
+     "result": 131,
+     "cold_ns": 1234700,
+     "warm_median_ns": 181200,
+     "warm_min_ns": 180200,
+     "peak_rss_bytes": 49496064
+    }
+   ]
+  },
+  {
+   "shape": "numbers",
+   "size": "64k",
+   "engine": "stj-reader",
+   "source_bytes": 65772,
+   "cold_ns": 604300,
+   "warm_ns": 184300,
+   "peak_rss_bytes": 49528832,
+   "samples": [
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65772,
+     "result": 4456,
+     "cold_ns": 576400,
+     "warm_median_ns": 159800,
+     "warm_min_ns": 147300,
+     "peak_rss_bytes": 49528832
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65772,
+     "result": 4456,
+     "cold_ns": 604300,
+     "warm_median_ns": 168100,
+     "warm_min_ns": 148000,
+     "peak_rss_bytes": 49561600
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65772,
+     "result": 4456,
+     "cold_ns": 592300,
+     "warm_median_ns": 193000,
+     "warm_min_ns": 172100,
+     "peak_rss_bytes": 49528832
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65772,
+     "result": 4456,
+     "cold_ns": 608100,
+     "warm_median_ns": 185400,
+     "warm_min_ns": 157700,
+     "peak_rss_bytes": 49545216
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65772,
+     "result": 4456,
+     "cold_ns": 635600,
+     "warm_median_ns": 184300,
+     "warm_min_ns": 158400,
+     "peak_rss_bytes": 49496064
+    }
+   ]
+  },
+  {
+   "shape": "numbers",
+   "size": "1m",
+   "engine": "nitride",
+   "source_bytes": 1049070,
+   "cold_ns": 23613000,
+   "warm_ns": 23143750,
+   "peak_rss_bytes": 27049984,
+   "samples": [
+    {
+     "cold_ns": 23511084,
+     "engine": "nitride",
+     "nodes": 69269,
+     "source_bytes": 1049070,
+     "warm_median_ns": 22611375,
+     "warm_min_ns": 22375917,
+     "peak_rss_bytes": 34226176
+    },
+    {
+     "cold_ns": 23604875,
+     "engine": "nitride",
+     "nodes": 69269,
+     "source_bytes": 1049070,
+     "warm_median_ns": 22740167,
+     "warm_min_ns": 22225375,
+     "peak_rss_bytes": 27049984
+    },
+    {
+     "cold_ns": 23613000,
+     "engine": "nitride",
+     "nodes": 69269,
+     "source_bytes": 1049070,
+     "warm_median_ns": 23193500,
+     "warm_min_ns": 22826000,
+     "peak_rss_bytes": 26984448
+    },
+    {
+     "cold_ns": 24059250,
+     "engine": "nitride",
+     "nodes": 69269,
+     "source_bytes": 1049070,
+     "warm_median_ns": 23222208,
+     "warm_min_ns": 23073250,
+     "peak_rss_bytes": 26968064
+    },
+    {
+     "cold_ns": 24205167,
+     "engine": "nitride",
+     "nodes": 69269,
+     "source_bytes": 1049070,
+     "warm_median_ns": 23143750,
+     "warm_min_ns": 22883750,
+     "peak_rss_bytes": 27049984
+    }
+   ]
+  },
+  {
+   "shape": "numbers",
+   "size": "1m",
+   "engine": "stj-document",
+   "source_bytes": 1049070,
+   "cold_ns": 4595400,
+   "warm_ns": 3644300,
+   "peak_rss_bytes": 51281920,
+   "samples": [
+    {
+     "engine": "stj-document",
+     "source_bytes": 1049070,
+     "result": 2099,
+     "cold_ns": 4589000,
+     "warm_median_ns": 3429200,
+     "warm_min_ns": 3121100,
+     "peak_rss_bytes": 51331072
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1049070,
+     "result": 2099,
+     "cold_ns": 4487600,
+     "warm_median_ns": 3675200,
+     "warm_min_ns": 3094700,
+     "peak_rss_bytes": 51281920
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1049070,
+     "result": 2099,
+     "cold_ns": 4595400,
+     "warm_median_ns": 3644300,
+     "warm_min_ns": 3251900,
+     "peak_rss_bytes": 51118080
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1049070,
+     "result": 2099,
+     "cold_ns": 4695300,
+     "warm_median_ns": 3592200,
+     "warm_min_ns": 3212200,
+     "peak_rss_bytes": 51314688
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1049070,
+     "result": 2099,
+     "cold_ns": 4651900,
+     "warm_median_ns": 3807100,
+     "warm_min_ns": 3684400,
+     "peak_rss_bytes": 51183616
+    }
+   ]
+  },
+  {
+   "shape": "numbers",
+   "size": "1m",
+   "engine": "stj-reader",
+   "source_bytes": 1049070,
+   "cold_ns": 3664500,
+   "warm_ns": 2967200,
+   "peak_rss_bytes": 50495488,
+   "samples": [
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1049070,
+     "result": 71368,
+     "cold_ns": 3812200,
+     "warm_median_ns": 2999100,
+     "warm_min_ns": 2450400,
+     "peak_rss_bytes": 50495488
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1049070,
+     "result": 71368,
+     "cold_ns": 3543200,
+     "warm_median_ns": 2631200,
+     "warm_min_ns": 2405500,
+     "peak_rss_bytes": 50511872
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1049070,
+     "result": 71368,
+     "cold_ns": 3628500,
+     "warm_median_ns": 2967200,
+     "warm_min_ns": 2495300,
+     "peak_rss_bytes": 50413568
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1049070,
+     "result": 71368,
+     "cold_ns": 3664500,
+     "warm_median_ns": 3057900,
+     "warm_min_ns": 2410000,
+     "peak_rss_bytes": 50642944
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1049070,
+     "result": 71368,
+     "cold_ns": 3787700,
+     "warm_median_ns": 2909300,
+     "warm_min_ns": 2255900,
+     "peak_rss_bytes": 50495488
+    }
+   ]
+  },
+  {
+   "shape": "numbers",
+   "size": "16m",
+   "engine": "nitride",
+   "source_bytes": 16777374,
+   "cold_ns": 426717792,
+   "warm_ns": 405340791,
+   "peak_rss_bytes": 897220608,
+   "samples": [
+    {
+     "cold_ns": 426717792,
+     "engine": "nitride",
+     "nodes": 1110056,
+     "source_bytes": 16777374,
+     "warm_median_ns": 406284000,
+     "warm_min_ns": 391959042,
+     "peak_rss_bytes": 897220608
+    },
+    {
+     "cold_ns": 429697333,
+     "engine": "nitride",
+     "nodes": 1110056,
+     "source_bytes": 16777374,
+     "warm_median_ns": 405014334,
+     "warm_min_ns": 388956792,
+     "peak_rss_bytes": 897548288
+    },
+    {
+     "cold_ns": 429693750,
+     "engine": "nitride",
+     "nodes": 1110056,
+     "source_bytes": 16777374,
+     "warm_median_ns": 403439750,
+     "warm_min_ns": 395573417,
+     "peak_rss_bytes": 897187840
+    },
+    {
+     "cold_ns": 421971584,
+     "engine": "nitride",
+     "nodes": 1110056,
+     "source_bytes": 16777374,
+     "warm_median_ns": 408097750,
+     "warm_min_ns": 395660375,
+     "peak_rss_bytes": 897171456
+    },
+    {
+     "cold_ns": 411426791,
+     "engine": "nitride",
+     "nodes": 1110056,
+     "source_bytes": 16777374,
+     "warm_median_ns": 405340791,
+     "warm_min_ns": 391606708,
+     "peak_rss_bytes": 897220608
+    }
+   ]
+  },
+  {
+   "shape": "numbers",
+   "size": "16m",
+   "engine": "stj-document",
+   "source_bytes": 16777374,
+   "cold_ns": 60892500,
+   "warm_ns": 46501700,
+   "peak_rss_bytes": 94683136,
+   "samples": [
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777374,
+     "result": 33638,
+     "cold_ns": 62024300,
+     "warm_median_ns": 46332000,
+     "warm_min_ns": 41102100,
+     "peak_rss_bytes": 94683136
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777374,
+     "result": 33638,
+     "cold_ns": 60152000,
+     "warm_median_ns": 46839200,
+     "warm_min_ns": 37452400,
+     "peak_rss_bytes": 94601216
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777374,
+     "result": 33638,
+     "cold_ns": 60247500,
+     "warm_median_ns": 46501700,
+     "warm_min_ns": 42237600,
+     "peak_rss_bytes": 94846976
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777374,
+     "result": 33638,
+     "cold_ns": 60896100,
+     "warm_median_ns": 46169300,
+     "warm_min_ns": 43447500,
+     "peak_rss_bytes": 94765056
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777374,
+     "result": 33638,
+     "cold_ns": 60892500,
+     "warm_median_ns": 46767000,
+     "warm_min_ns": 43972100,
+     "peak_rss_bytes": 94683136
+    }
+   ]
+  },
+  {
+   "shape": "numbers",
+   "size": "16m",
+   "engine": "stj-reader",
+   "source_bytes": 16777374,
+   "cold_ns": 44151800,
+   "warm_ns": 41185400,
+   "peak_rss_bytes": 66863104,
+   "samples": [
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777374,
+     "result": 1143694,
+     "cold_ns": 44151800,
+     "warm_median_ns": 41644000,
+     "warm_min_ns": 38049600,
+     "peak_rss_bytes": 66863104
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777374,
+     "result": 1143694,
+     "cold_ns": 45964400,
+     "warm_median_ns": 39821800,
+     "warm_min_ns": 30997500,
+     "peak_rss_bytes": 66863104
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777374,
+     "result": 1143694,
+     "cold_ns": 44296600,
+     "warm_median_ns": 41222200,
+     "warm_min_ns": 34196200,
+     "peak_rss_bytes": 66781184
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777374,
+     "result": 1143694,
+     "cold_ns": 40761200,
+     "warm_median_ns": 41028000,
+     "warm_min_ns": 36015900,
+     "peak_rss_bytes": 66945024
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777374,
+     "result": 1143694,
+     "cold_ns": 44072500,
+     "warm_median_ns": 41185400,
+     "warm_min_ns": 37708700,
+     "peak_rss_bytes": 66895872
+    }
+   ]
+  },
+  {
+   "shape": "strings",
+   "size": "64k",
+   "engine": "nitride",
+   "source_bytes": 65869,
+   "cold_ns": 210583,
+   "warm_ns": 182333,
+   "peak_rss_bytes": 3522560,
+   "samples": [
+    {
+     "cold_ns": 243250,
+     "engine": "nitride",
+     "nodes": 47,
+     "source_bytes": 65869,
+     "warm_median_ns": 183667,
+     "warm_min_ns": 163458,
+     "peak_rss_bytes": 3522560
+    },
+    {
+     "cold_ns": 210583,
+     "engine": "nitride",
+     "nodes": 47,
+     "source_bytes": 65869,
+     "warm_median_ns": 176083,
+     "warm_min_ns": 161666,
+     "peak_rss_bytes": 3522560
+    },
+    {
+     "cold_ns": 242667,
+     "engine": "nitride",
+     "nodes": 47,
+     "source_bytes": 65869,
+     "warm_median_ns": 182625,
+     "warm_min_ns": 164375,
+     "peak_rss_bytes": 3522560
+    },
+    {
+     "cold_ns": 199917,
+     "engine": "nitride",
+     "nodes": 47,
+     "source_bytes": 65869,
+     "warm_median_ns": 182208,
+     "warm_min_ns": 159542,
+     "peak_rss_bytes": 3506176
+    },
+    {
+     "cold_ns": 203500,
+     "engine": "nitride",
+     "nodes": 47,
+     "source_bytes": 65869,
+     "warm_median_ns": 182333,
+     "warm_min_ns": 165916,
+     "peak_rss_bytes": 3489792
+    }
+   ]
+  },
+  {
+   "shape": "strings",
+   "size": "64k",
+   "engine": "stj-document",
+   "source_bytes": 65869,
+   "cold_ns": 3585600,
+   "warm_ns": 16800,
+   "peak_rss_bytes": 49299456,
+   "samples": [
+    {
+     "engine": "stj-document",
+     "source_bytes": 65869,
+     "result": 45,
+     "cold_ns": 3638200,
+     "warm_median_ns": 17800,
+     "warm_min_ns": 17200,
+     "peak_rss_bytes": 49348608
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65869,
+     "result": 45,
+     "cold_ns": 3585600,
+     "warm_median_ns": 16800,
+     "warm_min_ns": 15300,
+     "peak_rss_bytes": 49512448
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65869,
+     "result": 45,
+     "cold_ns": 3684200,
+     "warm_median_ns": 15000,
+     "warm_min_ns": 14900,
+     "peak_rss_bytes": 49299456
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65869,
+     "result": 45,
+     "cold_ns": 3511300,
+     "warm_median_ns": 17600,
+     "warm_min_ns": 17500,
+     "peak_rss_bytes": 49283072
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 65869,
+     "result": 45,
+     "cold_ns": 3452000,
+     "warm_median_ns": 15200,
+     "warm_min_ns": 15100,
+     "peak_rss_bytes": 49299456
+    }
+   ]
+  },
+  {
+   "shape": "strings",
+   "size": "64k",
+   "engine": "stj-reader",
+   "source_bytes": 65869,
+   "cold_ns": 3245700,
+   "warm_ns": 17000,
+   "peak_rss_bytes": 49430528,
+   "samples": [
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65869,
+     "result": 47,
+     "cold_ns": 3208000,
+     "warm_median_ns": 16500,
+     "warm_min_ns": 16500,
+     "peak_rss_bytes": 49463296
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65869,
+     "result": 47,
+     "cold_ns": 3564000,
+     "warm_median_ns": 14600,
+     "warm_min_ns": 14500,
+     "peak_rss_bytes": 49430528
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65869,
+     "result": 47,
+     "cold_ns": 3287300,
+     "warm_median_ns": 18400,
+     "warm_min_ns": 16700,
+     "peak_rss_bytes": 49545216
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65869,
+     "result": 47,
+     "cold_ns": 3063700,
+     "warm_median_ns": 18600,
+     "warm_min_ns": 16400,
+     "peak_rss_bytes": 49414144
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 65869,
+     "result": 47,
+     "cold_ns": 3245700,
+     "warm_median_ns": 17000,
+     "warm_min_ns": 15200,
+     "peak_rss_bytes": 49381376
+    }
+   ]
+  },
+  {
+   "shape": "strings",
+   "size": "1m",
+   "engine": "nitride",
+   "source_bytes": 1049056,
+   "cold_ns": 2745583,
+   "warm_ns": 2771042,
+   "peak_rss_bytes": 6979584,
+   "samples": [
+    {
+     "cold_ns": 2756375,
+     "engine": "nitride",
+     "nodes": 775,
+     "source_bytes": 1049056,
+     "warm_median_ns": 2786125,
+     "warm_min_ns": 2716125,
+     "peak_rss_bytes": 6946816
+    },
+    {
+     "cold_ns": 2703291,
+     "engine": "nitride",
+     "nodes": 775,
+     "source_bytes": 1049056,
+     "warm_median_ns": 2771042,
+     "warm_min_ns": 2669958,
+     "peak_rss_bytes": 6995968
+    },
+    {
+     "cold_ns": 2645750,
+     "engine": "nitride",
+     "nodes": 775,
+     "source_bytes": 1049056,
+     "warm_median_ns": 2716833,
+     "warm_min_ns": 2528375,
+     "peak_rss_bytes": 6979584
+    },
+    {
+     "cold_ns": 2840833,
+     "engine": "nitride",
+     "nodes": 775,
+     "source_bytes": 1049056,
+     "warm_median_ns": 2894708,
+     "warm_min_ns": 2606250,
+     "peak_rss_bytes": 7061504
+    },
+    {
+     "cold_ns": 2745583,
+     "engine": "nitride",
+     "nodes": 775,
+     "source_bytes": 1049056,
+     "warm_median_ns": 2766000,
+     "warm_min_ns": 2600875,
+     "peak_rss_bytes": 6979584
+    }
+   ]
+  },
+  {
+   "shape": "strings",
+   "size": "1m",
+   "engine": "stj-document",
+   "source_bytes": 1049056,
+   "cold_ns": 4183900,
+   "warm_ns": 301600,
+   "peak_rss_bytes": 50511872,
+   "samples": [
+    {
+     "engine": "stj-document",
+     "source_bytes": 1049056,
+     "result": 773,
+     "cold_ns": 4089700,
+     "warm_median_ns": 313500,
+     "warm_min_ns": 307400,
+     "peak_rss_bytes": 50544640
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1049056,
+     "result": 773,
+     "cold_ns": 4185600,
+     "warm_median_ns": 289700,
+     "warm_min_ns": 270600,
+     "peak_rss_bytes": 50348032
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1049056,
+     "result": 773,
+     "cold_ns": 4183900,
+     "warm_median_ns": 305300,
+     "warm_min_ns": 288900,
+     "peak_rss_bytes": 50561024
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1049056,
+     "result": 773,
+     "cold_ns": 4224900,
+     "warm_median_ns": 300800,
+     "warm_min_ns": 289300,
+     "peak_rss_bytes": 50266112
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 1049056,
+     "result": 773,
+     "cold_ns": 3820200,
+     "warm_median_ns": 301600,
+     "warm_min_ns": 290500,
+     "peak_rss_bytes": 50511872
+    }
+   ]
+  },
+  {
+   "shape": "strings",
+   "size": "1m",
+   "engine": "stj-reader",
+   "source_bytes": 1049056,
+   "cold_ns": 3656500,
+   "warm_ns": 317000,
+   "peak_rss_bytes": 50331648,
+   "samples": [
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1049056,
+     "result": 775,
+     "cold_ns": 3559200,
+     "warm_median_ns": 322100,
+     "warm_min_ns": 303900,
+     "peak_rss_bytes": 50200576
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1049056,
+     "result": 775,
+     "cold_ns": 3656500,
+     "warm_median_ns": 317500,
+     "warm_min_ns": 303500,
+     "peak_rss_bytes": 50331648
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1049056,
+     "result": 775,
+     "cold_ns": 3728900,
+     "warm_median_ns": 317000,
+     "warm_min_ns": 309600,
+     "peak_rss_bytes": 50298880
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1049056,
+     "result": 775,
+     "cold_ns": 3473900,
+     "warm_median_ns": 316200,
+     "warm_min_ns": 305700,
+     "peak_rss_bytes": 50348032
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 1049056,
+     "result": 775,
+     "cold_ns": 3731300,
+     "warm_median_ns": 290900,
+     "warm_min_ns": 283400,
+     "peak_rss_bytes": 50446336
+    }
+   ]
+  },
+  {
+   "shape": "strings",
+   "size": "16m",
+   "engine": "nitride",
+   "source_bytes": 16777637,
+   "cold_ns": 43952000,
+   "warm_ns": 43860125,
+   "peak_rss_bytes": 63422464,
+   "samples": [
+    {
+     "cold_ns": 46641875,
+     "engine": "nitride",
+     "nodes": 12309,
+     "source_bytes": 16777637,
+     "warm_median_ns": 44415792,
+     "warm_min_ns": 41186875,
+     "peak_rss_bytes": 63422464
+    },
+    {
+     "cold_ns": 42387791,
+     "engine": "nitride",
+     "nodes": 12309,
+     "source_bytes": 16777637,
+     "warm_median_ns": 43811375,
+     "warm_min_ns": 42198000,
+     "peak_rss_bytes": 88539136
+    },
+    {
+     "cold_ns": 44902417,
+     "engine": "nitride",
+     "nodes": 12309,
+     "source_bytes": 16777637,
+     "warm_median_ns": 43860125,
+     "warm_min_ns": 43089250,
+     "peak_rss_bytes": 63422464
+    },
+    {
+     "cold_ns": 42746292,
+     "engine": "nitride",
+     "nodes": 12309,
+     "source_bytes": 16777637,
+     "warm_median_ns": 42419209,
+     "warm_min_ns": 41963417,
+     "peak_rss_bytes": 63340544
+    },
+    {
+     "cold_ns": 43952000,
+     "engine": "nitride",
+     "nodes": 12309,
+     "source_bytes": 16777637,
+     "warm_median_ns": 44183750,
+     "warm_min_ns": 42493917,
+     "peak_rss_bytes": 63406080
+    }
+   ]
+  },
+  {
+   "shape": "strings",
+   "size": "16m",
+   "engine": "stj-document",
+   "source_bytes": 16777637,
+   "cold_ns": 9613300,
+   "warm_ns": 5162300,
+   "peak_rss_bytes": 66666496,
+   "samples": [
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777637,
+     "result": 12307,
+     "cold_ns": 9613300,
+     "warm_median_ns": 5162300,
+     "warm_min_ns": 5086700,
+     "peak_rss_bytes": 66535424
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777637,
+     "result": 12307,
+     "cold_ns": 9595000,
+     "warm_median_ns": 4803500,
+     "warm_min_ns": 4666300,
+     "peak_rss_bytes": 66699264
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777637,
+     "result": 12307,
+     "cold_ns": 9681300,
+     "warm_median_ns": 5172400,
+     "warm_min_ns": 5028700,
+     "peak_rss_bytes": 66863104
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777637,
+     "result": 12307,
+     "cold_ns": 9289600,
+     "warm_median_ns": 5187000,
+     "warm_min_ns": 5130400,
+     "peak_rss_bytes": 66633728
+    },
+    {
+     "engine": "stj-document",
+     "source_bytes": 16777637,
+     "result": 12307,
+     "cold_ns": 10005200,
+     "warm_median_ns": 4804700,
+     "warm_min_ns": 4740700,
+     "peak_rss_bytes": 66666496
+    }
+   ]
+  },
+  {
+   "shape": "strings",
+   "size": "16m",
+   "engine": "stj-reader",
+   "source_bytes": 16777637,
+   "cold_ns": 8568500,
+   "warm_ns": 4924200,
+   "peak_rss_bytes": 66191360,
+   "samples": [
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777637,
+     "result": 12309,
+     "cold_ns": 9017000,
+     "warm_median_ns": 4990800,
+     "warm_min_ns": 4818600,
+     "peak_rss_bytes": 66240512
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777637,
+     "result": 12309,
+     "cold_ns": 8435300,
+     "warm_median_ns": 4924200,
+     "warm_min_ns": 4887600,
+     "peak_rss_bytes": 66174976
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777637,
+     "result": 12309,
+     "cold_ns": 8210600,
+     "warm_median_ns": 4565200,
+     "warm_min_ns": 4541600,
+     "peak_rss_bytes": 66256896
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777637,
+     "result": 12309,
+     "cold_ns": 8568500,
+     "warm_median_ns": 4927100,
+     "warm_min_ns": 4893700,
+     "peak_rss_bytes": 66158592
+    },
+    {
+     "engine": "stj-reader",
+     "source_bytes": 16777637,
+     "result": 12309,
+     "cold_ns": 8721100,
+     "warm_median_ns": 4877500,
+     "warm_min_ns": 4600700,
+     "peak_rss_bytes": 66191360
+    }
+   ]
+  }
+ ]
+}
