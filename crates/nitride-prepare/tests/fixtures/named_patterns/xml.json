@@ -14,6 +14,22 @@
     }
   ],
   "omitted_semantics": [],
+  "patterns": [
+    {
+      "alternatives": [
+        {
+          "captures": [],
+          "pattern": " <password ..$_>..$_</password> "
+        },
+        {
+          "captures": [],
+          "pattern": " <api-key ..$_>..$_</api-key> "
+        }
+      ],
+      "category": "Xml.Element",
+      "name": "Xml.Secret"
+    }
+  ],
   "rules": [
     {
       "associativity": null,
@@ -418,6 +434,37 @@
           "message": "A password is stored directly inside credentials; use a secret-ref instead. {pass}",
           "pattern": " <credentials ..$_>..$_<password ..$_>$pass</password>..$_</credentials>",
           "severity": "warning"
+        },
+        {
+          "at": null,
+          "captures": [
+            {
+              "category": "Xml.Element",
+              "descendant": true,
+              "name": "secret",
+              "pattern": "Xml.Secret"
+            }
+          ],
+          "code": "XML1002",
+          "kind": "match",
+          "message": "A vault stores a plaintext secret: {secret}",
+          "pattern": " <vault ..$_>..$_ $secret ..$_</vault> ",
+          "severity": "warning"
+        },
+        {
+          "at": null,
+          "captures": [],
+          "code": "XML1003",
+          "context": {
+            "captures": [],
+            "category": "Xml.Paired",
+            "kind": "inside",
+            "pattern": " <service ..$_>..$_</service> "
+          },
+          "kind": "match",
+          "message": "An API key is embedded in a service definition; reference it instead.",
+          "pattern": " <api-key ..$_>..$_</api-key> ",
+          "severity": "warning"
         }
       ],
       "clauses": [],
@@ -556,7 +603,7 @@
       "precedence": null
     }
   ],
-  "source_hash": "6245ab4f5095d5cec6583df783818e8c9faa08bdb8aa63be6d4c675e2995c0c6",
+  "source_hash": "c32ec3c893c9ba0afb56296c6ec0de4bb00fe3031b7284071f1984135a981a89",
   "start": "Xml.Document",
   "symbol_kinds": [],
   "version": 1

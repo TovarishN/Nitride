@@ -16,7 +16,18 @@ syntax module Xml
     match
       (pass:Text)<[ <credentials ..$_>..$_<password ..$_>$pass</password>..$_</credentials>]>
       => warning XML1001 : $"A password is stored directly inside credentials; use a secret-ref instead. {pass}";
+    // Looking down: one warning on the vault, wherever a secret sits beneath it.
+    match (secret: ..Secret)
+      <[ <vault ..$_>..$_ $secret ..$_</vault> ]>
+      => warning XML1002 : $"A vault stores a plaintext secret: {secret}";
+    // Looking up: one warning on each API key that sits anywhere inside a service.
+    match <[ <api-key ..$_>..$_</api-key> ]>
+      inside <[ <service ..$_>..$_</service> ]>
+      => warning XML1003 : "An API key is embedded in a service definition; reference it instead.";
   }
+  pattern Secret : Element =
+    | <[ <password ..$_>..$_</password> ]>
+    | <[ <api-key ..$_>..$_</api-key> ]>;
   syntax Attribute = Name "=" Quoted;
   syntax Node = Element / Comment / Text;
   syntax Text = Content;
