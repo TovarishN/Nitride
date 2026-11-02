@@ -23,10 +23,21 @@ that are cheaper than the first.
 
 ## Goals
 
-1. **One-shot parses skip the reuse index.** A parse option says whether the
-   snapshot will be edited. Without it, no recognition facts are recorded,
-   hashed, sorted or packed, and the snapshot keeps no index. Editing such a
-   snapshot still works and reparses fully (counted in `full_parse_fallbacks`).
+1. **Cheap facts during the parse, the index built only when needed.** Every
+   parse still records its recognition facts, since an editor may edit any
+   snapshot, but in a form that is cheap to write and quick to turn into the
+   index:
+   - an append-only log of compact fact records in the order rules start, so
+     the log is already nearly sorted by position;
+   - a slot replaced in place when a fact is re-recorded at the same position
+     and rule, so the log never holds duplicates;
+   - the in-parse lookups (`get`, `contains_key`, eviction order) served by a
+     small position-and-rule-to-slot map, or by the memo, instead of today's
+     map of full records.
+
+   The snapshot keeps the log and packs it into
+   `incremental::dependencies::Index` on its first edit, in about linear time
+   because the log is nearly sorted. A parse that is never edited never packs.
 2. **A reusable parser.** A parser object that is kept across parses and holds
    on to its scratch memory (memo, buffers, arena builder capacity, maps) so
    that later parses in the process allocate little. The one-shot functions
@@ -72,18 +83,25 @@ shows it helps, and the doc reports what was achieved.
 
 ## Decided
 
-- Goal 1 is an explicit option, not a lazily built index: the index holds
-  lookahead extents (`observed_offset`, `furthest_offset`) recorded during the
-  parse that cannot be recovered from the tree afterwards.
-- The JSON bench uses the one-shot mode for the STJ comparison, which is the
-  fair comparison since STJ cannot reuse work after edits; the doc says so.
-- Order of work: one-shot mode, reusable parser, memory, PGO, then the doc —
+- Goal 1 keeps every snapshot editable (no opt-out flag) and moves the cost
+  rather than removing it: a little help during the parse (the ordered,
+  duplicate-free log) makes the index fast to build later. The index cannot
+  be rebuilt from the tree alone, because it holds lookahead extents
+  (`observed_offset`, `furthest_offset`) recorded during the parse.
+- The first edit of a snapshot pays for packing the index. That cost is
+  measured on the 16 MiB inputs and reported; if it is too high for editor
+  use, the snapshot packs eagerly on a background thread instead.
+- The JSON bench measures the default parse, log included, so the comparison
+  needs no special mode.
+- Order of work: fact log and deferred index, reusable parser, memory, PGO, then the doc —
   each measured before the next.
 
 ## Left to the builder
 
-- The option's name and where it lives (`ParseOptions`, `SnapshotMode`, or the
-  parser object).
+- The fact record's exact layout, and whether the in-parse lookups use a slot
+  map or the memo.
+- Whether an explicit "never edited" opt-out is still worth adding, decided by
+  what the log costs on the 16 MiB inputs.
 - Which scratch structures the reusable parser keeps, and how it caps what it
   retains after an unusually large input.
 - Which syntax-layout changes to make for goal 3, guided by `storage_stats`

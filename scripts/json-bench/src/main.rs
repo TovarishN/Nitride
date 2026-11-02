@@ -5,6 +5,23 @@ mod json {
     include!(concat!(env!("OUT_DIR"), "/json.rs"));
 }
 
+struct Counting;
+static LIVE: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static PEAK: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+unsafe impl std::alloc::GlobalAlloc for Counting {
+    unsafe fn alloc(&self, l: std::alloc::Layout) -> *mut u8 {
+        let n = LIVE.fetch_add(l.size(), std::sync::atomic::Ordering::Relaxed) + l.size();
+        PEAK.fetch_max(n, std::sync::atomic::Ordering::Relaxed);
+        unsafe { std::alloc::System.alloc(l) }
+    }
+    unsafe fn dealloc(&self, p: *mut u8, l: std::alloc::Layout) {
+        LIVE.fetch_sub(l.size(), std::sync::atomic::Ordering::Relaxed);
+        unsafe { std::alloc::System.dealloc(p, l) }
+    }
+}
+#[global_allocator]
+static A: Counting = Counting;
+
 fn parse(source: &str) -> Result<ParseSnapshot, Diagnostic> {
     parse_snapshot_generated(
         &json::PARSER,
@@ -56,6 +73,18 @@ fn main() {
                     "warm_min_ns": rest.first(),
                 })
             );
+        }
+        Some("stats") => {
+            let source = std::fs::read_to_string(&args[1]).unwrap();
+            let snapshot = parse(&source).expect("parse");
+            eprintln!("{:#?}\n{:#?}", snapshot.stats(), snapshot.storage_stats());
+            eprintln!("live {} MB peak {} MB source {} MB", LIVE.load(std::sync::atomic::Ordering::Relaxed) >> 20, PEAK.load(std::sync::atomic::Ordering::Relaxed) >> 20, source.len() >> 20);
+        }
+        Some("loop") => {
+            let source = std::fs::read_to_string(&args[1]).unwrap();
+            for _ in 0..args[2].parse::<usize>().unwrap() {
+                std::hint::black_box(parse(&source).expect("parse"));
+            }
         }
         _ => panic!("usage: nitride-json-bench check <file>... | bench <file> <warm-iterations>"),
     }
