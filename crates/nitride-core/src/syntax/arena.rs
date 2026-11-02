@@ -12,7 +12,7 @@ use std::sync::{
 pub struct SubtreeId(u64);
 impl SubtreeId {
     pub(crate) const NONE: Self = Self(u64::MAX);
-    fn new(chunk: u32, slot: u32) -> Self {
+    pub(crate) fn new(chunk: u32, slot: u32) -> Self {
         Self((u64::from(chunk) << 32) | u64::from(slot))
     }
     fn chunk(self) -> u32 {

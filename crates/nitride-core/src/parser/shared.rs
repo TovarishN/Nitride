@@ -5,6 +5,7 @@ use crate::syntax::{arena::ArenaBuilder, text::Reader};
 use crate::*;
 use std::collections::HashMap;
 mod children;
+mod facts;
 pub(crate) mod hash;
 mod memo;
 use hash::FastMap;
@@ -143,7 +144,7 @@ struct Parser<'a> {
     checkpoint_next: bool,
     failure_checkpoint: Option<(u32, Key)>,
     pending_failures: usize,
-    pending_index: FastMap<(u32, Key), Hit>,
+    facts: facts::FactLog,
     prior: Index,
     prior_nodes: Vec<PriorNode>,
     prior_paths: FastMap<(SubtreeId, u32), PriorPath>,
@@ -476,12 +477,12 @@ fn publish(
     parser.arena.retain(root.node);
     parser.clear_memo(0);
     parser.clear_memo(1);
-    for hit in parser.pending_index.values() {
+    for hit in parser.facts.values() {
         parser.arena.release_cache(hit.root);
     }
     parser.arena.restore(0);
     parser
-        .pending_index
+        .facts
         .retain(|_, hit| hit.root == SubtreeId::NONE || parser.arena.node(hit.root).is_some());
     drop(parser.memo);
     drop(parser.edge_buffers);
@@ -499,24 +500,18 @@ fn publish(
         .saturating_add(allocation_charge);
     let mut arena = parser.arena.finish();
     arena.labels = parser.labels.into();
-    // A cold seed's facts are already in the index; compaction below keeps
-    // those still reachable from the published root.
+    // A cold parse's facts are packed after compaction below, sorted by
+    // position in linear time. A cold seed's facts are already in the index;
+    // compaction below keeps those still reachable from the published root.
+    let mut cold = None;
     if base.is_none() && parser.index.is_empty() {
-        parser.index = Index::from_entries(
-            parser
-                .pending_index
-                .into_iter()
-                .map(|((at, key), hit)| (at, key, hit)),
-        );
+        cold = Some(std::mem::take(&mut parser.facts).into_entries());
     } else if base.is_none() {
-        parser.index = parser.index.merged(
-            parser
-                .pending_index
-                .into_iter()
-                .map(|((at, key), hit)| (at, key, hit)),
-        );
+        parser.index = parser
+            .index
+            .merged(std::mem::take(&mut parser.facts).into_entries());
     } else {
-        for ((at, key), hit) in parser.pending_index {
+        for (at, key, hit) in std::mem::take(&mut parser.facts).into_entries() {
             parser.index.insert(at, key, hit);
         }
     }
@@ -539,13 +534,17 @@ fn publish(
         parser.stats.reclaimed_syntax_bytes = mapping.removed_bytes as u64;
         parser.stats.syntax_bytes_copied += mapping.copied_bytes as u64;
         parser.stats.maintenance_passes = u64::from(base.is_some());
-        parser.index = parser.index.retain_mapped(&|id| {
+        let map = |id| {
             if id == SubtreeId::NONE {
                 Some(id)
             } else {
                 mapping.get(id)
             }
-        });
+        };
+        match &mut cold {
+            Some(facts) => remap_facts(facts, map),
+            None => parser.index = parser.index.retain_mapped(&map),
+        }
         Handle {
             node: relocated[0],
             ..root
@@ -568,7 +567,10 @@ fn publish(
     }
     snapshot.stats = parser.stats;
     snapshot.stats.work = parser.work;
-    snapshot.recognitions = parser.index;
+    snapshot.recognitions = match cold {
+        Some(facts) => Index::from_unsorted(facts, text.len()),
+        None => parser.index,
+    };
     snapshot.dispatch = Some(parser.dispatch);
     parser.reused_ranges.sort_unstable();
     let mut covered = 0_u64;
@@ -587,6 +589,11 @@ fn publish(
         0
     };
     Ok(snapshot)
+}
+/// Points each fact at its syntax's new id after compaction, dropping facts
+/// whose syntax was reclaimed, as [`Index::retain_mapped`] does.
+fn remap_facts(facts: &mut Vec<(u32, Key, Hit)>, map: impl Fn(SubtreeId) -> Option<SubtreeId>) {
+    facts.retain_mut(|(.., hit)| map(hit.root).map(|root| hit.root = root).is_some());
 }
 impl<'a> Parser<'a> {
     fn new(
@@ -655,7 +662,7 @@ impl<'a> Parser<'a> {
             checkpoint_next: true,
             failure_checkpoint: None,
             pending_failures: 0,
-            pending_index: FastMap::default(),
+            facts: facts::FactLog::for_text(text.len()),
             prior: base.map_or_else(Index::default, |b| b.recognitions.clone()),
             prior_nodes: root_hint.into_iter().collect(),
             prior_paths: FastMap::default(),
@@ -687,8 +694,8 @@ impl<'a> Parser<'a> {
                 lexers,
                 source,
             });
-        let facts: Vec<_> = self.pending_index.drain().collect();
-        for (_, hit) in &facts {
+        let facts = std::mem::take(&mut self.facts).into_entries();
+        for (.., hit) in &facts {
             if hit.root != SubtreeId::NONE {
                 self.arena.retain(hit.root);
             }
@@ -699,12 +706,12 @@ impl<'a> Parser<'a> {
         arena.labels = self.labels.into();
         let mut roots: Vec<_> = facts
             .iter()
-            .map(|(_, hit)| hit.root)
+            .map(|(.., hit)| hit.root)
             .filter(|&root| root != SubtreeId::NONE)
             .collect();
         let (arena, mapping) = arena.compact(&mut roots)?;
         let recognitions =
-            Index::from_entries(facts.into_iter().filter_map(|((at, key), mut hit)| {
+            Index::from_entries(facts.into_iter().filter_map(|(at, key, mut hit)| {
                 if hit.root != SubtreeId::NONE {
                     hit.root = mapping.get(hit.root)?;
                 }
@@ -817,7 +824,7 @@ impl<'a> Parser<'a> {
             let Some(key) = self.pending_order.pop_back() else {
                 break;
             };
-            let Some(hit) = self.pending_index.get(&key).copied() else {
+            let Some(hit) = self.facts.get(&key).copied() else {
                 remaining -= 1;
                 continue;
             };
@@ -829,7 +836,7 @@ impl<'a> Parser<'a> {
                 remaining -= 1;
                 continue;
             }
-            self.pending_index.remove(&key);
+            self.facts.remove(&key);
             self.pending_failures -= usize::from(hit.root == SubtreeId::NONE);
             self.arena.release_cache(hit.root);
             // Releasing a cached parent may expose previously owned children.
@@ -1080,7 +1087,7 @@ impl<'a> Parser<'a> {
         };
         let old = self.reusable.get(at, key);
         let current = checkpoint
-            .then(|| self.pending_index.get(&(at, key)).copied())
+            .then(|| self.facts.get(&(at, key)).copied())
             .flatten();
         // Facts may have been produced by a different recognition specialization
         // or a higher frame budget. An over-depth fact is not proof that normal
@@ -1182,12 +1189,12 @@ impl<'a> Parser<'a> {
                 // Bound their metadata independently of graph ownership.
                 if root == NO_NODE
                     && self.pending_failures >= (self.cache_budget as usize / 512).max(1)
-                    && !self.pending_index.contains_key(&(at, key))
+                    && !self.facts.contains_key(&(at, key))
                 {
                     return result;
                 }
                 self.arena.retain_cache(root.node);
-                if let Some(old) = self.pending_index.insert((at, key), hit) {
+                if let Some(old) = self.facts.insert((at, key), hit) {
                     self.pending_failures -= usize::from(old.root == SubtreeId::NONE);
                     self.arena.release_cache(old.root);
                 } else {
@@ -2795,7 +2802,7 @@ impl<'a> SharedProbe<'a> {
         let parser = &mut self.parser;
         if parser.language.rules[id as usize].lexical
             || parser.reusable.get(at as u32, key).is_some()
-            || parser.pending_index.contains_key(&(at as u32, key))
+            || parser.facts.contains_key(&(at as u32, key))
         {
             return false;
         }
@@ -2911,7 +2918,7 @@ impl<'a> SharedProbe<'a> {
             return Some(true);
         }
         self.parser
-            .pending_index
+            .facts
             .contains_key(&(start as u32, key))
             .then_some(false)
     }
@@ -3247,7 +3254,7 @@ impl<'a> SharedProbe<'a> {
             .iter()
             .map(|(rule, span)| (*rule, span[0]))
             .collect();
-        self.parser.pending_index.retain(|(at, key), hit| {
+        self.parser.facts.retain(|(at, key), hit| {
             hit.root != SubtreeId::NONE || selected.contains(&(key.rule, *at))
         });
         publish(self.parser, text, root, base, mode).map(|snapshot| (snapshot, self.recovery_keys))
@@ -4592,5 +4599,147 @@ mod tests {
                 > 25
         );
         assert!(edited.stats.reused_subtrees >= 998);
+    }
+    /// `Item = List / Pair / Number`, where `Pair` starts with a `Wrap` node
+    /// around a `Number`, so plain numbers leave a dead `Wrap` for compaction.
+    fn backtracking_list() -> &'static Language<'static> {
+        let make = |name, expr, lexical| Rule {
+            name,
+            expr,
+            lexical,
+            owner: None,
+            precedence: 0,
+            except: &[],
+            right_associative: false,
+            transparent: false,
+            alias: false,
+            action: Action::None,
+        };
+        const ITEM: Expr = Expr::Label("Items", &Expr::Ref(1));
+        let rules = vec![
+            make("Root", Expr::Ref(1), false),
+            make(
+                "Item",
+                Expr::Choice(&[Expr::Ref(2), Expr::Ref(3), Expr::Ref(4)]),
+                false,
+            ),
+            make(
+                "List",
+                Expr::Sequence(&[
+                    Expr::Literal("["),
+                    ITEM,
+                    Expr::Repeat {
+                        inner: &Expr::Sequence(&[Expr::Literal(","), ITEM]),
+                        min: 0,
+                        max: u32::MAX,
+                    },
+                    Expr::Literal("]"),
+                ]),
+                false,
+            ),
+            make(
+                "Pair",
+                Expr::Sequence(&[Expr::Ref(5), Expr::Literal(":"), Expr::Ref(4)]),
+                false,
+            ),
+            make(
+                "Number",
+                Expr::Repeat {
+                    inner: &Expr::Class(&[('0', '9')]),
+                    min: 1,
+                    max: u32::MAX,
+                },
+                true,
+            ),
+            make("Wrap", Expr::Label("Value", &Expr::Ref(4)), false),
+        ];
+        Box::leak(Box::new(Language {
+            profile: Profile::SyntaxOnly,
+            rules: Box::leak(rules.into_boxed_slice()),
+            start: 0,
+            types: &[],
+            operations: &[],
+            handlers: &[],
+            checks: &[],
+            helpers: &[],
+            rule_checks: &[],
+            patterns: &[],
+            source_hash: "backtracking-list",
+        }))
+    }
+    fn list_source(items: usize) -> String {
+        let items: Vec<_> = (0..items)
+            .map(|i| match i % 3 {
+                0 => format!("{i}"),
+                1 => format!("{i}:{}", i + 1),
+                _ => format!("[{i},{}]", i * 7),
+            })
+            .collect();
+        format!("[{}]", items.join(","))
+    }
+    fn shape(snapshot: &ParseSnapshot) -> Vec<(u16, [u32; 2], u32)> {
+        let tree = snapshot.materialize().unwrap();
+        tree.nodes
+            .iter()
+            .map(|n| (n.rule, n.span, n.child_count))
+            .collect()
+    }
+    fn strict() -> SnapshotMode {
+        SnapshotMode::Strict(ParseOptions::default())
+    }
+    /// Replaces the first digit at or after `from` with another digit.
+    fn digit_edit(source: &str, from: usize) -> (TextEdit, String) {
+        let at = from + source[from..].find(|c: char| c.is_ascii_digit()).unwrap();
+        let digit = if &source[at..=at] == "1" { "2" } else { "1" };
+        let mut text = source.to_string();
+        text.replace_range(at..=at, digit);
+        let edit = TextEdit {
+            range: [at as u32, at as u32 + 1],
+            replacement: digit.into(),
+        };
+        (edit, text)
+    }
+    #[test]
+    fn cold_snapshot_edit_reuses_its_facts() {
+        let language = backtracking_list();
+        let source = list_source(300);
+        let snapshot = parse_snapshot(language, &source, Limits::default(), strict()).unwrap();
+        let (edit, text) = digit_edit(&source, source.len() / 2);
+        let edited = snapshot.edit(&edit, Limits::default()).unwrap();
+        let fresh = parse_snapshot(language, &text, Limits::default(), strict()).unwrap();
+        assert_eq!(shape(&edited), shape(&fresh));
+        assert!(edited.stats.reused_subtrees > 0);
+    }
+    #[test]
+    fn remap_facts_follows_compaction_and_drops_reclaimed_syntax() {
+        let key = Key {
+            rule: 1,
+            minimum: 0,
+            in_token: 0,
+        };
+        let hit = |root| Hit {
+            root,
+            root_offset: 0,
+            end_offset: 1,
+            observed_offset: 1,
+            furthest_offset: 1,
+            depth: 0,
+        };
+        let (kept, moved, gone) = (
+            SubtreeId::new(1, 4),
+            SubtreeId::new(9, 0),
+            SubtreeId::new(1, 5),
+        );
+        let mut facts = vec![
+            (0, key, hit(kept)),
+            (1, key, hit(SubtreeId::NONE)),
+            (2, key, hit(gone)),
+        ];
+        remap_facts(&mut facts, |id| {
+            (id == SubtreeId::NONE)
+                .then_some(id)
+                .or((id == kept).then_some(moved))
+        });
+        assert!(facts == vec![(0, key, hit(moved)), (1, key, hit(SubtreeId::NONE))]);
     }
 }
