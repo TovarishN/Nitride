@@ -1,3 +1,4 @@
+mod context;
 mod interfaces;
 mod lexical;
 mod syntax;
@@ -29,6 +30,7 @@ fn list(items: impl IntoIterator<Item = String>) -> String {
 
 pub fn generate(input: &str) -> Result<String, String> {
     let data: Value = serde_json::from_str(input).map_err(|e| e.to_string())?;
+    let data = context::specialize(&data)?.unwrap_or(data);
     if data["version"] != 1 {
         return Err("unsupported format version".into());
     }
@@ -916,8 +918,21 @@ pub fn generate(input: &str) -> Result<String, String> {
         if precedence > u32::MAX as u64 - 1 {
             return Err("precedence out of range".into());
         }
-        let alias = syntax_only && name != data["start"] && alias_rule(rule);
-        output_rules.push(format!("Rule {{name:{},lexical:{},expr:{},except:{},precedence:{precedence},right_associative:{},transparent:{},alias:{alias},owner:{owner},action:{action}}}",
+        // A context instance reports its origin's name and identity.
+        let (name, origin) = match rule.get("origin") {
+            Some(origin) => (
+                text(origin)?,
+                format!("Some({})", lookup(&ids, text(origin)?)?),
+            ),
+            None => (name, "None".into()),
+        };
+        // Context specialization decides aliases before folding its tests.
+        let alias = syntax_only
+            && name != data["start"]
+            && rule
+                .get("alias")
+                .map_or_else(|| alias_rule(rule), |a| a == true);
+        output_rules.push(format!("Rule {{name:{},lexical:{},expr:{},except:{},precedence:{precedence},right_associative:{},transparent:{},alias:{alias},owner:{owner},origin:{origin},action:{action}}}",
             quoted(name), rule["lexical"].as_bool().ok_or("invalid lexical flag")?, emit_expr_with(&pair_surrogates(&rule["expr"]), &ids, rule["expr"]["kind"] == "pratt" && memoize_point(&rule["expr"], rules, &ids))?,
             list(strings(&rule["except"])?.into_iter().map(quoted)), rule["associativity"] == "Right", rule["transparent"] == true));
     }
@@ -1341,7 +1356,7 @@ fn memoize_point(e: &Value, rules: &[Value], ids: &HashMap<&str, u16>) -> bool {
 /// Nitrogen's EmitModel.IsAlias: a syntax rule that is a reference (possibly
 /// labeled) or a choice of them, or a plain rule of literals and references,
 /// builds no node. Each matches at most one child node.
-fn alias_rule(rule: &Value) -> bool {
+pub(crate) fn alias_rule(rule: &Value) -> bool {
     fn reference(e: &Value) -> bool {
         match e["kind"].as_str() {
             Some("ref") => true,

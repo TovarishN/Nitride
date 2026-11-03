@@ -54,6 +54,47 @@ pub fn prepare(
             }
         }
     }
+    // Parse-context flags, qualified by their module; each language gives each its own bit.
+    let mut contexts = Vec::new();
+    for module in &modules {
+        for (name, span) in &module.contexts {
+            let qualified = format!("{}.{}", module.name, name);
+            if contexts.contains(&qualified) || symbols.contains_key(&qualified) {
+                return Err(sources[module.source].error(*span, "duplicate context flag"));
+            }
+            contexts.push(qualified);
+        }
+    }
+    if contexts.len() > 64 {
+        return Err(first.project_error("more than 64 context flags"));
+    }
+    let resolve_context = |name: &str, module: &Module, span: [usize; 2]| {
+        let error = || {
+            sources[module.source].error(span, format!("unknown or ambiguous context flag {name}"))
+        };
+        if name.contains('.') {
+            return contexts
+                .iter()
+                .find(|c| *c == name)
+                .cloned()
+                .ok_or_else(error);
+        }
+        let local = format!("{}.{}", module.name, name);
+        if contexts.contains(&local) {
+            return Ok(local);
+        }
+        let candidates: Vec<_> = module
+            .imports
+            .iter()
+            .map(|m| format!("{m}.{name}"))
+            .filter(|n| contexts.contains(n))
+            .collect();
+        if candidates.len() == 1 {
+            Ok(candidates.into_iter().next().unwrap())
+        } else {
+            Err(error())
+        }
+    };
     for module in &modules {
         for import in &module.imports {
             if !module_names.contains(import) {
@@ -370,14 +411,23 @@ pub fn prepare(
             }
         }
         let mut expr = rule.body.clone();
-        normalize_expr(&mut expr, &mut |name, span| {
-            let resolved = resolve(name, module, implicit, span)?;
-            let (mi, ri) = symbols[&resolved];
-            if rule.lexical && !modules[mi].rules[ri].lexical {
-                return Err(source.error(span, "token cannot reference a syntax rule"));
-            }
-            Ok(resolved)
-        })?;
+        normalize_expr(
+            &mut expr,
+            &mut |name, span| {
+                let resolved = resolve(name, module, implicit, span)?;
+                let (mi, ri) = symbols[&resolved];
+                if rule.lexical && !modules[mi].rules[ri].lexical {
+                    return Err(source.error(span, "token cannot reference a syntax rule"));
+                }
+                Ok(resolved)
+            },
+            &mut |name, span| {
+                if rule.lexical {
+                    return Err(source.error(span, "a token cannot use parse context"));
+                }
+                resolve_context(name, module, span)
+            },
+        )?;
         let mut checks = Vec::new();
         for check in &rule.checks {
             let span = |v: &Value| -> [usize; 2] {
@@ -466,11 +516,21 @@ pub fn prepare(
                         return Err(sources[from.source]
                             .error(alternative.span, "duplicate extension alternative name"));
                     }
-                    let head = first_expr(&alternative.body);
+                    let mut head = first_expr(&alternative.body);
+                    let scoped = head["kind"] == "scope";
+                    while head["kind"] == "scope" {
+                        head = first_expr(&head["inner"]);
+                    }
                     let span = expr_span(head);
                     let infix = head["kind"] == "ref"
                         && resolve(head["name"].as_str().unwrap(), from, Some(implicit), span)?
                             == point;
+                    if infix && scoped {
+                        return Err(sources[from.source].error(
+                            alternative.span,
+                            "a context scope around an infix's left operand is not admitted",
+                        ));
+                    }
                     // Alternatives may share an operator: the parser ranks them by longest
                     // match, then precedence, as Nitrogen does. A prefix alternative's
                     // associativity is accepted and ignored, as Nitrogen's generator ignores
@@ -547,6 +607,9 @@ pub fn prepare(
     let mut output = json!({"version":1,"symbol_kinds":symbol_kinds,"builtins":builtins,"mode":mode,"omitted_semantics":omitted,
         "modules":modules.iter().map(|m|json!({"name":m.name,"imports":m.imports})).collect::<Vec<_>>(),
         "source_hash":hash(&identity),"catalog_hash":hash(catalog),"start":start,"rules":rules,"catalog":catalog_value});
+    if !contexts.is_empty() {
+        output["contexts"] = json!(contexts);
+    }
     // Helpers are validated in both modes; syntax-only admission omits them.
     if !helpers.is_empty() && mode == "typed" {
         output["helpers"] = json!(helpers);
@@ -574,18 +637,21 @@ fn expr_span(expr: &Value) -> [usize; 2] {
 fn normalize_expr(
     expr: &mut Value,
     resolve: &mut impl FnMut(&str, [usize; 2]) -> Result<String, PrepareError>,
+    context: &mut impl FnMut(&str, [usize; 2]) -> Result<String, PrepareError>,
 ) -> Result<(), PrepareError> {
     let span = expr_span(expr);
     if expr["kind"] == "ref" {
         expr["name"] = json!(resolve(expr["name"].as_str().unwrap(), span)?);
+    } else if expr["kind"] == "context" || expr["kind"] == "scope" {
+        expr["name"] = json!(context(expr["name"].as_str().unwrap(), span)?);
     }
     if let Some(items) = expr.get_mut("items").and_then(Value::as_array_mut) {
         for child in items {
-            normalize_expr(child, resolve)?;
+            normalize_expr(child, resolve, context)?;
         }
     }
     if let Some(inner) = expr.get_mut("inner") {
-        normalize_expr(inner, resolve)?;
+        normalize_expr(inner, resolve, context)?;
     }
     expr.as_object_mut().unwrap().remove("_span");
     Ok(())

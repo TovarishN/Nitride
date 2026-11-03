@@ -12,6 +12,7 @@ fn language() -> &'static Language<'static> {
         transparent: false,
         alias: false,
         owner,
+        origin: None,
     };
     Box::leak(Box::new(Language {
         profile: Profile::SyntaxOnly,

@@ -10,6 +10,7 @@ fn rule(name: &'static str, expr: Expr<'static>) -> Rule<'static> {
         right_associative: false,
         transparent: false,
         alias: false,
+        origin: None,
         action: Action::None,
     }
 }

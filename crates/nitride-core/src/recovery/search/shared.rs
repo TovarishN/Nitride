@@ -322,7 +322,7 @@ impl Engine<'static, '_, SharedProbe<'_>> {
                 Repair::Missing {
                     expected: Expected::Rule(rule),
                     at,
-                } => Some((*rule, *at)),
+                } => Some((self.language.node_rule(*rule), *at)),
                 _ => None,
             })
             .collect();

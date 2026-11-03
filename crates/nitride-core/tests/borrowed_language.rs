@@ -11,6 +11,7 @@ fn rule<'a>(name: &'a str, lexical: bool, expr: Expr<'a>) -> Rule<'a> {
         transparent: false,
         alias: false,
         owner: None,
+        origin: None,
         action: Action::None,
     }
 }

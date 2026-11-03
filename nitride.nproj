@@ -13,4 +13,5 @@ workspace
   include languages/rewrites;
   include languages/grammar;
   include languages/csharp4;
+  include languages/context;
 }

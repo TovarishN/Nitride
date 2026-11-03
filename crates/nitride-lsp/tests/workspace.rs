@@ -182,8 +182,8 @@ fn missing_grammar_is_reported_on_its_nproj() {
 fn repo_manifest_loads() {
     let mut registry = Registry::default();
     registry.reload(&[repo()], &|_| None);
-    // The 12 nitride.nproj languages, and languages/signed's signed Portable.
-    assert_eq!(registry.languages().len(), 13);
+    // The 13 nitride.nproj languages, and languages/signed's signed Portable.
+    assert_eq!(registry.languages().len(), 14);
     assert_eq!(registry.languages().iter().filter(|l| l.signed).count(), 1);
     for language in registry.languages() {
         assert!(

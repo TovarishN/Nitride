@@ -11,6 +11,7 @@ fn language() -> Language<'static> {
         right_associative: false,
         transparent: false,
         alias: false,
+        origin: None,
         action: Action::None,
     };
     Language {
@@ -106,6 +107,7 @@ fn call_language() -> &'static Language<'static> {
         right_associative: false,
         transparent: false,
         alias: false,
+        origin: None,
         action: Action::None,
     };
     Box::leak(Box::new(Language {
@@ -199,6 +201,7 @@ fn shared_operator_alternatives_take_longest_match() {
         right_associative: false,
         transparent: false,
         alias: false,
+        origin: None,
         action: Action::None,
     };
     let language: &'static Language<'static> = Box::leak(Box::new(Language {

@@ -39,6 +39,7 @@ fn language(builtins: &'static [Builtin<'static>]) -> &'static Language<'static>
                     transparent: false,
                     alias: false,
                     owner: None,
+                    origin: None,
                     action: Action::Call {
                         kinds: &["function"],
                         field: "Name",
@@ -56,6 +57,7 @@ fn language(builtins: &'static [Builtin<'static>]) -> &'static Language<'static>
                     transparent: false,
                     alias: false,
                     owner: None,
+                    origin: None,
                     action: Action::None,
                 },
             ]

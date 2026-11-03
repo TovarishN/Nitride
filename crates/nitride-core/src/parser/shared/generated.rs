@@ -233,6 +233,7 @@ mod tests {
             transparent: false,
             alias: false,
             owner: None,
+            origin: None,
             action: Action::None,
         }],
     };

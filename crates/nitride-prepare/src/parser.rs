@@ -10,6 +10,8 @@ pub struct Module {
     pub helpers: Vec<Helper>,
     pub functions: Vec<Function>,
     pub patterns: Vec<NamedPatternDecl>,
+    /// Declared parse-context flags, unqualified, with their spans.
+    pub contexts: Vec<(String, [usize; 2])>,
     pub rules: Vec<Rule>,
     pub extensions: Vec<(String, Vec<Rule>)>,
     pub source: usize,
@@ -734,6 +736,7 @@ impl Decoder<'_> {
                     helpers: vec![],
                     functions: vec![],
                     patterns: vec![],
+                    contexts: vec![],
                     rules: vec![],
                     extensions: vec![],
                     source: index,
@@ -743,6 +746,9 @@ impl Decoder<'_> {
                     let m = self.first(member);
                     match self.kind(m) {
                         "Using" => module.imports.push(self.named(m, "Name")),
+                        "ContextDeclaration" => module
+                            .contexts
+                            .push((self.named(m, "Name"), self.span(self.field(m, "Name")))),
                         "SymbolProperty" => self.semantic_member(m)?,
                         "Symbols" => module.symbols.extend(
                             self.fields(m, "Names")
@@ -1179,6 +1185,17 @@ impl Decoder<'_> {
         }
         Ok(check)
     }
+    /// `context(Flag)` or `with(Flag = v) Body`. Kept out of `expr`, whose
+    /// stack frame bounds how deeply grammar groups may nest.
+    #[inline(never)]
+    fn context(&self, id: u32) -> Result<Value, PrepareError> {
+        Ok(if self.kind(id) == "ContextTest" {
+            json!({"kind":"context","name":self.named(id,"Name")})
+        } else {
+            json!({"kind":"scope","name":self.named(id,"Name"),
+                "value":self.named(id,"Value")=="true","inner":self.expr(self.field(id,"Body"))?})
+        })
+    }
     fn expr(&self, id: u32) -> Result<Value, PrepareError> {
         let mut value = match self.kind(id) {
             "Expression" | "Sequence" => {
@@ -1250,6 +1267,7 @@ impl Decoder<'_> {
                 json!({"kind":"literal","text":text})
             }
             "Reference" => json!({"kind":"ref","name":self.named(id,"Name")}),
+            "ContextTest" | "ContextScope" => self.context(id)?,
             "Any" => json!({"kind":"any"}),
             "Group" => return self.expr(self.field(id, "Inner")),
             "EmptyGroup" => json!({"kind":"sequence","items":[]}),

@@ -765,7 +765,11 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                             &mut state,
                             Task::Rule {
                                 id: *id,
-                                power: if owner == Some(*id) { power } else { 0 },
+                                power: if self.language.operand_of(*id, owner) {
+                                    power
+                                } else {
+                                    0
+                                },
                                 label,
                                 expand: false,
                             },
@@ -1446,7 +1450,7 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
                 Repair::Missing {
                     expected: Expected::Rule(rule),
                     at,
-                } => Some((*rule, *at)),
+                } => Some((self.language.node_rule(*rule), *at)),
                 _ => None,
             })
             .collect();
@@ -1532,7 +1536,7 @@ impl<'g> Builder<'g> {
         } else {
             let node = self.nodes.len() as u32;
             self.nodes.push(Node {
-                rule: frame.id,
+                rule: self.language.node_rule(frame.id),
                 span: [frame.start as u32, end as u32],
                 first_child: self.edges.len() as u32,
                 child_count: frame.children.len() as u32,

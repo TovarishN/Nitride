@@ -88,17 +88,17 @@ impl Memo {
         }
     }
 }
-fn minimum_sensitive(rule: &Rule) -> bool {
+fn minimum_sensitive(language: &Language, rule: &Rule) -> bool {
     if matches!(&rule.expr, Expr::Pratt { .. }) {
         return true;
     }
-    let Some(owner) = rule.owner else {
+    if rule.owner.is_none() {
         return false;
-    };
-    fn direct_operand(expr: &Expr, owner: u16) -> bool {
+    }
+    fn direct_operand(language: &Language, expr: &Expr, owner: Option<u16>) -> bool {
         match expr {
-            Expr::Label(_, inner) => direct_operand(inner, owner),
-            Expr::Ref(id) => *id == owner,
+            Expr::Label(_, inner) => direct_operand(language, inner, owner),
+            Expr::Ref(id) => language.operand_of(*id, owner),
             _ => false,
         }
     }
@@ -106,7 +106,7 @@ fn minimum_sensitive(rule: &Rule) -> bool {
         Expr::Sequence(parts) => parts.last(),
         expr => Some(expr),
     };
-    tail.is_some_and(|expr| direct_operand(expr, owner))
+    tail.is_some_and(|expr| direct_operand(language, expr, rule.owner))
 }
 struct Parser<'a> {
     optimize_recognition: bool,
@@ -621,7 +621,9 @@ impl<'a> Parser<'a> {
             choice_cache_bytes: 0,
             tokens: TokenCache::default(),
             language,
-            minimum_sensitive: language.rules.iter().map(minimum_sensitive).collect(),
+            minimum_sensitive: (language.rules.iter())
+                .map(|rule| minimum_sensitive(language, rule))
+                .collect(),
             dispatch: base
                 .and_then(|b| b.dispatch.clone())
                 .unwrap_or_else(|| std::sync::Arc::new(dispatch::Dispatch::new(language))),
@@ -858,6 +860,8 @@ impl<'a> Parser<'a> {
         }
     }
     fn find_prior(&mut self, rule: u16, start: u32) -> Result<Option<PriorNode>, Diagnostic> {
+        // Nodes record their context origin; prior nodes are construction hints only.
+        let rule = self.language.node_rule(rule);
         let approximate = self.reusable.construction_position(start).unwrap_or(start);
         let mut scope = None;
         for i in (0..self.prior_nodes.len()).rev() {
@@ -1043,7 +1047,7 @@ impl<'a> Parser<'a> {
             return Ok(NO_NODE);
         }
         let node = self.arena.add_prepared(
-            rule,
+            self.language.node_rule(rule),
             (self.position - start) as u32,
             children.iter(),
             children.prior_node(),
@@ -1068,7 +1072,7 @@ impl<'a> Parser<'a> {
         }
         let node = self.arena.add_committed(
             mark,
-            rule,
+            self.language.node_rule(rule),
             (self.position - start) as u32,
             children.iter(),
             children.prior_node(),
@@ -2552,9 +2556,15 @@ impl<'a> Parser<'a> {
                 }
             }
             Expr::Ref(id) => {
-                if let Some(node) =
-                    self.rule(*id, if Some(*id) == owner { power } else { 0 }, depth + 1)?
-                {
+                if let Some(node) = self.rule(
+                    *id,
+                    if self.language.operand_of(*id, owner) {
+                        power
+                    } else {
+                        0
+                    },
+                    depth + 1,
+                )? {
                     if node != NO_NODE {
                         out.push(
                             Edge { label: 0, node },
@@ -3238,6 +3248,7 @@ impl<'a> SharedProbe<'a> {
         end: u32,
         children: &Children,
     ) -> Result<SubtreeId, Diagnostic> {
+        let rule = self.parser.language.node_rule(rule);
         let node = self.parser.arena.add_prepared(
             rule,
             end - start,
@@ -3457,6 +3468,7 @@ mod tests {
                 transparent: false,
                 alias: false,
                 owner: None,
+                origin: None,
                 action: Action::None,
             };
             let language = Box::leak(Box::new(Language {
@@ -3556,6 +3568,7 @@ mod tests {
             transparent: false,
             alias: false,
             owner: None,
+            origin: None,
             action: Action::None,
         };
         let language = Box::leak(Box::new(Language {
@@ -3645,6 +3658,7 @@ mod tests {
             right_associative: false,
             transparent: false,
             alias: false,
+            origin: None,
             action: Action::None,
         };
         let mut rules = vec![make(
@@ -3724,6 +3738,7 @@ mod tests {
                 right_associative: false,
                 transparent: false,
                 alias: false,
+                origin: None,
                 action: Action::None,
             };
             let rules = vec![
@@ -3773,6 +3788,7 @@ mod tests {
             right_associative: false,
             transparent: false,
             alias: false,
+            origin: None,
             action: Action::None,
         };
         let rules = vec![
@@ -3826,6 +3842,7 @@ mod tests {
             right_associative: false,
             transparent: false,
             alias: false,
+            origin: None,
             action: Action::None,
         };
         let rules = vec![
@@ -3888,6 +3905,7 @@ mod tests {
                 transparent: false,
                 alias: false,
                 owner: None,
+                origin: None,
                 action: Action::None,
             },
             Rule {
@@ -3904,6 +3922,7 @@ mod tests {
                 transparent: false,
                 alias: false,
                 owner: None,
+                origin: None,
                 action: Action::None,
             },
         ];
@@ -3955,6 +3974,7 @@ mod tests {
             transparent: false,
             alias: false,
             owner: None,
+            origin: None,
             action: Action::None,
         }];
         for index in 0..65 {
@@ -3968,6 +3988,7 @@ mod tests {
                 transparent: false,
                 alias: false,
                 owner: Some(0),
+                origin: None,
                 action: Action::None,
             });
         }
@@ -4012,6 +4033,7 @@ mod tests {
             right_associative: false,
             transparent: false,
             alias: false,
+            origin: None,
             action: Action::None,
         };
         let rules = if sensitive {
@@ -4358,6 +4380,7 @@ mod tests {
             right_associative: false,
             transparent: false,
             alias: false,
+            origin: None,
             action: Action::None,
         };
         let language = Box::leak(Box::new(Language {
@@ -4414,6 +4437,7 @@ mod tests {
             right_associative: false,
             transparent: false,
             alias: false,
+            origin: None,
             action: Action::None,
         };
         let language = Box::leak(Box::new(Language {
@@ -4477,6 +4501,7 @@ mod tests {
             right_associative: false,
             transparent: false,
             alias: false,
+            origin: None,
             action: Action::None,
         };
         let language = Box::leak(Box::new(Language {
@@ -4545,6 +4570,7 @@ mod tests {
             right_associative: false,
             transparent: false,
             alias: false,
+            origin: None,
             action: Action::None,
         };
         let language = Box::leak(Box::new(Language {
@@ -4627,6 +4653,7 @@ mod tests {
             right_associative: false,
             transparent: false,
             alias: false,
+            origin: None,
             action: Action::None,
         };
         const ITEM: Expr = Expr::Label("Items", &Expr::Ref(1));

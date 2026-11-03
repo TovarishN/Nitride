@@ -12,6 +12,7 @@ fn main() {
         ("calendar", "calendar"),
         ("rewrites", "rewrites"),
         ("csharp4", "csharp4"),
+        ("context", "context"),
         ("grammar", "grammar"),
     ] {
         let manifest = format!("../../languages/{profile}/project.json");

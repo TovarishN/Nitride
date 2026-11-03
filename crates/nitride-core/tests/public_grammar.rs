@@ -24,6 +24,7 @@ fn invalid_pratt_rule_ids_return_diagnostics() {
             transparent: false,
             alias: false,
             owner: None,
+            origin: None,
             action: Action::None,
         };
         let language = Box::leak(Box::new(Language {

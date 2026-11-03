@@ -599,7 +599,7 @@ impl<'g> Parser<'g, '_> {
         }
         let id = self.nodes.len() as u32;
         let node = Node {
-            rule,
+            rule: self.language.node_rule(rule),
             span: [start as u32, self.position as u32],
             first_child: self.edges.len() as u32,
             child_count: children.len() as u32,
@@ -1025,9 +1025,15 @@ impl<'g> Parser<'g, '_> {
                 }
             }
             Expr::Ref(id) => {
-                if let Some(node) =
-                    self.rule(*id, if Some(*id) == owner { power } else { 0 }, depth + 1)?
-                {
+                if let Some(node) = self.rule(
+                    *id,
+                    if self.language.operand_of(*id, owner) {
+                        power
+                    } else {
+                        0
+                    },
+                    depth + 1,
+                )? {
                     if node != NO_NODE {
                         out.push(Edge { label: 0, node });
                     }
