@@ -39,11 +39,14 @@ class Plan:
     binary: Path
 
 
-def plan(crate, bin_name):
+def plan(crate, bin_name, warn_missing=False):
     """The two builds. The instrumented one also instruments build scripts and
     keeps their profiles: a build script that runs the parser generator parses
     the grammar with the same runtime, and that profile made the JSON bench
-    1.5-3.7% faster than training alone (docs/optimizing-generated-parsers.md)."""
+    1.5-3.7% faster than training alone (docs/optimizing-generated-parsers.md).
+    Without --target the profile flags also reach the build script's own copy
+    of the runtime, so warn_missing lists thousands of functions that only the
+    generator has; it is off unless asked for."""
     crate = Path(crate)
     raw = crate / 'target/pgo-raw'
     merged = raw / 'merged.profdata'
@@ -55,7 +58,10 @@ def plan(crate, bin_name):
 
     instrument = build('pgo-gen', [f'-Cprofile-generate={raw}'],
                        {'LLVM_PROFILE_FILE': str(raw / 'build-%m-%p.profraw')})
-    optimize = build('pgo', [f'-Cprofile-use={merged}', '-Cllvm-args=-pgo-warn-missing-function'], {})
+    use = [f'-Cprofile-use={merged}']
+    if warn_missing:
+        use.append('-Cllvm-args=-pgo-warn-missing-function')
+    optimize = build('pgo', use, {})
     return Plan(raw, merged, instrument, optimize,
                 instrument.target_dir / 'release' / bin_name,
                 optimize.target_dir / 'release' / bin_name)
@@ -80,10 +86,12 @@ def main():
     parser.add_argument('--train', action='append', required=True,
                         help="the instrumented binary's arguments for one training run; repeatable")
     parser.add_argument('--llvm-profdata', help='llvm-profdata matching rustc (found automatically)')
+    parser.add_argument('--warn-missing', action='store_true',
+                        help='list functions the profile does not cover while building the optimized binary')
     args = parser.parse_args()
     crate = args.crate.resolve()
     profdata = profdata_tool(args.llvm_profdata)
-    steps = plan(crate, args.bin)
+    steps = plan(crate, args.bin, args.warn_missing)
     shutil.rmtree(steps.raw, ignore_errors=True)
     steps.raw.mkdir(parents=True)
     cargo(steps.instrument, crate)

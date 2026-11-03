@@ -92,8 +92,11 @@ The profile is only as good as the training run:
   and include damaged input if it parses in recovery mode. The JSON bench
   trains on three 1 MiB shapes plus an edit run.
 - **Retrain when the grammar changes.** Generated code that the profile does
-  not cover gets no benefit; `-pgo-warn-missing-function` lists those
-  functions during the second build.
+  not cover gets no benefit; `--warn-missing` passes
+  `-pgo-warn-missing-function`, which lists those functions during the second
+  build. Expect thousands: the flag also reaches the build script's copy of
+  the runtime and generator, most of which training never runs. Look at the
+  warnings for your binary's own crate.
 
 ## What else to check
 
