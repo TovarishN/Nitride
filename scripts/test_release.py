@@ -210,6 +210,14 @@ class GeneratedPgoTests(unittest.TestCase):
         self.assertEqual(plan.binary, crate / 'target/pgo/release/app')
         self.assertEqual(plan.instrumented, crate / 'target/pgo-gen/release/app')
 
+    def test_missing_function_warnings_only_when_asked(self):
+        # Build scripts get the profile flags too, so the warning lists
+        # thousands of generator functions training never runs.
+        import pgo_generated
+        flag = '-Cllvm-args=-pgo-warn-missing-function'
+        self.assertNotIn(flag, pgo_generated.plan(Path('/work/app'), 'app').optimize.rustflags)
+        self.assertIn(flag, pgo_generated.plan(Path('/work/app'), 'app', warn_missing=True).optimize.rustflags)
+
     def test_training_commands_run_the_instrumented_binary(self):
         import pgo_generated
         plan = pgo_generated.plan(Path('/work/app'), 'app')
