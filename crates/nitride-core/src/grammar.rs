@@ -237,6 +237,9 @@ pub struct Rule<'g> {
     /// (Nitrogen's alias): its one child, if any, stands in for it.
     pub alias: bool,
     pub owner: Option<u16>,
+    /// A parse-context instance of another rule: its nodes report that rule.
+    /// Instances parse as separate rules, so results never cross contexts.
+    pub origin: Option<u16>,
     pub action: Action<'g>,
 }
 
@@ -266,4 +269,20 @@ pub struct Language<'g> {
     pub rule_checks: &'g [RuleCheck<'g>],
     pub patterns: &'g [NamedPattern<'g>],
     pub source_hash: &'g str,
+}
+
+impl Language<'_> {
+    /// The rule a node parsed by `rule` reports: its context origin, if any.
+    #[inline]
+    pub fn node_rule(&self, rule: u16) -> u16 {
+        (self.rules.get(rule as usize))
+            .and_then(|r| r.origin)
+            .unwrap_or(rule)
+    }
+    /// Whether a reference to `rule` is a direct operand of `owner`'s point:
+    /// any parse-context instance of the point is, as in Nitrogen.
+    #[inline]
+    pub fn operand_of(&self, rule: u16, owner: Option<u16>) -> bool {
+        owner.is_some_and(|owner| self.node_rule(owner) == self.node_rule(rule))
+    }
 }

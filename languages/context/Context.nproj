@@ -1,0 +1,12 @@
+// Context: scoped parse-context flags, syntax only.
+language Context
+{
+  extensions .context;
+  grammar Context.ngr;
+  start Context.File;
+
+  nitrogen
+  {
+    namespace Nitride.Reference.Context;
+  }
+}

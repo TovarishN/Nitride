@@ -92,6 +92,22 @@ fn bind<'g>(
     Ok(bound)
 }
 
+/// The syntax observation of each source in the project's language, which is
+/// prepared once.
+pub fn parse_project(manifest: &Path, sources: &[String]) -> Result<Vec<Value>, String> {
+    // Observations borrow the language for the life of the process.
+    let loaded: &'static Loaded = Box::leak(Box::new(load(manifest)?));
+    sources
+        .iter()
+        .map(|path| {
+            let text = std::fs::read_to_string(path).map_err(|e| format!("{path}: {e}"))?;
+            let mut observation = crate::syntax_observe(loaded.language.language(), &text);
+            observation["path"] = json!(path);
+            Ok(observation)
+        })
+        .collect()
+}
+
 /// Runs `source` in the project's language: the values of its show
 /// statements, or the first diagnostic. Components' operations that need
 /// effects outside `granted` are denied.

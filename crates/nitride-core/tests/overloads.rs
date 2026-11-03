@@ -12,6 +12,7 @@ fn language(candidates: &'static [u16]) -> &'static Language<'static> {
         transparent: false,
         alias: false,
         owner: None,
+        origin: None,
     };
     Box::leak(Box::new(Language {
         profile: Profile::Typed,

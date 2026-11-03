@@ -187,6 +187,17 @@
       ],
       "start": "CSharp.CompilationUnits.CompilationUnit",
       "namespace": "Nitride.Reference.CSharp4"
+    },
+    {
+      "name": "Context",
+      "extensions": [
+        ".context"
+      ],
+      "grammars": [
+        "languages/context/Context.ngr"
+      ],
+      "start": "Context.File",
+      "namespace": "Nitride.Reference.Context"
     }
   ]
 }

@@ -16,6 +16,7 @@ fn language(expr: Expr<'static>) -> &'static Language<'static> {
                     transparent: false,
                     alias: false,
                     owner: None,
+                    origin: None,
                     action: Action::None,
                 },
                 Rule {
@@ -28,6 +29,7 @@ fn language(expr: Expr<'static>) -> &'static Language<'static> {
                     transparent: false,
                     alias: false,
                     owner: None,
+                    origin: None,
                     action: Action::None,
                 },
             ]
@@ -91,6 +93,7 @@ fn prefix_language(prefixes: &'static [u16], second: Expr<'static>) -> &'static 
         transparent: false,
         alias: false,
         owner: None,
+        origin: None,
         action: Action::None,
     };
     Box::leak(Box::new(Language {

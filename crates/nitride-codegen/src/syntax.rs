@@ -22,6 +22,16 @@ pub(super) fn generate(rules: &[Value], ids: &HashMap<&str, u16>) -> Result<Stri
             infixes.insert(lookup(ids, name)? as usize);
         }
     }
+    // Each rule's point identity: any context instance of the owner's point
+    // is its direct operand.
+    let points = rules
+        .iter()
+        .enumerate()
+        .map(|(id, r)| {
+            r.get("origin")
+                .map_or(Ok(id as u16), |o| lookup(ids, text(o)?))
+        })
+        .collect::<Result<Vec<_>, String>>()?;
     let mut bodies = vec!["None".to_owned(); rules.len()];
     let mut tails = bodies.clone();
     let mut output = String::new();
@@ -41,9 +51,9 @@ pub(super) fn generate(rules: &[Value], ids: &HashMap<&str, u16>) -> Result<Stri
         };
         if !matches!(e["kind"].as_str(), Some("predicate" | "class" | "any")) {
             let body = if owner.is_some() && e["kind"] == "sequence" {
-                emit_parts(array(&e["items"])?, ids, owner, 0, &mut 0)?
+                emit_parts(array(&e["items"])?, ids, &points, owner, 0, &mut 0)?
             } else {
-                emit(&e, ids, owner, 0, &mut 0)?
+                emit(&e, ids, &points, owner, 0, &mut 0)?
             };
             output += &function(&format!("nitride_syntax_{id}"), &body);
             bodies[id] = format!("Some(nitride_syntax_{id})");
@@ -51,7 +61,7 @@ pub(super) fn generate(rules: &[Value], ids: &HashMap<&str, u16>) -> Result<Stri
         if infixes.contains(&id) && e["kind"] == "sequence" {
             let parts = array(&e["items"])?;
             if parts.len() >= 2 {
-                let body = emit_parts(&parts[1..], ids, owner, 0, &mut 0)?;
+                let body = emit_parts(&parts[1..], ids, &points, owner, 0, &mut 0)?;
                 output += &function(&format!("nitride_tail_{id}"), &body);
                 tails[id] = format!("Some(nitride_tail_{id})");
             }
@@ -83,6 +93,7 @@ fn function(name: &str, body: &str) -> String {
 fn emit_parts(
     parts: &[Value],
     ids: &HashMap<&str, u16>,
+    points: &[u16],
     owner: Option<u16>,
     depth: u32,
     serial: &mut usize,
@@ -92,6 +103,7 @@ fn emit_parts(
         output.push(emit(
             e,
             ids,
+            points,
             if index + 1 == parts.len() {
                 owner
             } else {
@@ -117,6 +129,7 @@ fn conjunction(parts: Vec<String>) -> String {
 fn emit(
     e: &Value,
     ids: &HashMap<&str, u16>,
+    points: &[u16],
     owner: Option<u16>,
     depth: u32,
     serial: &mut usize,
@@ -133,13 +146,17 @@ fn emit(
             let id = lookup(ids, text(&e["name"])?)?;
             format!(
                 "c.reference({id},{},{d})?",
-                if Some(id) == owner { "_minimum" } else { "0" }
+                if owner.is_some_and(|o| points[o as usize] == points[id as usize]) {
+                    "_minimum"
+                } else {
+                    "0"
+                }
             )
         }
         "sequence" => conjunction(
             array(&e["items"])?
                 .iter()
-                .map(|e| emit(e, ids, None, next, serial))
+                .map(|e| emit(e, ids, points, None, next, serial))
                 .collect::<Result<Vec<_>, _>>()?,
         ),
         // Alternatives are generated; the parser picks candidates by the
@@ -152,7 +169,7 @@ fn emit(
                 .map(|(index, item)| {
                     Ok(format!(
                         "{index}=>{}",
-                        as_result(&emit(item, ids, None, next, serial)?)
+                        as_result(&emit(item, ids, points, None, next, serial)?)
                     ))
                 })
                 .collect::<Result<Vec<_>, String>>()?;
@@ -164,7 +181,7 @@ fn emit(
         }
         "label" => format!(
             "{{let from=c.children_len();let matched={};c.label({},from,{d})?;matched}}",
-            emit(&e["inner"], ids, owner, next, serial)?,
+            emit(&e["inner"], ids, points, owner, next, serial)?,
             quoted(text(&e["label"])?)
         ),
         "repeat" => {
@@ -175,7 +192,7 @@ fn emit(
             } else {
                 let n = *serial;
                 *serial += 1;
-                let inner = emit(&e["inner"], ids, None, next, serial)?;
+                let inner = emit(&e["inner"], ids, points, None, next, serial)?;
                 let inner_result = if inner.starts_with("c.interpret(") {
                     as_result(&inner)
                 } else {

@@ -41,6 +41,7 @@ fn rule(name: &'static str, expr: Expr<'static>, lexical: bool) -> Rule<'static>
         right_associative: false,
         transparent: false,
         alias: false,
+        origin: None,
         action: Action::None,
     }
 }

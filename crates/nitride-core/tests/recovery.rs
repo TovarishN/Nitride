@@ -18,6 +18,7 @@ static LANGUAGE: Language = Language {
             transparent: false,
             alias: false,
             owner: None,
+            origin: None,
             action: Action::None,
         },
         Rule {
@@ -35,6 +36,7 @@ static LANGUAGE: Language = Language {
             transparent: false,
             alias: false,
             owner: None,
+            origin: None,
             action: Action::None,
         },
         Rule {
@@ -47,6 +49,7 @@ static LANGUAGE: Language = Language {
             transparent: false,
             alias: false,
             owner: None,
+            origin: None,
             action: Action::None,
         },
     ],

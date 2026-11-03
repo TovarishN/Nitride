@@ -1,0 +1,19 @@
+{
+  "catalogs": [],
+  "extensions": [
+    ".context"
+  ],
+  "grammars": [
+    "languages/context/Context.ngr"
+  ],
+  "name": "Context",
+  "nitrogen": {
+    "grammars": [
+      "languages/context/Context.ngr"
+    ],
+    "namespace": "Nitride.Reference.Context",
+    "sources": []
+  },
+  "start": "Context.File",
+  "typed": false
+}

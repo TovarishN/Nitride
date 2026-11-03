@@ -1,0 +1,7 @@
+{
+  "mode": "syntax",
+  "start": "Context.File",
+  "grammars": [
+    "Context.ngr"
+  ]
+}

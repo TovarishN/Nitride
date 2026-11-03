@@ -113,6 +113,9 @@ pub mod xml {
 pub mod composition {
     include!(concat!(env!("OUT_DIR"), "/composition.rs"));
 }
+pub mod context {
+    include!(concat!(env!("OUT_DIR"), "/context.rs"));
+}
 pub mod power {
     include!(concat!(env!("OUT_DIR"), "/power.rs"));
 }
@@ -121,7 +124,7 @@ use nitride_core::*;
 use serde_json::{Value, json};
 mod project;
 mod recovery;
-pub use project::{conform_project, run_project};
+pub use project::{conform_project, parse_project, run_project};
 pub use recovery::{recovery_language, recovery_observe};
 
 /// The compiled-in language of a `languages/<profile>` project.

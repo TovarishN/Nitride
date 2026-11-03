@@ -128,6 +128,7 @@ cargo build --release --locked
 ./target/release/nitride --power languages/power/sample.powercalc
 ./target/release/nitride --parse-xml languages/xml/sample.xml
 ./target/release/nitride --parse-csharp4 languages/csharp4/corpus/Mono2008/gtest-linq-01.cs
+./target/release/nitride parse languages/xml/Xml.nproj languages/xml/sample.xml
 cargo run --locked -p nitride-cli --example embed
 ```
 
@@ -166,6 +167,9 @@ Unsupported constructs and incompatible catalogs fail preparation.
 - Admitted typed profiles for separate symbol namespaces, inferred declarations,
   exact nominal overloads, built-in calls and values, template bodies, checked
   dates, and quote rewrites. See the examples under [languages](languages).
+- Scoped parse context: `context` flags, `with(Flag = v)` scopes and
+  `context(Flag)` tests, specialized into per-environment rule instances; see
+  [scoped parse context](docs/scoped-parse-context.md).
 - Rule checks and structural `match` diagnostics with Nitrogen's named patterns,
   descendant search and `inside`/`parent` context; see
   [structural checks and named patterns](docs/structural-patterns.md).

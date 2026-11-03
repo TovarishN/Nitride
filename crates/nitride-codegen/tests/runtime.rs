@@ -2,7 +2,7 @@ use nitride_codegen::LoadedLanguage;
 use nitride_core::*;
 use std::path::{Path, PathBuf};
 
-const PROFILES: [&str; 12] = [
+const PROFILES: [&str; 13] = [
     "portable",
     "power",
     "composition",
@@ -14,6 +14,7 @@ const PROFILES: [&str; 12] = [
     "dates",
     "rewrites",
     "csharp4",
+    "context",
     "grammar",
 ];
 

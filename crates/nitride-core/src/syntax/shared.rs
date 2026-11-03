@@ -341,6 +341,7 @@ mod tests {
                     right_associative: false,
                     transparent: false,
                     alias: false,
+                    origin: None,
                     action: Action::None,
                 }]
                 .into_boxed_slice(),

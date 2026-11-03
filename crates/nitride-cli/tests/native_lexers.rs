@@ -235,6 +235,7 @@ fn native_depth_facts_do_not_reject_lower_budget_interpreted_edits() {
             transparent: false,
             alias: false,
             owner: None,
+            origin: None,
             action: Action::None,
         }
     }

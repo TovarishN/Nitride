@@ -518,6 +518,11 @@ impl Builder {
                 Node::Call(p, args) if p == "Some" && args.len() == 1 => Some(int(&args[0])?),
                 other => return Err(format!("generated table: bad owner {other:?}")),
             },
+            origin: match f.get("origin")? {
+                Node::Path(p) if p == "None" => None,
+                Node::Call(p, args) if p == "Some" && args.len() == 1 => Some(int(&args[0])?),
+                other => return Err(format!("generated table: bad origin {other:?}")),
+            },
             action: self.action(f.get("action")?)?,
         })
     }

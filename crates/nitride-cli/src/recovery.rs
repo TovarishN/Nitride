@@ -15,6 +15,7 @@ pub fn recovery_language(profile: &str) -> Option<&'static Language<'static>> {
         "dates" => &crate::dates::LANGUAGE,
         "rewrites" => &crate::rewrites::LANGUAGE,
         "csharp4" => &crate::csharp4::LANGUAGE,
+        "context" => &crate::context::LANGUAGE,
         "grammar" => &crate::grammar_fixture::LANGUAGE,
         _ => return None,
     })

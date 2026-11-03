@@ -37,8 +37,10 @@ syntax module NitrideGrammar
   syntax LanguagePresentationSetting = Kind:LanguagePresentationKind Name:QualifiedName Value:String ";";
   token LanguagePresentationKind = ("tokens" / "types") !NameTail;
   syntax Module = "syntax" "module" Name:QualifiedName "{" Members:Member* "}";
-  syntax Member = NamedPattern / Using / Symbols / SymbolProperty / Builtin / Helper / Function / TokenRule / SyntaxRule / ExtensibleRule / Extend;
+  syntax Member = ContextDeclaration / NamedPattern / Using / Symbols / SymbolProperty / Builtin / Helper / Function / TokenRule / SyntaxRule / ExtensibleRule / Extend;
   syntax Using = "using" Name:QualifiedName ";";
+  // A Boolean parse-context flag owned by the module; every parse starts with it false.
+  syntax ContextDeclaration = "context" Name:Identifier ";";
   syntax Symbols = "symbols" "{" Names:Identifier+ "}";
   // Nitrogen's C# semantic members. They are recognised so that tolerant
   // preparation can skip them with a diagnostic; they are never admitted.
@@ -109,8 +111,12 @@ syntax module NitrideGrammar
   syntax PredicateOp = "!" / "&";
   syntax Postfixed = Inner:Primary Ops:Postfix*;
   syntax Postfix = "?" / "*" / "+";
-  syntax Primary = Literal / FunctionCall / If / Comprehension / Reference / Any / EmptyGroup / Group / Class;
+  syntax Primary = ContextScope / ContextTest / Literal / FunctionCall / If / Comprehension / Reference / Any / EmptyGroup / Group / Class;
   syntax Literal = Value:String;
+  // `with(Flag = true) Body` parses Body with the flag replaced; `context(Flag)` tests it.
+  syntax ContextScope = "with" "(" Name:QualifiedName "=" Value:ContextValue ")" Body:Unary;
+  syntax ContextTest = "context" "(" Name:QualifiedName ")";
+  token ContextValue = ("true" / "false") !NameTail;
   syntax Reference = !Reserved !CallHead Name:QualifiedName;
   syntax Any = !".." ".";
   syntax FunctionCall = Head:CallHead Args:(Value; ",")* ")";
