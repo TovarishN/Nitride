@@ -559,8 +559,8 @@ pub(crate) fn prepare(
         }
     };
     let prepared = match state.entry.mode {
-        Mode::Typed => catalog.prepare(&sources, &state.entry.start, "typed"),
-        Mode::Syntax => catalog.prepare_tolerant(&sources, &state.entry.start),
+        Mode::Typed => catalog.prepare_all(&sources, &state.entry.start, "typed"),
+        Mode::Syntax => catalog.prepare_tolerant_all(&sources, &state.entry.start),
     };
     match prepared {
         Ok(prepared) => match LoadedLanguage::load(&prepared.data.to_string()) {
@@ -578,7 +578,7 @@ pub(crate) fn prepare(
             }
             Err(message) => state.errors.push(manifest_error(message)),
         },
-        Err(error) => state.errors.push(error),
+        Err(errors) => state.errors.extend(errors),
     }
     state
 }
