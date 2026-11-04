@@ -100,7 +100,18 @@ pub fn prepare_sources(
     start: &str,
     mode: &str,
 ) -> Result<Value, PrepareError> {
-    normalize::prepare(sources, catalog, start, mode, false, &|_| Ok(())).map(|p| p.data)
+    normalize::prepare(sources, catalog, start, mode, false, &|_| Ok(()))
+        .map(|p| p.data)
+        .map_err(first)
+}
+
+/// The first of the errors a preparation collected: the one it would have
+/// stopped at.
+fn first(errors: Vec<PrepareError>) -> PrepareError {
+    errors
+        .into_iter()
+        .next()
+        .expect("a failed preparation has an error")
 }
 
 /// A prepared language with what tolerant preparation skipped and the
@@ -128,7 +139,7 @@ pub fn prepare_sources_detailed(
     start: &str,
     mode: &str,
 ) -> Result<Prepared, PrepareError> {
-    normalize::prepare(sources, catalog, start, mode, false, &|_| Ok(()))
+    normalize::prepare(sources, catalog, start, mode, false, &|_| Ok(())).map_err(first)
 }
 
 /// One `references` clause: the qualified rule, its name field and symbol kinds.
@@ -199,6 +210,15 @@ pub fn prepare_sources_tolerant(
     catalog: &str,
     start: &str,
 ) -> Result<Prepared, PrepareError> {
+    prepare_sources_tolerant_all(sources, catalog, start).map_err(first)
+}
+
+/// `prepare_sources_tolerant`, reporting every independent error.
+pub fn prepare_sources_tolerant_all(
+    sources: &[Source],
+    catalog: &str,
+    start: &str,
+) -> Result<Prepared, Vec<PrepareError>> {
     normalize::prepare(sources, catalog, start, "syntax", true, &|_| Ok(()))
 }
 
@@ -286,7 +306,7 @@ impl Catalog {
         start: &str,
         mode: &str,
     ) -> Result<Prepared, PrepareError> {
-        normalize::prepare(sources, &self.json, start, mode, false, &|d| self.check(d))
+        self.prepare_all(sources, start, mode).map_err(first)
     }
     /// Tolerant syntax-mode preparation of `sources` with this catalog.
     pub fn prepare_tolerant(
@@ -294,6 +314,24 @@ impl Catalog {
         sources: &[Source],
         start: &str,
     ) -> Result<Prepared, PrepareError> {
+        self.prepare_tolerant_all(sources, start).map_err(first)
+    }
+    /// `prepare`, reporting every independent error (never none) rather
+    /// than the first: each grammar member and rule is checked on its own.
+    pub fn prepare_all(
+        &self,
+        sources: &[Source],
+        start: &str,
+        mode: &str,
+    ) -> Result<Prepared, Vec<PrepareError>> {
+        normalize::prepare(sources, &self.json, start, mode, false, &|d| self.check(d))
+    }
+    /// `prepare_tolerant`, reporting every independent error.
+    pub fn prepare_tolerant_all(
+        &self,
+        sources: &[Source],
+        start: &str,
+    ) -> Result<Prepared, Vec<PrepareError>> {
         normalize::prepare(sources, &self.json, start, "syntax", true, &|d| {
             self.check(d)
         })

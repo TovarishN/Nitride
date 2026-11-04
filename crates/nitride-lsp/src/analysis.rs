@@ -438,7 +438,7 @@ fn grammar(
         };
         match standalone(&source) {
             Ok(warnings) => reported.extend(warnings.into_iter().map(|w| (w, 2))),
-            Err(error) => reported.push((error, 1)),
+            Err(errors) => reported.extend(errors.into_iter().map(|e| (e, 1))),
         }
     }
     let problems = in_file(reported, path);
@@ -676,8 +676,8 @@ fn binding(
 }
 
 /// Prepares a grammar no manifest lists, starting at its first syntax rule.
-fn standalone(source: &Source) -> Result<Vec<PrepareError>, PrepareError> {
-    let outline = nitride_prepare::grammar_outline(source)?;
+fn standalone(source: &Source) -> Result<Vec<PrepareError>, Vec<PrepareError>> {
+    let outline = nitride_prepare::grammar_outline(source).map_err(|e| vec![e])?;
     let start = outline
         .iter()
         .find_map(|m| {
@@ -690,6 +690,10 @@ fn standalone(source: &Source) -> Result<Vec<PrepareError>, PrepareError> {
     if start.is_empty() {
         return Ok(vec![]);
     }
-    nitride_prepare::prepare_sources_tolerant(std::slice::from_ref(source), EMPTY_CATALOG, &start)
-        .map(|p| p.warnings)
+    nitride_prepare::prepare_sources_tolerant_all(
+        std::slice::from_ref(source),
+        EMPTY_CATALOG,
+        &start,
+    )
+    .map(|p| p.warnings)
 }

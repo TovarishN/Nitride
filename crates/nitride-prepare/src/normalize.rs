@@ -6,6 +6,11 @@ use serde_json::{Value, json};
 use sha2::{Digest, Sha256};
 use std::collections::{HashMap, HashSet};
 
+/// Prepares a language, reporting every independent error rather than the
+/// first. Errors are collected within a stage (each source, member, rule or
+/// helper on its own) and preparation stops after a stage that had any, so a
+/// failing declaration does not cascade into errors about its uses. The
+/// first error is the one a fail-fast preparation would have reported.
 pub fn prepare(
     sources: &[Source],
     catalog: &str,
@@ -14,43 +19,59 @@ pub fn prepare(
     tolerant: bool,
     // Checks the catalog against the prepared rules before profile validation.
     check: &dyn Fn(&Value) -> Result<(), PrepareError>,
-) -> Result<crate::Prepared, PrepareError> {
+) -> Result<crate::Prepared, Vec<PrepareError>> {
+    let mut errors = Vec::new();
+    // Ends preparation after a stage that found errors.
+    macro_rules! barrier {
+        () => {
+            if !errors.is_empty() {
+                return Err(errors);
+            }
+        };
+    }
     let fallback = Source {
         path: "<project>".into(),
         text: String::new(),
     };
     let first = sources.first().unwrap_or(&fallback);
     if sources.is_empty() || !matches!(mode, "typed" | "syntax") {
-        return Err(first.project_error("empty input or unknown admission mode"));
+        return Err(vec![
+            first.project_error("empty input or unknown admission mode"),
+        ]);
     }
     let catalog_value: Value = serde_json::from_str(catalog)
-        .map_err(|e| first.project_error(format!("invalid catalog JSON: {e}")))?;
+        .map_err(|e| vec![first.project_error(format!("invalid catalog JSON: {e}"))])?;
     let mut modules = Vec::new();
     let mut warnings = Vec::new();
     for (index, source) in sources.iter().enumerate() {
-        let (parsed, skipped) = parser::parse(source, index, tolerant)?;
-        modules.extend(parsed);
-        warnings.extend(skipped);
+        match parser::parse(source, index, tolerant) {
+            Ok((parsed, skipped)) => {
+                modules.extend(parsed);
+                warnings.extend(skipped);
+            }
+            Err(found) => errors.extend(found),
+        }
     }
+    barrier!();
     // Grammar functions expand before validation, as in Nitrogen's compiler.
-    crate::functions::expand(&mut modules, sources)?;
+    crate::functions::expand(&mut modules, sources).map_err(|e| vec![e])?;
     let mut module_names = HashSet::new();
     let mut symbols = HashMap::new();
     for (mi, module) in modules.iter().enumerate() {
         let source = &sources[module.source];
         if !module_names.insert(module.name.clone()) {
-            return Err(source.error(module.span, "duplicate module"));
+            errors.push(source.error(module.span, "duplicate module"));
         }
         let kinds: HashSet<_> = module.symbols.iter().collect();
         if kinds.len() != module.symbols.len() {
-            return Err(source.error(module.span, "duplicate symbol namespace"));
+            errors.push(source.error(module.span, "duplicate symbol namespace"));
         }
         for (ri, rule) in module.rules.iter().enumerate() {
             if symbols
                 .insert(format!("{}.{}", module.name, rule.name), (mi, ri))
                 .is_some()
             {
-                return Err(source.error(rule.span, "duplicate rule"));
+                errors.push(source.error(rule.span, "duplicate rule"));
             }
         }
     }
@@ -60,13 +81,14 @@ pub fn prepare(
         for (name, span) in &module.contexts {
             let qualified = format!("{}.{}", module.name, name);
             if contexts.contains(&qualified) || symbols.contains_key(&qualified) {
-                return Err(sources[module.source].error(*span, "duplicate context flag"));
+                errors.push(sources[module.source].error(*span, "duplicate context flag"));
+                continue;
             }
             contexts.push(qualified);
         }
     }
     if contexts.len() > 64 {
-        return Err(first.project_error("more than 64 context flags"));
+        errors.push(first.project_error("more than 64 context flags"));
     }
     let resolve_context = |name: &str, module: &Module, span: [usize; 2]| {
         let error = || {
@@ -98,12 +120,13 @@ pub fn prepare(
     for module in &modules {
         for import in &module.imports {
             if !module_names.contains(import) {
-                return Err(
-                    sources[module.source].error(module.span, format!("unknown module {import}"))
+                errors.push(
+                    sources[module.source].error(module.span, format!("unknown module {import}")),
                 );
             }
         }
     }
+    barrier!();
     let resolve = |name: &str,
                    module: &Module,
                    implicit: Option<&str>,
@@ -150,7 +173,7 @@ pub fn prepare(
             if taken.contains(pattern.name.as_str())
                 || pattern_names.insert(qualified, (mi, pi)).is_some()
             {
-                return Err(sources[module.source].coded(
+                errors.push(sources[module.source].coded(
                     pattern.name_span,
                     "NGR0164",
                     format!("duplicate rule/helper/pattern '{}'", pattern.name),
@@ -158,6 +181,7 @@ pub fn prepare(
             }
         }
     }
+    barrier!();
     // A pattern visible from `module`: qualified, its own, or one import's.
     let find_pattern = |name: &str, module: &Module| -> Option<String> {
         if name.contains('.') {
@@ -224,11 +248,20 @@ pub fn prepare(
     }
     for (mi, module) in modules.iter().enumerate() {
         for (target, alternatives) in &module.extensions {
-            let target = resolve(target, module, None, module.span)?;
+            let target = match resolve(target, module, None, module.span) {
+                Ok(target) => target,
+                Err(error) => {
+                    errors.push(error);
+                    continue;
+                }
+            };
             let (owner, _) = symbols[&target];
-            let point = points.get_mut(&target).ok_or_else(|| {
-                sources[module.source].error(module.span, "extension target is not extensible")
-            })?;
+            let Some(point) = points.get_mut(&target) else {
+                errors.push(
+                    sources[module.source].error(module.span, "extension target is not extensible"),
+                );
+                continue;
+            };
             point.extend(
                 alternatives
                     .iter()
@@ -252,9 +285,10 @@ pub fn prepare(
             .collect();
         for (kind, name) in &module.builtins {
             if !kinds.contains(kind) || !builtin_keys.insert((kind, name)) {
-                return Err(
-                    sources[module.source].error(module.span, "unknown kind or duplicate builtin")
+                errors.push(
+                    sources[module.source].error(module.span, "unknown kind or duplicate builtin"),
                 );
+                continue;
             }
             builtins.push(json!({"kind":kind,"name":name}));
         }
@@ -267,52 +301,63 @@ pub fn prepare(
         for helper in &module.helpers {
             let name = format!("{}.{}", module.name, helper.name);
             if symbols.contains_key(&name) || !helper_names.insert(name.clone()) {
-                return Err(source.error(helper.span, "duplicate helper name"));
+                errors.push(source.error(helper.span, "duplicate helper name"));
+                continue;
             }
-            let category = |name: &str, span| -> Result<String, PrepareError> {
-                let resolved = resolve(name, module, None, span)?;
-                let (mi, ri) = symbols[&resolved];
-                if modules[mi].rules[ri].lexical {
-                    return Err(source.error(span, "helper categories must be syntax rules"));
-                }
-                Ok(resolved)
-            };
-            let parameters = |list: &[parser::Parameter], taken: &mut HashSet<String>| {
-                list.iter()
-                    .map(|p| {
-                        if !taken.insert(p.name.clone()) {
-                            return Err(source.error(p.span, "duplicate helper parameter"));
-                        }
-                        Ok(json!({"name":p.name,"category":category(&p.category, p.span)?}))
-                    })
-                    .collect::<Result<Vec<_>, _>>()
-            };
-            let mut taken = HashSet::new();
-            let mut value = json!({"name":name,"parameters":parameters(&helper.parameters, &mut taken)?,
-                "result":category(&helper.result.0, helper.result.1)?,"body":helper.body,"match":null});
-            if let Some(selector) = &helper.selector {
-                if !helper.parameters.iter().any(|p| &p.name == selector) {
-                    return Err(source.error(helper.span, "match selector must be a parameter"));
-                }
-                let mut arms = Vec::new();
-                for arm in &helper.arms {
-                    let mut names = taken.clone();
-                    // Arm captures may name patterns, as check captures do.
-                    let mut captures = crate::parser::captures_json(&arm.captures);
-                    for (item, written) in captures.iter_mut().zip(&arm.captures) {
-                        if !names.insert(written.name.clone()) {
-                            return Err(source.error(written.span, "duplicate helper parameter"));
-                        }
-                        capture(item, module)?;
+            // Each helper checks on its own: its first error is recorded.
+            let value = (|| -> Result<Value, PrepareError> {
+                let category = |name: &str, span| -> Result<String, PrepareError> {
+                    let resolved = resolve(name, module, None, span)?;
+                    let (mi, ri) = symbols[&resolved];
+                    if modules[mi].rules[ri].lexical {
+                        return Err(source.error(span, "helper categories must be syntax rules"));
                     }
-                    arms.push(json!({"captures":captures,
+                    Ok(resolved)
+                };
+                let parameters = |list: &[parser::Parameter], taken: &mut HashSet<String>| {
+                    list.iter()
+                        .map(|p| {
+                            if !taken.insert(p.name.clone()) {
+                                return Err(source.error(p.span, "duplicate helper parameter"));
+                            }
+                            Ok(json!({"name":p.name,"category":category(&p.category, p.span)?}))
+                        })
+                        .collect::<Result<Vec<_>, _>>()
+                };
+                let mut taken = HashSet::new();
+                let mut value = json!({"name":name,"parameters":parameters(&helper.parameters, &mut taken)?,
+                "result":category(&helper.result.0, helper.result.1)?,"body":helper.body,"match":null});
+                if let Some(selector) = &helper.selector {
+                    if !helper.parameters.iter().any(|p| &p.name == selector) {
+                        return Err(source.error(helper.span, "match selector must be a parameter"));
+                    }
+                    let mut arms = Vec::new();
+                    for arm in &helper.arms {
+                        let mut names = taken.clone();
+                        // Arm captures may name patterns, as check captures do.
+                        let mut captures = crate::parser::captures_json(&arm.captures);
+                        for (item, written) in captures.iter_mut().zip(&arm.captures) {
+                            if !names.insert(written.name.clone()) {
+                                return Err(
+                                    source.error(written.span, "duplicate helper parameter")
+                                );
+                            }
+                            capture(item, module)?;
+                        }
+                        arms.push(json!({"captures":captures,
                         "pattern":arm.pattern,"result":arm.result}));
+                    }
+                    value["match"] = json!({"selector":selector,"arms":arms});
                 }
-                value["match"] = json!({"selector":selector,"arms":arms});
+                Ok(value)
+            })();
+            match value {
+                Ok(value) => helpers.push(value),
+                Err(error) => errors.push(error),
             }
-            helpers.push(value);
         }
     }
+    barrier!();
     let resolve_helper = |name: &str, module: &Module, span| -> Result<String, PrepareError> {
         let error =
             || sources[module.source].error(span, format!("unknown or ambiguous helper {name}"));
@@ -513,8 +558,11 @@ pub fn prepare(
                 for (mi, alternative, implicit) in &points[&point] {
                     let from = &modules[*mi];
                     if !alternative_names.insert(&alternative.name) {
-                        return Err(sources[from.source]
-                            .error(alternative.span, "duplicate extension alternative name"));
+                        errors.push(
+                            sources[from.source]
+                                .error(alternative.span, "duplicate extension alternative name"),
+                        );
+                        continue;
                     }
                     let mut head = first_expr(&alternative.body);
                     let scoped = head["kind"] == "scope";
@@ -522,22 +570,34 @@ pub fn prepare(
                         head = first_expr(&head["inner"]);
                     }
                     let span = expr_span(head);
-                    let infix = head["kind"] == "ref"
-                        && resolve(head["name"].as_str().unwrap(), from, Some(implicit), span)?
-                            == point;
+                    let infix = if head["kind"] == "ref" {
+                        match resolve(head["name"].as_str().unwrap(), from, Some(implicit), span) {
+                            Ok(resolved) => resolved == point,
+                            Err(error) => {
+                                errors.push(error);
+                                continue;
+                            }
+                        }
+                    } else {
+                        false
+                    };
                     if infix && scoped {
-                        return Err(sources[from.source].error(
+                        errors.push(sources[from.source].error(
                             alternative.span,
                             "a context scope around an infix's left operand is not admitted",
                         ));
+                        continue;
                     }
                     // Alternatives may share an operator: the parser ranks them by longest
                     // match, then precedence, as Nitrogen does. A prefix alternative's
                     // associativity is accepted and ignored, as Nitrogen's generator ignores
                     // it: its trailing operand binds at its own precedence.
                     if infix && alternative.precedence.is_none_or(|p| p == 0) {
-                        return Err(sources[from.source]
-                            .error(alternative.span, "infix precedence must be 1..255"));
+                        errors.push(
+                            sources[from.source]
+                                .error(alternative.span, "infix precedence must be 1..255"),
+                        );
+                        continue;
                     }
                     // A transparent alternative yields exactly one node: a literal,
                     // class or reference, labeled or not, or a choice of them.
@@ -556,14 +616,22 @@ pub fn prepare(
                             || alternative.block
                             || !single(&alternative.body))
                     {
-                        return Err(sources[from.source].error(
+                        errors.push(sources[from.source].error(
                             alternative.span,
                             "a transparent alternative must be a prefix yielding exactly one node",
                         ));
+                        continue;
                     }
                     let assoc =
                         infix.then(|| alternative.associativity.as_deref().unwrap_or("Left"));
-                    let normalized = add(from, alternative, Some(&point), Some(implicit), assoc)?;
+                    let normalized =
+                        match add(from, alternative, Some(&point), Some(implicit), assoc) {
+                            Ok(normalized) => normalized,
+                            Err(error) => {
+                                errors.push(error);
+                                continue;
+                            }
+                        };
                     let name = normalized["name"].clone();
                     rules.push(normalized);
                     if infix {
@@ -574,15 +642,21 @@ pub fn prepare(
                 }
                 rules.push(json!({"name":point,"lexical":false,"expr":{"kind":"pratt","prefixes":prefixes,"infixes":infixes},"clauses":[],"except":[]}));
             } else {
-                rules.push(add(module, rule, None, None, None)?);
+                match add(module, rule, None, None, None) {
+                    Ok(normalized) => rules.push(normalized),
+                    Err(error) => errors.push(error),
+                }
             }
         }
     }
+    barrier!();
     let Some((mi, ri)) = symbols.get(start) else {
-        return Err(first.project_error(format!("unknown syntax start rule {start}")));
+        return Err(vec![
+            first.project_error(format!("unknown syntax start rule {start}")),
+        ]);
     };
     if modules[*mi].rules[*ri].lexical {
-        return Err(first.project_error("start rule must be syntax"));
+        return Err(vec![first.project_error("start rule must be syntax")]);
     }
     let identity = if sources.len() == 1 {
         sources[0].text.clone()
@@ -614,13 +688,14 @@ pub fn prepare(
     if !helpers.is_empty() && mode == "typed" {
         output["helpers"] = json!(helpers);
     }
-    let patterns = named_patterns(&modules, sources, &capture, &syntax_category)?;
+    let patterns =
+        named_patterns(&modules, sources, &capture, &syntax_category).map_err(|e| vec![e])?;
     if !patterns.is_empty() {
         output["patterns"] = json!(patterns);
     }
-    check(&output)?;
+    check(&output).map_err(|e| vec![e])?;
     nitride_codegen::generate(&output.to_string())
-        .map_err(|e| first.project_error(format!("profile validation: {e}")))?;
+        .map_err(|e| vec![first.project_error(format!("profile validation: {e}"))])?;
     Ok(crate::Prepared {
         data: output,
         warnings,

@@ -82,18 +82,24 @@ pub struct Rule {
 // consume tokens, choose alternatives or backtrack.
 /// Decodes one grammar source. Nitrogen's C# semantic members are errors,
 /// unless `tolerant`, when each is skipped and returned as a warning.
+///
+/// Errors are collected rather than stopping at the first: each member (and
+/// each alternative of an `extend`) decodes on its own, so every independent
+/// problem of the source is reported, in source order.
 pub fn parse(
     source: &Source,
     index: usize,
     tolerant: bool,
-) -> Result<(Vec<Module>, Vec<PrepareError>), PrepareError> {
-    let tree = syntax(source)?;
+) -> Result<(Vec<Module>, Vec<PrepareError>), Vec<PrepareError>> {
+    let tree = syntax(source).map_err(|e| vec![e])?;
     let decoder = Decoder {
         source,
         tree: &tree,
         tolerant,
         skipped: Default::default(),
+        errors: Default::default(),
     };
+    let mut errors = Vec::new();
     // Nodes are postorder. Bound the combined model depth before constructing
     // recursive JSON, cloning separated-list items, or invoking normalization.
     // Syntax wrappers conservatively cover the object/array wrappers introduced
@@ -113,23 +119,29 @@ pub fn parse(
         };
         let depth = nested + postfix + 1;
         if depth > 128 {
-            return Err(decoder.error(id, "grammar nesting exceeds 128"));
+            // Decoding recurses over the model: nothing past this is safe.
+            errors.push(decoder.error(id, "grammar nesting exceeds 128"));
+            return Err(errors);
         }
         depths.push(depth);
         // Recognition is generated; UTF-16 pairing is a model constraint,
         // including captured literals within opaque semantic regions.
-        match decoder.kind(id) {
-            "String" | "OpaqueCharLiteral" => {
-                decoder.literal(id)?;
-            }
-            "Char" => {
-                crate::literal::decode_unit(decoder.source, decoder.span(id))?;
-            }
-            _ => {}
-        }
+        let checked = match decoder.kind(id) {
+            "String" | "OpaqueCharLiteral" => decoder.literal(id).map(drop),
+            "Char" => crate::literal::decode_unit(decoder.source, decoder.span(id)).map(drop),
+            _ => Ok(()),
+        };
+        errors.extend(checked.err());
     }
     drop(depths);
-    let modules = decoder.modules(index)?;
+    if !errors.is_empty() {
+        return Err(errors);
+    }
+    let modules = decoder.modules(index);
+    let errors = decoder.errors.take();
+    if !errors.is_empty() {
+        return Err(errors);
+    }
     Ok((modules, decoder.skipped.into_inner()))
 }
 
@@ -249,6 +261,7 @@ pub fn references(source: &Source) -> Result<Vec<crate::GrammarReference>, Prepa
         tree: &tree,
         tolerant: true,
         skipped: Default::default(),
+        errors: Default::default(),
     };
     let modules: Vec<_> = decoder
         .fields(tree.root, "Modules")
@@ -321,6 +334,7 @@ pub fn language_declaration(
         tree: &tree,
         tolerant: true,
         skipped: Default::default(),
+        errors: Default::default(),
     };
     let Some(id) = tree.field(tree.root, "Language") else {
         return Ok(None);
@@ -377,6 +391,7 @@ pub fn locals(source: &Source) -> Result<Vec<crate::GrammarLocal>, PrepareError>
         tree: &tree,
         tolerant: true,
         skipped: Default::default(),
+        errors: Default::default(),
     };
     let mut found = Vec::new();
     for id in 0..tree.nodes.len() as u32 {
@@ -410,6 +425,7 @@ pub fn outline(source: &Source) -> Result<Vec<crate::GrammarItem>, PrepareError>
         tree: &tree,
         tolerant: true,
         skipped: Default::default(),
+        errors: Default::default(),
     };
     let item = |kind: &'static str, id: u32, children| {
         let name = decoder.field(id, "Name");
@@ -467,6 +483,8 @@ struct Decoder<'a> {
     tree: &'a SyntaxTree<'static>,
     tolerant: bool,
     skipped: std::cell::RefCell<Vec<PrepareError>>,
+    /// Errors of members (or alternatives) left out, in the order found.
+    errors: std::cell::RefCell<Vec<PrepareError>>,
 }
 impl Decoder<'_> {
     fn kind(&self, id: u32) -> &str {
@@ -724,7 +742,9 @@ impl Decoder<'_> {
     fn literal(&self, id: u32) -> Result<String, PrepareError> {
         crate::literal::decode(self.source, self.span(id), self.kind(id) == "Char")
     }
-    fn modules(&self, index: usize) -> Result<Vec<Module>, PrepareError> {
+    /// The source's modules. A member that does not decode is left out and
+    /// its error recorded, so later members are still checked.
+    fn modules(&self, index: usize) -> Vec<Module> {
         self.fields(self.tree.root, "Modules")
             .into_iter()
             .map(|id| {
@@ -744,17 +764,26 @@ impl Decoder<'_> {
                 };
                 for member in self.fields(id, "Members") {
                     let m = self.first(member);
-                    match self.kind(m) {
-                        "Using" => module.imports.push(self.named(m, "Name")),
-                        "ContextDeclaration" => module
-                            .contexts
-                            .push((self.named(m, "Name"), self.span(self.field(m, "Name")))),
-                        "SymbolProperty" => self.semantic_member(m)?,
-                        "Symbols" => module.symbols.extend(
-                            self.fields(m, "Names")
-                                .iter()
-                                .map(|&n| self.text(n).to_owned()),
-                        ),
+                    let decoded = match self.kind(m) {
+                        "Using" => {
+                            module.imports.push(self.named(m, "Name"));
+                            Ok(())
+                        }
+                        "ContextDeclaration" => {
+                            module
+                                .contexts
+                                .push((self.named(m, "Name"), self.span(self.field(m, "Name"))));
+                            Ok(())
+                        }
+                        "SymbolProperty" => self.semantic_member(m),
+                        "Symbols" => {
+                            module.symbols.extend(
+                                self.fields(m, "Names")
+                                    .iter()
+                                    .map(|&n| self.text(n).to_owned()),
+                            );
+                            Ok(())
+                        }
                         "Builtin" => {
                             let kind = self.named(m, "Kind");
                             module.builtins.extend(
@@ -762,26 +791,37 @@ impl Decoder<'_> {
                                     .iter()
                                     .map(|&n| (kind.clone(), self.text(n).into())),
                             );
+                            Ok(())
                         }
-                        "Helper" => module.helpers.push(self.helper(m)?),
-                        "NamedPattern" => module.patterns.push(self.named_pattern(m)?),
-                        "Function" => module.functions.push(self.function(m)?),
+                        "Helper" => self.helper(m).map(|h| module.helpers.push(h)),
+                        "NamedPattern" => self.named_pattern(m).map(|p| module.patterns.push(p)),
+                        "Function" => self.function(m).map(|f| module.functions.push(f)),
                         "Extend" => {
-                            let alternatives = self
-                                .fields(m, "Alternatives")
-                                .into_iter()
-                                .map(|n| self.rule(n))
-                                .collect::<Result<_, _>>()?;
+                            let alternatives = self.alternatives(m);
                             module
                                 .extensions
                                 .push((self.named(m, "Name"), alternatives));
+                            Ok(())
                         }
-                        _ => module.rules.push(self.rule(m)?),
-                    }
+                        _ => self.rule(m).map(|r| module.rules.push(r)),
+                    };
+                    self.errors.borrow_mut().extend(decoded.err());
                 }
-                Ok(module)
+                module
             })
             .collect()
+    }
+    /// The alternatives of an `extend` or extensible rule. Each is decoded on
+    /// its own: one that fails is left out and its error recorded.
+    fn alternatives(&self, id: u32) -> Vec<Rule> {
+        let mut alternatives = Vec::new();
+        for n in self.fields(id, "Alternatives") {
+            match self.rule(n) {
+                Ok(rule) => alternatives.push(rule),
+                Err(error) => self.errors.borrow_mut().push(error),
+            }
+        }
+        alternatives
     }
     /// The raw text between `<[` and the first `]>`, as Nitrogen's QuoteText holds it.
     fn quote(&self, id: u32) -> String {
@@ -1082,12 +1122,7 @@ impl Decoder<'_> {
             for property in self.fields(id, "Properties") {
                 self.semantic_member(property)?;
             }
-            rule.alternatives = Some(
-                self.fields(id, "Alternatives")
-                    .into_iter()
-                    .map(|n| self.rule(n))
-                    .collect::<Result<_, _>>()?,
-            );
+            rule.alternatives = Some(self.alternatives(id));
         }
         if let Some(n) = self.tree.field(id, "Except") {
             for word in self.fields(n, "Words") {
