@@ -105,6 +105,18 @@ pub(super) enum Cursor<'a> {
     Shared(Reader<'a>),
 }
 impl Cursor<'_> {
+    pub(super) fn ascii_whitespace_end(&mut self, at: usize, limit: usize) -> usize {
+        match self {
+            Self::Flat(s) => {
+                let bytes = &s.as_bytes()[at.min(s.len())..limit.min(s.len())];
+                at + bytes
+                    .iter()
+                    .take_while(|&&b| matches!(b, b' ' | b'\t' | b'\n' | b'\x0b' | b'\x0c' | b'\r'))
+                    .count()
+            }
+            Self::Shared(r) => r.ascii_whitespace_end(at, limit),
+        }
+    }
     pub(super) fn character(&mut self, at: usize) -> Option<char> {
         match self {
             Self::Flat(s) => Source::Flat(s).character(at),

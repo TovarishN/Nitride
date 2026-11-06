@@ -221,9 +221,11 @@ impl<'a> LexicalContext<'a> {
             return false;
         }
         self.observe(start.saturating_add(length));
-        self.source
-            .get(start..self.position)
-            .is_some_and(|text| sorted.binary_search(&text).is_ok())
+        self.source.get(start..self.position).is_some_and(|text| {
+            sorted
+                .binary_search_by(|probe| short_cmp(probe.as_bytes(), text.as_bytes()))
+                .is_ok()
+        })
     }
     #[inline]
     pub fn excluded(&mut self, start: usize, spellings: &[&str]) -> bool {
@@ -235,6 +237,18 @@ impl<'a> LexicalContext<'a> {
             self.source.get(start..self.position) == Some(*text)
         })
     }
+}
+
+/// `Ord` for the short byte strings grammars spell (keywords): an inline
+/// loop instead of a library call per binary-search probe.
+#[inline(always)]
+fn short_cmp(a: &[u8], b: &[u8]) -> std::cmp::Ordering {
+    for (x, y) in a.iter().zip(b) {
+        if x != y {
+            return x.cmp(y);
+        }
+    }
+    a.len().cmp(&b.len())
 }
 
 #[cfg(test)]

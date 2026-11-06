@@ -249,6 +249,26 @@ impl<'a> Reader<'a> {
         );
         value
     }
+    /// The end of the run of ASCII whitespace (as `char::is_whitespace`
+    /// classifies it) from `at`, stopping by `limit`.
+    pub(crate) fn ascii_whitespace_end(&mut self, at: usize, limit: usize) -> usize {
+        let mut end = at;
+        while end < limit {
+            let Some(window) = self.window(end) else {
+                break;
+            };
+            let run = window.as_bytes()[..window.len().min(limit - end)]
+                .iter()
+                .take_while(|&&b| matches!(b, b' ' | b'\t' | b'\n' | b'\x0b' | b'\x0c' | b'\r'))
+                .count();
+            end += run;
+            if run == 0 || end < limit && run < window.len() {
+                break;
+            }
+        }
+        self.observe((end + 1).min(self.len() + 1) as u64);
+        end
+    }
     pub(crate) fn matches(&mut self, at: usize, text: &str) -> bool {
         self.observe(at.saturating_add(text.len()).min(self.len() + 1) as u64);
         if at > self.len() || text.len() > self.len() - at {
