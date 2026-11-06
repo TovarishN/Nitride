@@ -1900,6 +1900,33 @@ impl<'a> Parser<'a> {
         if let Some(plan) = self.choice_cache.get(&key) {
             return plan.clone();
         }
+        let shared = self.dispatch.shared_plan(key);
+        let fresh = shared.is_none();
+        let plan = match shared {
+            Some(plan) => plan,
+            None => self.build_choice_plan(parts, lexical),
+        };
+        let cost = base_cost + plan.as_ref().map_or(0, |plan| plan.bytes());
+        if fresh {
+            self.dispatch.remember_plan(key, plan.clone(), cost);
+        }
+        if cost > limit {
+            return None;
+        }
+        if self.choice_cache_bytes + cost > limit {
+            // Drop buckets too: retained capacity must not escape the charge.
+            self.choice_cache = Default::default();
+            self.choice_cache_bytes = 0;
+        }
+        self.choice_cache_bytes += cost;
+        self.choice_cache.insert(key, plan.clone());
+        plan
+    }
+    fn build_choice_plan(
+        &mut self,
+        parts: &'static [Expr],
+        lexical: bool,
+    ) -> Option<std::sync::Arc<dispatch::ChoicePlan>> {
         self.stats.choice_plan_builds += 1;
         let starts: Vec<_> = parts
             .iter()
@@ -1913,19 +1940,7 @@ impl<'a> Parser<'a> {
                 .map(|part| self.dispatch.alternative_lead(part, self.language))
                 .collect()
         };
-        let plan = dispatch::ChoicePlan::new(&starts, leads).map(std::sync::Arc::new);
-        let cost = base_cost + plan.as_ref().map_or(0, |plan| plan.bytes());
-        if cost > limit {
-            return None;
-        }
-        if self.choice_cache_bytes + cost > limit {
-            // Drop buckets too: retained capacity must not escape the charge.
-            self.choice_cache = Default::default();
-            self.choice_cache_bytes = 0;
-        }
-        self.choice_cache_bytes += cost;
-        self.choice_cache.insert(key, plan.clone());
-        plan
+        dispatch::ChoicePlan::new(&starts, leads).map(std::sync::Arc::new)
     }
     #[inline]
     fn tick_steps(&mut self, count: usize, depth: u32) -> Result<(), Diagnostic> {

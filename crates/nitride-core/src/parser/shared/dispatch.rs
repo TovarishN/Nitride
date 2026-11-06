@@ -449,8 +449,33 @@ pub(crate) struct Dispatch {
     keywords: Vec<bool>,
     /// Per terminal: a literal's ASCII first byte; `LEXICAL` or `WIDE` otherwise.
     first_bytes: Vec<u8>,
+    /// Choice plans built by any parse sharing this analysis, by choice key,
+    /// with their charged bytes. A process cache bounded by `PLAN_BYTES`,
+    /// so not reported as any snapshot's memory.
+    plans: std::sync::Mutex<(SharedPlans, usize)>,
 }
+type SharedPlans = super::hash::FastMap<usize, Option<std::sync::Arc<ChoicePlan>>>;
 impl Dispatch {
+    /// The bound on `plans`' charged bytes.
+    const PLAN_BYTES: usize = 256 * 1024;
+    /// A plan an earlier parse built for `key`, if remembered.
+    pub(super) fn shared_plan(&self, key: usize) -> Option<Option<std::sync::Arc<ChoicePlan>>> {
+        let plans = self.plans.lock().unwrap_or_else(|e| e.into_inner());
+        plans.0.get(&key).cloned()
+    }
+    /// Remembers `plan` for later parses while the cache has room for `cost`.
+    pub(super) fn remember_plan(
+        &self,
+        key: usize,
+        plan: Option<std::sync::Arc<ChoicePlan>>,
+        cost: usize,
+    ) {
+        let mut plans = self.plans.lock().unwrap_or_else(|e| e.into_inner());
+        if plans.1 + cost <= Self::PLAN_BYTES && !plans.0.contains_key(&key) {
+            plans.1 += cost;
+            plans.0.insert(key, plan);
+        }
+    }
     pub(crate) fn new(language: &Language<'static>) -> Self {
         let mut starts = vec![Start::default(); language.rules.len()];
         let mut budget = 1_000_000usize;
@@ -496,6 +521,7 @@ impl Dispatch {
                 terminals: Vec::new(),
                 keywords: Vec::new(),
                 first_bytes: Vec::new(),
+                plans: Default::default(),
             };
         }
         let tails: Vec<Option<Start>> = language
@@ -558,6 +584,7 @@ impl Dispatch {
             terminals,
             keywords,
             first_bytes,
+            plans: Default::default(),
         };
         if dispatch.terminals.len() >= Step::ANY as usize {
             dispatch.terminals = Vec::new();
