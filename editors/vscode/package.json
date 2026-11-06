@@ -2,7 +2,7 @@
   "name": "nitride",
   "displayName": "Nitride DSL",
   "description": ".ngr grammars, .ncatalog catalogs, .nbind bindings and the .nproj (or nitrogen.json) workspace languages through nitride lsp.",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "publisher": "nitride",
   "license": "MIT",
   "engines": {
