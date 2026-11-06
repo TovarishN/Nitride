@@ -662,7 +662,7 @@ impl<'a> Parser<'a> {
             lexers: input.lexers,
             choice_cache: Default::default(),
             choice_cache_bytes: 0,
-            tokens: TokenCache::default(),
+            tokens: TokenCache::for_text(text.len() as usize),
             language,
             minimum_sensitive: tables.minimum_sensitive,
             dispatch: base
@@ -3382,6 +3382,8 @@ impl Peek {
 struct TokenCache {
     /// Allocated on first use: small edits often read few positions.
     slots: Vec<TokenSlot>,
+    /// Slots to allocate; `TOKEN_SLOTS` when zero.
+    size: usize,
 }
 #[derive(Clone, Copy)]
 struct TokenSlot {
@@ -3413,16 +3415,32 @@ impl TokenSlot {
     };
 }
 impl TokenCache {
+    /// A text of `len` bytes has `len + 1` positions. While those fit, a
+    /// smaller power-of-two table maps each to the slot the full table
+    /// would, so contents and hits are the same with less to allocate.
+    fn for_text(len: usize) -> Self {
+        Self {
+            slots: Vec::new(),
+            size: len.saturating_add(1).next_power_of_two().min(TOKEN_SLOTS),
+        }
+    }
     fn get(&self, at: usize) -> Option<&TokenSlot> {
         self.slots
-            .get(at % TOKEN_SLOTS)
+            // Power-of-two length; an empty table's mask finds nothing.
+            .get(at & self.slots.len().wrapping_sub(1))
             .filter(|slot| slot.at == at as u32)
     }
     fn slot(&mut self, at: usize) -> &mut TokenSlot {
         if self.slots.is_empty() {
-            self.slots = vec![TokenSlot::EMPTY; TOKEN_SLOTS];
+            let size = if self.size == 0 {
+                TOKEN_SLOTS
+            } else {
+                self.size
+            };
+            self.slots = vec![TokenSlot::EMPTY; size];
         }
-        let slot = &mut self.slots[at % TOKEN_SLOTS];
+        let mask = self.slots.len() - 1;
+        let slot = &mut self.slots[at & mask];
         if slot.at != at as u32 {
             *slot = TokenSlot {
                 at: at as u32,
