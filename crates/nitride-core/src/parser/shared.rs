@@ -1942,7 +1942,7 @@ impl<'a> Parser<'a> {
         };
         dispatch::ChoicePlan::new(&starts, leads).map(std::sync::Arc::new)
     }
-    #[inline]
+    #[inline(always)]
     fn tick_steps(&mut self, count: usize, depth: u32) -> Result<(), Diagnostic> {
         if count == 0 {
             return Ok(());
