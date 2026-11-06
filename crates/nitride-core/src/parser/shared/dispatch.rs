@@ -1,6 +1,5 @@
 //! Conservative start sets for prepared grammar rules. No recognition decisions
 //! are committed here: unknown and nullable starts always remain eligible.
-use crate::syntax::memory::{self, Class, Visitor};
 use crate::{Expr, Language, Rule};
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
@@ -328,34 +327,6 @@ impl PrattPlan {
             .last()
             .is_some_and(|(floor, _)| *floor >= minimum)
     }
-    fn visit(&self, visitor: &mut Visitor<'_>) {
-        for (id, bytes) in [
-            (
-                self.prefix_routes.bits.as_ptr() as usize,
-                self.prefix_routes.bytes(),
-            ),
-            (
-                self.infix_routes.bits.as_ptr() as usize,
-                self.infix_routes.bytes(),
-            ),
-            (
-                self.prefixes.as_ptr() as usize,
-                std::mem::size_of_val::<[Prefix]>(&self.prefixes),
-            ),
-            (
-                self.infixes.as_ptr() as usize,
-                std::mem::size_of_val::<[Infix]>(&self.infixes),
-            ),
-            (
-                self.floors.as_ptr() as usize,
-                std::mem::size_of_val::<[(u32, [u64; 4])]>(&self.floors),
-            ),
-        ] {
-            if bytes != 0 {
-                visitor(Class::Index, id, bytes);
-            }
-        }
-    }
 }
 
 pub(super) struct ChoiceCandidates {
@@ -426,14 +397,6 @@ impl Leads {
         let [start, end] = *self.ranges.get(id as usize)?;
         self.steps.get(start as usize..end as usize)
     }
-    fn visit(&self, visitor: &mut Visitor<'_>) {
-        if let Some((id, bytes)) = memory::vector(&self.steps) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.ranges) {
-            visitor(Class::Index, id, bytes);
-        }
-    }
 }
 const LEAD_LIMIT: usize = 48;
 
@@ -449,8 +412,33 @@ pub(crate) struct Dispatch {
     keywords: Vec<bool>,
     /// Per terminal: a literal's ASCII first byte; `LEXICAL` or `WIDE` otherwise.
     first_bytes: Vec<u8>,
+    /// Choice plans built by any parse sharing this analysis, by choice key,
+    /// with their charged bytes. A process cache bounded by `PLAN_BYTES`,
+    /// so not reported as any snapshot's memory.
+    plans: std::sync::Mutex<(SharedPlans, usize)>,
 }
+type SharedPlans = super::hash::FastMap<usize, Option<std::sync::Arc<ChoicePlan>>>;
 impl Dispatch {
+    /// The bound on `plans`' charged bytes.
+    const PLAN_BYTES: usize = 256 * 1024;
+    /// A plan an earlier parse built for `key`, if remembered.
+    pub(super) fn shared_plan(&self, key: usize) -> Option<Option<std::sync::Arc<ChoicePlan>>> {
+        let plans = self.plans.lock().unwrap_or_else(|e| e.into_inner());
+        plans.0.get(&key).cloned()
+    }
+    /// Remembers `plan` for later parses while the cache has room for `cost`.
+    pub(super) fn remember_plan(
+        &self,
+        key: usize,
+        plan: Option<std::sync::Arc<ChoicePlan>>,
+        cost: usize,
+    ) {
+        let mut plans = self.plans.lock().unwrap_or_else(|e| e.into_inner());
+        if plans.1 + cost <= Self::PLAN_BYTES && !plans.0.contains_key(&key) {
+            plans.1 += cost;
+            plans.0.insert(key, plan);
+        }
+    }
     pub(crate) fn new(language: &Language<'static>) -> Self {
         let mut starts = vec![Start::default(); language.rules.len()];
         let mut budget = 1_000_000usize;
@@ -496,6 +484,7 @@ impl Dispatch {
                 terminals: Vec::new(),
                 keywords: Vec::new(),
                 first_bytes: Vec::new(),
+                plans: Default::default(),
             };
         }
         let tails: Vec<Option<Start>> = language
@@ -558,6 +547,7 @@ impl Dispatch {
             terminals,
             keywords,
             first_bytes,
+            plans: Default::default(),
         };
         if dispatch.terminals.len() >= Step::ANY as usize {
             dispatch.terminals = Vec::new();
@@ -698,36 +688,6 @@ impl Dispatch {
     }
     pub(super) fn tail(&self, id: u16) -> Option<Start> {
         self.tails.get(id as usize).copied().flatten()
-    }
-    pub(crate) fn visit_allocations(&self, visitor: &mut Visitor<'_>) {
-        if let Some((id, bytes)) = memory::vector(&self.starts) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.tails) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.terminals) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.keywords) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.first_bytes) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.pratts) {
-            visitor(Class::Index, id, bytes);
-        }
-        for plan in self.pratts.iter().flatten() {
-            visitor(
-                Class::Index,
-                &**plan as *const PrattPlan as usize,
-                std::mem::size_of::<PrattPlan>(),
-            );
-            plan.visit(visitor);
-        }
-        self.leads.visit(visitor);
-        self.tail_leads.visit(visitor);
     }
 }
 

@@ -144,12 +144,8 @@ impl ParseSnapshot {
         self.arena.visit_allocations(visit);
         self.source.visit_allocations(visit);
         self.recognitions.visit_allocations(visit);
-        if let Some(dispatch) = &self.dispatch {
-            let (id, size) = memory::arc(dispatch);
-            if visit(Class::Index, id, size) {
-                dispatch.visit_allocations(visit);
-            }
-        }
+        // `dispatch` is the language's analysis, shared by every parse of it
+        // for the life of the process: not storage this snapshot owns.
         let (id, size) = memory::arc(&self.diagnostics);
         if visit(Class::Sidecar, id, size) {
             self.diagnostics.visit(visit);

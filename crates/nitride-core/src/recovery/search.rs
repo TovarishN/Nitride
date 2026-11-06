@@ -183,7 +183,7 @@ struct Engine<'g, 'a, P> {
     source: Source<'a>,
     limits: Limits,
     options: RecoveryOptions,
-    graph: Grammar<'g>,
+    tables: std::sync::Arc<Tables<'g>>,
     probe: P,
     tasks: Tasks<'g>,
     history: Vec<(u32, Event<'g>)>,
@@ -195,10 +195,6 @@ struct Engine<'g, 'a, P> {
     epoch_states: usize,
     serial: u64,
     best: Option<State>,
-    /// Distinct grammar literals, grouped by their first byte.
-    literal_tokens: Vec<Vec<&'g str>>,
-    character_tokens: Vec<&'g Expr<'g>>,
-    lexical: Vec<u16>,
     prefixes: Vec<Prefix<'g>>,
     reused_batches: u64,
     /// `starts` visit marks by code, current when equal to `start_epoch`.
@@ -218,6 +214,7 @@ pub(super) fn recover<'g>(
         limits,
         options,
         StrictProbe::new(language, source, limits),
+        std::sync::Arc::new(Tables::new(language)),
     );
     match engine.run() {
         Ok(state) => engine.finish(state, None),
@@ -231,46 +228,92 @@ pub(super) fn recover<'g>(
     }
 }
 
+/// Recovery's grammar tables, derived from the language alone.
+pub(super) struct Tables<'g> {
+    graph: Grammar<'g>,
+    /// Distinct grammar literals, grouped by their first byte.
+    literal_tokens: Vec<Vec<&'g str>>,
+    character_tokens: Vec<&'g Expr<'g>>,
+    lexical: Vec<u16>,
+}
+impl<'g> Tables<'g> {
+    fn new(language: &'g Language<'g>) -> Self {
+        let graph = Grammar::new(language);
+        let mut literal_tokens = vec![Vec::new(); 256];
+        let mut character_tokens = Vec::new();
+        for rule in language.rules.iter().filter(|r| !r.lexical) {
+            let mut pending = vec![&rule.expr];
+            while let Some(expr) = pending.pop() {
+                match expr {
+                    Expr::Literal(s) if !s.is_empty() => {
+                        let group: &mut Vec<&str> = &mut literal_tokens[s.as_bytes()[0] as usize];
+                        if !group.contains(s) {
+                            group.push(*s);
+                        }
+                    }
+                    Expr::Class(_) | Expr::NotClass(_) | Expr::Any => character_tokens.push(expr),
+                    Expr::Sequence(parts) | Expr::Choice(parts) => pending.extend(parts.iter()),
+                    Expr::Label(_, inner) | Expr::Repeat { inner, .. } => pending.push(inner),
+                    _ => {}
+                }
+            }
+        }
+        let lexical = language
+            .rules
+            .iter()
+            .enumerate()
+            .filter(|(_, r)| r.lexical)
+            .map(|(i, _)| i as u16)
+            .collect();
+        Self {
+            graph,
+            literal_tokens,
+            character_tokens,
+            lexical,
+        }
+    }
+}
+impl Tables<'static> {
+    /// One analysis per language for the life of the process: languages are
+    /// `'static`, so their addresses identify them for good.
+    pub(super) fn shared(language: &'static Language<'static>) -> std::sync::Arc<Self> {
+        type Cache = std::sync::Mutex<Vec<(usize, std::sync::Arc<Tables<'static>>)>>;
+        static CACHE: Cache = std::sync::Mutex::new(Vec::new());
+        let key = std::ptr::from_ref(language) as usize;
+        let find = |cache: &[(usize, std::sync::Arc<Tables<'static>>)]| {
+            cache
+                .iter()
+                .find(|(k, _)| *k == key)
+                .map(|(_, t)| t.clone())
+        };
+        if let Some(tables) = find(&CACHE.lock().unwrap_or_else(|e| e.into_inner())) {
+            return tables;
+        }
+        // Analyze outside the lock; a racing thread's result is equivalent.
+        let tables = std::sync::Arc::new(Self::new(language));
+        let mut cache = CACHE.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(existing) = find(&cache) {
+            return existing;
+        }
+        cache.push((key, tables.clone()));
+        tables
+    }
+}
+
 fn engine<'g, 'a, P: Probe<'g>>(
     language: &'g Language<'g>,
     source: Source<'a>,
     limits: Limits,
     options: RecoveryOptions,
     probe: P,
+    tables: std::sync::Arc<Tables<'g>>,
 ) -> Engine<'g, 'a, P> {
-    let graph = Grammar::new(language);
-    let mut literal_tokens = vec![Vec::new(); 256];
-    let mut character_tokens = Vec::new();
-    for rule in language.rules.iter().filter(|r| !r.lexical) {
-        let mut pending = vec![&rule.expr];
-        while let Some(expr) = pending.pop() {
-            match expr {
-                Expr::Literal(s) if !s.is_empty() => {
-                    let group: &mut Vec<&str> = &mut literal_tokens[s.as_bytes()[0] as usize];
-                    if !group.contains(s) {
-                        group.push(*s);
-                    }
-                }
-                Expr::Class(_) | Expr::NotClass(_) | Expr::Any => character_tokens.push(expr),
-                Expr::Sequence(parts) | Expr::Choice(parts) => pending.extend(parts.iter()),
-                Expr::Label(_, inner) | Expr::Repeat { inner, .. } => pending.push(inner),
-                _ => {}
-            }
-        }
-    }
-    let lexical = language
-        .rules
-        .iter()
-        .enumerate()
-        .filter(|(_, r)| r.lexical)
-        .map(|(i, _)| i as u16)
-        .collect();
     let mut engine = Engine {
         language,
         source,
         limits,
         options,
-        graph,
+        tables,
         probe,
         tasks: Tasks::new(),
         history: vec![(0, Event::Close { end: 0 })],
@@ -282,9 +325,6 @@ fn engine<'g, 'a, P: Probe<'g>>(
         epoch_states: 0,
         serial: 0,
         best: None,
-        literal_tokens,
-        character_tokens,
-        lexical,
         prefixes: Vec::new(),
         reused_batches: 0,
         start_seen: Vec::new(),
@@ -433,7 +473,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
     fn starts(&mut self, code: Code, at: usize) -> Result<bool, Diagnostic> {
         let mut pending = vec![code];
         if self.start_epoch == u32::MAX || self.start_seen.is_empty() {
-            self.start_seen = vec![0; self.graph.code.len()];
+            self.start_seen = vec![0; self.tables.graph.code.len()];
             self.start_epoch = 0;
         }
         self.start_epoch += 1;
@@ -443,7 +483,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                 continue;
             }
             *seen = self.start_epoch;
-            match &self.graph.code[code as usize] {
+            match &self.tables.graph.code[code as usize] {
                 Instruction::Terminal(Expected::Literal(text), _) => {
                     if self.literal_end(text, at).is_some() {
                         return Ok(true);
@@ -461,7 +501,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                             return Ok(true);
                         }
                     } else {
-                        pending.push(self.graph.rules[*id as usize]);
+                        pending.push(self.tables.graph.rules[*id as usize]);
                     }
                 }
                 Instruction::Sequence(parts) => {
@@ -476,15 +516,17 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                 Instruction::Label(_, inner) | Instruction::Repeat { inner, .. } => {
                     pending.push(*inner)
                 }
-                Instruction::Pratt { prefixes, .. } => {
-                    pending.extend(prefixes.iter().map(|id| self.graph.rules[*id as usize]))
-                }
+                Instruction::Pratt { prefixes, .. } => pending.extend(
+                    prefixes
+                        .iter()
+                        .map(|id| self.tables.graph.rules[*id as usize]),
+                ),
             }
         }
         Ok(false)
     }
     fn nullable(&self, code: Code) -> bool {
-        self.graph.nullable[code as usize]
+        self.tables.graph.nullable[code as usize]
     }
     fn recognized_end(&mut self, at: usize) -> Result<usize, Diagnostic> {
         let mut end = at;
@@ -494,10 +536,10 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
             return Ok(end);
         };
         let first = c.encode_utf8(&mut [0; 4]).as_bytes()[0];
-        for text in &self.literal_tokens[first as usize] {
+        for text in &self.tables.literal_tokens[first as usize] {
             end = end.max(self.literal_end(text, at).unwrap_or(at));
         }
-        for id in &self.lexical {
+        for id in &self.tables.lexical {
             if !self.probe.may_consume(*id, c) {
                 continue;
             }
@@ -505,7 +547,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                 end = end.max(token);
             }
         }
-        for expr in &self.character_tokens {
+        for expr in &self.tables.character_tokens {
             if self.probe.predicate(expr, at)? {
                 end = end.max(at + self.source.character(at).map_or(0, char::len_utf8));
             }
@@ -698,8 +740,10 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                         continue;
                     }
                     let start = state.position;
-                    let code = self.graph.rules[id as usize];
-                    if let Instruction::Pratt { prefixes, .. } = &self.graph.code[code as usize] {
+                    let code = self.tables.graph.rules[id as usize];
+                    if let Instruction::Pratt { prefixes, .. } =
+                        &self.tables.graph.code[code as usize]
+                    {
                         let prefixes = *prefixes;
                         for prefix in prefixes {
                             let mut branch = state.clone();
@@ -730,7 +774,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                     self.event(&mut state, Event::Open { id, start, label });
                     self.push(&mut state, Task::Close { id, start, label });
                     // Only the direct final part inherits the Pratt operand power.
-                    if let Instruction::Sequence(parts) = &self.graph.code[code as usize] {
+                    if let Instruction::Sequence(parts) = &self.tables.graph.code[code as usize] {
                         let parts = parts.clone();
                         for (i, part) in parts.iter().enumerate().rev() {
                             self.expr(
@@ -760,7 +804,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                     power,
                     label,
                 } => {
-                    match &self.graph.code[code as usize] {
+                    match &self.tables.graph.code[code as usize] {
                         Instruction::Ref(id) => self.push(
                             &mut state,
                             Task::Rule {
@@ -871,11 +915,13 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                     {
                         let mut inner = code;
                         let mut item_label = label;
-                        while let Instruction::Label(name, next) = self.graph.code[inner as usize] {
+                        while let Instruction::Label(name, next) =
+                            self.tables.graph.code[inner as usize]
+                        {
                             item_label = name;
                             inner = next;
                         }
-                        if let Instruction::Ref(id) = self.graph.code[inner as usize] {
+                        if let Instruction::Ref(id) = self.tables.graph.code[inner as usize] {
                             let mut accepted = 0;
                             while accepted < 128 && count + accepted < max {
                                 let before = state.position;
@@ -1038,7 +1084,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                     let before_trivia = state.position;
                     self.trivia(&mut state);
                     let Instruction::Pratt { infixes, .. } =
-                        self.graph.code[self.graph.rules[point as usize] as usize]
+                        self.tables.graph.code[self.tables.graph.rules[point as usize] as usize]
                     else {
                         unreachable!()
                     };
@@ -1049,7 +1095,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                             continue;
                         }
                         let Instruction::Sequence(parts) =
-                            &self.graph.code[self.graph.rules[*id as usize] as usize]
+                            &self.tables.graph.code[self.tables.graph.rules[*id as usize] as usize]
                         else {
                             continue;
                         };
@@ -1059,7 +1105,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                         }
                         extended = true;
                         let mut branch = state.clone();
-                        let left_label = match self.graph.code[parts[0] as usize] {
+                        let left_label = match self.tables.graph.code[parts[0] as usize] {
                             Instruction::Label(name, _) => name,
                             _ => "",
                         };
@@ -1319,7 +1365,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
         // a full expression here is unnecessary: its original static Expr is
         // retained in Grammar for strict recognition.
         self.probe
-            .predicate(self.graph.expressions[code as usize], at)
+            .predicate(self.tables.graph.expressions[code as usize], at)
             .map(|yes| yes.then_some(()))
     }
 }

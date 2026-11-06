@@ -88,6 +88,42 @@ impl Memo {
         }
     }
 }
+/// Input-independent analysis of a language, computed once per process.
+/// Languages are `'static`, so their addresses identify them for good.
+#[derive(Clone)]
+struct LanguageTables {
+    dispatch: std::sync::Arc<dispatch::Dispatch>,
+    minimum_sensitive: std::sync::Arc<[bool]>,
+}
+impl LanguageTables {
+    fn of(language: &'static Language<'static>) -> Self {
+        type Cache = std::sync::Mutex<Vec<(usize, LanguageTables)>>;
+        static CACHE: Cache = std::sync::Mutex::new(Vec::new());
+        let key = std::ptr::from_ref(language) as usize;
+        let find = |cache: &[(usize, LanguageTables)]| {
+            cache
+                .iter()
+                .find(|(k, _)| *k == key)
+                .map(|(_, t)| t.clone())
+        };
+        if let Some(tables) = find(&CACHE.lock().unwrap_or_else(|e| e.into_inner())) {
+            return tables;
+        }
+        // Analyze outside the lock; a racing thread's result is equivalent.
+        let tables = Self {
+            dispatch: std::sync::Arc::new(dispatch::Dispatch::new(language)),
+            minimum_sensitive: (language.rules.iter())
+                .map(|rule| minimum_sensitive(language, rule))
+                .collect(),
+        };
+        let mut cache = CACHE.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(existing) = find(&cache) {
+            return existing;
+        }
+        cache.push((key, tables.clone()));
+        tables
+    }
+}
 fn minimum_sensitive(language: &Language, rule: &Rule) -> bool {
     if matches!(&rule.expr, Expr::Pratt { .. }) {
         return true;
@@ -116,7 +152,7 @@ struct Parser<'a> {
     choice_cache_bytes: usize,
     tokens: TokenCache,
     language: &'static Language<'static>,
-    minimum_sensitive: Vec<bool>,
+    minimum_sensitive: std::sync::Arc<[bool]>,
     dispatch: std::sync::Arc<dispatch::Dispatch>,
     labels: Vec<&'static str>,
     label_ids: FastMap<(usize, usize), u16>,
@@ -612,6 +648,7 @@ impl<'a> Parser<'a> {
         index: Index,
     ) -> Self {
         let text = input.text;
+        let tables = LanguageTables::of(language);
         let labels = base.map_or_else(|| vec![""], |b| b.arena.labels.to_vec());
         let label_ids = label_ids(&labels);
         let root_hint = base.map(|b| PriorNode {
@@ -625,14 +662,12 @@ impl<'a> Parser<'a> {
             lexers: input.lexers,
             choice_cache: Default::default(),
             choice_cache_bytes: 0,
-            tokens: TokenCache::default(),
+            tokens: TokenCache::for_text(text.len() as usize),
             language,
-            minimum_sensitive: (language.rules.iter())
-                .map(|rule| minimum_sensitive(language, rule))
-                .collect(),
+            minimum_sensitive: tables.minimum_sensitive,
             dispatch: base
                 .and_then(|b| b.dispatch.clone())
-                .unwrap_or_else(|| std::sync::Arc::new(dispatch::Dispatch::new(language))),
+                .unwrap_or(tables.dispatch),
             labels,
             label_ids,
             source: input
@@ -1865,6 +1900,33 @@ impl<'a> Parser<'a> {
         if let Some(plan) = self.choice_cache.get(&key) {
             return plan.clone();
         }
+        let shared = self.dispatch.shared_plan(key);
+        let fresh = shared.is_none();
+        let plan = match shared {
+            Some(plan) => plan,
+            None => self.build_choice_plan(parts, lexical),
+        };
+        let cost = base_cost + plan.as_ref().map_or(0, |plan| plan.bytes());
+        if fresh {
+            self.dispatch.remember_plan(key, plan.clone(), cost);
+        }
+        if cost > limit {
+            return None;
+        }
+        if self.choice_cache_bytes + cost > limit {
+            // Drop buckets too: retained capacity must not escape the charge.
+            self.choice_cache = Default::default();
+            self.choice_cache_bytes = 0;
+        }
+        self.choice_cache_bytes += cost;
+        self.choice_cache.insert(key, plan.clone());
+        plan
+    }
+    fn build_choice_plan(
+        &mut self,
+        parts: &'static [Expr],
+        lexical: bool,
+    ) -> Option<std::sync::Arc<dispatch::ChoicePlan>> {
         self.stats.choice_plan_builds += 1;
         let starts: Vec<_> = parts
             .iter()
@@ -1878,19 +1940,7 @@ impl<'a> Parser<'a> {
                 .map(|part| self.dispatch.alternative_lead(part, self.language))
                 .collect()
         };
-        let plan = dispatch::ChoicePlan::new(&starts, leads).map(std::sync::Arc::new);
-        let cost = base_cost + plan.as_ref().map_or(0, |plan| plan.bytes());
-        if cost > limit {
-            return None;
-        }
-        if self.choice_cache_bytes + cost > limit {
-            // Drop buckets too: retained capacity must not escape the charge.
-            self.choice_cache = Default::default();
-            self.choice_cache_bytes = 0;
-        }
-        self.choice_cache_bytes += cost;
-        self.choice_cache.insert(key, plan.clone());
-        plan
+        dispatch::ChoicePlan::new(&starts, leads).map(std::sync::Arc::new)
     }
     #[inline]
     fn tick_steps(&mut self, count: usize, depth: u32) -> Result<(), Diagnostic> {
@@ -3332,6 +3382,8 @@ impl Peek {
 struct TokenCache {
     /// Allocated on first use: small edits often read few positions.
     slots: Vec<TokenSlot>,
+    /// Slots to allocate; `TOKEN_SLOTS` when zero.
+    size: usize,
 }
 #[derive(Clone, Copy)]
 struct TokenSlot {
@@ -3363,16 +3415,32 @@ impl TokenSlot {
     };
 }
 impl TokenCache {
+    /// A text of `len` bytes has `len + 1` positions. While those fit, a
+    /// smaller power-of-two table maps each to the slot the full table
+    /// would, so contents and hits are the same with less to allocate.
+    fn for_text(len: usize) -> Self {
+        Self {
+            slots: Vec::new(),
+            size: len.saturating_add(1).next_power_of_two().min(TOKEN_SLOTS),
+        }
+    }
     fn get(&self, at: usize) -> Option<&TokenSlot> {
         self.slots
-            .get(at % TOKEN_SLOTS)
+            // Power-of-two length; an empty table's mask finds nothing.
+            .get(at & self.slots.len().wrapping_sub(1))
             .filter(|slot| slot.at == at as u32)
     }
     fn slot(&mut self, at: usize) -> &mut TokenSlot {
         if self.slots.is_empty() {
-            self.slots = vec![TokenSlot::EMPTY; TOKEN_SLOTS];
+            let size = if self.size == 0 {
+                TOKEN_SLOTS
+            } else {
+                self.size
+            };
+            self.slots = vec![TokenSlot::EMPTY; size];
         }
-        let slot = &mut self.slots[at % TOKEN_SLOTS];
+        let mask = self.slots.len() - 1;
+        let slot = &mut self.slots[at & mask];
         if slot.at != at as u32 {
             *slot = TokenSlot {
                 at: at as u32,

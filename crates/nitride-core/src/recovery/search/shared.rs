@@ -96,6 +96,7 @@ fn recover_once<'a>(
         limits,
         options,
         SharedProbe::new(language, text, limits, base, index, seed),
+        Tables::shared(language),
     );
     let (state, failure) = match engine.run() {
         Ok(state) => (state, None),
