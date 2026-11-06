@@ -2,37 +2,44 @@ use crate::{SourceText, syntax::text::Reader};
 #[derive(Clone, Copy)]
 pub(super) enum Source<'a> {
     Flat(&'a str),
-    Shared(&'a SourceText),
+    /// The text, with its contiguous form when the caller still has one.
+    Shared(&'a SourceText, Option<&'a str>),
+}
+fn reader<'a>(source: &'a SourceText, flat: Option<&'a str>) -> Reader<'a> {
+    flat.map_or_else(
+        || Reader::new(source),
+        |text| Reader::contiguous(source, text),
+    )
 }
 impl<'a> Source<'a> {
     pub(super) fn flat(self) -> &'a str {
         match self {
             Self::Flat(s) => s,
-            Self::Shared(_) => unreachable!("flat compatibility path"),
+            Self::Shared(..) => unreachable!("flat compatibility path"),
         }
     }
     pub(super) fn len(self) -> usize {
         match self {
             Self::Flat(s) => s.len(),
-            Self::Shared(s) => s.len() as usize,
+            Self::Shared(s, _) => s.len() as usize,
         }
     }
     pub(super) fn character(self, at: usize) -> Option<char> {
         match self {
             Self::Flat(s) => s.get(at..)?.chars().next(),
-            Self::Shared(s) => Reader::new(s).character(at),
+            Self::Shared(s, flat) => reader(s, flat).character(at),
         }
     }
     pub(super) fn matches(self, at: usize, text: &str) -> bool {
         match self {
             Self::Flat(s) => s.get(at..).is_some_and(|s| s.starts_with(text)),
-            Self::Shared(s) => Reader::new(s).matches(at, text),
+            Self::Shared(s, flat) => reader(s, flat).matches(at, text),
         }
     }
     pub(super) fn find(self, at: usize, text: &str) -> Option<usize> {
         match self {
             Self::Flat(s) => s.get(at..)?.find(text).map(|n| at + n),
-            Self::Shared(s) => Reader::new(s).find(at, text),
+            Self::Shared(s, flat) => reader(s, flat).find(at, text),
         }
     }
     pub(super) fn all_whitespace(
@@ -50,8 +57,8 @@ impl<'a> Source<'a> {
                     }
                 }
             }
-            Self::Shared(s) => {
-                let mut reader = Reader::new(s);
+            Self::Shared(s, flat) => {
+                let mut reader = reader(s, flat);
                 let mut at = start;
                 while at < end {
                     step()?;
@@ -69,7 +76,7 @@ impl<'a> Source<'a> {
     pub(super) fn cursor(self) -> Cursor<'a> {
         match self {
             Self::Flat(s) => Cursor::Flat(s),
-            Self::Shared(s) => Cursor::Shared(Reader::new(s)),
+            Self::Shared(s, flat) => Cursor::Shared(reader(s, flat)),
         }
     }
     /// The end of whitespace and comments from `at`; an unterminated block

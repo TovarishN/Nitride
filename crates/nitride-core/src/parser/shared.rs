@@ -168,6 +168,12 @@ pub(crate) struct Seed<'a> {
     dispatch: std::sync::Arc<dispatch::Dispatch>,
     generated: Option<Generated<'a>>,
 }
+impl<'a> Seed<'a> {
+    /// The seed's source as one string, when it was parsed from one.
+    pub(crate) fn contiguous(&self) -> Option<&'a str> {
+        self.generated.map(|g| g.source)
+    }
+}
 #[derive(Clone, Copy)]
 struct Generated<'a> {
     compiled: Option<&'static CompiledParser>,
@@ -828,7 +834,10 @@ impl<'a> Parser<'a> {
         self.prior_paths.shrink_to_fit();
         self.prior_paths_bytes = 0;
         let mut remaining = self.pending_order.len();
-        while self.arena.cache_only_bytes() > budget && remaining != 0 {
+        // Evict to a low-water mark: stopping just under the budget leaves no
+        // room for the memo, so the next insert would clear it again.
+        let target = budget - budget / 4;
+        while self.arena.cache_only_bytes() > target && remaining != 0 {
             let Some(key) = self.pending_order.pop_back() else {
                 break;
             };
