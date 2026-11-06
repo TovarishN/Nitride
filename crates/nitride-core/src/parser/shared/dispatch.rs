@@ -1,6 +1,5 @@
 //! Conservative start sets for prepared grammar rules. No recognition decisions
 //! are committed here: unknown and nullable starts always remain eligible.
-use crate::syntax::memory::{self, Class, Visitor};
 use crate::{Expr, Language, Rule};
 
 #[derive(Clone, Copy, Default, PartialEq, Eq)]
@@ -328,34 +327,6 @@ impl PrattPlan {
             .last()
             .is_some_and(|(floor, _)| *floor >= minimum)
     }
-    fn visit(&self, visitor: &mut Visitor<'_>) {
-        for (id, bytes) in [
-            (
-                self.prefix_routes.bits.as_ptr() as usize,
-                self.prefix_routes.bytes(),
-            ),
-            (
-                self.infix_routes.bits.as_ptr() as usize,
-                self.infix_routes.bytes(),
-            ),
-            (
-                self.prefixes.as_ptr() as usize,
-                std::mem::size_of_val::<[Prefix]>(&self.prefixes),
-            ),
-            (
-                self.infixes.as_ptr() as usize,
-                std::mem::size_of_val::<[Infix]>(&self.infixes),
-            ),
-            (
-                self.floors.as_ptr() as usize,
-                std::mem::size_of_val::<[(u32, [u64; 4])]>(&self.floors),
-            ),
-        ] {
-            if bytes != 0 {
-                visitor(Class::Index, id, bytes);
-            }
-        }
-    }
 }
 
 pub(super) struct ChoiceCandidates {
@@ -425,14 +396,6 @@ impl Leads {
     fn get(&self, id: u16) -> Option<&[Step]> {
         let [start, end] = *self.ranges.get(id as usize)?;
         self.steps.get(start as usize..end as usize)
-    }
-    fn visit(&self, visitor: &mut Visitor<'_>) {
-        if let Some((id, bytes)) = memory::vector(&self.steps) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.ranges) {
-            visitor(Class::Index, id, bytes);
-        }
     }
 }
 const LEAD_LIMIT: usize = 48;
@@ -725,36 +688,6 @@ impl Dispatch {
     }
     pub(super) fn tail(&self, id: u16) -> Option<Start> {
         self.tails.get(id as usize).copied().flatten()
-    }
-    pub(crate) fn visit_allocations(&self, visitor: &mut Visitor<'_>) {
-        if let Some((id, bytes)) = memory::vector(&self.starts) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.tails) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.terminals) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.keywords) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.first_bytes) {
-            visitor(Class::Index, id, bytes);
-        }
-        if let Some((id, bytes)) = memory::vector(&self.pratts) {
-            visitor(Class::Index, id, bytes);
-        }
-        for plan in self.pratts.iter().flatten() {
-            visitor(
-                Class::Index,
-                &**plan as *const PrattPlan as usize,
-                std::mem::size_of::<PrattPlan>(),
-            );
-            plan.visit(visitor);
-        }
-        self.leads.visit(visitor);
-        self.tail_leads.visit(visitor);
     }
 }
 

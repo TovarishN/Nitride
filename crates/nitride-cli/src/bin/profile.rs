@@ -214,6 +214,21 @@ fn snapshot_parse(
     }
 }
 
+/// Language analysis (dispatch, choice plans, recovery grammar) is built on
+/// first use and shared by every later parse of the language for the life of
+/// the process. Like thread runtime storage, build it before measuring, so
+/// it is not charged to the first measured parse.
+fn prepare_language(
+    language: &'static Language,
+    profile: &str,
+    source: &str,
+    mode: SnapshotMode,
+    compiled: bool,
+    generated: bool,
+) {
+    let _ = snapshot_parse(language, profile, source, mode, compiled, generated);
+}
+
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize process-wide thread runtime storage before measuring the engine.
     // On musl, the first spill thread allocates std's stack-overflow thread-info
@@ -269,6 +284,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 SnapshotMode::Strict(ParseOptions::default())
             };
+            prepare_language(language, profile, &source, mode, compiled, generated);
             let (initial, cold_phase) =
                 measure(|| snapshot_parse(language, profile, &source, mode, compiled, generated));
             let mut current = initial.map_err(|e| e.message)?;
@@ -310,6 +326,8 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             let language =
                 nitride_cli::recovery_language(profile).ok_or("unknown snapshot language")?;
             let source = std::fs::read_to_string(path)?;
+            let mode = SnapshotMode::Strict(ParseOptions::default());
+            prepare_language(language, profile, &source, mode, compiled, generated);
             let (result, lifecycle) = measure(|| -> Result<(), Diagnostic> {
                 let original = snapshot_parse(
                     language,
@@ -358,6 +376,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
             } else {
                 SnapshotMode::Strict(ParseOptions::default())
             };
+            prepare_language(language, profile, &source, mode, compiled, generated);
             let (snapshot, phase) =
                 measure(|| snapshot_parse(language, profile, &source, mode, compiled, generated));
             let snapshot = snapshot.map_err(|e| e.message)?;
