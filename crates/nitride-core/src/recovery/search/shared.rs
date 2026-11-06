@@ -560,6 +560,23 @@ fn coverage_source(
             (skipped[sk][1] as usize, CoverageKind::Skipped)
         } else if tk < tokens.len() && tokens[tk][0] as usize <= at {
             (tokens[tk][1] as usize, CoverageKind::Retained)
+        } else if let Some(end) = Some(
+            cursor.ascii_whitespace_end(
+                at,
+                [
+                    range[1] as usize,
+                    skipped.get(sk).map_or(usize::MAX, |s| s[0] as usize),
+                    tokens.get(tk).map_or(usize::MAX, |t| t[0] as usize),
+                ]
+                .into_iter()
+                .min()
+                .unwrap_or(usize::MAX),
+            ),
+        )
+        .filter(|&end| end > at)
+        {
+            // One step per whitespace run: adjacent trivia merges below anyway.
+            (end, CoverageKind::Trivia)
         } else if cursor.matches(at, "//") {
             (
                 cursor.find(at, "\n").unwrap_or(source.len()),
