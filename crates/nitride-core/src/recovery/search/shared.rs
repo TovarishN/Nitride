@@ -92,7 +92,7 @@ fn recover_once<'a>(
 ) -> Result<ParseSnapshot, Diagnostic> {
     let mut engine = engine(
         language,
-        Source::Shared(text),
+        Source::Shared(text, seed.and_then(Seed::contiguous)),
         limits,
         options,
         SharedProbe::new(language, text, limits, base, index, seed),
