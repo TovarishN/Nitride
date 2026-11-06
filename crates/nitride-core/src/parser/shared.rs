@@ -88,6 +88,42 @@ impl Memo {
         }
     }
 }
+/// Input-independent analysis of a language, computed once per process.
+/// Languages are `'static`, so their addresses identify them for good.
+#[derive(Clone)]
+struct LanguageTables {
+    dispatch: std::sync::Arc<dispatch::Dispatch>,
+    minimum_sensitive: std::sync::Arc<[bool]>,
+}
+impl LanguageTables {
+    fn of(language: &'static Language<'static>) -> Self {
+        type Cache = std::sync::Mutex<Vec<(usize, LanguageTables)>>;
+        static CACHE: Cache = std::sync::Mutex::new(Vec::new());
+        let key = std::ptr::from_ref(language) as usize;
+        let find = |cache: &[(usize, LanguageTables)]| {
+            cache
+                .iter()
+                .find(|(k, _)| *k == key)
+                .map(|(_, t)| t.clone())
+        };
+        if let Some(tables) = find(&CACHE.lock().unwrap_or_else(|e| e.into_inner())) {
+            return tables;
+        }
+        // Analyze outside the lock; a racing thread's result is equivalent.
+        let tables = Self {
+            dispatch: std::sync::Arc::new(dispatch::Dispatch::new(language)),
+            minimum_sensitive: (language.rules.iter())
+                .map(|rule| minimum_sensitive(language, rule))
+                .collect(),
+        };
+        let mut cache = CACHE.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(existing) = find(&cache) {
+            return existing;
+        }
+        cache.push((key, tables.clone()));
+        tables
+    }
+}
 fn minimum_sensitive(language: &Language, rule: &Rule) -> bool {
     if matches!(&rule.expr, Expr::Pratt { .. }) {
         return true;
@@ -116,7 +152,7 @@ struct Parser<'a> {
     choice_cache_bytes: usize,
     tokens: TokenCache,
     language: &'static Language<'static>,
-    minimum_sensitive: Vec<bool>,
+    minimum_sensitive: std::sync::Arc<[bool]>,
     dispatch: std::sync::Arc<dispatch::Dispatch>,
     labels: Vec<&'static str>,
     label_ids: FastMap<(usize, usize), u16>,
@@ -612,6 +648,7 @@ impl<'a> Parser<'a> {
         index: Index,
     ) -> Self {
         let text = input.text;
+        let tables = LanguageTables::of(language);
         let labels = base.map_or_else(|| vec![""], |b| b.arena.labels.to_vec());
         let label_ids = label_ids(&labels);
         let root_hint = base.map(|b| PriorNode {
@@ -627,12 +664,10 @@ impl<'a> Parser<'a> {
             choice_cache_bytes: 0,
             tokens: TokenCache::default(),
             language,
-            minimum_sensitive: (language.rules.iter())
-                .map(|rule| minimum_sensitive(language, rule))
-                .collect(),
+            minimum_sensitive: tables.minimum_sensitive,
             dispatch: base
                 .and_then(|b| b.dispatch.clone())
-                .unwrap_or_else(|| std::sync::Arc::new(dispatch::Dispatch::new(language))),
+                .unwrap_or(tables.dispatch),
             labels,
             label_ids,
             source: input
