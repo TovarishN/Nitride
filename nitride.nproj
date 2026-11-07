@@ -14,4 +14,6 @@ workspace
   include languages/grammar;
   include languages/csharp4;
   include languages/context;
+  include languages/calendar;
+  include languages/json;
 }

@@ -114,3 +114,19 @@ fn trivia_policy_changes_reload_editor_languages_and_invalidate_snapshots() {
     assert!(!next.problems.is_empty());
     assert_eq!(next.snapshot.as_ref().unwrap().stats().reused_subtrees, 0);
 }
+
+#[test]
+fn calendar_duration_edits_preserve_navigation_and_update_native_hints() {
+    let dir = scratch("calendar-incremental");
+    manifest(&dir, "nitride.nproj", "Calendar", ".calendar", &[repo().join("languages/calendar/Calendar.ngr")], "Calendar.Program", Some(&repo().join("languages/calendar/Calendar.ncatalog")));
+    let path = dir.join("sample.calendar");
+    let messages = Session::run(&dir, vec![
+        open(&path, "let sprint = 2 weeks; sprint in days;"),
+        notification("textDocument/didChange", json!({"textDocument":{"uri":uri(&path),"version":2},"contentChanges":[{"range":{"start":{"line":0,"character":13},"end":{"line":0,"character":14}},"text":"3"}]})),
+        request(7, "textDocument/inlayHint", json!({"textDocument":{"uri":uri(&path)},"range":{"start":{"line":0,"character":0},"end":{"line":1,"character":0}}})),
+        request(8, "textDocument/definition", json!({"textDocument":{"uri":uri(&path)},"position":{"line":0,"character":24}})),
+    ]);
+    assert_eq!(diagnostics(&messages, &path), json!([]));
+    assert!(response(&messages, 7)["result"].to_string().contains("= 21"));
+    assert!(response(&messages, 8)["result"].to_string().contains("range"));
+}

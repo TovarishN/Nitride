@@ -65,6 +65,17 @@ catalog module Calendar
   operation SubScalar(Scalar, Scalar) : Scalar = host sub;
   operation SubDurations(Duration, Duration) : Duration = host sub;
 
+  operation NegScalar(Scalar) : Scalar = host neg;
+  operation NegDuration(Duration) : Duration = host neg;
+  operation MulScalar(Scalar, Scalar) : Scalar = host mul;
+  operation ScaleDuration(Duration, Scalar) : Duration = host mul;
+  operation ScalarDuration(Scalar, Duration) : Duration = host mul;
+  operation DivScalar(Scalar, Scalar) : Scalar = host div;
+  operation DivideDuration(Duration, Scalar) : Duration = host div;
+  overload Negate = NegScalar | NegDuration;
+  overload Times = MulScalar | ScaleDuration | ScalarDuration;
+  overload Divide = DivScalar | DivideDuration;
+
   overload Plus = AddScalar | Later | AddDurations;
   overload Minus = SubScalar | Earlier | Between | SubDurations;
 
