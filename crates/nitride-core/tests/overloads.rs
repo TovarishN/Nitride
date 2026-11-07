@@ -14,7 +14,7 @@ fn language(candidates: &'static [u16]) -> &'static Language<'static> {
         owner: None,
         origin: None,
     };
-    Box::leak(Box::new(Language {
+    Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::Typed,
         start: 0,
         source_hash: "test",

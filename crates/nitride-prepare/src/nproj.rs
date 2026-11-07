@@ -22,6 +22,7 @@ pub struct ProjectLanguage {
     pub catalogs: Vec<PathBuf>,
     /// `.nbind` files for the catalogs' interfaces.
     pub bindings: Vec<PathBuf>,
+    pub trivia: nitride_core::TriviaPolicy,
     pub nitrogen: Option<NitrogenSection>,
 }
 
@@ -181,6 +182,7 @@ pub fn read_language(
     let mut catalogs = Vec::new();
     let mut bindings = Vec::new();
     let mut nitrogen: Option<NitrogenBlock> = None;
+    let mut trivia = None;
     for member in children(&tree, item, "Members") {
         let m = d.concrete(
             member,
@@ -191,6 +193,7 @@ pub fn read_language(
                 "Catalog",
                 "Binding",
                 "Nitrogen",
+                "Trivia",
             ],
         );
         match d.kind(m) {
@@ -206,6 +209,16 @@ pub fn read_language(
             "Binding" => {
                 let paths = resolve(d.fields(m, "Paths"), &mut errors);
                 bindings.extend(paths);
+            }
+            "Trivia" => {
+                let policy = d.field(m, "Policy");
+                if trivia.is_some() {
+                    errors.push(source.project_error_at(policy.span, "trivia policy is declared more than once"));
+                } else if let Some(value) = nitride_core::TriviaPolicy::named(&policy.text) {
+                    trivia = Some(value);
+                } else {
+                    errors.push(source.project_error_at(policy.span, "unknown trivia policy; expected nitrogen or json"));
+                }
             }
             "Start" => {
                 if start.is_some() {
@@ -289,6 +302,7 @@ pub fn read_language(
         start_span: start.span,
         catalogs,
         bindings,
+        trivia: trivia.unwrap_or_default(),
         nitrogen,
     })
 }
@@ -508,6 +522,7 @@ pub fn references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError
                 "Catalog",
                 "Binding",
                 "Nitrogen",
+                "Trivia",
                 "Namespace",
                 "Source",
             ],

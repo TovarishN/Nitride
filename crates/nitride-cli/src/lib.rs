@@ -1,3 +1,6 @@
+pub mod json_language {
+    include!(concat!(env!("OUT_DIR"), "/json.rs"));
+}
 pub mod functions {
     include!(concat!(env!("OUT_DIR"), "/functions.rs"));
 }

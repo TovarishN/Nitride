@@ -46,13 +46,14 @@ impl<'a> Source<'a> {
         self,
         start: usize,
         end: usize,
+        policy: crate::TriviaPolicy,
         mut step: impl FnMut() -> Result<(), crate::Diagnostic>,
     ) -> Result<bool, crate::Diagnostic> {
         match self {
             Self::Flat(s) => {
                 for c in s[start..end].chars() {
                     step()?;
-                    if !c.is_whitespace() {
+                    if !policy.whitespace(c) {
                         return Ok(false);
                     }
                 }
@@ -63,7 +64,7 @@ impl<'a> Source<'a> {
                 while at < end {
                     step()?;
                     let c = reader.character(at).expect("VM source boundary");
-                    if !c.is_whitespace() {
+                    if !policy.whitespace(c) {
                         return Ok(false);
                     }
                     at += c.len_utf8();
@@ -81,11 +82,13 @@ impl<'a> Source<'a> {
     }
     /// The end of whitespace and comments from `at`; an unterminated block
     /// comment is not trivia.
-    pub(super) fn trivia_end(self, mut at: usize) -> usize {
+    pub(super) fn trivia_end(self, mut at: usize, policy: crate::TriviaPolicy) -> usize {
         let mut cursor = self.cursor();
         loop {
-            if let Some(c) = cursor.character(at).filter(|c| c.is_whitespace()) {
+            if let Some(c) = cursor.character(at).filter(|&c| policy.whitespace(c)) {
                 at += c.len_utf8();
+            } else if !policy.comments() {
+                return at;
             } else if cursor.matches(at, "//") {
                 at = cursor.find(at, "\n").unwrap_or(self.len());
             } else if cursor.matches(at, "/*") {
@@ -105,7 +108,12 @@ pub(super) enum Cursor<'a> {
     Shared(Reader<'a>),
 }
 impl Cursor<'_> {
-    pub(super) fn ascii_whitespace_end(&mut self, at: usize, limit: usize) -> usize {
+    pub(super) fn ascii_whitespace_end(&mut self, at: usize, limit: usize, policy: crate::TriviaPolicy) -> usize {
+        if policy == crate::TriviaPolicy::Json {
+            let mut end = at;
+            while end < limit && self.character(end).is_some_and(|c| policy.whitespace(c)) { end += 1; }
+            return end;
+        }
         match self {
             Self::Flat(s) => {
                 let bytes = &s.as_bytes()[at.min(s.len())..limit.min(s.len())];

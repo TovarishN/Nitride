@@ -21,6 +21,7 @@ pub struct Entry {
     /// The `.nbind` files that bind its catalogs' interfaces.
     pub bindings: Vec<PathBuf>,
     pub mode: Mode,
+    pub trivia: nitride_core::TriviaPolicy,
     /// Where a `.nproj` names the start rule.
     pub start_span: Option<[u32; 2]>,
 }
@@ -130,7 +131,7 @@ pub fn language_beside(
 
 fn entry(language: ProjectLanguage) -> Entry {
     Entry {
-        mode: if language.typed() {
+        trivia: language.trivia,        mode: if language.typed() {
             Mode::Typed
         } else {
             Mode::Syntax
@@ -175,7 +176,7 @@ fn nitrogen(text: &str, folder: &Path) -> Parsed {
                 .and_then(|a| a.iter().map(|v| v.as_str().map(str::to_owned)).collect())
                 .ok_or_else(|| invalid(format!("language {i} needs a string array \"{key}\"")))
         };
-        Ok(Entry {
+        Ok(Entry {trivia: nitride_core::TriviaPolicy::Nitrogen,
             name: string("name")?,
             extensions: strings("extensions")?,
             grammars: strings("grammars")?

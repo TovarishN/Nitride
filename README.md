@@ -162,6 +162,7 @@ Unsupported constructs and incompatible catalogs fail preparation.
 
 ## Features and boundaries
 
+- Per-project [trivia policies](docs/trivia.md), including strict JSON whitespace and comment handling.
 - Grammar modules and extensions, tokens, sequences, choices, repetition,
   lookahead, character classes, and Pratt-style expressions.
 - Admitted typed profiles for separate symbol namespaces, inferred declarations,

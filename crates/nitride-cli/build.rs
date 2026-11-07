@@ -14,6 +14,7 @@ fn main() {
         ("csharp4", "csharp4"),
         ("context", "context"),
         ("grammar", "grammar"),
+        ("json", "json"),
     ] {
         let manifest = format!("../../languages/{profile}/project.json");
         println!("cargo:rerun-if-changed={manifest}");

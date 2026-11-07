@@ -423,7 +423,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
         Ok(())
     }
     fn trivia(&mut self, state: &mut State) {
-        state.position = self.source.trivia_end(state.position);
+        state.position = self.source.trivia_end(state.position, self.language.trivia);
     }
     fn literal_end(&self, text: &str, at: usize) -> Option<usize> {
         let end = at.checked_add(text.len())?;
@@ -1452,7 +1452,7 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
             id
         };
         builder.nodes[root as usize].span = [0, self.source.len() as u32];
-        let mut diagnostics = repair_diagnostics(&repairs, self.source.flat());
+        let mut diagnostics = repair_diagnostics(&repairs, self.source.flat(), self.language.trivia);
         diagnostics.extend(exhausted);
         if let Some(error) = failure {
             diagnostics.push(error);
@@ -1602,7 +1602,7 @@ impl<'g> Builder<'g> {
     }
 }
 
-fn repair_diagnostics(repairs: &[Repair], source: &str) -> Vec<Diagnostic> {
+fn repair_diagnostics(repairs: &[Repair], source: &str, policy: TriviaPolicy) -> Vec<Diagnostic> {
     let mut result: Vec<Diagnostic> = vec![];
     for repair in repairs {
         let (span, message) = match repair {
@@ -1613,7 +1613,7 @@ fn repair_diagnostics(repairs: &[Repair], source: &str) -> Vec<Diagnostic> {
             if previous.span[1] <= span[0]
                 && source[previous.span[1] as usize..span[0] as usize]
                     .chars()
-                    .all(char::is_whitespace)
+                    .all(|c| policy.whitespace(c))
             {
                 previous.span[1] = span[1];
                 continue;
@@ -1659,18 +1659,18 @@ fn coverage(
             (tokens[tk][1] as usize, CoverageKind::Retained)
         } else {
             let rest = &source[at..];
-            if rest.starts_with("//") {
+            if language.trivia.comments() && rest.starts_with("//") {
                 (
                     at + rest.find('\n').unwrap_or(rest.len()),
                     CoverageKind::Trivia,
                 )
-            } else if rest.starts_with("/*") && rest[2..].contains("*/") {
+            } else if language.trivia.comments() && rest.starts_with("/*") && rest[2..].contains("*/") {
                 (at + rest[2..].find("*/").unwrap() + 4, CoverageKind::Trivia)
             } else {
                 let c = rest.chars().next().unwrap();
                 (
                     at + c.len_utf8(),
-                    if c.is_whitespace() {
+                    if language.trivia.whitespace(c) {
                         CoverageKind::Trivia
                     } else {
                         CoverageKind::Retained

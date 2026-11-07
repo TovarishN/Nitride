@@ -268,7 +268,7 @@ impl<'g> Engine<'g, '_, SharedProbe<'_, 'g>> {
             self.budget().saturating_sub(recognition_work),
             state.position as u32,
         );
-        let mut diagnostics = repair_diagnostics_source(&repairs, self.source, &mut metadata)?;
+        let mut diagnostics = repair_diagnostics_source(&repairs, self.source, self.language.trivia, &mut metadata)?;
         diagnostics.extend(exhausted);
         if let Some(error) = failure {
             diagnostics.push(error)
@@ -457,6 +457,7 @@ impl<'g> Engine<'g, '_, SharedProbe<'_, 'g>> {
             snapshot.stats.recovery_coverage_bytes += u64::from(end - start);
             let coverage = coverage_source(
                 self.source,
+                self.language.trivia,
                 &new_skipped.spans,
                 local_tokens,
                 [start, end],
@@ -483,6 +484,7 @@ impl<'g> Engine<'g, '_, SharedProbe<'_, 'g>> {
         } else {
             let coverage = coverage_source(
                 self.source,
+                self.language.trivia,
                 &new_skipped.spans,
                 lexical,
                 [0, text.len()],
@@ -514,6 +516,7 @@ impl<'g> Engine<'g, '_, SharedProbe<'_, 'g>> {
 fn repair_diagnostics_source(
     repairs: &[Repair],
     source: Source<'_>,
+    policy: TriviaPolicy,
     work: &mut MetadataWork,
 ) -> Result<Vec<Diagnostic>, Diagnostic> {
     let mut result: Vec<Diagnostic> = Vec::new();
@@ -525,7 +528,7 @@ fn repair_diagnostics_source(
         };
         if let Some(previous) = result.last_mut() {
             if previous.span[1] <= span[0]
-                && source.all_whitespace(previous.span[1] as usize, span[0] as usize, || {
+                && source.all_whitespace(previous.span[1] as usize, span[0] as usize, policy, || {
                     work.charge(1)
                 })?
             {
@@ -539,6 +542,7 @@ fn repair_diagnostics_source(
 }
 fn coverage_source(
     source: Source<'_>,
+    policy: TriviaPolicy,
     skipped: &[[u32; 2]],
     mut tokens: Vec<[u32; 2]>,
     range: [u32; 2],
@@ -571,13 +575,14 @@ fn coverage_source(
                 .into_iter()
                 .min()
                 .unwrap_or(usize::MAX),
+                policy,
             ),
         )
         .filter(|&end| end > at)
         {
             // One step per whitespace run: adjacent trivia merges below anyway.
             (end, CoverageKind::Trivia)
-        } else if cursor.matches(at, "//") {
+        } else if policy.comments() && cursor.matches(at, "//") {
             (
                 cursor.find(at, "\n").unwrap_or(source.len()),
                 CoverageKind::Trivia,
@@ -592,7 +597,7 @@ fn coverage_source(
             let c = cursor.character(at).unwrap();
             (
                 at + c.len_utf8(),
-                if c.is_whitespace() {
+                if policy.whitespace(c) {
                     CoverageKind::Trivia
                 } else {
                     CoverageKind::Retained

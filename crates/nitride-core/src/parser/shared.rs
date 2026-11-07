@@ -88,8 +88,8 @@ impl Memo {
         }
     }
 }
-/// Input-independent analysis of a language, computed once per process.
-/// Languages are `'g`, so their addresses identify them for good.
+/// Input-independent analysis retained by the language's snapshots.
+/// Only genuinely static tables also enter the process-wide cache.
 #[derive(Clone)]
 pub(crate) struct LanguageTables<'g> {
     pub(crate) dispatch: std::sync::Arc<dispatch::Dispatch<'g>>,
@@ -1695,8 +1695,10 @@ impl<'a, 'g> Parser<'a, 'g> {
         loop {
             self.tick(0)?;
             let character = self.source.character(self.position);
-            if let Some(c) = character.filter(|c| c.is_whitespace()) {
+            if let Some(c) = character.filter(|&c| self.language.trivia.whitespace(c)) {
                 self.position += c.len_utf8();
+            } else if !self.language.trivia.comments() {
+                return Ok(());
             } else if self.optimize_recognition && self.compiled.is_some() && character != Some('/')
             {
                 // Both original comment checks observe two bytes even when
@@ -3569,7 +3571,7 @@ mod tests {
                 origin: None,
                 action: Action::None,
             };
-            let language = Box::leak(Box::new(Language {
+            let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
                 rules: Box::leak(vec![root].into_boxed_slice()),
                 ..*template
             }));
@@ -3670,7 +3672,7 @@ mod tests {
             origin: None,
             action: Action::None,
         };
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(vec![root].into_boxed_slice()),
             ..*template
         }));
@@ -3776,7 +3778,7 @@ mod tests {
                 Expr::Literal(if index == 64 { "z" } else { "x" }),
             ));
         }
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -3855,7 +3857,7 @@ mod tests {
                 make("Good", Expr::Literal("y"), Some(0)),
                 make("X", Expr::Literal("x"), None),
             ];
-            let language = Box::leak(Box::new(Language {
+            let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
                 rules: Box::leak(rules.into_boxed_slice()),
                 ..*template
             }));
@@ -3910,7 +3912,7 @@ mod tests {
                 u32::MAX,
             ),
         ];
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -3962,7 +3964,7 @@ mod tests {
             ),
             make("Other", Expr::Literal("y"), Some(0)),
         ];
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -4026,7 +4028,7 @@ mod tests {
                 action: Action::None,
             },
         ];
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -4092,7 +4094,7 @@ mod tests {
                 action: Action::None,
             });
         }
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -4181,7 +4183,7 @@ mod tests {
                 make("Value", Expr::Literal("a"), Some(0), 0),
             ]
         };
-        Box::leak(Box::new(Language {
+        Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4306,7 +4308,7 @@ mod tests {
     }
     #[test]
     fn construction_hint_cache_does_not_retain_every_source_position() {
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4368,7 +4370,7 @@ mod tests {
     }
     #[test]
     fn warm_maintenance_uses_the_approved_retention_allowance() {
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4489,7 +4491,7 @@ mod tests {
             origin: None,
             action: Action::None,
         };
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4546,7 +4548,7 @@ mod tests {
             origin: None,
             action: Action::None,
         };
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4610,7 +4612,7 @@ mod tests {
             origin: None,
             action: Action::None,
         };
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4680,7 +4682,7 @@ mod tests {
             origin: None,
             action: Action::None,
         };
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4801,7 +4803,7 @@ mod tests {
             ),
             make("Wrap", Expr::Label("Value", &Expr::Ref(4)), false),
         ];
-        Box::leak(Box::new(Language {
+        Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules: Box::leak(rules.into_boxed_slice()),
             start: 0,

@@ -1,7 +1,7 @@
 use nitride_core::*;
 
 fn language(expr: Expr<'static>) -> &'static Language<'static> {
-    Box::leak(Box::new(Language {
+    Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 0,
         rules: Box::leak(
@@ -96,7 +96,7 @@ fn prefix_language(prefixes: &'static [u16], second: Expr<'static>) -> &'static 
         origin: None,
         action: Action::None,
     };
-    Box::leak(Box::new(Language {
+    Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 0,
         rules: Box::leak(

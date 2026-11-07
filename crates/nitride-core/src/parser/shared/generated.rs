@@ -212,7 +212,7 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    static LANGUAGE: Language = Language {
+    static LANGUAGE: Language = Language {trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 0,
         types: &[],

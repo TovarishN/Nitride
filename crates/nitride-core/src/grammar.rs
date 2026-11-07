@@ -1,3 +1,26 @@
+/// Whitespace and comment behavior between tokens. Token bodies are unaffected.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum TriviaPolicy {
+    #[default]
+    Nitrogen,
+    Json,
+}
+impl TriviaPolicy {
+    #[inline]
+    pub fn whitespace(self, c: char) -> bool {
+        match self {
+            Self::Nitrogen => c.is_whitespace(),
+            Self::Json => matches!(c, ' ' | '\t' | '\r' | '\n'),
+        }
+    }
+    #[inline]
+    pub fn comments(self) -> bool { self == Self::Nitrogen }
+    pub fn named(name: &str) -> Option<Self> {
+        match name { "nitrogen" => Some(Self::Nitrogen), "json" => Some(Self::Json), _ => None }
+    }
+    pub fn name(self) -> &'static str { match self { Self::Nitrogen => "nitrogen", Self::Json => "json" } }
+}
+
 #[derive(Debug)]
 pub enum Expr<'g> {
     Literal(&'g str),
@@ -258,6 +281,7 @@ pub enum Profile {
 
 #[derive(Debug)]
 pub struct Language<'g> {
+    pub trivia: TriviaPolicy,
     pub profile: Profile,
     pub rules: &'g [Rule<'g>],
     pub start: u16,

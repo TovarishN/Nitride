@@ -33,7 +33,10 @@ impl Start {
         }
         result
     }
-    fn with_trivia(self) -> Self {
+    fn with_trivia(self, policy: crate::TriviaPolicy) -> Self {
+        if policy == crate::TriviaPolicy::Json {
+            return self.union(Self { ascii: [(1 << 32) | (1 << 9) | (1 << 10) | (1 << 13), 0], wide: false, nullable: false });
+        }
         // Non-ASCII is deliberately unclassified: Unicode whitespace is legal.
         self.union(Self {
             ascii: [
@@ -401,6 +404,7 @@ impl Leads {
 const LEAD_LIMIT: usize = 48;
 
 pub(crate) struct Dispatch<'g> {
+    trivia: crate::TriviaPolicy,
     starts: Vec<Start>,
     tails: Vec<Option<Start>>,
     leads: Leads,
@@ -476,7 +480,7 @@ impl<'g> Dispatch<'g> {
         }
         if !completed || solve(&mut starts, &mut budget).is_none() {
             return Self {
-                starts: vec![Start::UNKNOWN; language.rules.len()],
+                trivia: language.trivia,                starts: vec![Start::UNKNOWN; language.rules.len()],
                 tails: vec![None; language.rules.len()],
                 leads: Leads::default(),
                 tail_leads: Leads::default(),
@@ -539,7 +543,7 @@ impl<'g> Dispatch<'g> {
             })
             .collect();
         let mut dispatch = Self {
-            starts,
+            trivia: language.trivia,            starts,
             tails,
             leads: Leads::default(),
             tail_leads: Leads::default(),
@@ -674,7 +678,7 @@ impl<'g> Dispatch<'g> {
         if lexical || start == Start::default() {
             start
         } else {
-            start.with_trivia()
+            start.with_trivia(self.trivia)
         }
         .allows(c)
     }
@@ -1205,7 +1209,7 @@ fn first(
                     .get(*id as usize)
                     .is_none_or(|rule| !rule.lexical)
             {
-                value.with_trivia()
+                value.with_trivia(language.trivia)
             } else {
                 value
             }
@@ -1277,7 +1281,7 @@ mod tests {
     }
     #[test]
     fn choice_selectors_leave_uncertain_or_zero_width_prefixes_eligible() {
-        let language = Language {
+        let language = Language {trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules: &[],
             start: 0,
@@ -1386,7 +1390,7 @@ mod tests {
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
         );
-        let language = Language {
+        let language = Language {trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules,
             start: 0,
@@ -1436,7 +1440,7 @@ mod tests {
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
         );
-        let language = Box::leak(Box::new(Language {
+        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules,
             start: 0,

@@ -95,3 +95,22 @@ fn wire_ranged_changes_update_hints_and_stale_changes_do_not_overwrite_them() {
     assert_eq!(diagnostics(&messages, &path), json!([]));
     assert!(response(&messages, 7)["result"].to_string().contains("= 4"));
 }
+
+#[test]
+fn trivia_policy_changes_reload_editor_languages_and_invalidate_snapshots() {
+    let dir = scratch("incremental-trivia");
+    manifest(&dir, "nitride.nproj", "Json", ".json", &[repo().join("languages/json/Json.ngr")], "Json.Document", None);
+    let mut registry = Registry::default();
+    registry.reload(&[dir.clone()], &|_| None);
+    let path = dir.join("sample.json");
+    let source = "[1, /* comment */ 2]";
+    let previous = analysis::analyze(&registry, &path, source, &|_| None).unwrap();
+    assert!(previous.problems.is_empty());
+    let project = language_file(&dir, "Json");
+    let text = std::fs::read_to_string(&project).unwrap().replace("start Json.Document;", "start Json.Document; trivia json;");
+    std::fs::write(project, text).unwrap();
+    registry.reload(&[dir], &|_| None);
+    let next = analysis::analyze_incremental(&registry, &path, source, &|_| None, Some(&previous)).unwrap();
+    assert!(!next.problems.is_empty());
+    assert_eq!(next.snapshot.as_ref().unwrap().stats().reused_subtrees, 0);
+}

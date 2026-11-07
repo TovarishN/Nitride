@@ -15,9 +15,10 @@ syntax module NitrideProject
   syntax Workspace = "workspace" "{" Includes:Include* "}";
   syntax Include = "include" Path:Path ";";
   syntax Language = "language" Name:Identifier "{" Members:Member* "}";
-  syntax Member = Extensions / Grammar / Start / Catalog / Binding / Nitrogen;
+  syntax Member = Extensions / Grammar / Start / Catalog / Binding / Trivia / Nitrogen;
   syntax Extensions = "extensions" Items:(Extension; ",")+ ";";
   syntax Grammar = "grammar" Paths:(Path; ",")+ ";";
+  syntax Trivia = "trivia" Policy:Identifier ";";
   syntax Start = "start" Rule:QualifiedName ";";
   syntax Catalog = "catalog" Paths:(Path; ",")+ ";";
   // `.nbind` files: which implementations run the catalogs' interfaces.
