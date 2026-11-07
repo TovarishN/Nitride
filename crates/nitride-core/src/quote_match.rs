@@ -67,6 +67,9 @@ struct QuoteHole<'a> {
     spread: bool,
     pattern: Option<u16>,
     descendant: bool,
+    /// For a descendant capture, the category it searches for (the
+    /// capture's own; `category` is the site's, which any node fills).
+    target: u16,
 }
 
 /// A compiled quote: its template tree and the hole each hole node stands for.
@@ -210,6 +213,10 @@ impl<'a> Quote<'a> {
             .into_iter()
             .map(|(id, index)| {
                 let hole = &holes[index];
+                let target = captures
+                    .iter()
+                    .find(|c| c.descendant && c.name == hole.name)
+                    .map_or(hole.category, |c| c.category);
                 (
                     id,
                     QuoteHole {
@@ -218,6 +225,7 @@ impl<'a> Quote<'a> {
                         spread: spreads.contains(&hole.name),
                         pattern: hole.pattern,
                         descendant: hole.descendant,
+                        target,
                     },
                 )
             })
@@ -318,14 +326,17 @@ impl<'a> Quote<'a> {
                 return Ok(true);
             }
             if hole.descendant {
-                // Preorder, document order, from the hole's own node.
-                let Some(pattern) = hole.pattern else {
-                    return Ok(false);
-                };
+                // Preorder, document order, from the hole's own node. Without a
+                // pattern (a Nitride extension, issue #33), the first node that
+                // stands for the capture's category is the hit.
                 let mut pending = vec![t];
                 while let Some(candidate) = pending.pop() {
                     budget.step()?;
-                    if patterns.matches_at(pattern, tree, candidate, budget)? {
+                    let hit = match hole.pattern {
+                        Some(pattern) => patterns.matches_at(pattern, tree, candidate, budget)?,
+                        None => self.accepts(hole.target, tree.nodes()[candidate as usize].rule),
+                    };
+                    if hit {
                         bindings.push((hole.name, candidate));
                         return Ok(true);
                     }
