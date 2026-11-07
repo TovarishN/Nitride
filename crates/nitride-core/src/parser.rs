@@ -1115,6 +1115,6 @@ impl<'g> Parser<'g, '_> {
 
 pub(crate) mod shared;
 pub use shared::{
-    CompiledParser, SyntaxContext, SyntaxMark, parse_snapshot, parse_snapshot_compiled,
+    CompiledParser, SyntaxContext, SyntaxMark, parse_snapshot, parse_borrowed_snapshot, parse_snapshot_compiled,
     parse_snapshot_generated,
 };

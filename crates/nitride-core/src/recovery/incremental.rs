@@ -11,9 +11,10 @@ use std::{
     collections::HashMap,
     sync::{Arc, OnceLock},
 };
+pub type SnapshotRecovery = BorrowedSnapshotRecovery<'static>;
 #[derive(Clone, PartialEq, Eq)]
-enum RepairValue {
-    Missing(Expected<'static>),
+enum RepairValue<'g> {
+    Missing(Expected<'g>),
     Skipped,
 }
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -26,14 +27,14 @@ impl Measured for CoveragePiece {
         u64::from(self.width)
     }
 }
-pub struct SnapshotRecovery {
-    repairs: Records<RepairValue>,
-    flat_repairs: OnceLock<Box<[Repair<'static>]>>,
+pub struct BorrowedSnapshotRecovery<'g> {
+    repairs: Records<RepairValue<'g>>,
+    flat_repairs: OnceLock<Box<[Repair<'g>]>>,
     coverage: Sequence<CoveragePiece>,
     damaged: Records<u16>,
     pub(crate) structures: Arc<[(u16, u32, SubtreeId)]>,
 }
-impl SnapshotRecovery {
+impl<'g> BorrowedSnapshotRecovery<'g> {
     pub(crate) fn visit_allocations(&self, visit: &mut crate::syntax::memory::Visitor<'_>) {
         use crate::syntax::memory::{self, Class};
         self.repairs.visit(visit);
@@ -55,11 +56,11 @@ impl SnapshotRecovery {
     pub(crate) fn damage_count(&self) -> usize {
         self.damaged.len()
     }
-    pub fn repairs(&self) -> &[Repair<'static>] {
+    pub fn repairs(&self) -> &[Repair<'g>] {
         self.flat_repairs
             .get_or_init(|| self.iter_repairs().collect())
     }
-    pub(crate) fn iter_repairs(&self) -> impl Iterator<Item = Repair<'static>> {
+    pub(crate) fn iter_repairs(&self) -> impl Iterator<Item = Repair<'g>> {
         self.repairs.iter().map(|(span, value)| match value {
             RepairValue::Missing(expected) => Repair::Missing {
                 expected: *expected,
@@ -73,7 +74,7 @@ impl SnapshotRecovery {
     }
     pub(crate) fn set_records(
         &mut self,
-        repairs: Vec<Repair<'static>>,
+        repairs: Vec<Repair<'g>>,
         damaged: Vec<(u16, [u32; 2])>,
         old: Option<&Self>,
     ) {
@@ -170,7 +171,7 @@ impl SnapshotRecovery {
             coverage: self.coverage.replace(first..last, merged),
         }
     }
-    fn from_flat(tree: &SyntaxTree<'static>, previous: Option<&Self>) -> Self {
+    fn from_flat(tree: &SyntaxTree<'g>, previous: Option<&Self>) -> Self {
         let data = tree.recovery().expect("recovered metadata");
         Self::from_parts(
             data.repairs.clone(),
@@ -183,7 +184,7 @@ impl SnapshotRecovery {
         )
     }
     pub(crate) fn from_parts(
-        repairs: Vec<Repair<'static>>,
+        repairs: Vec<Repair<'g>>,
         coverage: Vec<Coverage>,
         damaged: Vec<(u16, [u32; 2])>,
         previous: Option<&Self>,
@@ -243,7 +244,7 @@ fn mapped_span(span: [u32; 2], edit: &TextEdit) -> Option<[u32; 2]> {
     }
     None
 }
-fn same_shape(old: NodeView<'_>, tree: &SyntaxTree, id: u32) -> bool {
+fn same_shape<'g>(old: BorrowedNodeView<'_, 'g>, tree: &SyntaxTree, id: u32) -> bool {
     let mut pending = vec![(old, id)];
     while let Some((old, id)) = pending.pop() {
         let new = tree.nodes[id as usize];
@@ -271,15 +272,15 @@ fn same_shape(old: NodeView<'_>, tree: &SyntaxTree, id: u32) -> bool {
     }
     true
 }
-pub(crate) fn recover_snapshot(
-    language: &'static Language<'static>,
+pub(crate) fn recover_snapshot<'g>(
+    language: &'g Language<'g>,
     text: &SourceText,
     limits: Limits,
     options: RecoveryOptions,
-    previous: Option<(&ParseSnapshot, &TextEdit)>,
+    previous: Option<(&BorrowedParseSnapshot<'g>, &TextEdit)>,
     strict_error: Option<Diagnostic>,
-    seed: Option<&crate::parser::shared::Seed<'_>>,
-) -> Result<ParseSnapshot, Diagnostic> {
+    seed: Option<&crate::parser::shared::Seed<'_, 'g>>,
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     if options.max_states > 0
         && strict_error
             .as_ref()
@@ -322,7 +323,7 @@ pub(crate) fn recover_snapshot(
         None => parse_recovering(language, &source, limits, options),
     };
     let tree = &parsed.tree;
-    let mut candidates: HashMap<(u16, [u32; 2]), Vec<NodeView<'_>>> = HashMap::new();
+    let mut candidates: HashMap<(u16, [u32; 2]), Vec<BorrowedNodeView<'_, 'g>>> = HashMap::new();
     if let Some((old, edit)) = previous {
         let mut pending = vec![old.root()];
         while let Some(node) = pending.pop() {
@@ -406,7 +407,7 @@ pub(crate) fn recover_snapshot(
         arena = next;
         reclaimed = relocation.removed_bytes;
     }
-    let mut snapshot = ParseSnapshot::from_parts(
+    let mut snapshot = BorrowedParseSnapshot::from_parts(
         language,
         text.clone(),
         arena,
@@ -414,6 +415,9 @@ pub(crate) fn recover_snapshot(
         root.span[0],
         SnapshotMode::Recovering(options),
     );
+    snapshot.tables = previous.and_then(|(old, _)| old.tables.clone())
+        .or_else(|| seed.map(|s| s.tables.clone()));
+    snapshot.dispatch = snapshot.tables.as_ref().map(|t| t.dispatch.clone());
     if !compact {
         snapshot.maintenance_debt = maintenance_debt;
     }
@@ -424,7 +428,7 @@ pub(crate) fn recover_snapshot(
         previous.map(|(old, _)| old.diagnostics.as_ref()),
     ));
     snapshot.recovery = tree.recovery().map(|_| {
-        Arc::new(SnapshotRecovery::from_flat(
+        Arc::new(BorrowedSnapshotRecovery::from_flat(
             tree,
             previous.and_then(|(old, _)| old.recovery()),
         ))

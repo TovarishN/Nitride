@@ -1,4 +1,6 @@
 //! Immutable structure is separate from its occurrence in a source snapshot.
+pub type ParseSnapshot = BorrowedParseSnapshot<'static>;
+pub type NodeView<'a> = BorrowedNodeView<'a, 'static>;
 use super::{SourceText, SubtreeId, arena::PublishedArena, sidecars::DiagnosticStore};
 use crate::{Diagnostic, Edge, Language, Node, ParseOptions, RecoveryOptions, SyntaxTree};
 use std::{borrow::Cow, sync::Arc};
@@ -67,16 +69,17 @@ pub struct StorageStats {
     pub unique_allocations: usize,
 }
 #[derive(Clone)]
-pub struct ParseSnapshot {
-    pub(crate) dispatch: Option<Arc<crate::parser::shared::dispatch::Dispatch>>,
-    pub(crate) language: &'static Language<'static>,
+pub struct BorrowedParseSnapshot<'g> {
+    pub(crate) tables: Option<Arc<crate::parser::shared::LanguageTables<'g>>>,
+    pub(crate) dispatch: Option<Arc<crate::parser::shared::dispatch::Dispatch<'g>>>,
+    pub(crate) language: &'g Language<'g>,
     pub(crate) source: SourceText,
-    pub(crate) arena: PublishedArena,
+    pub(crate) arena: PublishedArena<'g>,
     pub(crate) root: SubtreeId,
     pub(crate) start: u32,
     pub(crate) mode: SnapshotMode,
     pub(crate) diagnostics: Arc<DiagnosticStore>,
-    pub(crate) recovery: Option<Arc<crate::SnapshotRecovery>>,
+    pub(crate) recovery: Option<Arc<crate::BorrowedSnapshotRecovery<'g>>>,
     pub(crate) stats: SnapshotStats,
     pub(crate) maintenance_debt: usize,
     pub(crate) maintenance_base: usize,
@@ -89,21 +92,22 @@ pub(crate) struct Occurrences {
     pub damaged_nodes: Vec<u32>,
 }
 #[derive(Clone, Copy)]
-pub struct NodeView<'a> {
-    snapshot: &'a ParseSnapshot,
+pub struct BorrowedNodeView<'a, 'g> {
+    snapshot: &'a BorrowedParseSnapshot<'g>,
     id: SubtreeId,
     start: u32,
 }
-impl ParseSnapshot {
+impl<'g> BorrowedParseSnapshot<'g> {
     pub(crate) fn from_parts(
-        language: &'static Language<'static>,
+        language: &'g Language<'g>,
         source: SourceText,
-        arena: PublishedArena,
+        arena: PublishedArena<'g>,
         root: SubtreeId,
         start: u32,
         mode: SnapshotMode,
     ) -> Self {
         Self {
+            tables: None,
             dispatch: None,
             maintenance_debt: 0,
             maintenance_base: arena.payload_bytes(),
@@ -119,14 +123,14 @@ impl ParseSnapshot {
             recognitions: Default::default(),
         }
     }
-    pub fn root(&self) -> NodeView<'_> {
-        NodeView {
+    pub fn root(&self) -> BorrowedNodeView<'_, 'g> {
+        BorrowedNodeView {
             snapshot: self,
             id: self.root,
             start: self.start,
         }
     }
-    pub fn recovery(&self) -> Option<&crate::SnapshotRecovery> {
+    pub fn recovery(&self) -> Option<&crate::BorrowedSnapshotRecovery<'g>> {
         self.recovery.as_deref()
     }
     pub fn diagnostics(&self) -> &[Diagnostic] {
@@ -233,7 +237,7 @@ impl ParseSnapshot {
             damaged_nodes,
         })
     }
-    pub fn materialize(&self) -> Result<SyntaxTree<'static>, Diagnostic> {
+    pub fn materialize(&self) -> Result<SyntaxTree<'g>, Diagnostic> {
         let indexed = self.indexed(u64::MAX)?;
         Ok(SyntaxTree {
             language: self.language,
@@ -255,14 +259,14 @@ impl ParseSnapshot {
 }
 
 /// Unique requested dynamic bytes for a collection of live snapshots.
-pub fn shared_storage_bytes(snapshots: &[&ParseSnapshot]) -> usize {
+pub fn shared_storage_bytes<'g>(snapshots: &[&BorrowedParseSnapshot<'g>]) -> usize {
     let mut counter = super::memory::Counter::default();
     for snapshot in snapshots {
         snapshot.visit_allocations(&mut |class, id, size| counter.add(class, id, size));
     }
     counter.total()
 }
-impl<'a> NodeView<'a> {
+impl<'a, 'g> BorrowedNodeView<'a, 'g> {
     pub fn subtree_id(&self) -> SubtreeId {
         self.id
     }
@@ -291,7 +295,7 @@ impl<'a> NodeView<'a> {
             .slice(self.span())
             .expect("validated syntax span")
     }
-    pub fn children(&self) -> impl Iterator<Item = (&'static str, NodeView<'a>)> + 'a {
+    pub fn children(&self) -> impl Iterator<Item = (&'g str, BorrowedNodeView<'a, 'g>)> + 'a {
         let snapshot = self.snapshot;
         let mut position = self.start;
         snapshot.arena.children(self.id).map(move |edge| {
@@ -299,7 +303,7 @@ impl<'a> NodeView<'a> {
             let start = position - snapshot.arena.node(edge.node).expect("owned child").width;
             (
                 snapshot.arena.labels[edge.label as usize],
-                NodeView {
+                BorrowedNodeView {
                     snapshot,
                     id: edge.node,
                     start,

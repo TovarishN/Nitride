@@ -4,14 +4,14 @@ use super::*;
 use crate::incremental::dependencies::Index;
 use crate::parser::shared::{Children, Handle, Seed, SharedProbe};
 use std::sync::Arc;
-impl Probe<'static> for SharedProbe<'_> {
+impl<'g> Probe<'g> for SharedProbe<'_, 'g> {
     fn selected(&mut self, root: u32) {
         self.selected(root)
     }
     fn rule(&mut self, id: u16, at: usize, power: u32) -> Result<Option<ProbeHit>, Diagnostic> {
         self.rule(id, at, power)
     }
-    fn predicate(&mut self, expr: &'static Expr<'static>, at: usize) -> Result<bool, Diagnostic> {
+    fn predicate(&mut self, expr: &'g Expr<'g>, at: usize) -> Result<bool, Diagnostic> {
         self.predicate(expr, at)
     }
     fn commit(&mut self, roots: &mut [u32], keep_from: usize) {
@@ -31,16 +31,16 @@ impl Probe<'static> for SharedProbe<'_> {
     }
 }
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn recover<'a>(
-    language: &'static Language<'static>,
+pub(crate) fn recover<'a, 'g>(
+    language: &'g Language<'g>,
     text: &'a SourceText,
     limits: Limits,
     options: RecoveryOptions,
-    base: Option<&ParseSnapshot>,
+    base: Option<&BorrowedParseSnapshot<'g>>,
     index: Index,
     edit: Option<&TextEdit>,
-    seed: Option<&Seed<'a>>,
-) -> Result<ParseSnapshot, Diagnostic> {
+    seed: Option<&Seed<'a, 'g>>,
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     let result = recover_once(
         language,
         text,
@@ -80,23 +80,23 @@ pub(crate) fn recover<'a>(
     }
 }
 #[allow(clippy::too_many_arguments)]
-fn recover_once<'a>(
-    language: &'static Language<'static>,
+fn recover_once<'a, 'g>(
+    language: &'g Language<'g>,
     text: &'a SourceText,
     limits: Limits,
     options: RecoveryOptions,
-    base: Option<&ParseSnapshot>,
+    base: Option<&BorrowedParseSnapshot<'g>>,
     index: Index,
     edit: Option<&TextEdit>,
-    seed: Option<&Seed<'a>>,
-) -> Result<ParseSnapshot, Diagnostic> {
+    seed: Option<&Seed<'a, 'g>>,
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     let mut engine = engine(
         language,
         Source::Shared(text, seed.and_then(Seed::contiguous)),
         limits,
         options,
         SharedProbe::new(language, text, limits, base, index, seed),
-        Tables::shared(language),
+        seed.map(|s| s.tables.recovery(language)).or_else(|| base.and_then(|b| b.tables.as_ref().map(|t| t.recovery(language)))).unwrap_or_else(|| Arc::new(Tables::new(language))),
     );
     let (state, failure) = match engine.run() {
         Ok(state) => (state, None),
@@ -115,8 +115,8 @@ struct SharedFrame {
     label: u16,
     children: Children,
 }
-fn construct(
-    probe: &mut SharedProbe<'_>,
+fn construct<'g>(
+    probe: &mut SharedProbe<'_, 'g>,
     id: u16,
     start: usize,
     end: usize,
@@ -129,8 +129,8 @@ fn construct(
         width: (end - start) as u32,
     })
 }
-fn close(
-    probe: &mut SharedProbe<'_>,
+fn close<'g>(
+    probe: &mut SharedProbe<'_, 'g>,
     frames: &mut Vec<SharedFrame>,
     end: usize,
     language: &Language,
@@ -151,15 +151,15 @@ fn close(
     probe.recovery_push(&mut frames.last_mut().unwrap().children, frame.label, node);
     Ok(())
 }
-impl Engine<'static, '_, SharedProbe<'_>> {
+impl<'g> Engine<'g, '_, SharedProbe<'_, 'g>> {
     fn finish_shared(
         mut self,
         text: &SourceText,
         state: State,
         failure: Option<Diagnostic>,
-        base: Option<&ParseSnapshot>,
+        base: Option<&BorrowedParseSnapshot<'g>>,
         edit: Option<&TextEdit>,
-    ) -> Result<ParseSnapshot, Diagnostic> {
+    ) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
         let mut events = Vec::new();
         let mut history = state.history;
         while history > 0 {
@@ -488,7 +488,7 @@ impl Engine<'static, '_, SharedProbe<'_>> {
                 [0, text.len()],
                 &mut metadata,
             )?;
-            crate::SnapshotRecovery::from_parts(repairs, coverage, damaged, None)
+            crate::BorrowedSnapshotRecovery::from_parts(repairs, coverage, damaged, None)
         };
         metadata.sorting(structures.len())?;
         structures.sort_by_key(|(rule, at, _)| (*rule, *at));

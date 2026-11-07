@@ -73,7 +73,7 @@ pub use text::{SourceText, TextEdit};
 pub(crate) mod arena;
 pub use arena::SubtreeId;
 pub(crate) mod shared;
-pub use shared::{NodeView, ParseSnapshot, SnapshotMode, SnapshotStats, StorageStats};
+pub use shared::{BorrowedParseSnapshot, BorrowedNodeView, NodeView, ParseSnapshot, SnapshotMode, SnapshotStats, StorageStats};
 
 pub(crate) mod access;
 pub use access::{compile_snapshot, compile_snapshot_recovering};

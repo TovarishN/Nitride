@@ -144,18 +144,18 @@ impl Relocation {
         Some(SubtreeId::new(id.chunk(), self.maps[chunk][id.slot()]))
     }
 }
-struct Evacuated {
-    arena: PublishedArena,
+struct Evacuated<'g> {
+    arena: PublishedArena<'g>,
     /// New IDs by chunk position and slot; `NONE` for unreachable nodes.
     mapping: Vec<Vec<SubtreeId>>,
     copied: usize,
 }
 #[derive(Clone)]
-pub(crate) struct PublishedArena {
+pub(crate) struct PublishedArena<'g> {
     chunks: Sequence<Arc<Chunk>>,
-    pub labels: Arc<[&'static str]>,
+    pub labels: Arc<[&'g str]>,
 }
-impl PublishedArena {
+impl<'g> PublishedArena<'g> {
     fn chunk(&self, id: SubtreeId) -> Option<&Chunk> {
         self.chunks.find_key(id.chunk()).map(Arc::as_ref)
     }
@@ -328,8 +328,8 @@ impl PublishedArena {
     fn evacuate(
         &self,
         roots: &[SubtreeId],
-        mut builder: ArenaBuilder,
-    ) -> Result<Evacuated, Diagnostic> {
+        mut builder: ArenaBuilder<'g>,
+    ) -> Result<Evacuated<'g>, Diagnostic> {
         // Chunk positions follow the sequence's ascending IDs, as in `compact`.
         let chunks: Vec<&Chunk> = self.chunks.iter().map(Arc::as_ref).collect();
         let ids: Vec<u32> = chunks.iter().map(|c| c.id).collect();
@@ -529,8 +529,8 @@ impl MutableChunk {
         self.weights.shrink_to_fit();
     }
 }
-pub(crate) struct ArenaBuilder {
-    published: PublishedArena,
+pub(crate) struct ArenaBuilder<'g> {
+    published: PublishedArena<'g>,
     chunks: Vec<Option<MutableChunk>>,
     by_id: crate::parser::shared::hash::FastMap<u32, usize>,
     /// Slot index by `id - first_id`, or `u32::MAX`; `by_id` covers ids too
@@ -546,14 +546,14 @@ pub(crate) struct ArenaBuilder {
     copied_existing_bytes: u64,
     cache_only_bytes: u64,
 }
-impl ArenaBuilder {
-    pub(crate) fn new(labels: Arc<[&'static str]>) -> Self {
+impl<'g> ArenaBuilder<'g> {
+    pub(crate) fn new(labels: Arc<[&'g str]>) -> Self {
         Self::from_published(&PublishedArena {
             chunks: Sequence::default(),
             labels,
         })
     }
-    pub(crate) fn from_published(published: &PublishedArena) -> Self {
+    pub(crate) fn from_published(published: &PublishedArena<'g>) -> Self {
         let chunk = MutableChunk::new();
         let first_id = chunk.data.id;
         Self {
@@ -1071,7 +1071,7 @@ impl ArenaBuilder {
                 (alive + c.alive, slots + c.data.nodes.len())
             })
     }
-    pub(crate) fn finish(self) -> PublishedArena {
+    pub(crate) fn finish(self) -> PublishedArena<'g> {
         let mut published = self.published;
         let mut chunks: Vec<_> = self
             .chunks

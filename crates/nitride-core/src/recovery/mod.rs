@@ -1,7 +1,7 @@
 //! Grammar-derived recovery. Strict parsing remains a separate public contract.
 use crate::*;
 mod grammar;
-mod search;
+pub(crate) mod search;
 mod semantic;
 mod tree;
 pub use semantic::*;
@@ -32,7 +32,7 @@ pub fn parse_recovering<'g>(
 }
 
 pub(crate) mod incremental;
-pub use incremental::SnapshotRecovery;
+pub use incremental::{SnapshotRecovery, BorrowedSnapshotRecovery};
 
 /// Continue recovery after an equivalent strict recognizer has already failed.
 pub(crate) fn recover_after_strict<'g>(

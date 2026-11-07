@@ -86,7 +86,7 @@ fn as_result(body: &str) -> String {
 fn function(name: &str, body: &str) -> String {
     let result = as_result(body);
     format!(
-        "#[allow(dead_code, unused_variables)]\nfn {name}(c:&mut nitride_core::SyntaxContext<'_, '_>,_minimum:u32,d:u32)->Result<bool,nitride_core::Diagnostic>{{c.guard()?;{result}}}\n"
+        "#[allow(dead_code, unused_variables)]\nfn {name}(c:&mut nitride_core::SyntaxContext<'_, '_, '_>,_minimum:u32,d:u32)->Result<bool,nitride_core::Diagnostic>{{c.guard()?;{result}}}\n"
     )
 }
 

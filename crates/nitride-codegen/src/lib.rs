@@ -4,6 +4,8 @@ mod lexical;
 mod syntax;
 use serde_json::Value;
 mod runtime;
+mod runtime_snapshot;
+pub use runtime_snapshot::RuntimeSnapshot;
 mod wit;
 pub use interfaces::interfaces;
 pub use runtime::LoadedLanguage;

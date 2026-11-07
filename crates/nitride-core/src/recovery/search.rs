@@ -229,7 +229,7 @@ pub(super) fn recover<'g>(
 }
 
 /// Recovery's grammar tables, derived from the language alone.
-pub(super) struct Tables<'g> {
+pub(crate) struct Tables<'g> {
     graph: Grammar<'g>,
     /// Distinct grammar literals, grouped by their first byte.
     literal_tokens: Vec<Vec<&'g str>>,
@@ -237,7 +237,7 @@ pub(super) struct Tables<'g> {
     lexical: Vec<u16>,
 }
 impl<'g> Tables<'g> {
-    fn new(language: &'g Language<'g>) -> Self {
+    pub(crate) fn new(language: &'g Language<'g>) -> Self {
         let graph = Grammar::new(language);
         let mut literal_tokens = vec![Vec::new(); 256];
         let mut character_tokens = Vec::new();
@@ -271,32 +271,6 @@ impl<'g> Tables<'g> {
             character_tokens,
             lexical,
         }
-    }
-}
-impl Tables<'static> {
-    /// One analysis per language for the life of the process: languages are
-    /// `'static`, so their addresses identify them for good.
-    pub(super) fn shared(language: &'static Language<'static>) -> std::sync::Arc<Self> {
-        type Cache = std::sync::Mutex<Vec<(usize, std::sync::Arc<Tables<'static>>)>>;
-        static CACHE: Cache = std::sync::Mutex::new(Vec::new());
-        let key = std::ptr::from_ref(language) as usize;
-        let find = |cache: &[(usize, std::sync::Arc<Tables<'static>>)]| {
-            cache
-                .iter()
-                .find(|(k, _)| *k == key)
-                .map(|(_, t)| t.clone())
-        };
-        if let Some(tables) = find(&CACHE.lock().unwrap_or_else(|e| e.into_inner())) {
-            return tables;
-        }
-        // Analyze outside the lock; a racing thread's result is equivalent.
-        let tables = std::sync::Arc::new(Self::new(language));
-        let mut cache = CACHE.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(existing) = find(&cache) {
-            return existing;
-        }
-        cache.push((key, tables.clone()));
-        tables
     }
 }
 
