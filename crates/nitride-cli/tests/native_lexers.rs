@@ -243,7 +243,7 @@ fn native_depth_facts_do_not_reject_lower_budget_interpreted_edits() {
     for _ in 0..32 {
         deep = Expr::Label("nested", Box::leak(Box::new(deep)));
     }
-    let language = Box::leak(Box::new(Language {
+    let language = Box::leak(Box::new(Language {trivia: nitride_core::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 0,
         types: &[],

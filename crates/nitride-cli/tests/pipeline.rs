@@ -94,7 +94,7 @@ fn nonfinite_result_is_an_execution_error_with_trace() {
 #[test]
 fn mismatched_language_snapshot_is_rejected() {
     let tree = parse(&LANGUAGE, "1;", Limits::default()).unwrap();
-    let other = Box::leak(Box::new(Language {
+    let other = Box::leak(Box::new(Language {trivia: nitride_core::TriviaPolicy::Nitrogen,
         profile: Profile::Typed,
         rules: LANGUAGE.rules,
         start: LANGUAGE.start,
