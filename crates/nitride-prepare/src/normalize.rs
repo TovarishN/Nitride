@@ -199,11 +199,11 @@ pub fn prepare(
             .collect();
         (found.len() == 1).then(|| found[0].clone())
     };
-    let syntax_category = |name: &str, module: &Module, at: [usize; 2], what: &str| {
+    let syntax_category = |name: &str, module: &Module, at: [usize; 2]| {
         let resolved = resolve(name, module, None, at)?;
         let (mi, ri) = symbols[&resolved];
         if modules[mi].rules[ri].lexical {
-            return Err(sources[module.source].error(at, format!("{what} must be syntax rules")));
+            return Err(sources[module.source].coded(at, "NGR0146", token_category(name)));
         }
         Ok(resolved)
     };
@@ -215,7 +215,7 @@ pub fn prepare(
         if let Some(pattern) = find_pattern(&written, module) {
             let (mi, pi) = pattern_names[&pattern];
             let (category, span) = &modules[mi].patterns[pi].category;
-            let category = syntax_category(category, &modules[mi], *span, "pattern categories")?;
+            let category = syntax_category(category, &modules[mi], *span)?;
             capture["category"] = json!(category);
             capture["pattern"] = json!(pattern);
         } else if capture["descendant"] == true {
@@ -225,8 +225,7 @@ pub fn prepare(
                 format!("'{written}' is not a named pattern; a descendant capture needs one"),
             ));
         } else {
-            capture["category"] =
-                json!(syntax_category(&written, module, at, "capture categories")?);
+            capture["category"] = json!(syntax_category(&written, module, at)?);
         }
         capture.as_object_mut().unwrap().remove("span");
         Ok(())
@@ -310,7 +309,7 @@ pub fn prepare(
                     let resolved = resolve(name, module, None, span)?;
                     let (mi, ri) = symbols[&resolved];
                     if modules[mi].rules[ri].lexical {
-                        return Err(source.error(span, "helper categories must be syntax rules"));
+                        return Err(source.coded(span, "NGR0146", token_category(name)));
                     }
                     Ok(resolved)
                 };
@@ -491,7 +490,6 @@ pub fn prepare(
                         written,
                         module,
                         span(&json!({"span":context["category_span"]})),
-                        "context categories",
                     )?,
                     None => name.clone(),
                 };
@@ -849,8 +847,7 @@ fn validate_fields(rule: &Rule, source: &Source, plain: bool) -> Result<(), Prep
 /// Resolves a capture in place (category, pattern) against its module.
 type CaptureResolver<'a> = dyn Fn(&mut Value, &Module) -> Result<(), PrepareError> + 'a;
 /// Resolves a category that must be a syntax rule; the last argument names it for errors.
-type CategoryResolver<'a> =
-    dyn Fn(&str, &Module, [usize; 2], &str) -> Result<String, PrepareError> + 'a;
+type CategoryResolver<'a> = dyn Fn(&str, &Module, [usize; 2]) -> Result<String, PrepareError> + 'a;
 /// A pattern's non-consuming references and where it is declared.
 type Edges = Vec<(String, Vec<String>, (usize, [usize; 2]))>;
 
@@ -868,12 +865,7 @@ fn named_patterns(
     for module in modules {
         for pattern in &module.patterns {
             let name = format!("{}.{}", module.name, pattern.name);
-            let category = syntax_category(
-                &pattern.category.0,
-                module,
-                pattern.category.1,
-                "pattern categories",
-            )?;
+            let category = syntax_category(&pattern.category.0, module, pattern.category.1)?;
             let mut targets = Vec::new();
             let mut alternatives = Vec::new();
             for (captures, text) in &pattern.alternatives {
@@ -940,4 +932,14 @@ fn named_patterns(
         }
     }
     Ok(patterns)
+}
+
+/// NGR0146 for a token used where a syntax category is required, with the
+/// workaround Nitrogen's XmlPatterns example uses.
+fn token_category(name: &str) -> String {
+    let short = name.rsplit('.').next().unwrap_or(name);
+    format!(
+        "'{name}' must be a syntax category, not a token; wrap the token in a syntax rule \
+         (`syntax {short}Text = {short};`) and use that"
+    )
 }

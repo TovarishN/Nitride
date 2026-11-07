@@ -51,8 +51,9 @@ fn stack_position() -> usize {
 
 /// Which matcher's rules a quote keeps. Checks take `..$x` spreads, accept a
 /// node whose rule derives from the hole's category through aliases, and
-/// compare a repeated capture by text. Function arms accept the category or a
-/// rule it owns and compare a repeated capture by structure.
+/// compare a repeated capture by structure, ignoring trivia, as Nitrogen does.
+/// Function arms accept the category or a rule it owns and compare a repeated
+/// capture with `same_syntax`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Flavor {
     Check,
@@ -287,10 +288,16 @@ impl<'a> Quote<'a> {
     }
 
     /// Whether `a` and `b`, captured under one name, count as the same.
-    fn same(&self, tree: &dyn SyntaxAccess<'_>, a: u32, b: u32) -> bool {
+    fn same(
+        &self,
+        tree: &dyn SyntaxAccess<'_>,
+        a: u32,
+        b: u32,
+        budget: &mut Budget,
+    ) -> Result<bool, LimitExceeded> {
         match self.flavor {
-            Flavor::Check => tree.text(a) == tree.text(b),
-            Flavor::Arm => same_syntax(self.language, tree, a, b),
+            Flavor::Check => same_structure(tree, a, b, budget),
+            Flavor::Arm => Ok(same_syntax(self.language, tree, a, b)),
         }
     }
 
@@ -341,7 +348,7 @@ impl<'a> Quote<'a> {
                 return Ok(false);
             }
             if let Some(&(_, bound)) = bindings.iter().find(|(n, _)| *n == hole.name) {
-                return Ok(self.same(tree, bound, t));
+                return self.same(tree, bound, t, budget);
             }
             bindings.push((hole.name, t));
             return Ok(true);
@@ -354,11 +361,6 @@ impl<'a> Quote<'a> {
         match self.flavor {
             Flavor::Check => {
                 if ps.is_empty() && ts.is_empty() {
-                    let spelling = |text: Option<&str>| {
-                        text.unwrap_or_default()
-                            .split_whitespace()
-                            .collect::<String>()
-                    };
                     return Ok(spelling(self.tree.text(p)) == spelling(tree.text(t)));
                 }
                 self.list(patterns, tree, ps, ts, budget, bindings)
@@ -451,6 +453,37 @@ pub(crate) fn spreads(pattern: &str) -> (String, Vec<&str>) {
 }
 
 /// Structural syntax equality: rules, labels and children; token text for lexical nodes.
+/// A leaf's text without whitespace, as checks compare tokens.
+fn spelling(text: Option<&str>) -> String {
+    text.unwrap_or_default().split_whitespace().collect()
+}
+
+/// Whether `x` and `y` have the same structure, as Nitrogen's
+/// `QuotePatternMatcher.Equal` decides it: the same rule and child count at
+/// every node, and the same spelling at every leaf. Interior trivia does not
+/// count. Iterative, so deep captures cannot overflow the stack.
+fn same_structure(
+    tree: &dyn SyntaxAccess<'_>,
+    x: u32,
+    y: u32,
+    budget: &mut Budget,
+) -> Result<bool, LimitExceeded> {
+    let mut pending = vec![(x, y)];
+    while let Some((x, y)) = pending.pop() {
+        budget.step()?;
+        let (p, q) = (tree.nodes()[x as usize], tree.nodes()[y as usize]);
+        let (left, right) = (tree.children(x), tree.children(y));
+        if p.rule != q.rule || left.len() != right.len() {
+            return Ok(false);
+        }
+        if left.is_empty() && spelling(tree.text(x)) != spelling(tree.text(y)) {
+            return Ok(false);
+        }
+        pending.extend(left.iter().zip(right).map(|(l, r)| (l.node, r.node)));
+    }
+    Ok(true)
+}
+
 fn same_syntax(language: &Language<'_>, tree: &dyn SyntaxAccess<'_>, x: u32, y: u32) -> bool {
     let (p, q) = (tree.nodes()[x as usize], tree.nodes()[y as usize]);
     if p.rule != q.rule {
