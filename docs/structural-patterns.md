@@ -20,7 +20,11 @@ syntax Paired = "<" Open:Name Attributes:Attribute* ">" Children:Node* "</" Clos
 - `match (captures) <[ quote ]> => warning|error CODE : message;` reports when
   the node matches the quote, parsed as the rule. `$name` is one node of its
   capture's category, `..$name` any run of siblings, and a repeated capture
-  must have the same text. The message is `$"..."` (with `{capture}` and
+  must be structurally equal: the same rules and the same tokens, whatever
+  whitespace lies between them (`<a/>` and `<a />` are the same). A capture's
+  category must be a syntax rule, not a token (`NGR0146`); to capture a token,
+  wrap it in a syntax rule, as in `syntax Text = Content;`, and capture that.
+  The message is `$"..."` (with `{capture}` and
   `{Field.Text}` placeholders) or a plain `"..."`.
 
 ## Named patterns
@@ -41,8 +45,21 @@ They work in `match` checks and in `syntax function` match arms.
 ## Looking down and up
 
 - `(s: ..Secret)` searches the hole's node and everything below it, in
-  document order, and binds the first node `Secret` matches. The check reports
-  once, on its own node.
+  document order, and binds only the first node `Secret` matches. The check
+  reports once, on its own node.
+- A descendant capture must name a pattern. A plain category, as in
+  `(p: ..Paired)`, is rejected with `NGR0163`. To find any node of a category,
+  declare a pattern that accepts every one of them, over a category that
+  contains it:
+
+  ```ngr
+  pattern AnyPaired : Element = (e: Paired) <[ $e ]>;
+  match (p: ..AnyPaired) <[ <vault ..$_>..$_ $p ..$_</vault> ]> => warning X1 : $"{p}";
+  ```
+
+  (Issue #33 proposes accepting a plain category directly.)
+- A descendant capture finds one node: it may occur only once in a pattern and
+  cannot be a list (`NGR0166`).
 - `inside [Category] [(captures)] <[ quote ]>` after a check's quote requires an
   ancestor (the nearest first) to match; `parent` checks only the parent. The
   check reports on each inner node, and the nearest matching ancestor supplies
@@ -60,6 +77,7 @@ In a function arm, running out fails the rewrite at its use.
 
 | Code | Meaning |
 |------|---------|
+| NGR0146 | a capture, pattern or context category is a token, not a syntax rule |
 | NGR0163 | a `..` capture names no pattern |
 | NGR0164 | a pattern repeats a rule, helper or pattern name |
 | NGR0165 | a context capture repeats one of the pattern's captures |

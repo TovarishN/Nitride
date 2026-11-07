@@ -140,6 +140,27 @@ fn ngr0163_unknown_descendant_pattern() {
 }
 
 #[test]
+fn ngr0146_token_capture_category() {
+    let checks = r#"    match (n: Name) <[ <$n ..$_>..$_</$n> ]> => warning X1 : "x";"#;
+    assert_code(
+        &error(checks, ""),
+        "NGR0146",
+        "'Name' must be a syntax category, not a token; wrap the token in a syntax rule \
+         (`syntax NameText = Name;`) and use that",
+    );
+}
+
+#[test]
+fn ngr0146_token_pattern_category() {
+    assert_code(
+        &error("", "  pattern Word : Content = <[ x ]>;"),
+        "NGR0146",
+        "'Content' must be a syntax category, not a token; wrap the token in a syntax rule \
+         (`syntax ContentText = Content;`) and use that",
+    );
+}
+
+#[test]
 fn ngr0164_duplicate_pattern() {
     assert_code(
         &error("", &format!("{SECRET}\n{SECRET}")),

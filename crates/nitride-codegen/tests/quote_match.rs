@@ -277,13 +277,21 @@ fn deep_input_does_not_overflow() {
     assert!(diagnostics.len() <= 2, "{diagnostics:?}");
 }
 
-/// Checks compare a repeated capture by text; function arms by structure.
+/// Checks compare a repeated capture by structure, as Nitrogen's
+/// `QuotePattern.Match` does: interior trivia does not count.
 #[test]
-fn check_flavor_keeps_text_equality() {
+fn check_flavor_compares_repeated_captures_by_structure() {
     let checks = r#"    match (e: Element) <[ <pair>$e $e</pair> ]> => warning X3 : "pair";"#;
     let language = language(checks, "");
     assert_eq!(found_codes(&language, "<pair><a/><a/></pair>"), ["X3"]);
-    assert!(found_codes(&language, "<pair><a/><a /></pair>").is_empty());
+    assert_eq!(found_codes(&language, "<pair><a/><a /></pair>"), ["X3"]);
+    assert_eq!(
+        found_codes(&language, r#"<pair><a x="1"/><a  x="1"/></pair>"#),
+        ["X3"]
+    );
+    assert!(found_codes(&language, "<pair><a/><b/></pair>").is_empty());
+    assert!(found_codes(&language, r#"<pair><a x="1"/><a x="2"/></pair>"#).is_empty());
+    assert!(found_codes(&language, "<pair><a/><a></a></pair>").is_empty());
 }
 
 #[test]
