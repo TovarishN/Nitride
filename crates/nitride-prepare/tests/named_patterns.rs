@@ -135,8 +135,28 @@ fn ngr0163_unknown_descendant_pattern() {
     assert_code(
         &error(checks, ""),
         "NGR0163",
-        "'Nope' is not a named pattern; a descendant capture needs one",
+        "'Nope' is neither a named pattern nor a syntax category",
     );
+}
+
+/// A Nitride extension (issue #33): a descendant capture may name a plain
+/// syntax category instead of a pattern.
+#[test]
+fn descendant_capture_over_plain_category_lowers() {
+    let checks =
+        r#"    match (p: ..Paired) <[ <vault ..$_>..$_ $p ..$_</vault> ]> => warning X1 : "x";"#;
+    let data = prepare(checks, "").unwrap();
+    assert_eq!(
+        check(&data, "X1")["captures"],
+        json!([{"name": "p", "category": "Xml.Paired", "descendant": true}])
+    );
+}
+
+#[test]
+fn ngr0146_descendant_over_token() {
+    let checks =
+        r#"    match (n: ..Name) <[ <vault ..$_>..$_ $n ..$_</vault> ]> => warning X1 : "x";"#;
+    assert_eq!(error(checks, "").code.as_deref(), Some("NGR0146"));
 }
 
 #[test]

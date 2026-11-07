@@ -47,17 +47,19 @@ They work in `match` checks and in `syntax function` match arms.
 - `(s: ..Secret)` searches the hole's node and everything below it, in
   document order, and binds only the first node `Secret` matches. The check
   reports once, on its own node.
-- A descendant capture must name a pattern. A plain category, as in
-  `(p: ..Paired)`, is rejected with `NGR0163`. To find any node of a category,
-  declare a pattern that accepts every one of them, over a category that
-  contains it:
+- `(p: ..Paired)`, with a plain syntax category instead of a pattern, binds
+  the first node, in document order, that stands for the category (in a
+  check, an alias category such as `Element` accepts any of its
+  alternatives). **This is a Nitride extension:** Nitrogen requires a named
+  pattern here and rejects the grammar with `NGR0163`. For a grammar that must
+  prepare in both tools, write a pattern that accepts every node of the
+  category instead:
 
   ```ngr
   pattern AnyPaired : Element = (e: Paired) <[ $e ]>;
   match (p: ..AnyPaired) <[ <vault ..$_>..$_ $p ..$_</vault> ]> => warning X1 : $"{p}";
   ```
 
-  (Issue #33 proposes accepting a plain category directly.)
 - A descendant capture finds one node: it may occur only once in a pattern and
   cannot be a list (`NGR0166`).
 - `inside [Category] [(captures)] <[ quote ]>` after a check's quote requires an
@@ -78,7 +80,7 @@ In a function arm, running out fails the rewrite at its use.
 | Code | Meaning |
 |------|---------|
 | NGR0146 | a capture, pattern or context category is a token, not a syntax rule |
-| NGR0163 | a `..` capture names no pattern |
+| NGR0163 | a `..` capture names neither a pattern nor a syntax category |
 | NGR0164 | a pattern repeats a rule, helper or pattern name |
 | NGR0165 | a context capture repeats one of the pattern's captures |
 | NGR0166 | a `..` capture is a list, or is used more than once |

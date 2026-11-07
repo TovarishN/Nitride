@@ -166,6 +166,43 @@ fn recursive_pattern_matches_at_several_depths() {
 
 const DESCENDANT: &str = r#"    match (s: ..Secret) <[ <vault ..$_>..$_ $s ..$_</vault> ]> => warning X2 : $"found {s}";"#;
 
+const DESCENDANT_PAIRED: &str = r#"    match (p: ..Paired) <[ <vault ..$_>..$_ $p ..$_</vault> ]> => warning X4 : $"found {p}";"#;
+
+fn messages(language: &LoadedLanguage, source: &str) -> Vec<String> {
+    let tree = parse(language.language(), source, Limits::default()).unwrap();
+    rule_diagnostics(language.language(), &tree)
+        .into_iter()
+        .map(|d| d.message)
+        .collect()
+}
+
+/// A Nitride extension (issue #33): a descendant capture over a plain
+/// category binds the first node, in document order, of that category.
+#[test]
+fn descendant_over_plain_category_binds_first_in_document_order() {
+    let language = language(DESCENDANT_PAIRED, "");
+    assert_eq!(
+        messages(&language, "<vault><y/><a><b>1</b></a><c>2</c></vault>"),
+        ["found <a><b>1</b></a>"]
+    );
+}
+
+#[test]
+fn descendant_over_plain_category_without_hit_reports_nothing() {
+    let language = language(DESCENDANT_PAIRED, "");
+    assert!(messages(&language, "<vault><y/>text<z/></vault>").is_empty());
+}
+
+#[test]
+fn descendant_over_alias_category_accepts_its_alternatives() {
+    let checks = r#"    match (e: ..Element) <[ <vault ..$_>..$_ $e ..$_</vault> ]> => warning X5 : $"found {e}";"#;
+    let language = language(checks, "");
+    assert_eq!(
+        messages(&language, "<vault>t<y/><a/></vault>"),
+        ["found <y/>"]
+    );
+}
+
 #[test]
 fn descendant_hits_depth_zero() {
     let language = language(DESCENDANT, SECRET);

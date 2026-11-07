@@ -208,7 +208,8 @@ pub fn prepare(
         Ok(resolved)
     };
     // A capture's category, resolved: a named pattern's category (and the
-    // pattern, qualified) when it names one, else a syntax rule.
+    // pattern, qualified) when it names one, else a syntax rule. A descendant
+    // capture over a plain category keeps no pattern.
     let capture = |capture: &mut Value, module: &Module| -> Result<(), PrepareError> {
         let at: [usize; 2] = serde_json::from_value(capture["span"].clone()).unwrap_or(module.span);
         let written = capture["category"].as_str().unwrap().to_owned();
@@ -219,11 +220,17 @@ pub fn prepare(
             capture["category"] = json!(category);
             capture["pattern"] = json!(pattern);
         } else if capture["descendant"] == true {
-            return Err(sources[module.source].coded(
-                at,
-                "NGR0163",
-                format!("'{written}' is not a named pattern; a descendant capture needs one"),
-            ));
+            // A Nitride extension (issue #33): a descendant capture may name a
+            // plain syntax category; it binds the first node that stands for it.
+            let category = syntax_category(&written, module, at).map_err(|e| match e.code {
+                None => sources[module.source].coded(
+                    at,
+                    "NGR0163",
+                    format!("'{written}' is neither a named pattern nor a syntax category"),
+                ),
+                Some(_) => e,
+            })?;
+            capture["category"] = json!(category);
         } else {
             capture["category"] = json!(syntax_category(&written, module, at)?);
         }
