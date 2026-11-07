@@ -85,7 +85,9 @@ def package_in(platform, out, work, pgo=True):
     extension = work / 'vscode'
     extension.mkdir()
     source = ROOT / 'editors/vscode'
-    for name in ['package.json', 'README.md', 'LICENSE', 'language-configuration.json']:
+    # .vscodeignore keeps vsce from warning that the package has no file list.
+    for name in ['package.json', 'README.md', 'LICENSE', 'language-configuration.json',
+                 '.vscodeignore']:
         shutil.copy2(source / name, extension / name)
     shutil.copytree(source / 'syntaxes', extension / 'syntaxes')
     (extension / 'out').mkdir()

@@ -29,7 +29,7 @@ jobs:
       reuse_run_id: ${{ steps.reuse.outputs.run_id }}
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
       - name: Validate synchronized versions and tag
@@ -64,10 +64,10 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         with:
           node-version: '22'
           cache: npm
@@ -102,7 +102,7 @@ jobs:
           RELEASE_PLATFORM: ${{ matrix.id }}
         run: python scripts/release/package.py "$RELEASE_PLATFORM"
       - name: Upload verified release assets
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: native-${{ matrix.id }}
           overwrite: true
@@ -111,7 +111,7 @@ jobs:
           retention-days: 14
       - name: Preserve failed optimization profiles for diagnosis
         if: ${{ failure() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: profiles-${{ matrix.id }}
           overwrite: true
@@ -131,10 +131,10 @@ jobs:
       actions: read
     steps:
       - uses: actions/checkout@v7
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: '3.12'
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v8
         with:
           github-token: ${{ github.token }}
           run-id: ${{ needs.version.outputs.reuse_run_id || github.run_id }}
