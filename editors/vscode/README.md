@@ -60,7 +60,11 @@ languages are syntax-only.
 - Quick fixes from the parser's repairs (`Insert ;`), and removal of Nitrogen
   C# semantic members from grammars (one, or all in a file).
 
-Grammar edits apply without restarting the server.
+Grammar edits apply without restarting the server. Program edits use shared
+recovering syntax snapshots, with incremental UTF-16 text synchronization.
+Binding, structural checks, navigation indexes and value hints are recomputed
+for the whole document. Grammar/catalog/project reloads invalidate cached syntax;
+frontend authoring files continue to use full analysis.
 
 ## Settings
 

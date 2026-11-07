@@ -21,10 +21,7 @@ enum Incoming {
     Malformed(String),
 }
 
-pub struct Document {
-    pub text: String,
-    pub version: i32,
-}
+use crate::document::Document;
 
 pub struct Server<W: Write> {
     output: W,
@@ -158,7 +155,7 @@ impl<W: Write> Server<W> {
         json!({
             "capabilities": {
                 "positionEncoding": "utf-16",
-                "textDocumentSync": 1,
+                "textDocumentSync": 2,
                 "workspace": {"workspaceFolders": {"supported": true, "changeNotifications": true}},
                 "semanticTokensProvider": {
                     "legend": {"tokenTypes": tokens::legend(self.palette), "tokenModifiers": tokens::MODIFIERS},
@@ -548,20 +545,13 @@ impl<W: Write> Server<W> {
             }
             "textDocument/didChange" => {
                 let uri = params["textDocument"]["uri"].as_str().unwrap_or_default();
-                let text = params["contentChanges"]
-                    .as_array()
-                    .and_then(|changes| changes.last())
-                    .and_then(|change| change["text"].as_str());
-                if let (Some(document), Some(text)) = (self.documents.get_mut(uri), text) {
-                    // A signed grammar is a language input before and after the edit:
-                    // removing its signature unregisters its language.
+                let version = params["textDocument"]["version"].as_i64().and_then(|v| i32::try_from(v).ok());
+                if let (Some(document), Some(version)) = (self.documents.get_mut(uri), version) {
                     let was_signed = crate::signed::declares_grammar(&document.text);
-                    document.text = text.into();
-                    document.version =
-                        params["textDocument"]["version"].as_i64().unwrap_or(0) as i32;
-                    self.pending.insert(uri.into());
-                    self.reload |=
-                        language_input(uri) || was_signed || crate::signed::declares_grammar(text);
+                    if document.apply(version, &params["contentChanges"]) {
+                        self.pending.insert(uri.into());
+                        self.reload |= language_input(uri) || was_signed || crate::signed::declares_grammar(&document.text);
+                    }
                 }
             }
             "textDocument/didClose" => {
@@ -600,9 +590,9 @@ impl<W: Write> Server<W> {
             return Ok(());
         };
         let buffers = self.buffers();
-        let analysis = analysis::analyze(&self.registry, &path, &document.text, &|p: &Path| {
+        let analysis = analysis::analyze_incremental(&self.registry, &path, &document.text, &|p: &Path| {
             buffers.get(p)
-        });
+        }, self.analyses.get(uri));
         match analysis {
             Some(analysis) => {
                 let diagnostics = analysis

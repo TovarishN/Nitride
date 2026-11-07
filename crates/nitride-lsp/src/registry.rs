@@ -14,7 +14,7 @@ use std::sync::Arc;
 pub const EMPTY_CATALOG: &str = r#"{"types":[],"operations":[],"statements":{}}"#;
 
 pub struct Loaded {
-    pub language: LoadedLanguage,
+    pub language: Arc<LoadedLanguage>,
     pub prepared: Prepared,
     /// Each binding to a WebAssembly component, from the language's `.nbind`
     /// files (prepared data's form), with the component's path.
@@ -570,7 +570,7 @@ pub(crate) fn prepare(
                 let roles = Arc::new(crate::roles::roles(language.language(), &declares));
                 let components = components(&bindings, &catalog.value);
                 state.current = Some(Arc::new(Loaded {
-                    language,
+                    language: Arc::new(language),
                     prepared,
                     components,
                     roles,
