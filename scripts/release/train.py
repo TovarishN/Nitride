@@ -35,19 +35,28 @@ def lsp(binary, env):
     folder = ROOT / 'languages/portable'
     source = folder / 'sample.portable'
     grammar = folder / 'Portable.ngr'
-    messages = [
+    initialize = [
         {'id': 1, 'method': 'initialize', 'params': {
             'processId': None, 'rootUri': folder.as_uri(), 'capabilities': {},
             'workspaceFolders': [{'uri': folder.as_uri(), 'name': 'portable'}]}},
         {'method': 'initialized', 'params': {}},
     ]
-    request_id = 2
-    expected = {1}
     for file, language in [(source, 'portable'), (grammar, 'ngr')]:
+        # Each input gets its own session: opening grammar metadata can invalidate
+        # source requests, and later edits/close can invalidate their own requests.
+        # Keep the requested revision alive until shutdown's analysis barrier.
+        messages = list(initialize)
+        request_id = 2
+        expected = {1}
         document = {'uri': file.as_uri()}
         text = file.read_text()
         messages.append({'method': 'textDocument/didOpen', 'params': {
             'textDocument': {**document, 'languageId': language, 'version': 1, 'text': text}}})
+        # Exercise broken edits and restore a valid revision before requesting it.
+        for revision, changed in [(2, text + '\n { ???'), (3, text + '\n')]:
+            messages.append({'method': 'textDocument/didChange', 'params': {
+                'textDocument': {**document, 'version': revision},
+                'contentChanges': [{'text': changed}]}})
         for method, extra in [
             ('semanticTokens/full', {}), ('documentSymbol', {}), ('foldingRange', {}),
             ('hover', {'position': {'line': 0, 'character': 1}}),
@@ -60,19 +69,13 @@ def lsp(binary, env):
                              'params': {'textDocument': document, **extra}})
             expected.add(request_id)
             request_id += 1
-        # Broken edits exercise recovery and subsequent valid edits restore the tree.
-        for revision, changed in [(2, text + '\n { ???'), (3, text + '\n')]:
-            messages.append({'method': 'textDocument/didChange', 'params': {
-                'textDocument': {**document, 'version': revision},
-                'contentChanges': [{'text': changed}]}})
-        messages.append({'method': 'textDocument/didClose', 'params': {'textDocument': document}})
-    messages += [{'id': request_id, 'method': 'shutdown', 'params': None},
-                 {'method': 'exit', 'params': None}]
-    expected.add(request_id)
-    output = responses(invoke(binary, ['lsp'], env, b''.join(map(frame, messages))))
-    replies = {message['id']: message for message in output if 'id' in message}
-    if not expected.issubset(replies) or any('error' in replies[i] for i in expected):
-        raise RuntimeError(f'LSP training did not complete all requests: {output}')
+        messages += [{'id': request_id, 'method': 'shutdown', 'params': None},
+                     {'method': 'exit', 'params': None}]
+        expected.add(request_id)
+        output = responses(invoke(binary, ['lsp'], env, b''.join(map(frame, messages))))
+        replies = {message['id']: message for message in output if 'id' in message}
+        if not expected.issubset(replies) or any('error' in replies[i] for i in expected):
+            raise RuntimeError(f'LSP training did not complete all requests for {file}: {output}')
 
 
 def train(binary, env):
