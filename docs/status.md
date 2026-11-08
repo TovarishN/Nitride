@@ -3,8 +3,10 @@
 Updated November 8, 2026. The starting published checkpoint was **0.3.0** on
 November 7. The engine milestones are proposed in
 [PR #43](https://github.com/TovarishN/Nitride/pull/43), with passing hosted CI.
-The background-analysis follow-up on `codex/lsp-background-analysis` is locally
-verified, unreleased development work; its hosted and GUI checks are unverified.
+The unreleased background-analysis follow-up is proposed in
+[PR #44](https://github.com/TovarishN/Nitride/pull/44). Local verification is
+recorded below; current hosted results are available in the PR checks. Manual
+VS Code acceptance remains unverified.
 
 ## Implemented in this development branch
 
