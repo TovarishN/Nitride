@@ -146,3 +146,42 @@ fn closing_a_pending_document_cancels_its_diagnostics() {
                 && m["params"]["uri"] == target)
     );
 }
+
+#[test]
+fn continuous_edits_to_one_document_do_not_postpone_another() {
+    let (root, _, quiet) = workspace("debounce-independent-documents");
+    let busy = root.join("busy.simple");
+    let mut input = vec![open(&quiet, "wrong"), open(&busy, "wrong")];
+    for version in 2..82 {
+        input.push(change(&busy, version, "wrong"));
+        input.push(request(
+            (version + 98) as u64,
+            "nitride/unrelated",
+            json!({}),
+        ));
+    }
+    let messages = run(&root, input, |_| {});
+    assert_error_before_traffic_ends(&messages, &quiet);
+}
+
+#[test]
+fn ordinary_json_edits_and_watches_do_not_reset_other_documents() {
+    let (root, _, quiet) = workspace("debounce-json-data");
+    let busy = root.join("data.json");
+    std::fs::write(&busy, "{}").unwrap();
+    let mut input = vec![open(&quiet, "wrong"), open(&busy, "{}")];
+    for version in 2..82 {
+        input.push(change(&busy, version, "{}"));
+        input.push(notification(
+            "workspace/didChangeWatchedFiles",
+            json!({"changes":[{"uri":uri(&busy),"type":2}]}),
+        ));
+        input.push(request(
+            (version + 98) as u64,
+            "nitride/unrelated",
+            json!({}),
+        ));
+    }
+    let messages = run(&root, input, |_| {});
+    assert_error_before_traffic_ends(&messages, &quiet);
+}

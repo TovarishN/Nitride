@@ -29,7 +29,6 @@ pub(super) struct State {
     workspace: u64,
     revision: u64,
     ticket: u64,
-    pub ready: bool,
     waiting: Vec<Waiting>,
     shutdown_id: Option<Value>,
     exit_after_shutdown: bool,
@@ -154,11 +153,11 @@ impl<W: Write> Server<W> {
         let stamp = target.as_deref().and_then(|uri| self.stamp(uri));
         self.jobs.waiting.push(Waiting {
             message: message.clone(),
-            target,
+            target: target.clone(),
             stamp,
             revision: self.jobs.revision,
         });
-        self.flush()?;
+        self.expedite(target.as_deref())?;
         Ok(true)
     }
     fn answer_settled(&mut self) -> io::Result<()> {
@@ -197,15 +196,7 @@ impl<W: Write> Server<W> {
         }
         self.answer_settled()?;
         while self.jobs.active.is_none() {
-            let requested = self
-                .jobs
-                .waiting
-                .iter()
-                .filter_map(|w| w.target.as_ref())
-                .find(|uri| self.pending.contains(*uri))
-                .cloned();
-            let all = self.jobs.ready || self.jobs.waiting.iter().any(|w| w.target.is_none());
-            let next = requested.or_else(|| all.then(|| self.pending.first().cloned()).flatten());
+            let next = self.timing.pop(&self.pending);
             if let Some(uri) = next {
                 self.pending.remove(&uri);
                 if let (Some(document), Some(path), Some(stamp)) = (

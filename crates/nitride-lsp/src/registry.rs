@@ -50,6 +50,9 @@ pub struct Registry {
     /// The language files each `nitride.nproj` last included, kept while it
     /// does not parse.
     included: HashMap<PathBuf, Vec<PathBuf>>,
+    /// Declared files survive missing inputs and mid-edit project syntax,
+    /// independently of whether a language has successfully resolved.
+    input_references: HashMap<PathBuf, Vec<PathBuf>>,
 }
 
 impl Registry {
@@ -109,7 +112,42 @@ impl Registry {
         for path in discover(folders, open, open_paths) {
             self.load_signed(&path, &mut previous, open);
         }
+        self.refresh_input_references(open);
         before != self.fingerprint()
+    }
+
+    fn refresh_input_references(&mut self, open: &dyn Fn(&Path) -> Option<String>) {
+        let mut previous = std::mem::take(&mut self.input_references);
+        let paths: std::collections::BTreeSet<_> = self
+            .manifests
+            .iter()
+            .map(|m| m.path.clone())
+            .chain(self.included.values().flatten().cloned())
+            .collect();
+        for path in paths {
+            if !path.extension().is_some_and(|ext| ext == "nproj") {
+                continue;
+            }
+            let references = read(&path, open)
+                .ok()
+                .and_then(|text| {
+                    nitride_prepare::project_references(&Source {
+                        path: path.to_string_lossy().into_owned(),
+                        text,
+                    })
+                    .ok()
+                })
+                .map(|references| {
+                    references
+                        .into_iter()
+                        .filter(|r| matches!(r.kind, "grammar" | "catalog" | "binding"))
+                        .filter_map(|r| r.target)
+                        .collect()
+                });
+            if let Some(references) = references.or_else(|| previous.remove(&path)) {
+                self.input_references.insert(path, references);
+            }
+        }
     }
 
     /// The language a signed grammar declares, if it declares one.
@@ -440,10 +478,9 @@ pub fn discover(
     found
 }
 
-/// Whether a watched file event (LSP `FileChangeType`: 1 created, 2 changed,
-/// 3 deleted) can change the workspace's languages: a manifest, grammar or
-/// catalog, a known signed grammar, or a file whose head now declares one.
-pub fn watched_change_matters(registry: &Registry, path: &Path, kind: u64) -> bool {
+/// Declared inputs and authoring file kinds. Data JSON is an input only when
+/// registered as a manifest/grammar/catalog/binding, not merely by its suffix.
+pub(crate) fn language_input_path(registry: &Registry, path: &Path) -> bool {
     let name = path
         .file_name()
         .map(|n| n.to_string_lossy().into_owned())
@@ -451,19 +488,74 @@ pub fn watched_change_matters(registry: &Registry, path: &Path, kind: u64) -> bo
     if manifest::NAMES.contains(&name.as_str())
         || name.ends_with(".ngr")
         || name.ends_with(".nproj")
-        || name.ends_with(".json")
+        || name.ends_with(".ncatalog")
+        || name.ends_with(".nbind")
     {
         return true;
     }
-    let known = registry.languages.iter().any(|l| {
-        same_file(&l.manifest, path) || l.entry.grammars.iter().any(|g| same_file(g, path))
-    });
-    if known {
+    let key = input_identity(path);
+    let matches_input = |input: &PathBuf| {
+        if input == path {
+            return true;
+        }
+        let input = input_identity(input);
+        if cfg!(windows) {
+            input
+                .to_string_lossy()
+                .eq_ignore_ascii_case(&key.to_string_lossy())
+        } else {
+            input == key
+        }
+    };
+    registry
+        .input_references
+        .values()
+        .flatten()
+        .any(matches_input)
+        || registry.languages.iter().any(|l| {
+            std::iter::once(&l.manifest)
+                .chain(&l.entry.grammars)
+                .chain(&l.entry.catalogs)
+                .chain(&l.entry.bindings)
+                .any(matches_input)
+        })
+}
+
+/// Resolve through the nearest existing ancestor so deleting a file or folder
+/// does not lose the identity of a registered input expressed with `..`.
+fn input_identity(path: &Path) -> PathBuf {
+    use std::path::Component;
+    let absolute = std::path::absolute(path).unwrap_or_else(|_| path.to_owned());
+    let parts: Vec<_> = absolute.components().collect();
+    for end in (1..=parts.len()).rev() {
+        let prefix: PathBuf = parts[..end].iter().collect();
+        if let Ok(mut resolved) = prefix.canonicalize() {
+            for part in &parts[end..] {
+                match part {
+                    Component::ParentDir => {
+                        resolved.pop();
+                    }
+                    Component::CurDir => {}
+                    _ => resolved.push(part.as_os_str()),
+                }
+            }
+            return resolved;
+        }
+    }
+    absolute
+}
+
+/// Whether an LSP create/change/delete can affect a language, including a file
+/// whose head newly declares a signed grammar.
+pub fn watched_change_matters(registry: &Registry, path: &Path, kind: u64) -> bool {
+    if language_input_path(registry, path) {
         return true;
     }
     if kind == 3 {
         // Gone: only a signed grammar's usual name says it may have mattered.
-        return name.ends_with(".syntax");
+        return path
+            .file_name()
+            .is_some_and(|name| name.to_string_lossy().ends_with(".syntax"));
     }
     use std::io::Read;
     let mut head = Vec::with_capacity(HEAD_BYTES);
@@ -615,4 +707,135 @@ fn components(
         }
     }
     found
+}
+
+#[cfg(test)]
+mod input_classification_tests {
+    use super::*;
+    #[test]
+    fn data_json_is_not_an_input_but_registered_json_metadata_is() {
+        let mut registry = Registry::default();
+        assert!(!watched_change_matters(
+            &registry,
+            Path::new("/virtual/data.json"),
+            2
+        ));
+        let entry = Entry {
+            name: "Test".into(),
+            extensions: vec![".test".into()],
+            grammars: vec!["/virtual/grammar.json".into()],
+            start: "Test.P".into(),
+            catalogs: vec!["/virtual/sub/../types.json".into()],
+            bindings: vec!["/virtual/host.json".into()],
+            mode: Mode::Typed,
+            trivia: nitride_core::TriviaPolicy::Nitrogen,
+            start_span: None,
+        };
+        registry.languages.push(LanguageState {
+            entry,
+            manifest: "/virtual/project.json".into(),
+            current: None,
+            errors: vec![],
+            warnings: vec![],
+            signed: false,
+            inputs: 0,
+        });
+        for path in [
+            "/virtual/grammar.json",
+            "/virtual/types.json",
+            "/virtual/host.json",
+            "/virtual/project.json",
+            "/virtual/nitrogen.json",
+        ] {
+            assert!(
+                watched_change_matters(&registry, Path::new(path), 2),
+                "{path}"
+            );
+            assert!(
+                watched_change_matters(&registry, Path::new(path), 3),
+                "deleted {path}"
+            );
+        }
+        assert!(!watched_change_matters(
+            &registry,
+            Path::new("/virtual/data.json"),
+            2
+        ));
+        if cfg!(windows) {
+            assert!(watched_change_matters(
+                &registry,
+                Path::new("/VIRTUAL/TYPES.JSON"),
+                3
+            ));
+        }
+    }
+}
+
+#[cfg(test)]
+mod missing_input_tests {
+    use super::*;
+    #[test]
+    fn cold_missing_json_input_is_tracked_before_language_resolution() {
+        let unique = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos();
+        let root = std::env::temp_dir().join(format!(
+            "nitride-missing-input-{}-{unique}",
+            std::process::id()
+        ));
+        std::fs::create_dir_all(root.join("Lang")).unwrap();
+        let workspace = root.join("nitride.nproj");
+        let project = root.join("Lang/Lang.nproj");
+        let catalog = root.join("types.json");
+        let source = "language Test { extensions .test; grammar ../Test.ngr; catalog ../types.json; start Test.P; }";
+        std::fs::write(&workspace, "workspace { include Lang; }").unwrap();
+        std::fs::write(&project, source).unwrap();
+        std::fs::write(
+            root.join("Test.ngr"),
+            "syntax module Test { syntax P = \"ok\"; }",
+        )
+        .unwrap();
+        let mut registry = Registry::default();
+        registry.reload(std::slice::from_ref(&root), &|_| None);
+        assert!(
+            registry.languages().is_empty(),
+            "missing catalog prevents a LanguageState"
+        );
+        assert!(
+            watched_change_matters(&registry, &catalog, 1),
+            "creation must recover a cold missing input"
+        );
+        std::fs::write(&project, "language Test {").unwrap();
+        registry.reload(std::slice::from_ref(&root), &|_| None);
+        assert!(
+            watched_change_matters(&registry, &catalog, 1),
+            "keep references while project is malformed"
+        );
+        std::fs::write(&project, source).unwrap();
+        std::fs::write(&workspace, "workspace {").unwrap();
+        registry.reload(std::slice::from_ref(&root), &|_| None);
+        assert!(
+            watched_change_matters(&registry, &catalog, 1),
+            "keep included project references while workspace is malformed"
+        );
+        std::fs::write(&workspace, "workspace { include Lang; }").unwrap();
+        std::fs::write(&catalog, "catalog module Test { }").unwrap();
+        assert!(watched_change_matters(&registry, &catalog, 1));
+        registry.reload(std::slice::from_ref(&root), &|_| None);
+        assert!(
+            registry
+                .for_path(&root.join("x.test"))
+                .unwrap()
+                .current
+                .is_some()
+        );
+        std::fs::write(&workspace, "workspace {}").unwrap();
+        registry.reload(std::slice::from_ref(&root), &|_| None);
+        assert!(
+            !watched_change_matters(&registry, &catalog, 2),
+            "removed project must not keep stale JSON references"
+        );
+        std::fs::remove_dir_all(root).unwrap();
+    }
 }
