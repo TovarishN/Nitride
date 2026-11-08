@@ -4,7 +4,6 @@
 //! wire and UTF-8 byte offsets inside; `lines` converts at the boundary.
 pub mod actions;
 pub mod analysis;
-#[cfg(test)]
 mod background;
 mod completion;
 pub mod document;
@@ -30,8 +29,9 @@ use std::time::Duration;
 
 #[derive(Clone, Copy, Debug)]
 pub struct ServeOptions {
-    /// Quiet time after an edit before documents are re-analysed. Zero
-    /// analyses after every message, which keeps scripted sessions exact.
+    /// Quiet time after accepted edits and relevant language changes before
+    /// background document analysis. Zero keeps synchronous analysis after
+    /// every message, which preserves exact scripted sessions.
     pub debounce: Duration,
 }
 

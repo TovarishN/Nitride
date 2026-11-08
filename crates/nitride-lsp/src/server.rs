@@ -1,5 +1,7 @@
 //! The message loop: document sync, debounced analysis and request dispatch.
 use crate::analysis::{self, Analysis};
+use crate::background;
+mod jobs;
 use crate::grammar_index::{self, GrammarIndex};
 use crate::lines::LineIndex;
 use crate::navigation::{self, GrammarAt};
@@ -21,6 +23,8 @@ pub const INVALID_PARAMS: i64 = -32602;
 enum Incoming {
     Message(Value),
     Malformed(String),
+    Wake,
+    End,
 }
 
 use crate::document::Document;
@@ -43,6 +47,7 @@ pub struct Server<W: Write> {
     grammars: Option<GrammarIndex>,
     /// The client colours palette token types (`initializationOptions.paletteTokens`).
     palette: bool,
+    jobs: jobs::State,
 }
 
 pub fn run(
@@ -50,7 +55,18 @@ pub fn run(
     output: impl Write,
     options: ServeOptions,
 ) -> io::Result<()> {
+    run_with_analyzer(input, output, options, Box::new(background::Job::analyze))
+}
+
+fn run_with_analyzer(
+    input: impl BufRead + Send + 'static,
+    output: impl Write,
+    options: ServeOptions,
+    analyze: background::Analyzer,
+) -> io::Result<()> {
     let (sender, receiver) = mpsc::channel();
+    let (completed_sender, completed_receiver) = mpsc::sync_channel::<background::Completion>(1);
+    let input_sender = sender.clone();
     std::thread::spawn(move || {
         let mut input = input;
         while let Ok(Some(message)) = rpc::read(&mut input) {
@@ -58,13 +74,32 @@ pub fn run(
                 Ok(value) => Incoming::Message(value),
                 Err(error) => Incoming::Malformed(error),
             };
-            if sender.send(incoming).is_err() {
+            if input_sender.send(incoming).is_err() {
                 break;
             }
         }
+        let _ = input_sender.send(Incoming::End);
     });
     let mut server = Server::new(output, options.debounce);
+    if !options.debounce.is_zero() {
+        server.jobs.worker = Some(background::Worker::spawn(
+            move |done| {
+                let _ = completed_sender.send(done);
+                let _ = sender.send(Incoming::Wake);
+            },
+            analyze,
+        ));
+    }
     loop {
+        // One completion and one input per turn: neither a queued client stream
+        // nor a ready batch of small documents can starve the other.
+        if let Ok(done) = completed_receiver.try_recv() {
+            server.completed(done)?;
+            server.pump()?;
+            if server.jobs.exit_ready {
+                return Ok(());
+            }
+        }
         if server.pending.is_empty() && !server.reload {
             server.analysis_deadline = None;
         }
@@ -93,6 +128,12 @@ pub fn run(
                 }
             }
             Incoming::Malformed(error) => server.error(Value::Null, PARSE_ERROR, &error)?,
+            Incoming::Wake => {}
+            Incoming::End => {
+                if server.terminate() {
+                    return Ok(());
+                }
+            }
         }
         // Give the next queued edit/close/exit a chance to supersede old work,
         // then enforce expiry even if unrelated input keeps the queue occupied.
@@ -103,6 +144,16 @@ pub fn run(
         {
             server.flush()?;
         }
+        server.pump()?;
+        if server.jobs.exit_ready {
+            return Ok(());
+        }
+    }
+}
+
+impl<W: Write> Drop for Server<W> {
+    fn drop(&mut self) {
+        self.jobs.cancel_active();
     }
 }
 
@@ -121,10 +172,12 @@ impl<W: Write> Server<W> {
             analyses: HashMap::new(),
             grammars: None,
             palette: false,
+            jobs: jobs::State::default(),
         }
     }
 
     fn schedule(&mut self) {
+        self.jobs.ready = false;
         self.analysis_deadline = Instant::now().checked_add(self.debounce);
     }
 
@@ -149,6 +202,13 @@ impl<W: Write> Server<W> {
             return self
                 .error(id, INVALID_REQUEST, "server is shutting down")
                 .map(|_| false);
+        }
+        if self.jobs.worker.is_some() && method == "shutdown" {
+            self.begin_shutdown(id)?;
+            return Ok(false);
+        }
+        if self.defer_request(&message)? {
+            return Ok(false);
         }
         let result = match method.as_str() {
             "initialize" => Ok(self.initialize(&params)),
@@ -520,8 +580,12 @@ impl<W: Write> Server<W> {
     }
 
     fn notification(&mut self, method: &str, params: Value) -> io::Result<bool> {
+        if self.shutdown && method != "exit" && method != "$/cancelRequest" {
+            return Ok(false);
+        }
         match method {
-            "exit" => return Ok(true),
+            "exit" => return Ok(self.terminate()),
+            "$/cancelRequest" => self.cancel_request(&params["id"])?,
             "initialized" if self.reload => self.schedule(),
             "workspace/didChangeWatchedFiles" => {
                 // The client watches every file; only some change the languages.
@@ -533,7 +597,7 @@ impl<W: Write> Server<W> {
                         crate::registry::watched_change_matters(&self.registry, &p, kind)
                     })
                 });
-                self.reload |= relevant;
+                self.changed_languages(relevant)?;
                 if relevant {
                     self.schedule();
                 }
@@ -550,7 +614,7 @@ impl<W: Write> Server<W> {
                 let removed = folders("removed");
                 self.folders.retain(|f| !removed.contains(f));
                 self.folders.extend(folders("added"));
-                self.reload = true;
+                self.changed_languages(true)?;
                 self.schedule();
             }
             "textDocument/didOpen" => {
@@ -567,8 +631,11 @@ impl<W: Write> Server<W> {
                         },
                     );
                     self.pending.insert(uri.into());
+                    self.changed_document(uri)?;
                     // Grammars and signed grammars are language inputs.
-                    self.reload |= language_input(uri) || crate::signed::declares_grammar(text);
+                    self.changed_languages(
+                        language_input(uri) || crate::signed::declares_grammar(text),
+                    )?;
                     self.schedule();
                 }
             }
@@ -580,10 +647,12 @@ impl<W: Write> Server<W> {
                 if let (Some(document), Some(version)) = (self.documents.get_mut(uri), version) {
                     let was_signed = crate::signed::declares_grammar(&document.text);
                     if document.apply(version, &params["contentChanges"]) {
-                        self.pending.insert(uri.into());
-                        self.reload |= language_input(uri)
+                        let language_changed = language_input(uri)
                             || was_signed
                             || crate::signed::declares_grammar(&document.text);
+                        self.pending.insert(uri.into());
+                        self.changed_document(uri)?;
+                        self.changed_languages(language_changed)?;
                         self.schedule();
                     }
                 }
@@ -595,13 +664,16 @@ impl<W: Write> Server<W> {
                     .to_owned();
                 let closed = self.documents.remove(&uri);
                 self.pending.remove(&uri);
+                if closed.is_some() {
+                    self.changed_document(&uri)?;
+                }
                 if self.analyses.remove(&uri).is_some() {
                     self.publish(&uri, vec![])?;
                 }
                 // The file on disk replaces the closed buffer.
                 let reload = language_input(&uri)
                     || closed.is_some_and(|d| crate::signed::declares_grammar(&d.text));
-                self.reload |= reload;
+                self.changed_languages(reload)?;
                 if reload {
                     self.schedule();
                 }
@@ -616,6 +688,10 @@ impl<W: Write> Server<W> {
         self.analysis_deadline = None;
         if std::mem::take(&mut self.reload) {
             self.reload_languages()?;
+        }
+        if self.jobs.worker.is_some() {
+            self.jobs.ready = true;
+            return self.pump();
         }
         for uri in std::mem::take(&mut self.pending) {
             self.analyze(&uri)?;
@@ -636,6 +712,10 @@ impl<W: Write> Server<W> {
             &|p: &Path| buffers.get(p),
             self.analyses.get(uri).map(Arc::as_ref),
         );
+        self.commit_analysis(uri, analysis)
+    }
+
+    fn commit_analysis(&mut self, uri: &str, analysis: Option<Analysis>) -> io::Result<()> {
         match analysis {
             Some(analysis) => {
                 let diagnostics = analysis
@@ -718,9 +798,12 @@ impl<W: Write> Server<W> {
     }
 
     pub fn publish(&mut self, uri: &str, diagnostics: Vec<Value>) -> io::Result<()> {
+        let mut params = json!({"uri":uri,"diagnostics":diagnostics});
+        if let Some(document) = self.documents.get(uri) {
+            params["version"] = json!(document.version);
+        }
         self.send(
-            json!({"jsonrpc":"2.0","method":"textDocument/publishDiagnostics",
-            "params":{"uri":uri,"diagnostics":diagnostics}}),
+            json!({"jsonrpc":"2.0","method":"textDocument/publishDiagnostics", "params":params}),
         )
     }
 }
@@ -735,7 +818,7 @@ impl Buffers {
     }
 }
 
-fn canonical(path: &Path) -> PathBuf {
+pub(crate) fn canonical(path: &Path) -> PathBuf {
     path.canonicalize().unwrap_or_else(|_| path.to_owned())
 }
 
@@ -819,3 +902,6 @@ mod scheduling_tests {
         assert!(server.analysis_deadline.is_some());
     }
 }
+
+#[cfg(test)]
+mod async_tests;

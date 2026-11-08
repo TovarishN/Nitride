@@ -4,7 +4,7 @@ use crate::{
     registry::Registry,
 };
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::sync::{
     Arc,
     atomic::{AtomicBool, Ordering},
@@ -33,7 +33,7 @@ impl Job {
             &self.registry,
             &self.path,
             &self.text,
-            &|p| self.buffers.get(p).cloned(),
+            &|p| self.buffers.get(&crate::server::canonical(p)).cloned(),
             self.previous.as_deref(),
         )
     }
@@ -85,6 +85,7 @@ impl Worker {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::path::Path;
     use std::sync::mpsc;
     use std::time::Duration;
 
