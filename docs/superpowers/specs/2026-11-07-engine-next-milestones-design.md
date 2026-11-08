@@ -6,7 +6,9 @@ The user requested planning and work on all five directions from the November 7
 assessment: current measurements, incremental LSP parsing, configurable trivia,
 a substantial DSL workflow, and smaller snapshot storage, plus documentation
 cleanup. This document makes the proposed behavior and completion gates explicit.
-Implementation has not started. The concrete design awaits review.
+Approved by the user ("appoved"); implementation is complete in the companion
+plan. See [final measurements and verification](../../benchmark-2026-11-07.md)
+for the November 8 results and remaining boundaries.
 
 ## Starting point
 

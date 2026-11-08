@@ -1,3 +1,9 @@
+# Historical initial-stage ledger
+
+This file records the original stages 1–13. See [current project status](status.md)
+for later features, measurements and verification. Historical statements below
+apply to their recorded checkpoint.
+
 # SDD ledger — plan: docs/plan.md
 
 Design approved by user: "lets go", after normal Rust/desktop deployment correction.

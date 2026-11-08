@@ -2,12 +2,13 @@
 import argparse
 import json
 import pathlib
+import platform
 import re
 import statistics
 import subprocess
 import sys
 import tempfile
-from benchmark_checkpoint import ROOT, compare, measured, sha, source_identity, summarize
+from benchmark_checkpoint import ROOT, command, compare, measured, sha, source_identity, summarize
 from csharp4_scaling import generated
 from recovery_scaling import damaged
 import importlib.util
@@ -29,7 +30,10 @@ def main():
     parser.add_argument("--smoke", action="store_true")
     args = parser.parse_args()
     state = source_identity()
-    report = {"source": state, "host": sys.platform, "variant": "portable-release-no-pgo",
+    report = {"source": state, "host": platform.platform(), "variant": "portable-release-no-pgo",
+              "rustc": command(["rustc", "-Vv"]).decode(),
+              "cpu": command(["sysctl", "-n", "machdep.cpu.brand_string"]).decode().strip() if sys.platform == "darwin" else platform.processor(),
+              "build_flags": "opt-level=3, LTO, one codegen unit, panic=abort; inherited Rust flags cleared; no PGO/native CPU targeting",
               "baseline_layout_revision": "2e0211b",
               "source_control": "same isolated source copy and flags for both variants; before replaces only dependency-index source with the named revision", "runs": 1 if args.smoke else 5, "smoke": args.smoke, "rows": [],
               "definitions": {"timing": "parse/edit phase only; process wall includes launch/export/destruction",
@@ -78,6 +82,8 @@ def main():
                     row["requires_equivalence"] = True
             row = {"case": case, "before": rows[0], "after": rows[1], "comparison": compare(*rows),
                    "executables": [{"path": str(binary), "sha256": sha(binary.read_bytes())} for binary in bins]}
+            if verify_edits:
+                row["equivalence_oracles"] = oracles
             if name == "nitride-json-bench" and not heap and tail[0] == "bench":
                 row["storage"] = {"before": stats(bins[0], path), "after": stats(bins[1], path)}
             report["rows"].append(row)

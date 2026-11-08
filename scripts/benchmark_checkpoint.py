@@ -143,6 +143,8 @@ def main():
                         raise ValueError("timed JSON edit differs from fresh-parse oracle")
                     sample["equivalence_checked"] = True
             row = summarize(case, sha(path.read_bytes()), samples)
+            if oracle:
+                row["equivalence_oracle"] = oracle
             row["executable"] = {"path": str(executable), "sha256": sha(executable.read_bytes())}
             rows.append(row)
             print(f"{case}: {row['medians']}", file=sys.stderr, flush=True)

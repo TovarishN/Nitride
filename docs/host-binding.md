@@ -1,6 +1,10 @@
-# Host binding (design draft)
+# Host binding
 
-Status: draft for review. Adds interfaces to `.ncatalog`, a binding language
+Catalog interfaces, binding files and conformance are implemented. This
+document retains the original design and phase-by-phase history, followed by
+open questions. See [current status](status.md) for the development checkpoint.
+
+The design adds interfaces to `.ncatalog`, a binding language
 (`.nbind`) that maps an interface onto a concrete implementation, and
 conformance examples that check every implementation against its interface.
 Phases 1 to 6 are implemented (see Phases), with what each leaves undone
@@ -14,11 +18,12 @@ vocabulary had no single definition. It was listed or interpreted four times:
 by catalog preparation (`nitride-prepare/src/catalog.rs`), by codegen
 (`nitride-codegen/src/lib.rs`), by the fixture host
 (`nitride-cli/src/lib.rs`) and by the editor's value previews and hovers
-(`nitride-lsp/src/values.rs`). It is now declared once, in
-`nitride_core::host`. A language author still cannot add an operation
-without changing Rust.
+(`nitride-lsp/src/values.rs`). It is declared once, in
+`nitride_core::host`. A language author adds new operations through declared
+interfaces and bindings without changing the engine; the fixed built-in handler
+vocabulary remains small.
 
-Two needs are not met at all:
+The design addresses two needs:
 
 - **An implementation exists, and a DSL should use it.** A library in Rust,
   C#, or behind a service already does the work. The DSL needs a declared,

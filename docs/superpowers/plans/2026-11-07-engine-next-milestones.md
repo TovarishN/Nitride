@@ -1,6 +1,6 @@
 # Nitride Next Milestones Implementation Plan
 
-> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
+> **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Complete the five approved project directions with measured results and current documentation.
 
@@ -38,11 +38,11 @@
 
 **Interfaces:** Orchestrator CLI `python3 scripts/benchmark_checkpoint.py --suite csharp|json|edits|all --output PATH [--smoke]`. Output JSON identifies revision/diff/input hashes, variant, metric definitions, missing counters, raw samples and medians. `--smoke` labels output as incomplete evidence.
 
-- [ ] Test metadata/sample serialization and reject mismatched-input before/after comparisons with synthetic harness results; run `python3 -m unittest scripts/test_benchmark_checkpoint.py` and observe the intended failures.
-- [ ] Implement orchestration using existing harness commands; keep process startup, parse time, fingerprints, initialization and memory metrics distinct.
-- [ ] Run smoke coverage, then the full native matrix specified in the design. Collect external comparison runs where available and record tool identities; do not substitute historical numbers for fresh runs.
-- [ ] Record current baseline and measurement limitations in the report and current status entry point. Preserve historical reports.
-- [ ] Verify harness tests and version metadata, inspect emitted JSON, and commit only this milestone's files.
+- [x] Test metadata/sample serialization and reject mismatched-input before/after comparisons with synthetic harness results; run `python3 -m unittest scripts/test_benchmark_checkpoint.py` and observe the intended failures.
+- [x] Implement orchestration using existing harness commands; keep process startup, parse time, fingerprints, initialization and memory metrics distinct.
+- [x] Run smoke coverage, then the full native matrix specified in the design. Collect external comparison runs where available and record tool identities; do not substitute historical numbers for fresh runs.
+- [x] Record current baseline and measurement limitations in the report and current status entry point. Preserve historical reports.
+- [x] Verify harness tests and version metadata, inspect emitted JSON, and commit only this milestone's files.
 
 ## Task 2: Runtime-language snapshot ownership
 
@@ -50,10 +50,10 @@
 
 **Interfaces:** Provide an owned runtime snapshot adapter from an `Arc<LoadedLanguage>` and source. The adapter exposes edits, diagnostics, storage/reuse counters and borrowed materialization/semantic access. It retains the language owner across edits and clones. Existing static `parse_snapshot` callers remain supported.
 
-- [ ] Write regressions for snapshot access after dropping the original owner, edits after registry reload, drop of the final snapshot releasing the owner, and concurrent readers. Include typed checks and rule-label access, not just source text. Observe failure before adding the adapter.
-- [ ] Refactor language ownership/lifetimes at the core boundary so runtime snapshots retain owned language tables. Keep borrowed views scoped to the snapshot; audit `ParseSnapshot::materialize`, `NodeView::children`, `SnapshotOccurrences` and arena labels for static references that could escape. Review the process analysis-cache key and retention policy for runtime generations.
-- [ ] Validate static/generated and runtime trees, diagnostics and edit results against fresh flat parsing. Run `cargo test --locked -p nitride-cli --test runtime_snapshots --test shared_syntax` plus impacted core tests.
-- [ ] Obtain independent ownership review; resolve findings before integrating with LSP. Commit the ownership milestone separately.
+- [x] Write regressions for snapshot access after dropping the original owner, edits after registry reload, drop of the final snapshot releasing the owner, and concurrent readers. Include typed checks and rule-label access, not just source text. Observe failure before adding the adapter.
+- [x] Refactor language ownership/lifetimes at the core boundary so runtime snapshots retain owned language tables. Keep borrowed views scoped to the snapshot; audit `ParseSnapshot::materialize`, `NodeView::children`, `SnapshotOccurrences` and arena labels for static references that could escape. Review the process analysis-cache key and retention policy for runtime generations.
+- [x] Validate static/generated and runtime trees, diagnostics and edit results against fresh flat parsing. Run `cargo test --locked -p nitride-cli --test runtime_snapshots --test shared_syntax` plus impacted core tests.
+- [x] Obtain independent ownership review; resolve findings before integrating with LSP. Commit the ownership milestone separately.
 
 ## Task 3: Incremental LSP synchronization and parsing
 
@@ -61,12 +61,12 @@
 
 **Interfaces:** `LineIndex::checked_offset(line: u32, column: u32) -> Option<u32>` rejects invalid edit boundaries while existing clamped navigation APIs remain available. Document changes stage all edits against evolving text, then commit version/text/syntax together. Analysis uses the Task 2 adapter and recomputes existing semantic/index outputs.
 
-- [ ] Add failing UTF-16/CRLF, multiple ranged changes, full replacement, stale version and invalid-transaction tests. Assert a failed transaction leaves version, text and syntax unchanged.
-- [ ] Implement ordered transactional changes and advertise incremental synchronization (`textDocumentSync: 2`). Preserve compatibility with full-text notifications.
-- [ ] Cache recovering snapshots for workspace programs, update them with compatible edits and invalidate on loaded-language identity or source-signature changes. Retain the full frontend analysis path where necessary.
-- [ ] Differentially compare diagnostics/codes/spans/repairs, navigation and values against fresh analysis after valid-to-invalid-to-valid edits. Assert untouched subtree reuse on a multi-declaration fixture and owner release on close/reload.
-- [ ] Run `cargo test --locked -p nitride-lsp` and relevant CLI LSP tests. Benchmark initial analysis, edit parsing, materialization/semantic work and end-to-end diagnostic latency at 256 KiB/4 MiB; report costs separately.
-- [ ] Update editor documentation with actual behavior/limits and commit.
+- [x] Add failing UTF-16/CRLF, multiple ranged changes, full replacement, stale version and invalid-transaction tests. Assert a failed transaction leaves version, text and syntax unchanged.
+- [x] Implement ordered transactional changes and advertise incremental synchronization (`textDocumentSync: 2`). Preserve compatibility with full-text notifications.
+- [x] Cache recovering snapshots for workspace programs, update them with compatible edits and invalidate on loaded-language identity or source-signature changes. Retain the full frontend analysis path where necessary.
+- [x] Differentially compare diagnostics/codes/spans/repairs, navigation and values against fresh analysis after valid-to-invalid-to-valid edits. Assert untouched subtree reuse on a multi-declaration fixture and owner release on close/reload.
+- [x] Run `cargo test --locked -p nitride-lsp` and relevant CLI LSP tests. Benchmark initial analysis, edit parsing, materialization/semantic work and end-to-end diagnostic latency at 256 KiB/4 MiB; report costs separately.
+- [x] Update editor documentation with actual behavior/limits and commit.
 
 ## Task 4: Explicit trivia policy and strict JSON
 
@@ -74,11 +74,11 @@
 
 **Interfaces:** Core `TriviaPolicy::{Nitrogen, Json}` on `Language`; absence defaults to `Nitrogen`. `.nproj` accepts `trivia json;` or `trivia nitrogen;`; JSON manifests accept `"trivia": "json"|"nitrogen"`. Preserve the policy in prepared metadata and language identity. Unknown names and duplicate policy declarations are errors.
 
-- [ ] Write failing project round-trip/invalid-policy tests and strict JSON tests rejecting comments and non-JSON whitespace while accepting space/tab/CR/LF. Test those characters inside string tokens separately.
-- [ ] Extend project grammar/decoder and JSON preparation; propagate through code generation/runtime loading and initialize all in-repo language constructors. Regenerate the project seed with the fixed-point tooling.
-- [ ] Apply the policy consistently in flat/shared/generated recognizers, dispatch start sets, lexical fast paths, recovery scanning, quotes and editor-loaded projects. Keep `strict_comments` as the independent unterminated-comment control for the default policy.
-- [ ] Enable JSON policy for the shipped JSON profile. Run all 53 conformance cases, generated-versus-runtime and snapshot-edit parity, plus strict-policy recovery/lookahead tests. Add an attributed pinned external corpus when available.
-- [ ] Run bootstrap fixed points, core/prepare/codegen/LSP focused tests and optional scanner features. Verify current default-language fingerprints remain unchanged. Re-run JSON measurements and document strictness/resource-limit boundaries; commit.
+- [x] Write failing project round-trip/invalid-policy tests and strict JSON tests rejecting comments and non-JSON whitespace while accepting space/tab/CR/LF. Test those characters inside string tokens separately.
+- [x] Extend project grammar/decoder and JSON preparation; propagate through code generation/runtime loading and initialize all in-repo language constructors. Regenerate the project seed with the fixed-point tooling.
+- [x] Apply the policy consistently in flat/shared/generated recognizers, dispatch start sets, lexical fast paths, recovery scanning, quotes and editor-loaded projects. Keep `strict_comments` as the independent unterminated-comment control for the default policy.
+- [x] Enable JSON policy for the shipped JSON profile. Run all 53 conformance cases, generated-versus-runtime and snapshot-edit parity, plus strict-policy recovery/lookahead tests. Add an attributed pinned external corpus when available.
+- [x] Run bootstrap fixed points, core/prepare/codegen/LSP focused tests and optional scanner features. Verify current default-language fingerprints remain unchanged. Re-run JSON measurements and document strictness/resource-limit boundaries; commit.
 
 ## Task 5: Complete Calendar planning workflows
 
@@ -86,11 +86,11 @@
 
 **Interfaces:** Add scalar/scalar multiplication/division and duration/scalar scaling with existing engine `mul`/`div` handlers; unary scalar/duration negation uses `neg`. `weeks` rewrites to multiplication by 7 days; `fortnights` to multiplication by 2 weeks. Preserve postfix precedence 30, multiplicative precedence 20, additive precedence 10 and conversion precedence 5; prefix negation uses precedence 25 so `-2 weeks` negates the duration.
 
-- [ ] Add failing workflows covering leap/year boundaries, negative/fractional durations, weeks/fortnights, Mondays/count/nth, nominal-type mismatch, division by zero and invalid dates. Assert deterministic values and coded source diagnostics where supported.
-- [ ] Implement grammar/catalog changes with typed rewrites and engine overloads; reserve new keywords. Do not change host-interface versions or rebuild a component for unrelated contract changes.
-- [ ] Run the deterministic workflow through embedded/fixture Rust, process bindings and existing component-enabled execution; compare values and conformance. Assert no handler invocation on preflight failures and correct origin chains through rewrites.
-- [ ] Exercise LSP diagnostics/navigation/hints after edits using the same sample. Document clock grants, native-only component limitations, and exact CLI/embedding commands.
-- [ ] Run focused Calendar/bindings/rewrite and LSP tests; commit the complete example.
+- [x] Add failing workflows covering leap/year boundaries, negative/fractional durations, weeks/fortnights, Mondays/count/nth, nominal-type mismatch, division by zero and invalid dates. Assert deterministic values and coded source diagnostics where supported.
+- [x] Implement grammar/catalog changes with typed rewrites and engine overloads; reserve new keywords. Do not change host-interface versions or rebuild a component for unrelated contract changes.
+- [x] Run the deterministic workflow through embedded/fixture Rust, process bindings and existing component-enabled execution; compare values and conformance. Assert no handler invocation on preflight failures and correct origin chains through rewrites.
+- [x] Exercise LSP diagnostics/navigation/hints after edits using the same sample. Document clock grants, native-only component limitations, and exact CLI/embedding commands.
+- [x] Run focused Calendar/bindings/rewrite and LSP tests; commit the complete example.
 
 ## Task 6: Profile-guided storage experiment
 
@@ -98,24 +98,27 @@
 
 **Interfaces:** Preserve the logical `FactLog`, dependency-index and syntax-view contracts. Packed values use checked bounds and a lossless wide fallback; accounting counts actual capacities and shared ownership without double counting language tables.
 
-- [ ] Measure byte layouts, counts, capacities, retained-history storage and heap peaks on baseline JSON/C# workloads. Select the largest actionable contributor; record the hypothesis before changing its layout.
-- [ ] Add failing equivalence/overflow regressions for the selected representation, including maximum depth/lookahead, repeated facts, eviction, cross-piece edits and retained old snapshots.
-- [ ] Implement one safe-Rust representation experiment, then run tree/diagnostic/recovery fingerprints and standard/adversarial edit traces before timing.
-- [ ] Run paired baseline/candidate measurements with alternating order. Target at least 10% reduction in the affected heap component. Treat under-5% timing differences as inconclusive until replicated; reject a reproducible over-5% parse/edit slowdown unless separately approved with evidence.
-- [ ] Keep only demonstrated wins. Record rejected attempts and exact limitations; commit code only if justified by evidence.
+- [x] Measure byte layouts, counts, capacities, retained-history storage and heap peaks on baseline JSON/C# workloads. Select the largest actionable contributor; record the hypothesis before changing its layout.
+- [x] Add failing equivalence/overflow regressions for the selected representation, including maximum depth/lookahead, repeated facts, eviction, cross-piece edits and retained old snapshots.
+- [x] Implement one safe-Rust representation experiment, then run tree/diagnostic/recovery fingerprints and standard/adversarial edit traces before timing.
+- [x] Run paired baseline/candidate measurements with alternating order. Target at least 10% reduction in the affected heap component. Treat under-5% timing differences as inconclusive until replicated; reject a reproducible over-5% parse/edit slowdown unless separately approved with evidence.
+- [x] Keep only demonstrated wins. Record rejected attempts and exact limitations; commit code only if justified by evidence.
 
 ## Task 7: Documentation, aggregate validation and handoff
 
 **Files:** `README.md`, `docs/status.md`, `docs/progress.md`, `docs/host-binding.md`, `docs/json-comparison.md`, editor README and final evidence report.
 
-- [ ] Replace stale install examples with version 0.3.0 or a verified version-neutral command. Label the progress ledger as historical and link the current status page. Reconcile host-binding draft text with completed phases.
-- [ ] Link current measurements without overwriting historical claims; describe runtime ownership, actual incremental editor behavior, trivia opt-in and complete Calendar workflow.
-- [ ] Run `cargo fmt --all --check`, `cargo test --workspace --locked`, `cargo clippy --workspace --all-targets --all-features --locked -- -D warnings`, bootstrap checks, optional scanner tests and native-only CLI/process/LSP tests.
-- [ ] Run version/release-tooling and extension compile/tests. Review complete branch diff independently; reproduce and repair actionable findings.
-- [ ] Report each milestone's result and measurement, rejected experiments, manual VS Code checks not performed, and cross-platform checks not yet run. Do not claim publication or full Nitrogen/DateCalc parity.
+- [x] Replace stale install examples with version 0.3.0 or a verified version-neutral command. Label the progress ledger as historical and link the current status page. Reconcile host-binding draft text with completed phases.
+- [x] Link current measurements without overwriting historical claims; describe runtime ownership, actual incremental editor behavior, trivia opt-in and complete Calendar workflow.
+- [x] Run `cargo fmt --all --check`, `cargo test --workspace --locked`, `cargo clippy --workspace --all-targets --all-features --locked -- -D warnings`, bootstrap checks, optional scanner tests and native-only CLI/process/LSP tests.
+- [x] Run version/release-tooling and extension compile/tests. Review complete branch diff independently; reproduce and repair actionable findings.
+- [x] Report each milestone's result and measurement, rejected experiments, manual VS Code checks not performed, and cross-platform checks not yet run. Do not claim publication or full Nitrogen/DateCalc parity.
 
 ## Execution status
 
 Design reviewed independently; no important unanswered planning questions found.
-Implementation is pending concrete design/plan review. Milestones are intentionally
+Approved by the user ("appoved"). All seven tasks are complete. Final evidence and limitations are recorded in
+[the measurement report](../../benchmark-2026-11-07.md). No fresh external .NET
+ranking, manual VS Code acceptance, or hosted cross-platform run is claimed.
+Milestones are intentionally
 separate commits so measurements and behavior can be reviewed or reverted alone.
