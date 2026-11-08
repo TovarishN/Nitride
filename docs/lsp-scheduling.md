@@ -7,11 +7,22 @@ debounce retains synchronous analysis after every message for scripted sessions.
 
 ## Quiet time and fairness
 
-Accepted edits and relevant workspace/language-input notifications set a debounce
-deadline. Unrelated requests, ignored notifications, stale versions and invalid
-edit transactions leave it unchanged. A due batch becomes ready; one document
-runs at a time and pending URIs coalesce newer work. There is at most one
-outstanding worker job, rather than an unbounded queue of old document versions.
+Each document has its own quiet deadline. An accepted edit resets only that
+document and removes its old ready placement; edits in B do not postpone A.
+Unrelated requests, ignored notifications, stale versions and invalid transactions
+reset no deadline. Ready work runs oldest-ready first, with URI as a deterministic
+tie break. New requests and hot files cannot jump older ready work. There is still
+only one outstanding worker job; pending URIs coalesce newer versions.
+
+Language inputs share a reload deadline because preparation affects the registry.
+Relevant grammar, catalog, binding, project and workspace changes invalidate the
+current generation and gate affected documents through that shared quiet period.
+A later ordinary edit extends only its own deadline. Ordinary `.json` data files
+are not treated as metadata by suffix: declared manifests/grammars/catalogs/
+bindings remain inputs, including missing files and aliased paths. Declared paths
+are retained independently of successful language loading and through malformed
+project text, then dropped when a project is removed. Path classification is
+cached on open/reload, avoiding filesystem identity checks per keystroke.
 
 Completed results use a bounded slot and a wake event. Each loop turn checks at
 most one completion and handles one input message, so queued unrelated traffic
@@ -26,7 +37,9 @@ flush behavior, including initialization.
 ## Fresh requests and cancellation
 
 Supported document requests wait asynchronously when their analysis is pending
-or running. Workspace-symbol requests wait for all current open-document analyses.
+or running, expediting only their target without jumping older ready work. Other
+documents retain their deadlines. Workspace-symbol requests and shutdown
+intentionally expedite all pending documents.
 Unserved languages and unsupported URIs settle with the established empty/null
 results. Unknown methods still fail immediately.
 
@@ -62,9 +75,10 @@ release panic-isolation guarantee is added.
 
 Registry preparation/reload, grammar-index construction, request response
 formatting and RPC writes remain synchronous on the message loop. Continuous
-accepted edits may keep resetting the global debounce interval, including edits
-to another document. Per-document timing and cooperative parser interruption
-remain possible follow-ups. No end-to-end GUI latency claim is made here.
+edits can keep their own document waiting for quiet; shared language-input
+changes still affect all open documents under the current registry invalidation
+policy. Cooperative parser interruption and language-scoped reloads remain
+possible follow-ups. No end-to-end GUI latency claim is made here.
 
 ## Evidence and reproduction
 
@@ -87,13 +101,12 @@ URI could strand a due batch. A directed mixed-URI regression failed before the
 pump was changed to drain skipped entries and settle their waiters. It passes
 with the fix. The reviewer ran no tests/builds and did not judge GUI performance.
 
-Fresh verification passed:
+Fresh per-document scheduling verification passed:
 
-- Full workspace: 730 passed test executions, three ignored.
-- Native-only LSP: 208 tests; native-only real-binary stdio: one test.
-- An additional typed protocol parity test passed in both component-enabled and
-  native-only modes: eleven request types across valid, invalid and edited input.
-- Strict workspace all-target/all-feature clippy, formatting, and patch checks.
+- Full workspace: 744 passed test executions, three ignored.
+- Native-only LSP: 222 tests; native-only real-binary stdio: one test.
+- Typed protocol parity remains included in both feature configurations.
+- Strict workspace all-target/all-feature clippy, formatting and patch checks.
 - Python release/benchmark tooling: 22 tests, including staged VSIX packaging.
 
 ```sh
@@ -110,3 +123,11 @@ results for this follow-up are reported in
 Linux, macOS, Windows, quality and release-tooling CI after the package-safe
 README link fix. See the [design](superpowers/specs/2026-11-08-background-analysis-design.md)
 and [plan](superpowers/plans/2026-11-08-background-analysis.md) for the follow-up scope.
+
+The per-document follow-up adds framed RED→GREEN regressions for cross-file
+starvation, target-only request expediting, and JSON data edit/watch isolation.
+Seven fake-clock tests cover quiet periods, shared reload gating, oldest-ready
+ordering, resetting ready work, close cleanup and expediting. Metadata tests cover
+missing/aliased declared inputs and cold-start recovery before a language resolves.
+Independent review found the cold-start gap; it was reproduced, fixed and verified
+through creation, malformed project/workspace text and project removal.

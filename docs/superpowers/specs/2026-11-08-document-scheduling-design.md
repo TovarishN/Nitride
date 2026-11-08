@@ -19,6 +19,11 @@ watch or workspace-folder changes invalidate the affected generation as before
 and debounce a shared reload. All open documents wait through that shared quiet
 period. A later ordinary edit can extend its own quiet period without extending
 that of the other files. Loading the registry must not lose their timing state.
+Ordinary JSON edits/watches are not language changes merely because of the file
+suffix. Registered JSON manifests/grammars/catalogs/bindings remain inputs, even
+when broken. Keep declared paths independently of successful language resolution,
+retain them through mid-edit project syntax and drop removed projects. Cache path classification on open/reload so typing does not repeatedly
+perform filesystem identity checks; signed-header checks remain per change.
 
 A document-feature request expedites only its target, loading a pending registry
 first if necessary. Other files retain their deadlines. Already-due files remain

@@ -22,25 +22,44 @@
 
 **Files:** tests/debounce.rs, server/async_tests.rs, new server/schedule.rs under crates/nitride-lsp.
 
-- [ ] Add framed RED regression: repeated changes to B plus unrelated responses must not postpone A's error diagnostics.
-- [ ] Add RED server-state regression: completing a request for A leaves not-yet-due B pending.
-- [ ] Add fake-time tests for independent quiet periods, shared reload gating, oldest-ready ordering/ties, resetting ready entries, forgetting closed documents and target/all expediting.
+- [x] Add framed RED regression: repeated changes to B plus unrelated responses must not postpone A's error diagnostics.
+- [x] Add RED server-state regression: completing a request for A leaves not-yet-due B pending.
+- [x] Add fake-time tests for independent quiet periods, shared reload gating, oldest-ready ordering/ties, resetting ready entries, forgetting closed documents and target/all expediting.
 
 ## Task 2: Integrate independent readiness
 
 **Files:** server.rs, server/jobs.rs, server/schedule.rs, existing scheduling unit tests.
 
-- [ ] Implement the private timing unit and observe its tests pass.
-- [ ] Replace the global deadline/ready flag with per-file timing and a shared reload deadline.
-- [ ] Split due-time flushing, targeted request expediting and global barrier flushing; select oldest ready work in pump.
-- [ ] Preserve unsupported URI draining, cancellation, reload and shutdown behavior; run focused regressions and complete LSP tests.
-- [ ] Commit the validated scheduling change.
+- [x] Implement the private timing unit and observe its tests pass.
+- [x] Replace the global deadline/ready flag with per-file timing and a shared reload deadline.
+- [x] Split due-time flushing, targeted request expediting and global barrier flushing; select oldest ready work in pump.
+- [x] Preserve unsupported URI draining, cancellation, reload and shutdown behavior; run focused regressions and complete LSP tests.
+- [x] Commit the validated scheduling change.
 
 ## Task 3: Review, verification and documentation
 
 **Files:** docs/lsp-scheduling.md, docs/status.md, editor README and this plan.
 
-- [ ] Obtain independent full-change review; reproduce/fix actionable findings.
-- [ ] Verify default/native LSP, typed protocol parity, real CLI stdio, strict clippy, formatting and staged packaging tests.
-- [ ] Document independent timing, shared-input behavior and remaining synchronous/preemption limits; preserve verification evidence.
-- [ ] Commit and leave the feature worktree reviewable without disturbing main's local files.
+- [x] Obtain independent full-change review; reproduce/fix actionable findings.
+- [x] Verify default/native LSP, typed protocol parity, real CLI stdio, strict clippy, formatting and staged packaging tests.
+- [x] Document independent timing, shared-input behavior and remaining synchronous/preemption limits; preserve verification evidence.
+- [x] Commit and leave the feature worktree reviewable without disturbing main's local files.
+
+## Completion and engineering rulings
+
+The shared-input rule required narrowing blanket `.json` classification: ordinary
+JSON edits/watches must stay document-local, while declared JSON inputs remain
+registered even when a language cannot resolve. Classification is cached on open/
+reload, not recalculated with filesystem probes per keystroke. Missing-input path
+identity resolves through existing ancestors and supports deleted/aliased paths.
+
+Independent review found one cold-start recovery gap: missing JSON metadata can
+prevent creation of any LanguageState. A directed regression reproduced it;
+registry declarations are now retained independently of resolution, preserved
+through malformed syntax and dropped when projects leave the workspace. No other
+findings or deferred minor issues remain.
+
+All tasks are complete. Full workspace744passed/3ignored, nativeLSP222, native
+CLI stdio, strict clippy, formatting and 22 packaging/tooling tests passed. These
+are local results; hosted checks are reported on the follow-up PR, and manual
+GUI acceptance is unverified. No parser preemption, merge or release is included.
