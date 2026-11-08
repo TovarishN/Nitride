@@ -517,3 +517,82 @@ fn unsupported_uris_in_due_batch_do_not_strand_valid_documents() {
     assert!(server.analyses.contains_key("file:///background.nproj"));
     assert!(server.pending.is_empty());
 }
+
+#[test]
+fn target_request_does_not_start_another_documents_quiet_work() {
+    let (send, receive) = mpsc::channel();
+    let mut server = Server::new(Vec::new(), Duration::from_secs(60));
+    server.jobs.worker = Some(crate::background::Worker::spawn(
+        move |done| {
+            let _ = send.send(done);
+        },
+        Box::new(crate::background::Job::analyze),
+    ));
+    for uri in ["file:///a.nproj", "file:///b.nproj"] {
+        server
+            .notification(
+                "textDocument/didOpen",
+                json!({"textDocument":{
+            "uri":uri,"version":1,"text":"workspace {}"}}),
+            )
+            .unwrap();
+    }
+    server
+        .handle(
+            json!({"id":7,"method":"textDocument/documentSymbol","params":{
+        "textDocument":{"uri":"file:///a.nproj"}}}),
+        )
+        .unwrap();
+    let done = receive.recv_timeout(Duration::from_secs(3)).unwrap();
+    assert_eq!(done.uri, "file:///a.nproj");
+    server.completed(done).unwrap();
+    server.pump().unwrap();
+    assert!(
+        server.pending.contains("file:///b.nproj"),
+        "a request for A started B before B's own quiet deadline"
+    );
+}
+
+#[test]
+fn registry_reload_refreshes_open_json_input_classification() {
+    let unique = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .unwrap()
+        .as_nanos();
+    let root = std::env::temp_dir().join(format!(
+        "nitride-json-input-{}-{unique}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(root.join("Lang")).unwrap();
+    std::fs::write(root.join("nitride.nproj"), "workspace { include Lang; }").unwrap();
+    std::fs::write(
+        root.join("Test.ngr"),
+        "syntax module Test { syntax P = \"ok\"; }",
+    )
+    .unwrap();
+    std::fs::write(root.join("Lang/Lang.nproj"),"language Test { extensions .test; grammar ../Test.ngr; catalog ../types.json; start Test.P; }").unwrap();
+    let json = root.join("types.json");
+    std::fs::write(&json, "{broken").unwrap();
+    let uri = uri::from_path(&json);
+    let mut server = Server::new(Vec::new(), Duration::from_millis(100));
+    server.folders.push(root.clone());
+    server
+        .notification(
+            "textDocument/didOpen",
+            json!({"textDocument":{"uri":uri,"version":1,"text":"{broken"}}),
+        )
+        .unwrap();
+    assert!(!server.input_documents.contains(&uri));
+    server.reload_languages().unwrap();
+    assert!(server.input_documents.contains(&uri));
+    server.reload = false;
+    server.notification("textDocument/didChange",json!({"textDocument":{"uri":uri,"version":2},"contentChanges":[{"text":"{still broken"}]})).unwrap();
+    assert!(server.reload);
+    assert!(server.timing.reload.is_some());
+    std::fs::remove_dir_all(root).unwrap();
+    assert!(crate::registry::watched_change_matters(
+        &server.registry,
+        &json,
+        3
+    ));
+}

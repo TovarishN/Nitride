@@ -68,9 +68,11 @@ frontend authoring files continue to use full analysis.
 Normal debounced document analysis runs on one background worker. Requests
 wait for fresh results; cancellation applies to waiting requests, and obsolete
 results cannot publish after edits, close/reopen or language invalidation.
-In-flight parsing is not interrupted. Debounce follows accepted edits and
-relevant language changes; unrelated traffic does not postpone it. File-watch
-reloads also run when no document is pending. See [LSP scheduling](https://github.com/TovarishN/Nitride/blob/main/docs/lsp-scheduling.md)
+In-flight parsing is not interrupted. Each document has its own quiet period;
+edits to one file do not postpone another. A feature request expedites only its
+target, while workspace-symbol requests and shutdown expedite all pending work.
+Shared language changes still reload the registry; unrelated traffic does not
+postpone due work. File-watch reloads also run when no document is pending. See [LSP scheduling](https://github.com/TovarishN/Nitride/blob/main/docs/lsp-scheduling.md)
 for ordering and remaining synchronous-analysis limits.
 
 ## Settings

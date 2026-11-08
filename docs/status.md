@@ -1,12 +1,12 @@
 # Current project status
 
 Updated November 8, 2026. The starting published checkpoint was **0.3.0** on
-November 7. The engine milestones are proposed in
-[PR #43](https://github.com/TovarishN/Nitride/pull/43), with passing hosted CI.
-The unreleased background-analysis follow-up is proposed in
-[PR #44](https://github.com/TovarishN/Nitride/pull/44). Local verification is
-recorded below; current hosted results are available in the PR checks. Manual
-VS Code acceptance remains unverified.
+November 7. Engine milestones and background analysis were merged through
+[PR #43](https://github.com/TovarishN/Nitride/pull/43) and
+[PR #44](https://github.com/TovarishN/Nitride/pull/44), both with passing hosted CI.
+Independent document timing is the next unreleased change on
+`codex/lsp-document-scheduling`; local verification is recorded in the scheduling
+guide. Manual VS Code acceptance remains unverified.
 
 ## Implemented in this development branch
 
@@ -20,7 +20,9 @@ VS Code acceptance remains unverified.
   [Background analysis and scheduling](lsp-scheduling.md) use one worker in
   positive-debounce mode, retain fresh request barriers, support cancellation
   of waiting requests and reject obsolete results by document/workspace
-  generation. Idle file-watch reloads are scheduled as well.
+  generation. Independent quiet periods keep edits in one ordinary document
+  from postponing another; target requests expedite only their file. Shared
+  language reloads and global freshness barriers remain explicit.
 - Projects can select [trivia policies](trivia.md). Strict JSON accepts only its
   four whitespace characters and no comments outside tokens. Generated and
   runtime parsers pass the pinned JSONTestSuite acceptance/rejection corpus.
@@ -63,7 +65,7 @@ current scope. Distributed native binaries omit the component runtime;
 process-only Calendar is the native deployment example.
 
 The next engineering decisions should use measured editor phase costs:
-avoiding repeated flat-tree materialization, per-document timing and parser interruption,
+avoiding repeated flat-tree materialization, cooperative parser interruption and language-scoped reloads,
 incremental semantic dependencies, and
 further tree/index storage work remain possible follow-ups. Larger language
 coverage and automatic bindings from non-component metadata are separate

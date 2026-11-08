@@ -2,11 +2,12 @@
 use crate::analysis::{self, Analysis};
 use crate::background;
 mod jobs;
+mod schedule;
 use crate::grammar_index::{self, GrammarIndex};
 use crate::lines::LineIndex;
 use crate::navigation::{self, GrammarAt};
 use crate::registry::Registry;
-use crate::{ServeOptions, manifest, rpc, structure, tokens, uri};
+use crate::{ServeOptions, rpc, structure, tokens, uri};
 use serde_json::{Value, json};
 use std::collections::{BTreeSet, HashMap};
 use std::io::{self, BufRead, Write};
@@ -33,10 +34,12 @@ pub struct Server<W: Write> {
     output: W,
     shutdown: bool,
     pub documents: HashMap<String, Document>,
+    /// Path-based language-input classification, refreshed on open/reload.
+    input_documents: std::collections::HashSet<String>,
     /// Documents whose analysis is out of date.
     pending: BTreeSet<String>,
     debounce: Duration,
-    analysis_deadline: Option<Instant>,
+    timing: schedule::Schedule,
     folders: Vec<PathBuf>,
     pub registry: Registry,
     /// Manifests, grammars or catalogs changed since languages were loaded.
@@ -100,17 +103,16 @@ fn run_with_analyzer(
                 return Ok(());
             }
         }
-        if server.pending.is_empty() && !server.reload {
-            server.analysis_deadline = None;
-        }
+        server.timing.retain(&server.pending, server.reload);
         let deadline = server
-            .analysis_deadline
+            .timing
+            .next(server.reload)
             .filter(|_| !options.debounce.is_zero());
         let incoming = if let Some(deadline) = deadline {
             match receiver.recv_timeout(deadline.saturating_duration_since(Instant::now())) {
                 Ok(incoming) => incoming,
                 Err(RecvTimeoutError::Timeout) => {
-                    server.flush()?;
+                    server.flush_due()?;
                     continue;
                 }
                 Err(RecvTimeoutError::Disconnected) => return Ok(()),
@@ -137,12 +139,14 @@ fn run_with_analyzer(
         }
         // Give the next queued edit/close/exit a chance to supersede old work,
         // then enforce expiry even if unrelated input keeps the queue occupied.
-        if options.debounce.is_zero()
-            || server
-                .analysis_deadline
-                .is_some_and(|due| Instant::now() >= due)
-        {
+        if options.debounce.is_zero() {
             server.flush()?;
+        } else if server
+            .timing
+            .next(server.reload)
+            .is_some_and(|due| Instant::now() >= due)
+        {
+            server.flush_due()?;
         }
         server.pump()?;
         if server.jobs.exit_ready {
@@ -163,9 +167,10 @@ impl<W: Write> Server<W> {
             output,
             shutdown: false,
             documents: HashMap::new(),
+            input_documents: Default::default(),
             pending: BTreeSet::new(),
             debounce,
-            analysis_deadline: None,
+            timing: schedule::Schedule::default(),
             folders: Vec::new(),
             registry: Registry::default(),
             reload: false,
@@ -174,11 +179,6 @@ impl<W: Write> Server<W> {
             palette: false,
             jobs: jobs::State::default(),
         }
-    }
-
-    fn schedule(&mut self) {
-        self.jobs.ready = false;
-        self.analysis_deadline = Instant::now().checked_add(self.debounce);
     }
 
     fn send(&mut self, message: Value) -> io::Result<()> {
@@ -586,7 +586,7 @@ impl<W: Write> Server<W> {
         match method {
             "exit" => return Ok(self.terminate()),
             "$/cancelRequest" => self.cancel_request(&params["id"])?,
-            "initialized" if self.reload => self.schedule(),
+            "initialized" if self.reload => self.schedule_languages(),
             "workspace/didChangeWatchedFiles" => {
                 // The client watches every file; only some change the languages.
                 let changes = params["changes"].as_array().cloned().unwrap_or_default();
@@ -599,7 +599,7 @@ impl<W: Write> Server<W> {
                 });
                 self.changed_languages(relevant)?;
                 if relevant {
-                    self.schedule();
+                    self.schedule_languages();
                 }
             }
             "workspace/didChangeWorkspaceFolders" => {
@@ -615,7 +615,7 @@ impl<W: Write> Server<W> {
                 self.folders.retain(|f| !removed.contains(f));
                 self.folders.extend(folders("added"));
                 self.changed_languages(true)?;
-                self.schedule();
+                self.schedule_languages();
             }
             "textDocument/didOpen" => {
                 let document = &params["textDocument"];
@@ -633,10 +633,18 @@ impl<W: Write> Server<W> {
                     self.pending.insert(uri.into());
                     self.changed_document(uri)?;
                     // Grammars and signed grammars are language inputs.
-                    self.changed_languages(
-                        language_input(uri) || crate::signed::declares_grammar(text),
-                    )?;
-                    self.schedule();
+                    let input = language_input(&self.registry, uri);
+                    if input {
+                        self.input_documents.insert(uri.into());
+                    } else {
+                        self.input_documents.remove(uri);
+                    }
+                    let language_changed = input || crate::signed::declares_grammar(text);
+                    self.changed_languages(language_changed)?;
+                    self.schedule_document(uri);
+                    if language_changed {
+                        self.schedule_languages();
+                    }
                 }
             }
             "textDocument/didChange" => {
@@ -644,16 +652,19 @@ impl<W: Write> Server<W> {
                 let version = params["textDocument"]["version"]
                     .as_i64()
                     .and_then(|v| i32::try_from(v).ok());
+                let input = self.input_documents.contains(uri);
                 if let (Some(document), Some(version)) = (self.documents.get_mut(uri), version) {
                     let was_signed = crate::signed::declares_grammar(&document.text);
                     if document.apply(version, &params["contentChanges"]) {
-                        let language_changed = language_input(uri)
-                            || was_signed
-                            || crate::signed::declares_grammar(&document.text);
+                        let language_changed =
+                            input || was_signed || crate::signed::declares_grammar(&document.text);
                         self.pending.insert(uri.into());
                         self.changed_document(uri)?;
                         self.changed_languages(language_changed)?;
-                        self.schedule();
+                        self.schedule_document(uri);
+                        if language_changed {
+                            self.schedule_languages();
+                        }
                     }
                 }
             }
@@ -664,6 +675,7 @@ impl<W: Write> Server<W> {
                     .to_owned();
                 let closed = self.documents.remove(&uri);
                 self.pending.remove(&uri);
+                self.timing.forget(&uri);
                 if closed.is_some() {
                     self.changed_document(&uri)?;
                 }
@@ -671,11 +683,12 @@ impl<W: Write> Server<W> {
                     self.publish(&uri, vec![])?;
                 }
                 // The file on disk replaces the closed buffer.
-                let reload = language_input(&uri)
+                let reload = self.input_documents.remove(&uri)
+                    || language_input(&self.registry, &uri)
                     || closed.is_some_and(|d| crate::signed::declares_grammar(&d.text));
                 self.changed_languages(reload)?;
                 if reload {
-                    self.schedule();
+                    self.schedule_languages();
                 }
             }
             _ => {}
@@ -685,13 +698,12 @@ impl<W: Write> Server<W> {
 
     /// Brings every pending document's analysis up to date.
     fn flush(&mut self) -> io::Result<()> {
-        self.analysis_deadline = None;
+        if self.jobs.worker.is_some() {
+            return self.expedite(None);
+        }
+        self.timing.clear();
         if std::mem::take(&mut self.reload) {
             self.reload_languages()?;
-        }
-        if self.jobs.worker.is_some() {
-            self.jobs.ready = true;
-            return self.pump();
         }
         for uri in std::mem::take(&mut self.pending) {
             self.analyze(&uri)?;
@@ -773,6 +785,12 @@ impl<W: Write> Server<W> {
         let changed =
             self.registry
                 .reload_with(&self.folders, &|path: &Path| buffers.get(path), &open_paths);
+        self.input_documents = self
+            .documents
+            .keys()
+            .filter(|uri| language_input(&self.registry, uri))
+            .cloned()
+            .collect();
         let mut published = Vec::new();
         for manifest in self.registry.manifests() {
             let text = buffers
@@ -823,14 +841,9 @@ pub(crate) fn canonical(path: &Path) -> PathBuf {
 }
 
 /// Whether a document is an input of workspace languages.
-fn language_input(uri: &str) -> bool {
-    let name = uri.rsplit('/').next().unwrap_or_default();
-    manifest::NAMES.contains(&name)
-        || name.ends_with(".ngr")
-        || name.ends_with(".ncatalog")
-        || name.ends_with(".nbind")
-        || name.ends_with(".nproj")
-        || name.ends_with(".json")
+fn language_input(registry: &Registry, uri: &str) -> bool {
+    let path = uri::to_path(uri).unwrap_or_else(|| PathBuf::from(uri));
+    crate::registry::language_input_path(registry, &path)
 }
 
 pub fn range(lines: &LineIndex, span: [u32; 2]) -> Value {
@@ -859,8 +872,8 @@ mod scheduling_tests {
             "uri":uri,"version":1,"text":"ok"}}),
             )
             .unwrap();
-        let deadline = Some(Instant::now() + Duration::from_secs(60));
-        server.analysis_deadline = deadline;
+        let deadline = Instant::now() + Duration::from_secs(60);
+        server.timing.documents.insert(uri.into(), deadline);
         for (method, params) in [
             ("$/cancelRequest", json!({"id":7})),
             (
@@ -878,7 +891,11 @@ mod scheduling_tests {
             ),
         ] {
             server.notification(method, params).unwrap();
-            assert_eq!(server.analysis_deadline, deadline, "{method}");
+            assert_eq!(
+                server.timing.documents.get(uri),
+                Some(&deadline),
+                "{method}"
+            );
         }
         assert_eq!(server.documents[uri].text, "ok");
         server
@@ -888,7 +905,7 @@ mod scheduling_tests {
             "contentChanges":[{"text":"updated"}]}),
             )
             .unwrap();
-        assert_ne!(server.analysis_deadline, deadline);
+        assert_ne!(server.timing.documents.get(uri), Some(&deadline));
         assert_eq!(server.documents[uri].text, "updated");
     }
 
@@ -897,9 +914,9 @@ mod scheduling_tests {
         let mut server = Server::new(Vec::new(), Duration::from_millis(20));
         server.initialize(&json!({}));
         assert!(server.reload);
-        assert!(server.analysis_deadline.is_none());
+        assert!(server.timing.reload.is_none());
         server.notification("initialized", json!({})).unwrap();
-        assert!(server.analysis_deadline.is_some());
+        assert!(server.timing.reload.is_some());
     }
 }
 
