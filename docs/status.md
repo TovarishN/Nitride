@@ -21,8 +21,9 @@ milestones on `codex/engine-next-milestones` are local, unreleased development w
   and component execution. Existing host interface contracts are unchanged.
 - A retained dependency-index storage change uses smaller records with a
   lossless wide fallback. Paired benchmarks document the savings and costs.
-- Snapshot materialization avoids per-node temporary child vectors. A follow-up
-  matched editor benchmark records the allocation and update-time improvements.
+- Snapshot materialization avoids per-node temporary child vectors and repeated
+  chunk-directory searches through a local borrowed reader. Follow-up matched
+  editor benchmarks record the allocation and update-time improvements.
 
 ## Evidence
 
@@ -30,6 +31,8 @@ The [November 7 measurement report](benchmark-2026-11-07.md) separates the initi
 44-case checkpoint, paired storage experiments and end-to-end editor analysis.
 The [November 8 materialization follow-up](benchmark-2026-11-08-materialization.md)
 records the next editor optimization and its fresh verification.
+The [local arena-reader follow-up](benchmark-2026-11-08-arena-reader.md) measures
+the subsequent reduction in chunk lookup costs against that optimized baseline.
 Historical [C#](compiler-assessment-2026-10-30.md) and
 [JSON](json-comparison.md) comparisons retain their original dates and limits.
 

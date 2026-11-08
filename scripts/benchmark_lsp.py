@@ -21,6 +21,8 @@ def main():
     parser.add_argument('--before', type=pathlib.Path, required=True)
     parser.add_argument('--after', type=pathlib.Path, required=True)
     parser.add_argument('--output', type=pathlib.Path, required=True)
+    parser.add_argument('--baseline-revision', default='2d31168')
+    parser.add_argument('--build-description', default='unspecified; executable hashes identify the supplied binaries')
     args = parser.parse_args()
     binaries = [args.before.resolve(), args.after.resolve()]
     report = {
@@ -29,10 +31,12 @@ def main():
         'cpu': command(['sysctl', '-n', 'machdep.cpu.brand_string']).decode().strip()
         if platform.system() == 'Darwin' else platform.processor(),
         'executables': [{'path': str(p), 'sha256': sha(p.read_bytes())} for p in binaries],
-        'baseline_revision': '2d31168',
-        'changed_source_sha256': sha((ROOT / 'crates/nitride-core/src/syntax/shared.rs').read_bytes()),
-        'baseline_source_sha256': sha(command(['git', 'show', '2d31168:crates/nitride-core/src/syntax/shared.rs'])),
-        'build': 'same source and portable release flags; no-default-features nitride-lsp example benchmark; only syntax/shared.rs differs; inherited Rust flags cleared; no PGO',
+        'declared_baseline_revision': args.baseline_revision,
+        'source_hashes': {name: {
+            'before': sha(command(['git', 'show', f'{args.baseline_revision}:{name}'])),
+            'after': sha((ROOT / name).read_bytes())}
+            for name in ('crates/nitride-core/src/syntax/shared.rs', 'crates/nitride-core/src/syntax/arena.rs')},
+        'declared_build': args.build_description,
         'definitions': 'In-process analysis, excluding registry load/debounce/stdio/GUI. One warm edit then five samples per process, always update before fresh analysis. Each update compares tree shape/edges, values and problems to fresh analysis outside timing. Alternating executable order across fresh processes; medians below are medians of process medians.',
         'complete': False, 'rows': [],
     }

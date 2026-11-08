@@ -177,6 +177,7 @@ impl<'g> BorrowedParseSnapshot<'g> {
         }
     }
     pub(crate) fn indexed(&self, limit: u64) -> Result<Occurrences, Diagnostic> {
+        let mut reader = self.arena.reader();
         let mut pending = vec![(self.root(), false)];
         let mut completed: Vec<u32> = Vec::new();
         let mut nodes = Vec::new();
@@ -189,28 +190,38 @@ impl<'g> BorrowedParseSnapshot<'g> {
         let mut work = 0_u64;
         while let Some((view, visited)) = pending.pop() {
             work = work.saturating_add(1);
+            let node = reader.node(view.id).expect("reachable node");
+            let span = [view.start, view.start + node.width];
             if work > limit {
                 return Err(Diagnostic::new(
                     "limit",
-                    view.span(),
+                    span,
                     "occurrence indexing work limit exceeded",
                 ));
             }
             if !visited {
                 pending.push((view, true));
                 let base = pending.len();
-                pending.extend(view.children().map(|(_, child)| (child, false)));
+                let mut position = view.start;
+                for child in reader.children(view.id) {
+                    position += child.extent;
+                    let start = position - reader.node(child.node).expect("owned child").width;
+                    pending.push((
+                        BorrowedNodeView {
+                            snapshot: self,
+                            id: child.node,
+                            start,
+                        },
+                        false,
+                    ));
+                }
                 // Pop children in source order without a temporary child vector.
                 pending[base..].reverse();
             } else {
-                let child_count = self
-                    .arena
-                    .node(view.id)
-                    .expect("reachable node")
-                    .child_count();
+                let child_count = node.child_count();
                 let base = completed.len() - child_count as usize;
                 let first_child = edges.len() as u32;
-                for (child, id) in self.arena.children(view.id).zip(completed.drain(base..)) {
+                for (child, id) in reader.children(view.id).zip(completed.drain(base..)) {
                     edges.push(Edge {
                         label: child.label,
                         node: id,
@@ -220,16 +231,16 @@ impl<'g> BorrowedParseSnapshot<'g> {
                 if nodes.len() >= u32::MAX as usize || edges.len() > u32::MAX as usize {
                     return Err(Diagnostic::new(
                         "limit",
-                        view.span(),
+                        span,
                         "syntax storage capacity exceeded",
                     ));
                 }
-                if damaged.contains(&(view.rule(), view.span())) {
+                if damaged.contains(&(node.rule, span)) {
                     damaged_nodes.push(id);
                 }
                 nodes.push(Node {
-                    rule: view.rule(),
-                    span: view.span(),
+                    rule: node.rule,
+                    span,
                     first_child,
                     child_count,
                 });

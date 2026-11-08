@@ -1,0 +1,1284 @@
+{
+  "source": {
+    "revision": "5312ba5883bb0caa3f7d35437e81d58e5df0e847",
+    "diff_sha256": "f502958dc1a85ef2acaeade4040c93d5b869d602c3f0b8a9490988d1b3849792",
+    "dirty": true
+  },
+  "host": "macOS-27.2-arm64-arm-64bit-Mach-O",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1\n",
+  "cpu": "Apple M4 Pro",
+  "executables": [
+    {
+      "path": "/Users/dmitrikamenetski/.codex/worktrees/engine-next-milestones/Nitride/target/arena-before-benchmark",
+      "sha256": "da79d563deca7dbda2abe31b122d7f6a1504d4be141d001ea3f492f311cd1a8a"
+    },
+    {
+      "path": "/Users/dmitrikamenetski/.codex/worktrees/engine-next-milestones/Nitride/target/materialization-build/release/examples/benchmark",
+      "sha256": "809cba259beeae7426f12cb4c7d088f436060dd01e099e978ad1faed01b6d9fb"
+    }
+  ],
+  "declared_baseline_revision": "5312ba5",
+  "source_hashes": {
+    "crates/nitride-core/src/syntax/shared.rs": {
+      "before": "e9555c0ee52004535d0574757f39a8b728ec3c3894141f5a0aeec3191a219a45",
+      "after": "c97c67615c012fa21f04a98a93d4be69a34c45a48912d03d8ac14db895be2f77"
+    },
+    "crates/nitride-core/src/syntax/arena.rs": {
+      "before": "5b66a7e24f028b8f145cc1b9c287bbe534c290e330a88ac19fa462f95c57c32d",
+      "after": "2431dd056f040df8f7764666d26d1d6f8781f2404bf413bc4710cb502933fe18"
+    }
+  },
+  "declared_build": "Matched portable release; no-default-features LSP example; Rust flags cleared; no PGO; only arena.rs/shared.rs differ",
+  "definitions": "In-process analysis, excluding registry load/debounce/stdio/GUI. One warm edit then five samples per process, always update before fresh analysis. Each update compares tree shape/edges, values and problems to fresh analysis outside timing. Alternating executable order across fresh processes; medians below are medians of process medians.",
+  "complete": true,
+  "rows": [
+    {
+      "case": "262144-valid",
+      "input_sha256": "fb24d3b7883f34ab3c7774bbdb289f6d6e609ee81e386469e8cf3d5e6cb743f6",
+      "before": [
+        {
+          "initial_analysis_ns": 97689500,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1641341708,
+          "samples": [
+            {
+              "editor_ns": 136958,
+              "fresh_ns": 97768583,
+              "incremental_ns": 6795250,
+              "materialize_ns": 6232542,
+              "parse_update_ns": 341042,
+              "reused_subtrees": 743,
+              "semantic_ns": 125,
+              "work": 8281
+            },
+            {
+              "editor_ns": 158708,
+              "fresh_ns": 97716208,
+              "incremental_ns": 6262542,
+              "materialize_ns": 5611708,
+              "parse_update_ns": 379333,
+              "reused_subtrees": 743,
+              "semantic_ns": 166,
+              "work": 8281
+            },
+            {
+              "editor_ns": 137417,
+              "fresh_ns": 103633125,
+              "incremental_ns": 6236667,
+              "materialize_ns": 5561333,
+              "parse_update_ns": 417250,
+              "reused_subtrees": 743,
+              "semantic_ns": 333,
+              "work": 8281
+            },
+            {
+              "editor_ns": 194750,
+              "fresh_ns": 98521125,
+              "incremental_ns": 7137167,
+              "materialize_ns": 6366542,
+              "parse_update_ns": 443333,
+              "reused_subtrees": 743,
+              "semantic_ns": 333,
+              "work": 8281
+            },
+            {
+              "editor_ns": 140583,
+              "fresh_ns": 96896500,
+              "incremental_ns": 6362333,
+              "materialize_ns": 5743041,
+              "parse_update_ns": 387833,
+              "reused_subtrees": 743,
+              "semantic_ns": 42,
+              "work": 8281
+            }
+          ],
+          "source_bytes": 262212,
+          "medians": {
+            "editor_ns": 140583,
+            "fresh_ns": 97768583,
+            "incremental_ns": 6362333,
+            "materialize_ns": 5743041,
+            "parse_update_ns": 387833,
+            "reused_subtrees": 743,
+            "semantic_ns": 166,
+            "work": 8281
+          }
+        }
+      ],
+      "after": [
+        {
+          "initial_analysis_ns": 93660834,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1655086625,
+          "samples": [
+            {
+              "editor_ns": 178375,
+              "fresh_ns": 92915459,
+              "incremental_ns": 2182250,
+              "materialize_ns": 1594042,
+              "parse_update_ns": 288791,
+              "reused_subtrees": 743,
+              "semantic_ns": 0,
+              "work": 8281
+            },
+            {
+              "editor_ns": 150833,
+              "fresh_ns": 92643500,
+              "incremental_ns": 2046958,
+              "materialize_ns": 1500542,
+              "parse_update_ns": 285250,
+              "reused_subtrees": 743,
+              "semantic_ns": 41,
+              "work": 8281
+            },
+            {
+              "editor_ns": 169834,
+              "fresh_ns": 97041458,
+              "incremental_ns": 2174500,
+              "materialize_ns": 1599500,
+              "parse_update_ns": 284750,
+              "reused_subtrees": 743,
+              "semantic_ns": 83,
+              "work": 8281
+            },
+            {
+              "editor_ns": 155750,
+              "fresh_ns": 95492042,
+              "incremental_ns": 2473042,
+              "materialize_ns": 1755416,
+              "parse_update_ns": 447000,
+              "reused_subtrees": 743,
+              "semantic_ns": 292,
+              "work": 8281
+            },
+            {
+              "editor_ns": 170583,
+              "fresh_ns": 95115791,
+              "incremental_ns": 2417334,
+              "materialize_ns": 1760709,
+              "parse_update_ns": 374167,
+              "reused_subtrees": 743,
+              "semantic_ns": 417,
+              "work": 8281
+            }
+          ],
+          "source_bytes": 262212,
+          "medians": {
+            "editor_ns": 169834,
+            "fresh_ns": 95115791,
+            "incremental_ns": 2182250,
+            "materialize_ns": 1599500,
+            "parse_update_ns": 288791,
+            "reused_subtrees": 743,
+            "semantic_ns": 83,
+            "work": 8281
+          }
+        }
+      ],
+      "medians": {
+        "before": {
+          "editor_ns": 140583,
+          "fresh_ns": 97768583,
+          "incremental_ns": 6362333,
+          "materialize_ns": 5743041,
+          "parse_update_ns": 387833,
+          "reused_subtrees": 743,
+          "semantic_ns": 166,
+          "work": 8281
+        },
+        "after": {
+          "editor_ns": 169834,
+          "fresh_ns": 95115791,
+          "incremental_ns": 2182250,
+          "materialize_ns": 1599500,
+          "parse_update_ns": 288791,
+          "reused_subtrees": 743,
+          "semantic_ns": 83,
+          "work": 8281
+        }
+      },
+      "ratios": {
+        "editor_ns": 1.208069254461777,
+        "fresh_ns": 0.9728666211721612,
+        "incremental_ns": 0.34299525032719913,
+        "materialize_ns": 0.2785109839891444,
+        "parse_update_ns": 0.744627197788739,
+        "reused_subtrees": 1.0,
+        "semantic_ns": 0.5,
+        "work": 1.0
+      }
+    },
+    {
+      "case": "262144-one",
+      "input_sha256": "4f184bb80dee1831ffbe33b1abb79d708dd94adb3d80627c09b35d43b36b1e94",
+      "before": [
+        {
+          "initial_analysis_ns": 387578125,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1685188667,
+          "samples": [
+            {
+              "editor_ns": 146917,
+              "fresh_ns": 380888375,
+              "incremental_ns": 9268083,
+              "materialize_ns": 6189000,
+              "parse_update_ns": 2838709,
+              "reused_subtrees": 832,
+              "semantic_ns": 334,
+              "work": 71659
+            },
+            {
+              "editor_ns": 145083,
+              "fresh_ns": 380851875,
+              "incremental_ns": 9178083,
+              "materialize_ns": 6143625,
+              "parse_update_ns": 2774416,
+              "reused_subtrees": 832,
+              "semantic_ns": 333,
+              "work": 71659
+            },
+            {
+              "editor_ns": 130583,
+              "fresh_ns": 380752333,
+              "incremental_ns": 9310417,
+              "materialize_ns": 6225166,
+              "parse_update_ns": 2852417,
+              "reused_subtrees": 832,
+              "semantic_ns": 459,
+              "work": 71659
+            },
+            {
+              "editor_ns": 145083,
+              "fresh_ns": 380556625,
+              "incremental_ns": 9205542,
+              "materialize_ns": 6177625,
+              "parse_update_ns": 2792167,
+              "reused_subtrees": 832,
+              "semantic_ns": 291,
+              "work": 71659
+            },
+            {
+              "editor_ns": 132584,
+              "fresh_ns": 379267333,
+              "incremental_ns": 9218500,
+              "materialize_ns": 6138834,
+              "parse_update_ns": 2860334,
+              "reused_subtrees": 832,
+              "semantic_ns": 250,
+              "work": 71659
+            }
+          ],
+          "source_bytes": 262211,
+          "medians": {
+            "editor_ns": 145083,
+            "fresh_ns": 380752333,
+            "incremental_ns": 9218500,
+            "materialize_ns": 6177625,
+            "parse_update_ns": 2838709,
+            "reused_subtrees": 832,
+            "semantic_ns": 333,
+            "work": 71659
+          }
+        }
+      ],
+      "after": [
+        {
+          "initial_analysis_ns": 382236833,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1653342375,
+          "samples": [
+            {
+              "editor_ns": 144375,
+              "fresh_ns": 376756250,
+              "incremental_ns": 4747750,
+              "materialize_ns": 1709917,
+              "parse_update_ns": 2798584,
+              "reused_subtrees": 832,
+              "semantic_ns": 208,
+              "work": 71659
+            },
+            {
+              "editor_ns": 142083,
+              "fresh_ns": 377927958,
+              "incremental_ns": 4769250,
+              "materialize_ns": 1727584,
+              "parse_update_ns": 2784667,
+              "reused_subtrees": 832,
+              "semantic_ns": 125,
+              "work": 71659
+            },
+            {
+              "editor_ns": 130083,
+              "fresh_ns": 379916125,
+              "incremental_ns": 4675042,
+              "materialize_ns": 1699000,
+              "parse_update_ns": 2750750,
+              "reused_subtrees": 832,
+              "semantic_ns": 125,
+              "work": 71659
+            },
+            {
+              "editor_ns": 144375,
+              "fresh_ns": 377073791,
+              "incremental_ns": 4778417,
+              "materialize_ns": 1738834,
+              "parse_update_ns": 2808125,
+              "reused_subtrees": 832,
+              "semantic_ns": 250,
+              "work": 71659
+            },
+            {
+              "editor_ns": 158875,
+              "fresh_ns": 382372833,
+              "incremental_ns": 4731625,
+              "materialize_ns": 1722417,
+              "parse_update_ns": 2749875,
+              "reused_subtrees": 832,
+              "semantic_ns": 83,
+              "work": 71659
+            }
+          ],
+          "source_bytes": 262211,
+          "medians": {
+            "editor_ns": 144375,
+            "fresh_ns": 377927958,
+            "incremental_ns": 4747750,
+            "materialize_ns": 1722417,
+            "parse_update_ns": 2784667,
+            "reused_subtrees": 832,
+            "semantic_ns": 125,
+            "work": 71659
+          }
+        }
+      ],
+      "medians": {
+        "before": {
+          "editor_ns": 145083,
+          "fresh_ns": 380752333,
+          "incremental_ns": 9218500,
+          "materialize_ns": 6177625,
+          "parse_update_ns": 2838709,
+          "reused_subtrees": 832,
+          "semantic_ns": 333,
+          "work": 71659
+        },
+        "after": {
+          "editor_ns": 144375,
+          "fresh_ns": 377927958,
+          "incremental_ns": 4747750,
+          "materialize_ns": 1722417,
+          "parse_update_ns": 2784667,
+          "reused_subtrees": 832,
+          "semantic_ns": 125,
+          "work": 71659
+        }
+      },
+      "ratios": {
+        "editor_ns": 0.9951200347387358,
+        "fresh_ns": 0.9925821203044343,
+        "incremental_ns": 0.5150241362477627,
+        "materialize_ns": 0.27881540235932095,
+        "parse_update_ns": 0.980962472729681,
+        "reused_subtrees": 1.0,
+        "semantic_ns": 0.37537537537537535,
+        "work": 1.0
+      }
+    },
+    {
+      "case": "4194304-valid",
+      "input_sha256": "bfa28dd3a2fa6c86836d2706d48026317228b2209d169ee355a7274f5ee2f919",
+      "before": [
+        {
+          "initial_analysis_ns": 1608524333,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1657934083,
+          "samples": [
+            {
+              "editor_ns": 4317125,
+              "fresh_ns": 1582721958,
+              "incremental_ns": 146532459,
+              "materialize_ns": 136180750,
+              "parse_update_ns": 4498167,
+              "reused_subtrees": 11341,
+              "semantic_ns": 958,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4700667,
+              "fresh_ns": 1599750000,
+              "incremental_ns": 147830916,
+              "materialize_ns": 137135125,
+              "parse_update_ns": 4059875,
+              "reused_subtrees": 11341,
+              "semantic_ns": 542,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4008459,
+              "fresh_ns": 1588795541,
+              "incremental_ns": 145988042,
+              "materialize_ns": 136027958,
+              "parse_update_ns": 3953750,
+              "reused_subtrees": 11341,
+              "semantic_ns": 584,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4875833,
+              "fresh_ns": 1601554500,
+              "incremental_ns": 146305041,
+              "materialize_ns": 135638417,
+              "parse_update_ns": 3984458,
+              "reused_subtrees": 11341,
+              "semantic_ns": 542,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4671250,
+              "fresh_ns": 1605539916,
+              "incremental_ns": 149335708,
+              "materialize_ns": 138338833,
+              "parse_update_ns": 4379000,
+              "reused_subtrees": 11341,
+              "semantic_ns": 1375,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 4671250,
+            "fresh_ns": 1599750000,
+            "incremental_ns": 146532459,
+            "materialize_ns": 136180750,
+            "parse_update_ns": 4059875,
+            "reused_subtrees": 11341,
+            "semantic_ns": 584,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1628812500,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1716229042,
+          "samples": [
+            {
+              "editor_ns": 4881083,
+              "fresh_ns": 1636700583,
+              "incremental_ns": 152404000,
+              "materialize_ns": 141620333,
+              "parse_update_ns": 4315625,
+              "reused_subtrees": 11341,
+              "semantic_ns": 1000,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4636709,
+              "fresh_ns": 1623290125,
+              "incremental_ns": 151740333,
+              "materialize_ns": 141314875,
+              "parse_update_ns": 4250750,
+              "reused_subtrees": 11341,
+              "semantic_ns": 542,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4097084,
+              "fresh_ns": 1634937834,
+              "incremental_ns": 151882166,
+              "materialize_ns": 142025542,
+              "parse_update_ns": 3953667,
+              "reused_subtrees": 11341,
+              "semantic_ns": 750,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4403791,
+              "fresh_ns": 1623622791,
+              "incremental_ns": 153816458,
+              "materialize_ns": 143666208,
+              "parse_update_ns": 4204750,
+              "reused_subtrees": 11341,
+              "semantic_ns": 750,
+              "work": 59676
+            },
+            {
+              "editor_ns": 3996750,
+              "fresh_ns": 1620800959,
+              "incremental_ns": 152722875,
+              "materialize_ns": 143262708,
+              "parse_update_ns": 3918792,
+              "reused_subtrees": 11341,
+              "semantic_ns": 750,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 4403791,
+            "fresh_ns": 1623622791,
+            "incremental_ns": 152404000,
+            "materialize_ns": 142025542,
+            "parse_update_ns": 4204750,
+            "reused_subtrees": 11341,
+            "semantic_ns": 750,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1624418167,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1662774584,
+          "samples": [
+            {
+              "editor_ns": 6029917,
+              "fresh_ns": 1644150708,
+              "incremental_ns": 155197500,
+              "materialize_ns": 143207041,
+              "parse_update_ns": 4313250,
+              "reused_subtrees": 11341,
+              "semantic_ns": 1209,
+              "work": 59676
+            },
+            {
+              "editor_ns": 3646083,
+              "fresh_ns": 1628396041,
+              "incremental_ns": 148943000,
+              "materialize_ns": 139226916,
+              "parse_update_ns": 4028750,
+              "reused_subtrees": 11341,
+              "semantic_ns": 625,
+              "work": 59676
+            },
+            {
+              "editor_ns": 5023208,
+              "fresh_ns": 1606207708,
+              "incremental_ns": 152017750,
+              "materialize_ns": 141098166,
+              "parse_update_ns": 4025459,
+              "reused_subtrees": 11341,
+              "semantic_ns": 708,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4589541,
+              "fresh_ns": 1615095250,
+              "incremental_ns": 149596041,
+              "materialize_ns": 139334709,
+              "parse_update_ns": 4011333,
+              "reused_subtrees": 11341,
+              "semantic_ns": 667,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4329875,
+              "fresh_ns": 1621392917,
+              "incremental_ns": 151062417,
+              "materialize_ns": 140927625,
+              "parse_update_ns": 4074875,
+              "reused_subtrees": 11341,
+              "semantic_ns": 83,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 4589541,
+            "fresh_ns": 1621392917,
+            "incremental_ns": 151062417,
+            "materialize_ns": 140927625,
+            "parse_update_ns": 4028750,
+            "reused_subtrees": 11341,
+            "semantic_ns": 667,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1632468458,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1669542833,
+          "samples": [
+            {
+              "editor_ns": 5650041,
+              "fresh_ns": 1621071583,
+              "incremental_ns": 154928083,
+              "materialize_ns": 142999417,
+              "parse_update_ns": 4447250,
+              "reused_subtrees": 11341,
+              "semantic_ns": 42,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4057042,
+              "fresh_ns": 1616813667,
+              "incremental_ns": 147977042,
+              "materialize_ns": 138020917,
+              "parse_update_ns": 4040667,
+              "reused_subtrees": 11341,
+              "semantic_ns": 542,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4633083,
+              "fresh_ns": 1627215250,
+              "incremental_ns": 148249000,
+              "materialize_ns": 137515208,
+              "parse_update_ns": 4231917,
+              "reused_subtrees": 11341,
+              "semantic_ns": 667,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4263000,
+              "fresh_ns": 1619022209,
+              "incremental_ns": 147680792,
+              "materialize_ns": 137265625,
+              "parse_update_ns": 4259750,
+              "reused_subtrees": 11341,
+              "semantic_ns": 1208,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4379917,
+              "fresh_ns": 1637860917,
+              "incremental_ns": 149325042,
+              "materialize_ns": 138768000,
+              "parse_update_ns": 4242791,
+              "reused_subtrees": 11341,
+              "semantic_ns": 667,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 4379917,
+            "fresh_ns": 1621071583,
+            "incremental_ns": 148249000,
+            "materialize_ns": 138020917,
+            "parse_update_ns": 4242791,
+            "reused_subtrees": 11341,
+            "semantic_ns": 667,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1629755833,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1640710500,
+          "samples": [
+            {
+              "editor_ns": 6442167,
+              "fresh_ns": 1630082500,
+              "incremental_ns": 153194375,
+              "materialize_ns": 140469958,
+              "parse_update_ns": 4707708,
+              "reused_subtrees": 11341,
+              "semantic_ns": 417,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4185500,
+              "fresh_ns": 1619137292,
+              "incremental_ns": 151104542,
+              "materialize_ns": 140994958,
+              "parse_update_ns": 4037458,
+              "reused_subtrees": 11341,
+              "semantic_ns": 833,
+              "work": 59676
+            },
+            {
+              "editor_ns": 3832709,
+              "fresh_ns": 1628430292,
+              "incremental_ns": 153867583,
+              "materialize_ns": 144011458,
+              "parse_update_ns": 4123833,
+              "reused_subtrees": 11341,
+              "semantic_ns": 708,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4289583,
+              "fresh_ns": 1610947959,
+              "incremental_ns": 163712042,
+              "materialize_ns": 153267666,
+              "parse_update_ns": 4252291,
+              "reused_subtrees": 11341,
+              "semantic_ns": 1000,
+              "work": 59676
+            },
+            {
+              "editor_ns": 3496833,
+              "fresh_ns": 1640565375,
+              "incremental_ns": 158608583,
+              "materialize_ns": 149496083,
+              "parse_update_ns": 4090833,
+              "reused_subtrees": 11341,
+              "semantic_ns": 667,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 4185500,
+            "fresh_ns": 1628430292,
+            "incremental_ns": 153867583,
+            "materialize_ns": 144011458,
+            "parse_update_ns": 4123833,
+            "reused_subtrees": 11341,
+            "semantic_ns": 708,
+            "work": 59676
+          }
+        }
+      ],
+      "after": [
+        {
+          "initial_analysis_ns": 1516865250,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1642315417,
+          "samples": [
+            {
+              "editor_ns": 4698375,
+              "fresh_ns": 1482222958,
+              "incremental_ns": 39228667,
+              "materialize_ns": 28436875,
+              "parse_update_ns": 4213250,
+              "reused_subtrees": 11341,
+              "semantic_ns": 541,
+              "work": 59676
+            },
+            {
+              "editor_ns": 3991708,
+              "fresh_ns": 1492342792,
+              "incremental_ns": 38560416,
+              "materialize_ns": 28306709,
+              "parse_update_ns": 4439583,
+              "reused_subtrees": 11341,
+              "semantic_ns": 625,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4124542,
+              "fresh_ns": 1483915708,
+              "incremental_ns": 38475667,
+              "materialize_ns": 28335000,
+              "parse_update_ns": 4439333,
+              "reused_subtrees": 11341,
+              "semantic_ns": 916,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4502625,
+              "fresh_ns": 1507140041,
+              "incremental_ns": 38492000,
+              "materialize_ns": 28192041,
+              "parse_update_ns": 4233625,
+              "reused_subtrees": 11341,
+              "semantic_ns": 542,
+              "work": 59676
+            },
+            {
+              "editor_ns": 5286167,
+              "fresh_ns": 1500028166,
+              "incremental_ns": 39807000,
+              "materialize_ns": 28533416,
+              "parse_update_ns": 4103875,
+              "reused_subtrees": 11341,
+              "semantic_ns": 750,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 4502625,
+            "fresh_ns": 1492342792,
+            "incremental_ns": 38560416,
+            "materialize_ns": 28335000,
+            "parse_update_ns": 4233625,
+            "reused_subtrees": 11341,
+            "semantic_ns": 625,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1508689500,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1640962625,
+          "samples": [
+            {
+              "editor_ns": 4990958,
+              "fresh_ns": 1493502334,
+              "incremental_ns": 39369375,
+              "materialize_ns": 28295375,
+              "parse_update_ns": 4243458,
+              "reused_subtrees": 11341,
+              "semantic_ns": 458,
+              "work": 59676
+            },
+            {
+              "editor_ns": 3964625,
+              "fresh_ns": 1491217250,
+              "incremental_ns": 38559334,
+              "materialize_ns": 28430041,
+              "parse_update_ns": 4299292,
+              "reused_subtrees": 11341,
+              "semantic_ns": 875,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4386541,
+              "fresh_ns": 1491431916,
+              "incremental_ns": 38807500,
+              "materialize_ns": 28214042,
+              "parse_update_ns": 4348584,
+              "reused_subtrees": 11341,
+              "semantic_ns": 625,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4315292,
+              "fresh_ns": 1521414917,
+              "incremental_ns": 39251875,
+              "materialize_ns": 28867625,
+              "parse_update_ns": 4160958,
+              "reused_subtrees": 11341,
+              "semantic_ns": 625,
+              "work": 59676
+            },
+            {
+              "editor_ns": 5666375,
+              "fresh_ns": 1502805000,
+              "incremental_ns": 40403625,
+              "materialize_ns": 28621791,
+              "parse_update_ns": 4377416,
+              "reused_subtrees": 11341,
+              "semantic_ns": 542,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 4386541,
+            "fresh_ns": 1493502334,
+            "incremental_ns": 39251875,
+            "materialize_ns": 28430041,
+            "parse_update_ns": 4299292,
+            "reused_subtrees": 11341,
+            "semantic_ns": 625,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1558177416,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1678787375,
+          "samples": [
+            {
+              "editor_ns": 4428792,
+              "fresh_ns": 1516594500,
+              "incremental_ns": 38602417,
+              "materialize_ns": 28447417,
+              "parse_update_ns": 4122833,
+              "reused_subtrees": 11341,
+              "semantic_ns": 500,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4278459,
+              "fresh_ns": 1504129750,
+              "incremental_ns": 39221166,
+              "materialize_ns": 28736000,
+              "parse_update_ns": 4223833,
+              "reused_subtrees": 11341,
+              "semantic_ns": 708,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4132667,
+              "fresh_ns": 1496552334,
+              "incremental_ns": 38437125,
+              "materialize_ns": 28309166,
+              "parse_update_ns": 4408750,
+              "reused_subtrees": 11341,
+              "semantic_ns": 584,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4249209,
+              "fresh_ns": 1512283083,
+              "incremental_ns": 38046334,
+              "materialize_ns": 28298625,
+              "parse_update_ns": 4007125,
+              "reused_subtrees": 11341,
+              "semantic_ns": 584,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4211334,
+              "fresh_ns": 1496074417,
+              "incremental_ns": 38450125,
+              "materialize_ns": 28461041,
+              "parse_update_ns": 4242083,
+              "reused_subtrees": 11341,
+              "semantic_ns": 459,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 4249209,
+            "fresh_ns": 1504129750,
+            "incremental_ns": 38450125,
+            "materialize_ns": 28447417,
+            "parse_update_ns": 4223833,
+            "reused_subtrees": 11341,
+            "semantic_ns": 584,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1519524875,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1666171125,
+          "samples": [
+            {
+              "editor_ns": 5687834,
+              "fresh_ns": 1558276583,
+              "incremental_ns": 41090250,
+              "materialize_ns": 29201875,
+              "parse_update_ns": 4177459,
+              "reused_subtrees": 11341,
+              "semantic_ns": 500,
+              "work": 59676
+            },
+            {
+              "editor_ns": 3956584,
+              "fresh_ns": 1514024333,
+              "incremental_ns": 38368750,
+              "materialize_ns": 28574709,
+              "parse_update_ns": 4235417,
+              "reused_subtrees": 11341,
+              "semantic_ns": 541,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4461834,
+              "fresh_ns": 1505900417,
+              "incremental_ns": 39487750,
+              "materialize_ns": 28669083,
+              "parse_update_ns": 4407334,
+              "reused_subtrees": 11341,
+              "semantic_ns": 208,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4564291,
+              "fresh_ns": 1514421000,
+              "incremental_ns": 39176833,
+              "materialize_ns": 28323291,
+              "parse_update_ns": 4279167,
+              "reused_subtrees": 11341,
+              "semantic_ns": 1000,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4484000,
+              "fresh_ns": 1500904792,
+              "incremental_ns": 38964750,
+              "materialize_ns": 28521500,
+              "parse_update_ns": 4023625,
+              "reused_subtrees": 11341,
+              "semantic_ns": 583,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 4484000,
+            "fresh_ns": 1514024333,
+            "incremental_ns": 39176833,
+            "materialize_ns": 28574709,
+            "parse_update_ns": 4235417,
+            "reused_subtrees": 11341,
+            "semantic_ns": 541,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1526398209,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1675853625,
+          "samples": [
+            {
+              "editor_ns": 5713125,
+              "fresh_ns": 1508987166,
+              "incremental_ns": 40532334,
+              "materialize_ns": 28390291,
+              "parse_update_ns": 4509708,
+              "reused_subtrees": 11341,
+              "semantic_ns": 750,
+              "work": 59676
+            },
+            {
+              "editor_ns": 3953542,
+              "fresh_ns": 1524203875,
+              "incremental_ns": 38458333,
+              "materialize_ns": 28351167,
+              "parse_update_ns": 4287333,
+              "reused_subtrees": 11341,
+              "semantic_ns": 708,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4514584,
+              "fresh_ns": 1507045708,
+              "incremental_ns": 38744417,
+              "materialize_ns": 28369417,
+              "parse_update_ns": 4021583,
+              "reused_subtrees": 11341,
+              "semantic_ns": 625,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4139584,
+              "fresh_ns": 1507208750,
+              "incremental_ns": 38390334,
+              "materialize_ns": 28173459,
+              "parse_update_ns": 4231166,
+              "reused_subtrees": 11341,
+              "semantic_ns": 41,
+              "work": 59676
+            },
+            {
+              "editor_ns": 4688792,
+              "fresh_ns": 1518825542,
+              "incremental_ns": 39420250,
+              "materialize_ns": 28573500,
+              "parse_update_ns": 4186708,
+              "reused_subtrees": 11341,
+              "semantic_ns": 750,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 4514584,
+            "fresh_ns": 1508987166,
+            "incremental_ns": 38744417,
+            "materialize_ns": 28369417,
+            "parse_update_ns": 4231166,
+            "reused_subtrees": 11341,
+            "semantic_ns": 708,
+            "work": 59676
+          }
+        }
+      ],
+      "medians": {
+        "before": {
+          "editor_ns": 4403791,
+          "fresh_ns": 1621392917,
+          "incremental_ns": 151062417,
+          "materialize_ns": 140927625,
+          "parse_update_ns": 4123833,
+          "reused_subtrees": 11341,
+          "semantic_ns": 667,
+          "work": 59676
+        },
+        "after": {
+          "editor_ns": 4484000,
+          "fresh_ns": 1504129750,
+          "incremental_ns": 38744417,
+          "materialize_ns": 28430041,
+          "parse_update_ns": 4233625,
+          "reused_subtrees": 11341,
+          "semantic_ns": 625,
+          "work": 59676
+        }
+      },
+      "ratios": {
+        "editor_ns": 1.0182136254876764,
+        "fresh_ns": 0.9276775137164363,
+        "incremental_ns": 0.2564795252812617,
+        "materialize_ns": 0.20173504662410935,
+        "parse_update_ns": 1.0266237745320919,
+        "reused_subtrees": 1.0,
+        "semantic_ns": 0.9370314842578711,
+        "work": 1.0
+      }
+    },
+    {
+      "case": "4194304-one",
+      "input_sha256": "d73208f5ec37051de89b68773a099dd4e50d9c10cee5c0bf5f62690efe4fd84c",
+      "before": [
+        {
+          "initial_analysis_ns": 6198446375,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1670980792,
+          "samples": [
+            {
+              "editor_ns": 4433000,
+              "fresh_ns": 6176706917,
+              "incremental_ns": 164207041,
+              "materialize_ns": 148284500,
+              "parse_update_ns": 9552208,
+              "reused_subtrees": 11405,
+              "semantic_ns": 459,
+              "work": 145152
+            },
+            {
+              "editor_ns": 4400625,
+              "fresh_ns": 6187074750,
+              "incremental_ns": 164037666,
+              "materialize_ns": 148913667,
+              "parse_update_ns": 9127041,
+              "reused_subtrees": 11405,
+              "semantic_ns": 750,
+              "work": 145152
+            },
+            {
+              "editor_ns": 5438958,
+              "fresh_ns": 6167548916,
+              "incremental_ns": 167321542,
+              "materialize_ns": 150470375,
+              "parse_update_ns": 9614292,
+              "reused_subtrees": 11405,
+              "semantic_ns": 750,
+              "work": 145152
+            },
+            {
+              "editor_ns": 5373875,
+              "fresh_ns": 6173967584,
+              "incremental_ns": 166043083,
+              "materialize_ns": 149461917,
+              "parse_update_ns": 9596833,
+              "reused_subtrees": 11405,
+              "semantic_ns": 792,
+              "work": 145152
+            },
+            {
+              "editor_ns": 5294875,
+              "fresh_ns": 6153190500,
+              "incremental_ns": 170638000,
+              "materialize_ns": 154323875,
+              "parse_update_ns": 9403166,
+              "reused_subtrees": 11405,
+              "semantic_ns": 542,
+              "work": 145152
+            }
+          ],
+          "source_bytes": 4194491,
+          "medians": {
+            "editor_ns": 5294875,
+            "fresh_ns": 6173967584,
+            "incremental_ns": 166043083,
+            "materialize_ns": 149461917,
+            "parse_update_ns": 9552208,
+            "reused_subtrees": 11405,
+            "semantic_ns": 750,
+            "work": 145152
+          }
+        }
+      ],
+      "after": [
+        {
+          "initial_analysis_ns": 6117613417,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings",
+          "registry_load_ns": 1684690458,
+          "samples": [
+            {
+              "editor_ns": 4250542,
+              "fresh_ns": 6051990292,
+              "incremental_ns": 45531125,
+              "materialize_ns": 30122625,
+              "parse_update_ns": 9517292,
+              "reused_subtrees": 11405,
+              "semantic_ns": 167,
+              "work": 145152
+            },
+            {
+              "editor_ns": 3969625,
+              "fresh_ns": 6009805292,
+              "incremental_ns": 44180791,
+              "materialize_ns": 28994208,
+              "parse_update_ns": 9400375,
+              "reused_subtrees": 11405,
+              "semantic_ns": 333,
+              "work": 145152
+            },
+            {
+              "editor_ns": 3338584,
+              "fresh_ns": 6075874791,
+              "incremental_ns": 43460417,
+              "materialize_ns": 29355375,
+              "parse_update_ns": 9214542,
+              "reused_subtrees": 11405,
+              "semantic_ns": 709,
+              "work": 145152
+            },
+            {
+              "editor_ns": 4235500,
+              "fresh_ns": 6015370125,
+              "incremental_ns": 45413125,
+              "materialize_ns": 29741666,
+              "parse_update_ns": 9502250,
+              "reused_subtrees": 11405,
+              "semantic_ns": 584,
+              "work": 145152
+            },
+            {
+              "editor_ns": 4283666,
+              "fresh_ns": 6061123000,
+              "incremental_ns": 44637083,
+              "materialize_ns": 29370666,
+              "parse_update_ns": 9494292,
+              "reused_subtrees": 11405,
+              "semantic_ns": 42,
+              "work": 145152
+            }
+          ],
+          "source_bytes": 4194491,
+          "medians": {
+            "editor_ns": 4235500,
+            "fresh_ns": 6051990292,
+            "incremental_ns": 44637083,
+            "materialize_ns": 29370666,
+            "parse_update_ns": 9494292,
+            "reused_subtrees": 11405,
+            "semantic_ns": 333,
+            "work": 145152
+          }
+        }
+      ],
+      "medians": {
+        "before": {
+          "editor_ns": 5294875,
+          "fresh_ns": 6173967584,
+          "incremental_ns": 166043083,
+          "materialize_ns": 149461917,
+          "parse_update_ns": 9552208,
+          "reused_subtrees": 11405,
+          "semantic_ns": 750,
+          "work": 145152
+        },
+        "after": {
+          "editor_ns": 4235500,
+          "fresh_ns": 6051990292,
+          "incremental_ns": 44637083,
+          "materialize_ns": 29370666,
+          "parse_update_ns": 9494292,
+          "reused_subtrees": 11405,
+          "semantic_ns": 333,
+          "work": 145152
+        }
+      },
+      "ratios": {
+        "editor_ns": 0.7999244552515404,
+        "fresh_ns": 0.980243289207396,
+        "incremental_ns": 0.26882831969579846,
+        "materialize_ns": 0.19650936231468247,
+        "parse_update_ns": 0.9939368991964999,
+        "reused_subtrees": 1.0,
+        "semantic_ns": 0.444,
+        "work": 1.0
+      }
+    }
+  ]
+}
