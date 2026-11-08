@@ -198,13 +198,19 @@ impl<'g> BorrowedParseSnapshot<'g> {
             }
             if !visited {
                 pending.push((view, true));
-                let children: Vec<_> = view.children().collect();
-                pending.extend(children.into_iter().rev().map(|(_, c)| (c, false)));
+                let base = pending.len();
+                pending.extend(view.children().map(|(_, child)| (child, false)));
+                // Pop children in source order without a temporary child vector.
+                pending[base..].reverse();
             } else {
-                let children: Vec<_> = view.snapshot.arena.children(view.id).collect();
-                let base = completed.len() - children.len();
+                let child_count = self
+                    .arena
+                    .node(view.id)
+                    .expect("reachable node")
+                    .child_count();
+                let base = completed.len() - child_count as usize;
                 let first_child = edges.len() as u32;
-                for (child, id) in children.iter().zip(completed.drain(base..)) {
+                for (child, id) in self.arena.children(view.id).zip(completed.drain(base..)) {
                     edges.push(Edge {
                         label: child.label,
                         node: id,
@@ -225,7 +231,7 @@ impl<'g> BorrowedParseSnapshot<'g> {
                     rule: view.rule(),
                     span: view.span(),
                     first_child,
-                    child_count: children.len() as u32,
+                    child_count,
                 });
                 completed.push(id);
             }

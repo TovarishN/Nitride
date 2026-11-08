@@ -7,10 +7,12 @@ struct Allocator;
 static ENABLED: AtomicBool = AtomicBool::new(false);
 static MAX: AtomicUsize = AtomicUsize::new(0);
 static TOTAL: AtomicUsize = AtomicUsize::new(0);
+static CALLS: AtomicUsize = AtomicUsize::new(0);
 /// The counters are process-wide, so tests that read them run one at a time.
 static SERIAL: std::sync::Mutex<()> = std::sync::Mutex::new(());
 fn allocated(size: usize) {
     if ENABLED.load(Relaxed) {
+        CALLS.fetch_add(1, Relaxed);
         MAX.fetch_max(size, Relaxed);
         TOTAL.fetch_add(size, Relaxed);
     }
@@ -363,4 +365,75 @@ fn edit_near_the_start_of_a_large_file_allocates_for_the_edit() {
         "edit allocated {} bytes",
         TOTAL.load(Relaxed)
     );
+}
+
+#[test]
+fn materializing_many_occurrences_has_bounded_allocation_calls() {
+    let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
+    let language = Box::leak(Box::new(Language {
+        trivia: TriviaPolicy::Nitrogen,
+        profile: Profile::SyntaxOnly,
+        start: 0,
+        types: &[],
+        operations: &[],
+        handlers: &[],
+        checks: &[],
+        helpers: &[],
+        rule_checks: &[],
+        patterns: &[],
+        source_hash: "materialize-allocations",
+        rules: Box::leak(
+            vec![
+                rule(
+                    "Root",
+                    Expr::Repeat {
+                        inner: &Expr::Ref(1),
+                        min: 1,
+                        max: u32::MAX,
+                    },
+                    false,
+                ),
+                rule(
+                    "Item",
+                    Expr::Sequence(&[Expr::Label("Value", &Expr::Ref(2)), Expr::Literal(";")]),
+                    false,
+                ),
+                rule("Number", Expr::Class(&[('0', '9')]), true),
+            ]
+            .into_boxed_slice(),
+        ),
+    }));
+    let source = "1;".repeat(4096);
+    let snapshot = parse_snapshot(
+        language,
+        &source,
+        Limits::default(),
+        SnapshotMode::Strict(ParseOptions::default()),
+    )
+    .unwrap();
+    CALLS.store(0, Relaxed);
+    ENABLED.store(true, Relaxed);
+    let result = snapshot.materialize();
+    ENABLED.store(false, Relaxed);
+    let calls = CALLS.load(Relaxed);
+    let flat = result.unwrap();
+    let fresh = parse(language, &source, Limits::default()).unwrap();
+    assert_eq!(flat.source, source);
+    assert_eq!(flat.root, fresh.root);
+    assert!(
+        flat.nodes
+            .iter()
+            .map(|n| (n.rule, n.span, n.child_count))
+            .eq(fresh.nodes.iter().map(|n| (n.rule, n.span, n.child_count)))
+    );
+    for id in 0..flat.nodes.len() as u32 {
+        assert!(
+            flat.children(id)
+                .iter()
+                .map(|e| (flat.label(e), e.node))
+                .eq(fresh.children(id).iter().map(|e| (fresh.label(e), e.node)))
+        );
+    }
+    // Thousands of nodes need output buffers, not thousands of scratch allocations.
+    assert!(calls < 256, "materialization allocation calls: {calls}");
 }
