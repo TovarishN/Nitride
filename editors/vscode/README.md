@@ -67,7 +67,7 @@ for the whole document. Grammar/catalog/project reloads invalidate cached syntax
 frontend authoring files continue to use full analysis.
 Diagnostic debounce deadlines follow accepted edits and relevant language-input
 changes; unrelated traffic does not postpone them. File-watch reloads also run
-when no document is pending. See [LSP scheduling](../../docs/lsp-scheduling.md)
+when no document is pending. See [LSP scheduling](https://github.com/TovarishN/Nitride/blob/main/docs/lsp-scheduling.md)
 for ordering and remaining synchronous-analysis limits.
 
 ## Settings
