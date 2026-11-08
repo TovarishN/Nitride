@@ -23,6 +23,7 @@ pub struct Loaded {
     pub roles: Arc<HashMap<(u16, String), Role>>,
 }
 
+#[derive(Clone)]
 pub struct LanguageState {
     pub entry: Entry,
     pub manifest: PathBuf,
@@ -36,12 +37,13 @@ pub struct LanguageState {
     inputs: u64,
 }
 
+#[derive(Clone)]
 pub struct ManifestState {
     pub path: PathBuf,
     pub errors: Vec<ManifestError>,
 }
 
-#[derive(Default)]
+#[derive(Clone, Default)]
 pub struct Registry {
     languages: Vec<LanguageState>,
     manifests: Vec<ManifestState>,

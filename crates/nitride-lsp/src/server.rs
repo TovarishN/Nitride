@@ -9,6 +9,7 @@ use serde_json::{Value, json};
 use std::collections::{BTreeSet, HashMap};
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
+use std::sync::Arc;
 use std::sync::mpsc::{self, RecvTimeoutError};
 use std::time::{Duration, Instant};
 
@@ -36,7 +37,7 @@ pub struct Server<W: Write> {
     pub registry: Registry,
     /// Manifests, grammars or catalogs changed since languages were loaded.
     reload: bool,
-    pub analyses: HashMap<String, Analysis>,
+    pub analyses: HashMap<String, Arc<Analysis>>,
     /// Every workspace grammar, indexed on demand and dropped when languages
     /// or grammar buffers change.
     grammars: Option<GrammarIndex>,
@@ -429,7 +430,7 @@ impl<W: Write> Server<W> {
                     ));
                 }
                 let grammars = self.grammars.as_ref().expect("just built");
-                let open = self.analyses.iter().map(|(u, a)| (u.as_str(), a));
+                let open = self.analyses.iter().map(|(u, a)| (u.as_str(), a.as_ref()));
                 Ok(navigation::workspace_symbols(grammars, open, &query))
             }
             _ => Err((METHOD_NOT_FOUND, "method not found".into())),
@@ -515,7 +516,7 @@ impl<W: Write> Server<W> {
             // Diagnostics are published as part of this analysis.
             self.analyze(uri).ok()?;
         }
-        self.analyses.get(uri)
+        self.analyses.get(uri).map(Arc::as_ref)
     }
 
     fn notification(&mut self, method: &str, params: Value) -> io::Result<bool> {
@@ -633,7 +634,7 @@ impl<W: Write> Server<W> {
             &path,
             &document.text,
             &|p: &Path| buffers.get(p),
-            self.analyses.get(uri),
+            self.analyses.get(uri).map(Arc::as_ref),
         );
         match analysis {
             Some(analysis) => {
@@ -648,7 +649,7 @@ impl<W: Write> Server<W> {
                         d
                     })
                     .collect();
-                self.analyses.insert(uri.to_owned(), analysis);
+                self.analyses.insert(uri.to_owned(), Arc::new(analysis));
                 self.publish(uri, diagnostics)
             }
             None if self.analyses.remove(uri).is_some() => self.publish(uri, vec![]),
