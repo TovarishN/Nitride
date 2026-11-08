@@ -1,8 +1,10 @@
 # Current project status
 
 Updated November 8, 2026. The starting published checkpoint was **0.3.0** on
-November 7. The engine
-milestones on `codex/engine-next-milestones` are local, unreleased development work.
+November 7. The engine milestones are proposed in
+[PR #43](https://github.com/TovarishN/Nitride/pull/43), with passing hosted CI.
+The background-analysis follow-up on `codex/lsp-background-analysis` is locally
+verified, unreleased development work; its hosted and GUI checks are unverified.
 
 ## Implemented in this development branch
 
@@ -13,8 +15,10 @@ milestones on `codex/engine-next-milestones` are local, unreleased development w
   versions and reuses recovering syntax snapshots for workspace programs.
   Binding, structural checks, navigation indexes and hints still recompute for
   the whole document; frontend authoring files retain full analysis.
-  [Diagnostic scheduling](lsp-scheduling.md) keeps unrelated traffic from
-  postponing due analysis and schedules idle file-watch reloads.
+  [Background analysis and scheduling](lsp-scheduling.md) use one worker in
+  positive-debounce mode, retain fresh request barriers, support cancellation
+  of waiting requests and reject obsolete results by document/workspace
+  generation. Idle file-watch reloads are scheduled as well.
 - Projects can select [trivia policies](trivia.md). Strict JSON accepts only its
   four whitespace characters and no comments outside tokens. Generated and
   runtime parsers pass the pinned JSONTestSuite acceptance/rejection corpus.
@@ -57,7 +61,7 @@ current scope. Distributed native binaries omit the component runtime;
 process-only Calendar is the native deployment example.
 
 The next engineering decisions should use measured editor phase costs:
-avoiding repeated flat-tree materialization, background scheduling/cancellation,
+avoiding repeated flat-tree materialization, per-document timing and parser interruption,
 incremental semantic dependencies, and
 further tree/index storage work remain possible follow-ups. Larger language
 coverage and automatic bindings from non-component metadata are separate

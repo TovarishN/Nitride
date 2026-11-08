@@ -51,11 +51,16 @@ a diagnostic; they must not strand the scheduler. Only the main thread writes RP
 `panic=abort` setting, so a panic there still terminates the process; no release
 panic-isolation guarantee is added.
 
-Completion and input share the message-loop event channel. Input EOF is explicit
+A bounded completion slot and a wake event integrate worker output with input.
+The loop consumes at most one completion and one input per turn so a queued
+client stream cannot postpone diagnostics and a ready job batch cannot monopolize
+input. Input EOF is explicit
 so a worker sender cannot keep the loop waiting after client disconnect. Exit/EOF
 cancel/drop outstanding work without joining a still-running bounded computation.
 Shutdown stops accepting new work, finishes already accepted analyses and deferred
-requests, then sends its acknowledgement. Zero-mode lifecycle remains unchanged.
+requests, then sends its acknowledgement. A pipelined exit/EOF after an accepted
+shutdown waits for that barrier; bare exit/EOF terminates immediately. This keeps
+existing buffered scripted sessions meaningful. Zero-mode lifecycle remains unchanged.
 
 ## Scheduling and requests
 
