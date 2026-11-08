@@ -1,14 +1,16 @@
 # Current project status
 
-Updated November 8, 2026. The starting published checkpoint was **0.3.0** on
-November 7. Engine milestones and background analysis were merged through
-[PR #43](https://github.com/TovarishN/Nitride/pull/43) and
-[PR #44](https://github.com/TovarishN/Nitride/pull/44), both with passing hosted CI.
-Independent document timing is the next unreleased change on
-`codex/lsp-document-scheduling`; local verification is recorded in the scheduling
-guide. Manual VS Code acceptance remains unverified.
+Updated November 9, 2026. The published checkpoint remains **0.3.0**.
+Engine milestones, background analysis, independent document scheduling and the
+release-training fix were merged through [PR #43](https://github.com/TovarishN/Nitride/pull/43),
+[PR #44](https://github.com/TovarishN/Nitride/pull/44),
+[PR #45](https://github.com/TovarishN/Nitride/pull/45) and
+[PR #46](https://github.com/TovarishN/Nitride/pull/46), all with passing hosted CI.
+The [November 9 editor baseline](benchmark-2026-11-09-editor-responsiveness.md)
+adds packaged VS Code extension-host acceptance and checked syntax/typed phase
+measurements. Visual acceptance and painted-frame latency remain unverified.
 
-## Implemented in this development branch
+## Implemented in merged development
 
 - Owned runtime syntax snapshots retain language tables safely through edits,
   concurrent readers and reloads. The final reader releases its snapshot slot.
@@ -64,10 +66,11 @@ is not a target. Modern C# semantics, embedded targets and no_std are outside th
 current scope. Distributed native binaries omit the component runtime;
 process-only Calendar is the native deployment example.
 
-The next engineering decisions should use measured editor phase costs:
-avoiding repeated flat-tree materialization, cooperative parser interruption and language-scoped reloads,
-incremental semantic dependencies, and
-further tree/index storage work remain possible follow-ups. Larger language
+Fresh measurements select snapshot-native access for syntax-only workspace
+documents as the next steady-state large-document investigation: flat-tree
+materialization accounts for most cached 4 MiB C# analysis time. Typed indexing,
+cold multi-language preparation, cooperative parser interruption and narrower
+reload invalidation remain separate follow-ups. Larger language
 coverage and automatic bindings from non-component metadata are separate
-projects. Manual VS Code acceptance and new hosted cross-platform validation
-must be distinguished from local automated tests.
+projects. Packaged extension-host checks, manual visual acceptance and hosted cross-platform
+validation remain distinct evidence.
