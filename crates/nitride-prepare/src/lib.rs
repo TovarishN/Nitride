@@ -19,7 +19,7 @@ pub use nproj::{
     NitrogenSection, ProjectLanguage, ProjectReference, ProjectWorkspace, read_language,
     read_workspace, snapshot,
 };
-pub use project::{PreparedProject, prepare_project, write_prepared};
+pub use project::{PreparedProject, apply_trivia, prepare_project, write_prepared};
 
 use serde_json::Value;
 use std::fmt;

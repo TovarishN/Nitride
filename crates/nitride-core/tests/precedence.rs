@@ -15,6 +15,7 @@ fn language() -> Language<'static> {
         action: Action::None,
     };
     Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 0,
         rules: Box::leak(
@@ -111,6 +112,7 @@ fn call_language() -> &'static Language<'static> {
         action: Action::None,
     };
     Box::leak(Box::new(Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 0,
         rules: Box::leak(
@@ -205,6 +207,7 @@ fn shared_operator_alternatives_take_longest_match() {
         action: Action::None,
     };
     let language: &'static Language<'static> = Box::leak(Box::new(Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 0,
         rules: Box::leak(

@@ -3,5 +3,6 @@
   "start": "Json.Document",
   "grammars": [
     "Json.ngr"
-  ]
+  ],
+  "trivia": "json"
 }

@@ -2,6 +2,7 @@ use nitride_core::*;
 
 fn language(builtins: &'static [Builtin<'static>]) -> &'static Language<'static> {
     Box::leak(Box::new(Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::Typed,
         source_hash: "test",
         start: 0,

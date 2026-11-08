@@ -71,6 +71,7 @@ fn prepare_nproj(path: PathBuf) -> Result<PreparedProject, PrepareError> {
             }
         })?
         .data;
+    apply_trivia(&mut data, language.trivia);
     with_bindings(&mut data, bindings);
     Ok(PreparedProject { data, inputs })
 }
@@ -146,7 +147,14 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
         .map(|b| load(b, "binding"))
         .collect::<Result<Vec<_>, _>>()?;
     let bindings = located(&binding_sources, &catalog.value, &path)?;
+    let policy = match manifest.get("trivia") {
+        None => nitride_core::TriviaPolicy::default(),
+        Some(Value::String(name)) => nitride_core::TriviaPolicy::named(name)
+            .ok_or_else(|| error(&path, "unknown trivia policy; expected nitrogen or json"))?,
+        Some(_) => return Err(error(&path, "trivia must be nitrogen or json")),
+    };
     let mut data = catalog.prepare(&sources, start, mode)?.data;
+    apply_trivia(&mut data, policy);
     with_bindings(&mut data, bindings);
     Ok(PreparedProject { data, inputs })
 }
@@ -229,4 +237,20 @@ pub fn write_prepared(project: &PreparedProject, path: &Path) -> Result<(), Prep
             Err(error(path, e.to_string()))
         }
     }
+}
+
+/// Include a non-default trivia policy in prepared identity and generated tables.
+/// Call once after preparation; default profiles retain reference-export parity.
+pub fn apply_trivia(data: &mut Value, policy: nitride_core::TriviaPolicy) {
+    if policy == nitride_core::TriviaPolicy::Nitrogen {
+        return;
+    }
+    use sha2::{Digest, Sha256};
+    let identity = format!(
+        "{};trivia={}",
+        data["source_hash"].as_str().unwrap_or_default(),
+        policy.name()
+    );
+    data["source_hash"] = format!("{:x}", Sha256::digest(identity.as_bytes())).into();
+    data["trivia"] = policy.name().into();
 }

@@ -15,10 +15,10 @@ impl SubtreeId {
     pub(crate) fn new(chunk: u32, slot: u32) -> Self {
         Self((u64::from(chunk) << 32) | u64::from(slot))
     }
-    fn chunk(self) -> u32 {
+    pub(crate) fn chunk(self) -> u32 {
         (self.0 >> 32) as u32
     }
-    fn slot(self) -> usize {
+    pub(crate) fn slot(self) -> usize {
         self.0 as u32 as usize
     }
 }
@@ -144,18 +144,50 @@ impl Relocation {
         Some(SubtreeId::new(id.chunk(), self.maps[chunk][id.slot()]))
     }
 }
-struct Evacuated {
-    arena: PublishedArena,
+struct Evacuated<'g> {
+    arena: PublishedArena<'g>,
     /// New IDs by chunk position and slot; `NONE` for unreachable nodes.
     mapping: Vec<Vec<SubtreeId>>,
     copied: usize,
 }
 #[derive(Clone)]
-pub(crate) struct PublishedArena {
+pub(crate) struct PublishedArena<'g> {
     chunks: Sequence<Arc<Chunk>>,
-    pub labels: Arc<[&'static str]>,
+    pub labels: Arc<[&'g str]>,
 }
-impl PublishedArena {
+/// A read pass remembers its last chunk without retaining another owner or
+/// adding mutable state to published snapshots. Iterators borrow the arena,
+/// so the reader can keep looking up nodes while walking a child sequence.
+pub(crate) struct ArenaReader<'a, 'g> {
+    arena: &'a PublishedArena<'g>,
+    cached: Option<(u32, &'a Chunk)>,
+}
+impl<'a> ArenaReader<'a, '_> {
+    fn chunk(&mut self, id: SubtreeId) -> Option<&'a Chunk> {
+        if let Some((key, chunk)) = self.cached {
+            if key == id.chunk() {
+                return Some(chunk);
+            }
+        }
+        let chunk = self.arena.chunk(id)?;
+        self.cached = Some((id.chunk(), chunk));
+        Some(chunk)
+    }
+    pub(crate) fn node(&mut self, id: SubtreeId) -> Option<StoredNode> {
+        self.chunk(id)?.nodes.get(id.slot()).copied()
+    }
+    pub(crate) fn children(&mut self, id: SubtreeId) -> Children<'a> {
+        let chunk = self.chunk(id).expect("owned subtree chunk");
+        chunk.children(chunk.nodes[id.slot()])
+    }
+}
+impl<'g> PublishedArena<'g> {
+    pub(crate) fn reader(&self) -> ArenaReader<'_, 'g> {
+        ArenaReader {
+            arena: self,
+            cached: None,
+        }
+    }
     fn chunk(&self, id: SubtreeId) -> Option<&Chunk> {
         self.chunks.find_key(id.chunk()).map(Arc::as_ref)
     }
@@ -328,8 +360,8 @@ impl PublishedArena {
     fn evacuate(
         &self,
         roots: &[SubtreeId],
-        mut builder: ArenaBuilder,
-    ) -> Result<Evacuated, Diagnostic> {
+        mut builder: ArenaBuilder<'g>,
+    ) -> Result<Evacuated<'g>, Diagnostic> {
         // Chunk positions follow the sequence's ascending IDs, as in `compact`.
         let chunks: Vec<&Chunk> = self.chunks.iter().map(Arc::as_ref).collect();
         let ids: Vec<u32> = chunks.iter().map(|c| c.id).collect();
@@ -529,8 +561,8 @@ impl MutableChunk {
         self.weights.shrink_to_fit();
     }
 }
-pub(crate) struct ArenaBuilder {
-    published: PublishedArena,
+pub(crate) struct ArenaBuilder<'g> {
+    published: PublishedArena<'g>,
     chunks: Vec<Option<MutableChunk>>,
     by_id: crate::parser::shared::hash::FastMap<u32, usize>,
     /// Slot index by `id - first_id`, or `u32::MAX`; `by_id` covers ids too
@@ -546,14 +578,14 @@ pub(crate) struct ArenaBuilder {
     copied_existing_bytes: u64,
     cache_only_bytes: u64,
 }
-impl ArenaBuilder {
-    pub(crate) fn new(labels: Arc<[&'static str]>) -> Self {
+impl<'g> ArenaBuilder<'g> {
+    pub(crate) fn new(labels: Arc<[&'g str]>) -> Self {
         Self::from_published(&PublishedArena {
             chunks: Sequence::default(),
             labels,
         })
     }
-    pub(crate) fn from_published(published: &PublishedArena) -> Self {
+    pub(crate) fn from_published(published: &PublishedArena<'g>) -> Self {
         let chunk = MutableChunk::new();
         let first_id = chunk.data.id;
         Self {
@@ -1071,7 +1103,7 @@ impl ArenaBuilder {
                 (alive + c.alive, slots + c.data.nodes.len())
             })
     }
-    pub(crate) fn finish(self) -> PublishedArena {
+    pub(crate) fn finish(self) -> PublishedArena<'g> {
         let mut published = self.published;
         let mut chunks: Vec<_> = self
             .chunks
@@ -1130,6 +1162,63 @@ impl ChunkIndex {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    fn local_reader_keeps_chunk_identities_and_retained_arenas_separate() {
+        let mut arena = ArenaBuilder::new(vec!["", "Earlier", "Later"].into());
+        let earlier = arena.add(1, 2, vec![]).unwrap();
+        arena.seal();
+        let later = arena.add(2, 3, vec![]).unwrap();
+        let root = arena
+            .add(
+                0,
+                5,
+                vec![
+                    Child {
+                        node: earlier,
+                        extent: 2,
+                        label: 1,
+                    },
+                    Child {
+                        node: later,
+                        extent: 3,
+                        label: 2,
+                    },
+                ],
+            )
+            .unwrap();
+        let published = arena.finish();
+        let mut reader = published.reader();
+        for id in [earlier, later, later, earlier] {
+            let node = reader.node(id).unwrap();
+            assert_eq!(
+                (node.rule, node.width),
+                if id == earlier { (1, 2) } else { (2, 3) }
+            );
+        }
+        assert!(reader.node(SubtreeId::new(0, 0)).is_none());
+        assert!(
+            reader
+                .node(SubtreeId::new(earlier.chunk(), u32::MAX))
+                .is_none()
+        );
+        assert_eq!(reader.node(earlier).unwrap().width, 2);
+        assert_eq!(
+            reader
+                .children(root)
+                .map(|e| (e.node, e.extent, e.label))
+                .collect::<Vec<_>>(),
+            vec![(earlier, 2, 1), (later, 3, 2)]
+        );
+        let mut edited = ArenaBuilder::from_published(&published);
+        let new = edited.add(3, 7, vec![]).unwrap();
+        let edited = edited.finish();
+        let mut new_reader = edited.reader();
+        assert_eq!(new_reader.node(new).unwrap().rule, 3);
+        assert_eq!(new_reader.node(earlier).unwrap().rule, 1);
+        assert!(reader.node(new).is_none());
+        assert_eq!(reader.node(later).unwrap().rule, 2);
+    }
+
     use super::*;
     #[test]
     fn current_chunk_lookup_rejects_recycled_and_freed_identities() {

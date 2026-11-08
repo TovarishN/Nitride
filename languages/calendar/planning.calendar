@@ -1,0 +1,16 @@
+// A deterministic two-week plan spanning leap day.
+let kickoff = 2024-02-28;
+let sprint = 2 weeks;
+let deadline = kickoff + sprint;
+deadline;
+weekday(deadline);
+leap(deadline);
+(deadline - kickoff) in days;
+3 fortnights in days;
+-2 weeks in days;
+(2 weeks * 3 / 2) in days;
+(2 * 3 weeks) in days;
+2024-01-01 - (-1 weeks);
+let meetings = mondays(span(kickoff, deadline));
+count(meetings);
+nth(meetings, 1);

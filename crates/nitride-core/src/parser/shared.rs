@@ -88,37 +88,53 @@ impl Memo {
         }
     }
 }
-/// Input-independent analysis of a language, computed once per process.
-/// Languages are `'static`, so their addresses identify them for good.
+/// Input-independent analysis retained by the language's snapshots.
+/// Only genuinely static tables also enter the process-wide cache.
 #[derive(Clone)]
-struct LanguageTables {
-    dispatch: std::sync::Arc<dispatch::Dispatch>,
+pub(crate) struct LanguageTables<'g> {
+    pub(crate) dispatch: std::sync::Arc<dispatch::Dispatch<'g>>,
     minimum_sensitive: std::sync::Arc<[bool]>,
+    recovery:
+        std::sync::Arc<std::sync::OnceLock<std::sync::Arc<crate::recovery::search::Tables<'g>>>>,
 }
-impl LanguageTables {
-    fn of(language: &'static Language<'static>) -> Self {
-        type Cache = std::sync::Mutex<Vec<(usize, LanguageTables)>>;
+impl<'g> LanguageTables<'g> {
+    fn new(language: &'g Language<'g>) -> Self {
+        Self {
+            dispatch: std::sync::Arc::new(dispatch::Dispatch::new(language)),
+            minimum_sensitive: language
+                .rules
+                .iter()
+                .map(|r| minimum_sensitive(language, r))
+                .collect(),
+            recovery: Default::default(),
+        }
+    }
+    pub(crate) fn recovery(
+        &self,
+        language: &'g Language<'g>,
+    ) -> std::sync::Arc<crate::recovery::search::Tables<'g>> {
+        self.recovery
+            .get_or_init(|| std::sync::Arc::new(crate::recovery::search::Tables::new(language)))
+            .clone()
+    }
+}
+impl LanguageTables<'static> {
+    fn of(language: &'static Language<'static>) -> std::sync::Arc<Self> {
+        type Cache = std::sync::Mutex<Vec<(usize, std::sync::Arc<LanguageTables<'static>>)>>;
         static CACHE: Cache = std::sync::Mutex::new(Vec::new());
         let key = std::ptr::from_ref(language) as usize;
-        let find = |cache: &[(usize, LanguageTables)]| {
-            cache
-                .iter()
-                .find(|(k, _)| *k == key)
-                .map(|(_, t)| t.clone())
-        };
-        if let Some(tables) = find(&CACHE.lock().unwrap_or_else(|e| e.into_inner())) {
-            return tables;
+        if let Some((_, tables)) = CACHE
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .find(|(k, _)| *k == key)
+        {
+            return tables.clone();
         }
-        // Analyze outside the lock; a racing thread's result is equivalent.
-        let tables = Self {
-            dispatch: std::sync::Arc::new(dispatch::Dispatch::new(language)),
-            minimum_sensitive: (language.rules.iter())
-                .map(|rule| minimum_sensitive(language, rule))
-                .collect(),
-        };
+        let tables = std::sync::Arc::new(Self::new(language));
         let mut cache = CACHE.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(existing) = find(&cache) {
-            return existing;
+        if let Some((_, existing)) = cache.iter().find(|(k, _)| *k == key) {
+            return existing.clone();
         }
         cache.push((key, tables.clone()));
         tables
@@ -144,17 +160,18 @@ fn minimum_sensitive(language: &Language, rule: &Rule) -> bool {
     };
     tail.is_some_and(|expr| direct_operand(language, expr, rule.owner))
 }
-struct Parser<'a> {
+struct Parser<'a, 'g> {
     optimize_recognition: bool,
     compiled: Option<&'static CompiledParser>,
     lexers: Option<&'static crate::lexical::CompiledLexers>,
     choice_cache: FastMap<usize, Option<std::sync::Arc<dispatch::ChoicePlan>>>,
     choice_cache_bytes: usize,
     tokens: TokenCache,
-    language: &'static Language<'static>,
+    language: &'g Language<'g>,
+    tables: std::sync::Arc<LanguageTables<'g>>,
     minimum_sensitive: std::sync::Arc<[bool]>,
-    dispatch: std::sync::Arc<dispatch::Dispatch>,
-    labels: Vec<&'static str>,
+    dispatch: std::sync::Arc<dispatch::Dispatch<'g>>,
+    labels: Vec<&'g str>,
     label_ids: FastMap<(usize, usize), u16>,
     source: Reader<'a>,
     options: ParseOptions,
@@ -163,7 +180,7 @@ struct Parser<'a> {
     furthest: usize,
     work: u64,
     work_budget: u64,
-    arena: ArenaBuilder,
+    arena: ArenaBuilder<'g>,
     edge_buffers: Vec<Children>,
     in_token: u32,
     memo: [FastMap<MemoKey, Memo>; 2],
@@ -187,8 +204,9 @@ struct Parser<'a> {
     prior_paths_bytes: usize,
     reused_ranges: Vec<[u32; 2]>,
 }
-#[derive(Clone, Copy)]
-struct Input<'a> {
+#[derive(Clone)]
+struct Input<'a, 'g> {
+    tables: Option<std::sync::Arc<LanguageTables<'g>>>,
     compiled: Option<&'static CompiledParser>,
     lexers: Option<&'static crate::lexical::CompiledLexers>,
     text: &'a SourceText,
@@ -198,13 +216,14 @@ struct Input<'a> {
 /// Recovery probes reuse them as an edit reuses a previous snapshot's facts;
 /// the arena owns only syntax reachable from those facts. A generated attempt
 /// also lends its callbacks and contiguous source to recovery probes.
-pub(crate) struct Seed<'a> {
-    arena: crate::syntax::arena::PublishedArena,
+pub(crate) struct Seed<'a, 'g> {
+    pub(crate) tables: std::sync::Arc<LanguageTables<'g>>,
+    arena: crate::syntax::arena::PublishedArena<'g>,
     recognitions: Index,
-    dispatch: std::sync::Arc<dispatch::Dispatch>,
+    dispatch: std::sync::Arc<dispatch::Dispatch<'g>>,
     generated: Option<Generated<'a>>,
 }
-impl<'a> Seed<'a> {
+impl<'a, 'g> Seed<'a, 'g> {
     /// The seed's source as one string, when it was parsed from one.
     pub(crate) fn contiguous(&self) -> Option<&'a str> {
         self.generated.map(|g| g.source)
@@ -222,11 +241,35 @@ pub fn parse_snapshot(
     limits: Limits,
     mode: SnapshotMode,
 ) -> Result<ParseSnapshot, Diagnostic> {
+    parse_borrowed_with_tables(
+        language,
+        source,
+        limits,
+        mode,
+        Some(LanguageTables::of(language)),
+    )
+}
+pub fn parse_borrowed_snapshot<'g>(
+    language: &'g Language<'g>,
+    source: &str,
+    limits: Limits,
+    mode: SnapshotMode,
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
+    parse_borrowed_with_tables(language, source, limits, mode, None)
+}
+fn parse_borrowed_with_tables<'g>(
+    language: &'g Language<'g>,
+    source: &str,
+    limits: Limits,
+    mode: SnapshotMode,
+    tables: Option<std::sync::Arc<LanguageTables<'g>>>,
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     let text = SourceText::new(source)?;
     match mode {
         SnapshotMode::Strict(options) => parse_with_spill(
             language,
             Input {
+                tables: tables.clone(),
                 compiled: None,
                 lexers: None,
                 text: &text,
@@ -241,6 +284,7 @@ pub fn parse_snapshot(
         SnapshotMode::Recovering(_) => recover_cold(
             language,
             Input {
+                tables: tables.clone(),
                 compiled: None,
                 lexers: None,
                 text: &text,
@@ -253,19 +297,19 @@ pub fn parse_snapshot(
 }
 /// Cold recovering parse: a strict attempt first, then recovery seeded with
 /// that attempt's recognition facts instead of recognizing the prefix again.
-fn recover_cold(
-    language: &'static Language<'static>,
-    input: Input<'_>,
+fn recover_cold<'g>(
+    language: &'g Language<'g>,
+    input: Input<'_, 'g>,
     limits: Limits,
     mode: SnapshotMode,
-) -> Result<ParseSnapshot, Diagnostic> {
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     let SnapshotMode::Recovering(options) = mode else {
         unreachable!("cold recovery requires recovering mode")
     };
     let mut seed = None;
     let error = match parse_with_spill(
         language,
-        input,
+        input.clone(),
         limits,
         ParseOptions {
             strict_comments: true,
@@ -319,12 +363,13 @@ fn parse_snapshot_specialized(
     mode: SnapshotMode,
 ) -> Result<ParseSnapshot, Diagnostic> {
     let language = lexers.language;
+    let tables = LanguageTables::of(language);
     if lexers.scanners.len() != language.rules.len()
         || compiled.is_some_and(|p| {
             p.bodies.len() != language.rules.len() || p.tails.len() != language.rules.len()
         })
     {
-        return parse_snapshot(language, source, limits, mode);
+        return parse_borrowed_with_tables(language, source, limits, mode, Some(tables.clone()));
     }
     let text = SourceText::new(source)?;
     let options = match mode {
@@ -338,6 +383,7 @@ fn parse_snapshot_specialized(
     let result = parse_with_spill(
         language,
         Input {
+            tables: Some(tables.clone()),
             lexers: Some(lexers),
             compiled,
             text: &text,
@@ -369,11 +415,11 @@ fn parse_snapshot_specialized(
         }
         (Err(_), _) => {
             drop(text);
-            parse_snapshot(language, source, limits, mode)
+            parse_borrowed_with_tables(language, source, limits, mode, Some(tables.clone()))
         }
     }
 }
-impl ParseSnapshot {
+impl<'g> BorrowedParseSnapshot<'g> {
     pub fn edit(&self, edit: &TextEdit, limits: Limits) -> Result<Self, Diagnostic> {
         let text = self.source.replace(edit)?;
         let delta = edit.replacement.len() as i64 - i64::from(edit.range[1] - edit.range[0]);
@@ -382,6 +428,7 @@ impl ParseSnapshot {
             SnapshotMode::Strict(options) => parse_with_spill(
                 self.language,
                 Input {
+                    tables: None,
                     compiled: None,
                     lexers: None,
                     text: &text,
@@ -402,6 +449,7 @@ impl ParseSnapshot {
                     match parse_with_spill(
                         self.language,
                         Input {
+                            tables: None,
                             compiled: None,
                             lexers: None,
                             text: &text,
@@ -437,18 +485,18 @@ impl ParseSnapshot {
         }
     }
 }
-fn parse_with_spill<'a>(
-    language: &'static Language<'static>,
-    text: Input<'a>,
+fn parse_with_spill<'a, 'g>(
+    language: &'g Language<'g>,
+    text: Input<'a, 'g>,
     limits: Limits,
     options: ParseOptions,
-    base: Option<&ParseSnapshot>,
+    base: Option<&BorrowedParseSnapshot<'g>>,
     index: Index,
-    mut seed: Option<&mut Option<Seed<'a>>>,
-) -> Result<ParseSnapshot, Diagnostic> {
+    mut seed: Option<&mut Option<Seed<'a, 'g>>>,
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     let result = parse_source(
         language,
-        text,
+        text.clone(),
         limits,
         options,
         limits.parser_stack_bytes,
@@ -478,16 +526,16 @@ fn parse_with_spill<'a>(
     }
 }
 #[allow(clippy::too_many_arguments)]
-fn parse_source<'a>(
-    language: &'static Language<'static>,
-    text: Input<'a>,
+fn parse_source<'a, 'g>(
+    language: &'g Language<'g>,
+    text: Input<'a, 'g>,
     limits: Limits,
     options: ParseOptions,
     stack_budget: usize,
-    base: Option<&ParseSnapshot>,
+    base: Option<&BorrowedParseSnapshot<'g>>,
     index: Index,
-    seed: Option<&mut Option<Seed<'a>>>,
-) -> Result<ParseSnapshot, Diagnostic> {
+    seed: Option<&mut Option<Seed<'a, 'g>>>,
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     let input = text;
     let text = input.text;
     let mut parser = Parser::new(language, input, limits, options, stack_budget, base, index);
@@ -509,13 +557,13 @@ fn parse_source<'a>(
         SnapshotMode::Strict(options),
     )
 }
-fn publish(
-    mut parser: Parser<'_>,
+fn publish<'g>(
+    mut parser: Parser<'_, 'g>,
     text: &SourceText,
     root: Handle,
-    base: Option<&ParseSnapshot>,
+    base: Option<&BorrowedParseSnapshot<'g>>,
     mode: SnapshotMode,
-) -> Result<ParseSnapshot, Diagnostic> {
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     parser.arena.retain(root.node);
     parser.clear_memo(0);
     parser.clear_memo(1);
@@ -594,7 +642,7 @@ fn publish(
     } else {
         root
     };
-    let mut snapshot = ParseSnapshot::from_parts(
+    let mut snapshot = BorrowedParseSnapshot::from_parts(
         parser.language,
         text.clone(),
         arena,
@@ -613,6 +661,7 @@ fn publish(
         Some(facts) => Index::from_unsorted(facts, text.len()),
         None => parser.index,
     };
+    snapshot.tables = Some(parser.tables);
     snapshot.dispatch = Some(parser.dispatch);
     parser.reused_ranges.sort_unstable();
     let mut covered = 0_u64;
@@ -637,18 +686,22 @@ fn publish(
 fn remap_facts(facts: &mut Vec<(u32, Key, Hit)>, map: impl Fn(SubtreeId) -> Option<SubtreeId>) {
     facts.retain_mut(|(.., hit)| map(hit.root).map(|root| hit.root = root).is_some());
 }
-impl<'a> Parser<'a> {
+impl<'a, 'g> Parser<'a, 'g> {
     fn new(
-        language: &'static Language<'static>,
-        input: Input<'a>,
+        language: &'g Language<'g>,
+        input: Input<'a, 'g>,
         limits: Limits,
         options: ParseOptions,
         stack_budget: usize,
-        base: Option<&ParseSnapshot>,
+        base: Option<&BorrowedParseSnapshot<'g>>,
         index: Index,
     ) -> Self {
         let text = input.text;
-        let tables = LanguageTables::of(language);
+        let tables = input
+            .tables
+            .clone()
+            .or_else(|| base.and_then(|b| b.tables.clone()))
+            .unwrap_or_else(|| std::sync::Arc::new(LanguageTables::new(language)));
         let labels = base.map_or_else(|| vec![""], |b| b.arena.labels.to_vec());
         let label_ids = label_ids(&labels);
         let root_hint = base.map(|b| PriorNode {
@@ -664,10 +717,11 @@ impl<'a> Parser<'a> {
             choice_cache_bytes: 0,
             tokens: TokenCache::for_text(text.len() as usize),
             language,
-            minimum_sensitive: tables.minimum_sensitive,
+            minimum_sensitive: tables.minimum_sensitive.clone(),
+            tables: tables.clone(),
             dispatch: base
                 .and_then(|b| b.dispatch.clone())
-                .unwrap_or(tables.dispatch),
+                .unwrap_or_else(|| tables.dispatch.clone()),
             labels,
             label_ids,
             source: input
@@ -720,7 +774,7 @@ impl<'a> Parser<'a> {
         }
     }
 }
-fn label_ids(labels: &[&'static str]) -> FastMap<(usize, usize), u16> {
+fn label_ids(labels: &[&str]) -> FastMap<(usize, usize), u16> {
     labels
         .iter()
         .enumerate()
@@ -728,11 +782,11 @@ fn label_ids(labels: &[&'static str]) -> FastMap<(usize, usize), u16> {
         .map(|(i, s)| ((s.as_ptr() as usize, s.len()), i as u16))
         .collect()
 }
-impl<'a> Parser<'a> {
+impl<'a, 'g> Parser<'a, 'g> {
     /// Convert a failed cold strict attempt into recovery seed facts. Fact
     /// roots become owners; all other syntax, including the partial root, is
     /// reclaimed before compaction.
-    fn into_seed(mut self) -> Result<Seed<'a>, Diagnostic> {
+    fn into_seed(mut self) -> Result<Seed<'a, 'g>, Diagnostic> {
         self.clear_memo(0);
         self.clear_memo(1);
         let generated = self
@@ -767,6 +821,7 @@ impl<'a> Parser<'a> {
                 Some((at, key, hit))
             }));
         Ok(Seed {
+            tables: self.tables.clone(),
             arena,
             recognitions,
             dispatch: self.dispatch,
@@ -774,7 +829,7 @@ impl<'a> Parser<'a> {
         })
     }
     /// Reuse a cold seed for the same text: its facts need no edit mapping.
-    fn adopt_seed(&mut self, text: &'a SourceText, seed: &Seed<'a>) {
+    fn adopt_seed(&mut self, text: &'a SourceText, seed: &Seed<'a, 'g>) {
         if let Some(generated) = seed.generated {
             self.source = Reader::contiguous(text, generated.source);
         }
@@ -1571,8 +1626,8 @@ impl<'a> Parser<'a> {
     fn pratt(
         &mut self,
         point: u16,
-        prefixes: &'static [u16],
-        infixes: &'static [u16],
+        prefixes: &'g [u16],
+        infixes: &'g [u16],
         minimum: u32,
         depth: u32,
     ) -> Result<Option<Handle>, Diagnostic> {
@@ -1675,8 +1730,10 @@ impl<'a> Parser<'a> {
         loop {
             self.tick(0)?;
             let character = self.source.character(self.position);
-            if let Some(c) = character.filter(|c| c.is_whitespace()) {
+            if let Some(c) = character.filter(|&c| self.language.trivia.whitespace(c)) {
                 self.position += c.len_utf8();
+            } else if !self.language.trivia.comments() {
+                return Ok(());
             } else if self.optimize_recognition && self.compiled.is_some() && character != Some('/')
             {
                 // Both original comment checks observe two bytes even when
@@ -1707,7 +1764,7 @@ impl<'a> Parser<'a> {
             }
         }
     }
-    fn intern(&mut self, label: &'static str) -> Result<u16, Diagnostic> {
+    fn intern(&mut self, label: &'g str) -> Result<u16, Diagnostic> {
         if label.is_empty() {
             return Ok(0);
         }
@@ -1876,8 +1933,8 @@ impl<'a> Parser<'a> {
     }
     fn choice_plan(
         &mut self,
-        expr: &'static Expr<'static>,
-        parts: &'static [Expr],
+        expr: &'g Expr<'g>,
+        parts: &'g [Expr],
         lexical: bool,
     ) -> Option<std::sync::Arc<dispatch::ChoicePlan>> {
         if !self.optimize_recognition || !(2..=256).contains(&parts.len()) {
@@ -1924,7 +1981,7 @@ impl<'a> Parser<'a> {
     }
     fn build_choice_plan(
         &mut self,
-        parts: &'static [Expr],
+        parts: &'g [Expr],
         lexical: bool,
     ) -> Option<std::sync::Arc<dispatch::ChoicePlan>> {
         self.stats.choice_plan_builds += 1;
@@ -1966,8 +2023,8 @@ impl<'a> Parser<'a> {
     /// start; the interpreter and generated bodies differ only there.
     pub(super) fn choice<F>(
         &mut self,
-        expr: &'static Expr<'static>,
-        parts: &'static [Expr],
+        expr: &'g Expr<'g>,
+        parts: &'g [Expr],
         lexical: bool,
         depth: u32,
         out: &mut Children,
@@ -2227,8 +2284,8 @@ impl<'a> Parser<'a> {
     fn pratt_uncached(
         &mut self,
         point: u16,
-        prefixes: &'static [u16],
-        infixes: &'static [u16],
+        prefixes: &'g [u16],
+        infixes: &'g [u16],
         minimum: u32,
         depth: u32,
     ) -> Result<Option<Handle>, Diagnostic> {
@@ -2420,8 +2477,8 @@ impl<'a> Parser<'a> {
     /// charge for the excluded remainder.
     fn pratt_planned(
         &mut self,
-        dispatch: &dispatch::Dispatch,
-        plan: &dispatch::PrattPlan,
+        dispatch: &dispatch::Dispatch<'g>,
+        plan: &dispatch::PrattPlan<'g>,
         minimum: u32,
         depth: u32,
     ) -> Result<Option<Handle>, Diagnostic> {
@@ -2548,7 +2605,7 @@ impl<'a> Parser<'a> {
     }
     fn expression(
         &mut self,
-        expr: &'static Expr<'static>,
+        expr: &'g Expr<'g>,
         lexical: bool,
         owner: Option<u16>,
         power: u32,
@@ -2706,7 +2763,7 @@ impl<'a> Parser<'a> {
 /// Recovery's opaque probe handles refer directly to immutable shared records.
 /// Only selected handles acquire committed ownership at VM stable boundaries.
 type RecoveryKeys = std::collections::HashSet<(u16, [u32; 2]), hash::Seeded>;
-impl SharedProbe<'_> {
+impl<'g> SharedProbe<'_, 'g> {
     pub(crate) fn may_consume(&self, id: u16, c: char) -> bool {
         self.parser.dispatch.may_consume(id, c)
     }
@@ -2726,8 +2783,8 @@ impl SharedProbe<'_> {
         self.parser.dispatch.may_begin(id, lexical, c)
     }
 }
-pub(crate) struct SharedProbe<'a> {
-    parser: Parser<'a>,
+pub(crate) struct SharedProbe<'a, 'g> {
+    parser: Parser<'a, 'g>,
     handles: Vec<Handle>,
     active: Vec<bool>,
     borrowed: Option<u32>,
@@ -2741,19 +2798,20 @@ pub(crate) struct SharedProbe<'a> {
     recovery_keys: RecoveryKeys,
     generated: Option<Generated<'a>>,
 }
-impl<'a> SharedProbe<'a> {
+impl<'a, 'g> SharedProbe<'a, 'g> {
     pub(crate) fn new(
-        language: &'static Language<'static>,
+        language: &'g Language<'g>,
         text: &'a SourceText,
         limits: Limits,
-        base: Option<&ParseSnapshot>,
+        base: Option<&BorrowedParseSnapshot<'g>>,
         index: Index,
-        seed: Option<&Seed<'a>>,
+        seed: Option<&Seed<'a, 'g>>,
     ) -> Self {
         let mut probe = Self {
             parser: Parser::new(
                 language,
                 Input {
+                    tables: seed.map(|s| s.tables.clone()),
                     compiled: None,
                     lexers: None,
                     text,
@@ -2913,12 +2971,7 @@ impl<'a> SharedProbe<'a> {
     /// the generated parser; only the fragment's own structure is
     /// interpreted. `None` when there is no generated parser or the run
     /// reached a limit, which the interpreted predicate then decides.
-    fn generated_predicate(
-        &mut self,
-        expr: &'static Expr<'static>,
-        at: usize,
-        reuse: bool,
-    ) -> Option<bool> {
+    fn generated_predicate(&mut self, expr: &'g Expr<'g>, at: usize, reuse: bool) -> Option<bool> {
         let generated = self.generated?;
         let parser = &mut self.parser;
         let saved = (parser.work, parser.max_depth, parser.furthest);
@@ -2966,7 +3019,7 @@ impl<'a> SharedProbe<'a> {
     /// A predicate over a single syntax reference skips trivia, then calls the
     /// rule there. Pre-recognize that call: `Some(true)` when the generated
     /// parser decided it fails, `Some(false)` when a fact now exists.
-    fn prerecognize_reference(&mut self, expr: &'static Expr<'static>, at: usize) -> Option<bool> {
+    fn prerecognize_reference(&mut self, expr: &'g Expr<'g>, at: usize) -> Option<bool> {
         let Expr::Ref(id) = *expr else {
             return None;
         };
@@ -3103,11 +3156,7 @@ impl<'a> SharedProbe<'a> {
         }
         self.rule(id, at, 0)
     }
-    pub(crate) fn predicate(
-        &mut self,
-        expr: &'static Expr<'static>,
-        at: usize,
-    ) -> Result<bool, Diagnostic> {
+    pub(crate) fn predicate(&mut self, expr: &'g Expr<'g>, at: usize) -> Result<bool, Diagnostic> {
         self.retire_borrowed();
         self.enforce_budget();
         let prerecognized = self.prerecognize_reference(expr, at);
@@ -3207,10 +3256,10 @@ impl<'a> SharedProbe<'a> {
     pub(crate) fn handle(&self, id: u32) -> Option<Handle> {
         (id != u32::MAX).then(|| self.handles[id as usize])
     }
-    pub(crate) fn label(&mut self, name: &'static str) -> Result<u16, Diagnostic> {
+    pub(crate) fn label(&mut self, name: &'g str) -> Result<u16, Diagnostic> {
         self.parser.intern(name)
     }
-    pub(crate) fn arena(&mut self) -> &mut ArenaBuilder {
+    pub(crate) fn arena(&mut self) -> &mut ArenaBuilder<'g> {
         &mut self.parser.arena
     }
     pub(crate) fn recovery_children(
@@ -3322,9 +3371,9 @@ impl<'a> SharedProbe<'a> {
         mut self,
         text: &SourceText,
         root: Handle,
-        base: Option<&ParseSnapshot>,
+        base: Option<&BorrowedParseSnapshot<'g>>,
         mode: SnapshotMode,
-    ) -> Result<(ParseSnapshot, RecoveryKeys), Diagnostic> {
+    ) -> Result<(BorrowedParseSnapshot<'g>, RecoveryKeys), Diagnostic> {
         self.parser.arena.retain(root.node);
         for (i, (handle, active)) in self.handles.into_iter().zip(self.active).enumerate() {
             if active || self.borrowed == Some(i as u32) {
@@ -3549,6 +3598,7 @@ mod tests {
                 action: Action::None,
             };
             let language = Box::leak(Box::new(Language {
+                trivia: crate::TriviaPolicy::Nitrogen,
                 rules: Box::leak(vec![root].into_boxed_slice()),
                 ..*template
             }));
@@ -3587,6 +3637,7 @@ mod tests {
             Parser::new(
                 language,
                 Input {
+                    tables: None,
                     compiled: None,
                     lexers: None,
                     text: &text,
@@ -3649,6 +3700,7 @@ mod tests {
             action: Action::None,
         };
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(vec![root].into_boxed_slice()),
             ..*template
         }));
@@ -3678,6 +3730,7 @@ mod tests {
         let mut parser = Parser::new(
             language,
             Input {
+                tables: None,
                 compiled: None,
                 lexers: None,
                 text: &text,
@@ -3754,6 +3807,7 @@ mod tests {
             ));
         }
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -3833,6 +3887,7 @@ mod tests {
                 make("X", Expr::Literal("x"), None),
             ];
             let language = Box::leak(Box::new(Language {
+                trivia: crate::TriviaPolicy::Nitrogen,
                 rules: Box::leak(rules.into_boxed_slice()),
                 ..*template
             }));
@@ -3888,6 +3943,7 @@ mod tests {
             ),
         ];
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -3940,6 +3996,7 @@ mod tests {
             make("Other", Expr::Literal("y"), Some(0)),
         ];
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -4004,6 +4061,7 @@ mod tests {
             },
         ];
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -4070,6 +4128,7 @@ mod tests {
             });
         }
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -4159,6 +4218,7 @@ mod tests {
             ]
         };
         Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4176,6 +4236,7 @@ mod tests {
         let mut parser = Parser::new(
             language,
             Input {
+                tables: None,
                 compiled: None,
                 lexers: None,
                 text,
@@ -4233,6 +4294,7 @@ mod tests {
         let next = parse_source(
             language,
             Input {
+                tables: None,
                 compiled: None,
                 lexers: None,
                 text: &text,
@@ -4262,6 +4324,7 @@ mod tests {
         let next = parse_source(
             language,
             Input {
+                tables: None,
                 compiled: None,
                 lexers: None,
                 text: &text,
@@ -4281,6 +4344,7 @@ mod tests {
     #[test]
     fn construction_hint_cache_does_not_retain_every_source_position() {
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4317,6 +4381,7 @@ mod tests {
         let mut parser = Parser::new(
             language,
             Input {
+                tables: None,
                 compiled: None,
                 lexers: None,
                 text: &text,
@@ -4342,6 +4407,7 @@ mod tests {
     #[test]
     fn warm_maintenance_uses_the_approved_retention_allowance() {
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4381,6 +4447,7 @@ mod tests {
         let parser = Parser::new(
             language,
             Input {
+                tables: None,
                 compiled: None,
                 lexers: None,
                 text: &text,
@@ -4415,6 +4482,7 @@ mod tests {
         let parser = Parser::new(
             language,
             Input {
+                tables: None,
                 compiled: None,
                 lexers: None,
                 text: &text,
@@ -4461,6 +4529,7 @@ mod tests {
             action: Action::None,
         };
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4518,6 +4587,7 @@ mod tests {
             action: Action::None,
         };
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4582,6 +4652,7 @@ mod tests {
             action: Action::None,
         };
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4618,6 +4689,7 @@ mod tests {
         let mut parser = Parser::new(
             language,
             Input {
+                tables: None,
                 compiled: None,
                 lexers: None,
                 text: &text,
@@ -4651,6 +4723,7 @@ mod tests {
             action: Action::None,
         };
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4772,6 +4845,7 @@ mod tests {
             make("Wrap", Expr::Label("Value", &Expr::Ref(4)), false),
         ];
         Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules: Box::leak(rules.into_boxed_slice()),
             start: 0,
@@ -4869,6 +4943,7 @@ mod tests {
             let mut parser = Parser::new(
                 backtracking_list(),
                 Input {
+                    tables: None,
                     compiled: None,
                     lexers: None,
                     text: &text,
@@ -4888,5 +4963,44 @@ mod tests {
                 parser.facts.capacity()
             );
         }
+    }
+    #[test]
+    fn static_specialization_fallback_reuses_warmed_dispatch() {
+        let language = backtracking_list();
+        let mode = SnapshotMode::Strict(ParseOptions::default());
+        let initial = parse_snapshot(language, "[1,2]", Limits::default(), mode).unwrap();
+        let lexers = Box::leak(Box::new(crate::lexical::CompiledLexers::new(language, &[])));
+        let fallback = parse_snapshot_compiled(lexers, "[1,2]", Limits::default(), mode).unwrap();
+        assert!(std::sync::Arc::ptr_eq(
+            initial.dispatch.as_ref().unwrap(),
+            fallback.dispatch.as_ref().unwrap()
+        ));
+    }
+    #[test]
+    fn flat_recovery_keeps_owner_scoped_analysis_for_later_edits() {
+        let language = backtracking_list();
+        let mode = SnapshotMode::Recovering(RecoveryOptions {
+            max_states: 0,
+            ..Default::default()
+        });
+        let initial = parse_snapshot(language, "[1,2]", Limits::default(), mode).unwrap();
+        let broken = initial
+            .edit(
+                &TextEdit {
+                    range: [4, 5],
+                    replacement: String::new(),
+                },
+                Limits::default(),
+            )
+            .unwrap();
+        assert_eq!(broken.stats().full_parse_fallbacks, 1);
+        assert!(
+            broken.tables.is_some(),
+            "flat fallback discarded its owner's analysis"
+        );
+        assert!(std::sync::Arc::ptr_eq(
+            initial.dispatch.as_ref().unwrap(),
+            broken.dispatch.as_ref().unwrap()
+        ));
     }
 }

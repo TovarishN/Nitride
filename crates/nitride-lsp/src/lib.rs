@@ -5,6 +5,7 @@
 pub mod actions;
 pub mod analysis;
 mod completion;
+pub mod document;
 mod format;
 pub mod grammar_index;
 pub mod index;

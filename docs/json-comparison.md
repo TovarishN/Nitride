@@ -159,7 +159,7 @@ Tried and not kept:
   peak) and narrower per-node syntax storage. These are the next places to
   look for memory.
 
-## Conformance
+## Conformance at the November 2 checkpoint
 
 `corpus.py` writes 53 hand-written RFC 8259 cases (19 valid, 34 invalid);
 `check` mode reports a verdict per file. Nitride and STJ agree with the RFC on
@@ -200,3 +200,12 @@ python3 -I bench.py --extras > ../../docs/json-comparison.json
 ```
 
 One synthetic corpus on one host; real payloads and other machines will differ.
+
+## Subsequent strict-trivia support
+
+The November 7 development branch adds a per-project trivia policy and selects
+`trivia json;` for the shipped JSON grammar. Comments and non-JSON whitespace
+outside strings are rejected by generated and runtime parsers, including
+snapshot recovery/edit paths. The historical verdict table above describes the
+November 2 revision. See [trivia policies](trivia.md) and
+[the pinned JSONTestSuite corpus](../tests/json-testsuite/README.md).

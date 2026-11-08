@@ -7,7 +7,7 @@ fn initialize_shutdown_exit() {
     let messages = Session::run(&scratch("lifecycle"), vec![]);
     let init = response(&messages, 1);
     assert_eq!(init["result"]["serverInfo"]["name"], "nitride");
-    assert_eq!(init["result"]["capabilities"]["textDocumentSync"], 1);
+    assert_eq!(init["result"]["capabilities"]["textDocumentSync"], 2);
     assert_eq!(init["result"]["capabilities"]["positionEncoding"], "utf-16");
     assert_eq!(response(&messages, 9999)["result"], Value::Null);
 }

@@ -566,8 +566,14 @@ impl<'g> Parser<'g, '_> {
         loop {
             self.tick(0)?;
             let rest = &self.source[self.position..];
-            if let Some(c) = rest.chars().next().filter(|c| c.is_whitespace()) {
+            if let Some(c) = rest
+                .chars()
+                .next()
+                .filter(|&c| self.language.trivia.whitespace(c))
+            {
                 self.position += c.len_utf8();
+            } else if !self.language.trivia.comments() {
+                return Ok(());
             } else if rest.starts_with("//") {
                 self.position += rest.find('\n').unwrap_or(rest.len());
             } else if let Some(after_open) = rest.strip_prefix("/*") {
@@ -1115,6 +1121,6 @@ impl<'g> Parser<'g, '_> {
 
 pub(crate) mod shared;
 pub use shared::{
-    CompiledParser, SyntaxContext, SyntaxMark, parse_snapshot, parse_snapshot_compiled,
-    parse_snapshot_generated,
+    CompiledParser, SyntaxContext, SyntaxMark, parse_borrowed_snapshot, parse_snapshot,
+    parse_snapshot_compiled, parse_snapshot_generated,
 };

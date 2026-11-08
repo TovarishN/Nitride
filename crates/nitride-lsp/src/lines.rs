@@ -66,6 +66,23 @@ impl LineIndex {
         end as u32
     }
 
+    /// An exact UTF-16 position for edits, rejecting surrogate splits and overflow.
+    pub fn checked_offset(&self, line: u32, column: u32) -> Option<u32> {
+        let start = *self.starts.get(line as usize)? as usize;
+        let end = self.content_end(line as usize);
+        let mut units = 0;
+        for (i, c) in self.text[start..end].char_indices() {
+            if units == column {
+                return Some((start + i) as u32);
+            }
+            units += c.len_utf16() as u32;
+            if units > column {
+                return None;
+            }
+        }
+        (units == column).then_some(end as u32)
+    }
+
     pub fn line_count(&self) -> u32 {
         self.starts.len() as u32
     }

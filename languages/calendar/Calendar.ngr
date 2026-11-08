@@ -6,11 +6,13 @@ syntax module Calendar
   token Digit = ['0'..'9'];
   token Date = Digit Digit Digit Digit "-" Digit Digit "-" Digit Digit;
   token Number = Digit+ ("." Digit+)?;
-  token Identifier = ['a'..'z' 'A'..'Z' '_'] ['a'..'z' 'A'..'Z' '0'..'9' '_']* except "let" "days" "in" "weekday" "leap" "span" "mondays" "count" "nth" "start" "end" "today";
+  token Identifier = ['a'..'z' 'A'..'Z' '_'] ['a'..'z' 'A'..'Z' '0'..'9' '_']* except "let" "days" "weeks" "fortnights" "in" "weekday" "leap" "span" "mondays" "count" "nth" "start" "end" "today";
   syntax Program = Statements:Statement*;
   syntax Statement = Let / Show;
   syntax Let = "let" Name:Identifier "=" Value:Expr ";" declares value Name sequential;
   syntax Show = Value:Expr ";";
+  syntax function WeekDuration(Count: Expr) : Expr = <[ $Count * 7 days ]>;
+  syntax function FortnightDuration(Count: Expr) : Expr = <[ $Count * 2 weeks ]>;
   extensible syntax Expr
   {
     | Day = Value:Date lowers Calendar.ParseDate(text Value)
@@ -26,6 +28,11 @@ syntax module Calendar
     | Mondays = "mondays" "(" Of:Expr ")" lowers Calendar.Mondays(Of)
     | Count = "count" "(" Of:Expr ")" lowers Calendar.Count(Of)
     | Nth = "nth" "(" Of:Expr "," Index:Expr ")" lowers Calendar.Nth(Of, Index)
+    | Neg = "-" Operand:Expr precedence 25 lowers Calendar.Negate(Operand)
+    | Weeks = Count:Expr "weeks" precedence 30 rewrites WeekDuration(Count)
+    | Fortnights = Count:Expr "fortnights" precedence 30 rewrites FortnightDuration(Count)
+    | Mul = Left:Expr "*" Right:Expr precedence 20 left lowers Calendar.Times(Left, Right)
+    | Div = Left:Expr "/" Right:Expr precedence 20 left lowers Calendar.Divide(Left, Right)
     | Days = Amount:Expr "days" precedence 30 lowers Calendar.Days(Amount)
     | InDays = Span:Expr "in" "days" precedence 5 lowers Calendar.InDays(Span)
     | Add = Left:Expr "+" Right:Expr precedence 10 left lowers Calendar.Plus(Left, Right)

@@ -4,14 +4,14 @@ use super::*;
 use crate::incremental::dependencies::Index;
 use crate::parser::shared::{Children, Handle, Seed, SharedProbe};
 use std::sync::Arc;
-impl Probe<'static> for SharedProbe<'_> {
+impl<'g> Probe<'g> for SharedProbe<'_, 'g> {
     fn selected(&mut self, root: u32) {
         self.selected(root)
     }
     fn rule(&mut self, id: u16, at: usize, power: u32) -> Result<Option<ProbeHit>, Diagnostic> {
         self.rule(id, at, power)
     }
-    fn predicate(&mut self, expr: &'static Expr<'static>, at: usize) -> Result<bool, Diagnostic> {
+    fn predicate(&mut self, expr: &'g Expr<'g>, at: usize) -> Result<bool, Diagnostic> {
         self.predicate(expr, at)
     }
     fn commit(&mut self, roots: &mut [u32], keep_from: usize) {
@@ -31,16 +31,16 @@ impl Probe<'static> for SharedProbe<'_> {
     }
 }
 #[allow(clippy::too_many_arguments)]
-pub(crate) fn recover<'a>(
-    language: &'static Language<'static>,
+pub(crate) fn recover<'a, 'g>(
+    language: &'g Language<'g>,
     text: &'a SourceText,
     limits: Limits,
     options: RecoveryOptions,
-    base: Option<&ParseSnapshot>,
+    base: Option<&BorrowedParseSnapshot<'g>>,
     index: Index,
     edit: Option<&TextEdit>,
-    seed: Option<&Seed<'a>>,
-) -> Result<ParseSnapshot, Diagnostic> {
+    seed: Option<&Seed<'a, 'g>>,
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     let result = recover_once(
         language,
         text,
@@ -80,23 +80,25 @@ pub(crate) fn recover<'a>(
     }
 }
 #[allow(clippy::too_many_arguments)]
-fn recover_once<'a>(
-    language: &'static Language<'static>,
+fn recover_once<'a, 'g>(
+    language: &'g Language<'g>,
     text: &'a SourceText,
     limits: Limits,
     options: RecoveryOptions,
-    base: Option<&ParseSnapshot>,
+    base: Option<&BorrowedParseSnapshot<'g>>,
     index: Index,
     edit: Option<&TextEdit>,
-    seed: Option<&Seed<'a>>,
-) -> Result<ParseSnapshot, Diagnostic> {
+    seed: Option<&Seed<'a, 'g>>,
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     let mut engine = engine(
         language,
         Source::Shared(text, seed.and_then(Seed::contiguous)),
         limits,
         options,
         SharedProbe::new(language, text, limits, base, index, seed),
-        Tables::shared(language),
+        seed.map(|s| s.tables.recovery(language))
+            .or_else(|| base.and_then(|b| b.tables.as_ref().map(|t| t.recovery(language))))
+            .unwrap_or_else(|| Arc::new(Tables::new(language))),
     );
     let (state, failure) = match engine.run() {
         Ok(state) => (state, None),
@@ -115,8 +117,8 @@ struct SharedFrame {
     label: u16,
     children: Children,
 }
-fn construct(
-    probe: &mut SharedProbe<'_>,
+fn construct<'g>(
+    probe: &mut SharedProbe<'_, 'g>,
     id: u16,
     start: usize,
     end: usize,
@@ -129,8 +131,8 @@ fn construct(
         width: (end - start) as u32,
     })
 }
-fn close(
-    probe: &mut SharedProbe<'_>,
+fn close<'g>(
+    probe: &mut SharedProbe<'_, 'g>,
     frames: &mut Vec<SharedFrame>,
     end: usize,
     language: &Language,
@@ -151,15 +153,15 @@ fn close(
     probe.recovery_push(&mut frames.last_mut().unwrap().children, frame.label, node);
     Ok(())
 }
-impl Engine<'static, '_, SharedProbe<'_>> {
+impl<'g> Engine<'g, '_, SharedProbe<'_, 'g>> {
     fn finish_shared(
         mut self,
         text: &SourceText,
         state: State,
         failure: Option<Diagnostic>,
-        base: Option<&ParseSnapshot>,
+        base: Option<&BorrowedParseSnapshot<'g>>,
         edit: Option<&TextEdit>,
-    ) -> Result<ParseSnapshot, Diagnostic> {
+    ) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
         let mut events = Vec::new();
         let mut history = state.history;
         while history > 0 {
@@ -268,7 +270,8 @@ impl Engine<'static, '_, SharedProbe<'_>> {
             self.budget().saturating_sub(recognition_work),
             state.position as u32,
         );
-        let mut diagnostics = repair_diagnostics_source(&repairs, self.source, &mut metadata)?;
+        let mut diagnostics =
+            repair_diagnostics_source(&repairs, self.source, self.language.trivia, &mut metadata)?;
         diagnostics.extend(exhausted);
         if let Some(error) = failure {
             diagnostics.push(error)
@@ -457,6 +460,7 @@ impl Engine<'static, '_, SharedProbe<'_>> {
             snapshot.stats.recovery_coverage_bytes += u64::from(end - start);
             let coverage = coverage_source(
                 self.source,
+                self.language.trivia,
                 &new_skipped.spans,
                 local_tokens,
                 [start, end],
@@ -483,12 +487,13 @@ impl Engine<'static, '_, SharedProbe<'_>> {
         } else {
             let coverage = coverage_source(
                 self.source,
+                self.language.trivia,
                 &new_skipped.spans,
                 lexical,
                 [0, text.len()],
                 &mut metadata,
             )?;
-            crate::SnapshotRecovery::from_parts(repairs, coverage, damaged, None)
+            crate::BorrowedSnapshotRecovery::from_parts(repairs, coverage, damaged, None)
         };
         metadata.sorting(structures.len())?;
         structures.sort_by_key(|(rule, at, _)| (*rule, *at));
@@ -514,6 +519,7 @@ impl Engine<'static, '_, SharedProbe<'_>> {
 fn repair_diagnostics_source(
     repairs: &[Repair],
     source: Source<'_>,
+    policy: TriviaPolicy,
     work: &mut MetadataWork,
 ) -> Result<Vec<Diagnostic>, Diagnostic> {
     let mut result: Vec<Diagnostic> = Vec::new();
@@ -525,9 +531,12 @@ fn repair_diagnostics_source(
         };
         if let Some(previous) = result.last_mut() {
             if previous.span[1] <= span[0]
-                && source.all_whitespace(previous.span[1] as usize, span[0] as usize, || {
-                    work.charge(1)
-                })?
+                && source.all_whitespace(
+                    previous.span[1] as usize,
+                    span[0] as usize,
+                    policy,
+                    || work.charge(1),
+                )?
             {
                 previous.span[1] = span[1];
                 continue;
@@ -539,6 +548,7 @@ fn repair_diagnostics_source(
 }
 fn coverage_source(
     source: Source<'_>,
+    policy: TriviaPolicy,
     skipped: &[[u32; 2]],
     mut tokens: Vec<[u32; 2]>,
     range: [u32; 2],
@@ -571,19 +581,19 @@ fn coverage_source(
                 .into_iter()
                 .min()
                 .unwrap_or(usize::MAX),
+                policy,
             ),
         )
         .filter(|&end| end > at)
         {
             // One step per whitespace run: adjacent trivia merges below anyway.
             (end, CoverageKind::Trivia)
-        } else if cursor.matches(at, "//") {
+        } else if policy.comments() && cursor.matches(at, "//") {
             (
                 cursor.find(at, "\n").unwrap_or(source.len()),
                 CoverageKind::Trivia,
             )
-        } else if let Some(close) = cursor
-            .matches(at, "/*")
+        } else if let Some(close) = (policy.comments() && cursor.matches(at, "/*"))
             .then(|| cursor.find(at + 2, "*/"))
             .flatten()
         {
@@ -592,7 +602,7 @@ fn coverage_source(
             let c = cursor.character(at).unwrap();
             (
                 at + c.len_utf8(),
-                if c.is_whitespace() {
+                if policy.whitespace(c) {
                     CoverageKind::Trivia
                 } else {
                     CoverageKind::Retained

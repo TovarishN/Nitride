@@ -2,7 +2,7 @@
 //! dispatch stay with Parser; callbacks never publish their own nodes.
 use super::*;
 
-pub type SyntaxBody = fn(&mut SyntaxContext<'_, '_>, u32, u32) -> Result<bool, Diagnostic>;
+pub type SyntaxBody = fn(&mut SyntaxContext<'_, '_, '_>, u32, u32) -> Result<bool, Diagnostic>;
 /// Generated callbacks paired with their unchanged language/lexical table.
 pub struct CompiledParser {
     pub(crate) lexers: &'static crate::lexical::CompiledLexers,
@@ -31,12 +31,12 @@ pub struct SyntaxMark {
 }
 /// Borrowed access to the current parser and child buffer. This is a concrete
 /// context so generated primitive calls can inline without virtual dispatch.
-pub struct SyntaxContext<'p, 's> {
-    parser: &'p mut Parser<'s>,
+pub struct SyntaxContext<'p, 's, 'g> {
+    parser: &'p mut Parser<'s, 'g>,
     children: &'p mut Children,
 }
-impl<'p, 's> SyntaxContext<'p, 's> {
-    pub(super) fn new(parser: &'p mut Parser<'s>, children: &'p mut Children) -> Self {
+impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
+    pub(super) fn new(parser: &'p mut Parser<'s, 'g>, children: &'p mut Children) -> Self {
         Self { parser, children }
     }
     /// Check the generated function's actual stack frame without charging an
@@ -118,12 +118,7 @@ impl<'p, 's> SyntaxContext<'p, 's> {
         self.children.len()
     }
     #[inline]
-    pub fn label(
-        &mut self,
-        label: &'static str,
-        from: usize,
-        depth: u32,
-    ) -> Result<(), Diagnostic> {
+    pub fn label(&mut self, label: &'g str, from: usize, depth: u32) -> Result<(), Diagnostic> {
         if self.children.len() > from {
             let label = self.parser.intern(label)?;
             self.parser.work = self
@@ -175,9 +170,9 @@ impl<'p, 's> SyntaxContext<'p, 's> {
     #[inline]
     pub fn choice(
         &mut self,
-        expr: &'static Expr<'static>,
+        expr: &'g Expr<'g>,
         depth: u32,
-        mut alternative: impl FnMut(&mut SyntaxContext<'_, '_>, usize) -> Result<bool, Diagnostic>,
+        mut alternative: impl FnMut(&mut SyntaxContext<'_, '_, '_>, usize) -> Result<bool, Diagnostic>,
     ) -> Result<bool, Diagnostic> {
         let Expr::Choice(parts) = expr else {
             return Err(Diagnostic::new(
@@ -199,7 +194,7 @@ impl<'p, 's> SyntaxContext<'p, 's> {
     #[inline]
     pub fn interpret(
         &mut self,
-        expr: &'static Expr<'static>,
+        expr: &'g Expr<'g>,
         owner: Option<u16>,
         minimum: u32,
         depth: u32,
@@ -213,6 +208,7 @@ impl<'p, 's> SyntaxContext<'p, 's> {
 mod tests {
     use super::*;
     static LANGUAGE: Language = Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 0,
         types: &[],
@@ -237,10 +233,11 @@ mod tests {
             action: Action::None,
         }],
     };
-    fn parser<'a>(text: &'a SourceText, source: &'a str) -> Parser<'a> {
+    fn parser<'a>(text: &'a SourceText, source: &'a str) -> Parser<'a, 'static> {
         Parser::new(
             &LANGUAGE,
             Input {
+                tables: None,
                 compiled: None,
                 lexers: None,
                 text,

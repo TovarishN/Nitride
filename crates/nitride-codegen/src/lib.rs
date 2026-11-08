@@ -4,6 +4,8 @@ mod lexical;
 mod syntax;
 use serde_json::Value;
 mod runtime;
+mod runtime_snapshot;
+pub use runtime_snapshot::{RuntimeAnalysisTimings, RuntimeSnapshot};
 mod wit;
 pub use interfaces::interfaces;
 pub use runtime::LoadedLanguage;
@@ -981,10 +983,16 @@ pub fn generate(input: &str) -> Result<String, String> {
             }
         }
     }
+    let trivia = match data.get("trivia") {
+        None => "Nitrogen",
+        Some(Value::String(name)) if name == "nitrogen" => "Nitrogen",
+        Some(Value::String(name)) if name == "json" => "Json",
+        _ => return Err("unknown trivia policy; expected nitrogen or json".into()),
+    };
     let lexers = lexical::generate(rules, &ids)?;
     let parser = syntax::generate(rules, &ids)?;
     Ok(format!(
-        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},helpers:{},rule_checks:{},patterns:{},source_hash:{},profile:Profile::{}}};\n{lexers}{parser}",
+        "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{trivia:nitride_core::TriviaPolicy::{trivia},rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},helpers:{},rule_checks:{},patterns:{},source_hash:{},profile:Profile::{}}};\n{lexers}{parser}",
         list(output_rules),
         list(types.into_iter().map(quoted)),
         list(signatures),

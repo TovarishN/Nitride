@@ -33,7 +33,14 @@ impl Start {
         }
         result
     }
-    fn with_trivia(self) -> Self {
+    fn with_trivia(self, policy: crate::TriviaPolicy) -> Self {
+        if policy == crate::TriviaPolicy::Json {
+            return self.union(Self {
+                ascii: [(1 << 32) | (1 << 9) | (1 << 10) | (1 << 13), 0],
+                wide: false,
+                nullable: false,
+            });
+        }
         // Non-ASCII is deliberately unclassified: Unicode whitespace is legal.
         self.union(Self {
             ascii: [
@@ -180,29 +187,29 @@ pub(super) struct Prefix {
     pub(super) power: u32,
     pub(super) precedence: u32,
 }
-pub(super) struct Infix {
+pub(super) struct Infix<'g> {
     pub(super) id: u16,
     pub(super) precedence: u32,
     pub(super) power: u32,
-    pub(super) label: &'static str,
-    pub(super) parts: &'static [Expr<'static>],
+    pub(super) label: &'g str,
+    pub(super) parts: &'g [Expr<'g>],
     pub(super) owner: Option<u16>,
 }
 /// Precomputed dispatch for a non-lexical Pratt point: validated operator
 /// metadata plus character routes. Callers peek once after trivia, attempt
 /// only routed operators in grammar order and charge the rest as skipped.
-pub(super) struct PrattPlan {
+pub(super) struct PrattPlan<'g> {
     pub(super) prefixes: Box<[Prefix]>,
     prefix_routes: Routes,
-    pub(super) infixes: Box<[Infix]>,
+    pub(super) infixes: Box<[Infix<'g>]>,
     infix_routes: Routes,
     /// Ascending precedences with the infixes at or above each.
     floors: Box<[(u32, [u64; 4])]>,
 }
-impl PrattPlan {
+impl<'g> PrattPlan<'g> {
     fn new(
-        point: &Rule<'static>,
-        language: &Language<'static>,
+        point: &'g Rule<'g>,
+        language: &'g Language<'g>,
         starts: &[Start],
         tails: &[Option<Start>],
     ) -> Option<Self> {
@@ -352,8 +359,8 @@ impl Iterator for ChoiceCandidates {
 /// A token read after trivia: a literal with keyword boundaries or a
 /// complete lexical rule match.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Debug)]
-pub(super) enum Terminal {
-    Literal(&'static str),
+pub(super) enum Terminal<'g> {
+    Literal(&'g str),
     Lexical(u16),
 }
 /// A possible beginning of a non-empty match: its first token, as an index
@@ -400,14 +407,15 @@ impl Leads {
 }
 const LEAD_LIMIT: usize = 48;
 
-pub(crate) struct Dispatch {
+pub(crate) struct Dispatch<'g> {
+    trivia: crate::TriviaPolicy,
     starts: Vec<Start>,
     tails: Vec<Option<Start>>,
     leads: Leads,
     tail_leads: Leads,
-    pratts: Vec<Option<Box<PrattPlan>>>,
+    pratts: Vec<Option<Box<PrattPlan<'g>>>>,
     /// Sorted; steps index into it.
-    terminals: Vec<Terminal>,
+    terminals: Vec<Terminal<'g>>,
     /// Per terminal: an identifier-like literal, which needs a word boundary.
     keywords: Vec<bool>,
     /// Per terminal: a literal's ASCII first byte; `LEXICAL` or `WIDE` otherwise.
@@ -418,7 +426,7 @@ pub(crate) struct Dispatch {
     plans: std::sync::Mutex<(SharedPlans, usize)>,
 }
 type SharedPlans = super::hash::FastMap<usize, Option<std::sync::Arc<ChoicePlan>>>;
-impl Dispatch {
+impl<'g> Dispatch<'g> {
     /// The bound on `plans`' charged bytes.
     const PLAN_BYTES: usize = 256 * 1024;
     /// A plan an earlier parse built for `key`, if remembered.
@@ -439,7 +447,7 @@ impl Dispatch {
             plans.0.insert(key, plan);
         }
     }
-    pub(crate) fn new(language: &Language<'static>) -> Self {
+    pub(crate) fn new(language: &'g Language<'g>) -> Self {
         let mut starts = vec![Start::default(); language.rules.len()];
         let mut budget = 1_000_000usize;
         // Monotone iteration; an exhausted preparation budget disables filtering.
@@ -476,6 +484,7 @@ impl Dispatch {
         }
         if !completed || solve(&mut starts, &mut budget).is_none() {
             return Self {
+                trivia: language.trivia,
                 starts: vec![Start::UNKNOWN; language.rules.len()],
                 tails: vec![None; language.rules.len()],
                 leads: Leads::default(),
@@ -539,6 +548,7 @@ impl Dispatch {
             })
             .collect();
         let mut dispatch = Self {
+            trivia: language.trivia,
             starts,
             tails,
             leads: Leads::default(),
@@ -595,7 +605,7 @@ impl Dispatch {
         dispatch.tail_leads = tail_leads;
         dispatch
     }
-    pub(super) fn terminal(&self, id: u16) -> Terminal {
+    pub(super) fn terminal(&self, id: u16) -> Terminal<'g> {
         self.terminals[id as usize]
     }
     pub(super) fn keyword(&self, id: u16) -> bool {
@@ -608,11 +618,7 @@ impl Dispatch {
         self.first_bytes[id as usize]
     }
     /// Possible beginnings of a non-lexical alternative that cannot match empty.
-    pub(super) fn alternative_lead(
-        &self,
-        expr: &'static Expr<'static>,
-        language: &Language<'static>,
-    ) -> Lead {
+    pub(super) fn alternative_lead(&self, expr: &'g Expr<'g>, language: &'g Language<'g>) -> Lead {
         let mut analysis = Analysis {
             language,
             starts: &self.starts,
@@ -629,7 +635,7 @@ impl Dispatch {
         }
         self.leads.get(id)
     }
-    pub(super) fn pratt(&self, id: u16) -> Option<&PrattPlan> {
+    pub(super) fn pratt(&self, id: u16) -> Option<&PrattPlan<'g>> {
         self.pratts.get(id as usize)?.as_deref()
     }
     pub(super) fn tail_lead(&self, id: u16) -> Option<&[Step]> {
@@ -674,7 +680,7 @@ impl Dispatch {
         if lexical || start == Start::default() {
             start
         } else {
-            start.with_trivia()
+            start.with_trivia(self.trivia)
         }
         .allows(c)
     }
@@ -691,7 +697,7 @@ impl Dispatch {
     }
 }
 
-fn collect_literals(expr: &'static Expr<'static>, depth: usize, into: &mut Vec<Terminal>) {
+fn collect_literals<'g>(expr: &'g Expr<'g>, depth: usize, into: &mut Vec<Terminal<'g>>) {
     if depth > 64 {
         return;
     }
@@ -828,14 +834,14 @@ fn concat(x: Found, y: Option<Found>) -> Option<Found> {
     })
 }
 /// Lead analysis over one grammar and its terminal table.
-struct Analysis<'a> {
-    language: &'a Language<'static>,
+struct Analysis<'a, 'g> {
+    language: &'g Language<'g>,
     starts: &'a [Start],
-    terminals: &'a [Terminal],
+    terminals: &'a [Terminal<'g>],
     budget: usize,
 }
-impl Analysis<'_> {
-    fn terminal(&self, terminal: Terminal) -> Option<u16> {
+impl<'g> Analysis<'_, 'g> {
+    fn terminal(&self, terminal: Terminal<'g>) -> Option<u16> {
         self.terminals
             .binary_search(&terminal)
             .ok()
@@ -893,12 +899,7 @@ impl Analysis<'_> {
         }
         leads
     }
-    fn sequence(
-        &mut self,
-        parts: &'static [Expr<'static>],
-        leads: Table<'_>,
-        depth: usize,
-    ) -> Option<Found> {
+    fn sequence(&mut self, parts: &'g [Expr<'g>], leads: Table<'_>, depth: usize) -> Option<Found> {
         let mut result = Found::EMPTY;
         for part in parts {
             // Later parts matter only after an empty or an open prefix.
@@ -916,12 +917,7 @@ impl Analysis<'_> {
     }
     /// Beginnings of the matches of `expr` in a non-lexical context.
     /// Zero-width parts contribute nothing; nullability is over-approximated.
-    fn lead(
-        &mut self,
-        expr: &'static Expr<'static>,
-        leads: Table<'_>,
-        depth: usize,
-    ) -> Option<Found> {
+    fn lead(&mut self, expr: &'g Expr<'g>, leads: Table<'_>, depth: usize) -> Option<Found> {
         if depth > 64 || self.budget == 0 {
             return None;
         }
@@ -1205,7 +1201,7 @@ fn first(
                     .get(*id as usize)
                     .is_none_or(|rule| !rule.lexical)
             {
-                value.with_trivia()
+                value.with_trivia(language.trivia)
             } else {
                 value
             }
@@ -1278,6 +1274,7 @@ mod tests {
     #[test]
     fn choice_selectors_leave_uncertain_or_zero_width_prefixes_eligible() {
         let language = Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules: &[],
             start: 0,
@@ -1387,6 +1384,7 @@ mod tests {
                 .into_boxed_slice(),
         );
         let language = Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules,
             start: 0,
@@ -1416,7 +1414,9 @@ mod tests {
         assert!(plan.starts[6].allows(None));
         assert!(plan.starts[7].allows(Some('!'))); // unproductive cycles stay unfiltered
     }
-    fn leads_for(bodies: Vec<(bool, Expr<'static>)>) -> (Dispatch, &'static Language<'static>) {
+    fn leads_for(
+        bodies: Vec<(bool, Expr<'static>)>,
+    ) -> (Dispatch<'static>, &'static Language<'static>) {
         let rules = Box::leak(
             bodies
                 .into_iter()
@@ -1437,6 +1437,7 @@ mod tests {
                 .into_boxed_slice(),
         );
         let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules,
             start: 0,
@@ -1453,16 +1454,16 @@ mod tests {
     }
     #[derive(Clone, Copy, PartialEq, Debug)]
     struct Seq {
-        first: Terminal,
+        first: Terminal<'static>,
         next: Next,
     }
     #[derive(Clone, Copy, PartialEq, Debug)]
     enum Next {
         Open,
         Any,
-        Token(Terminal),
+        Token(Terminal<'static>),
     }
-    fn seqs(plan: &Dispatch, id: u16) -> Option<Vec<Seq>> {
+    fn seqs(plan: &Dispatch<'static>, id: u16) -> Option<Vec<Seq>> {
         let steps = plan.lead(id)?;
         Some(
             steps

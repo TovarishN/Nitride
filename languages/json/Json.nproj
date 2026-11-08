@@ -3,6 +3,7 @@ language Json
   extensions .json;
   grammar Json.ngr;
   start Json.Document;
+  trivia json;
 
   nitrogen
   {

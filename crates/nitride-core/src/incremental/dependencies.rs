@@ -25,9 +25,12 @@ struct Entry {
 }
 #[derive(Clone)]
 struct SmallEntry {
-    root: SubtreeId,
-    at: u32,
-    end: u32,
+    // Two naturally aligned halves preserve every handle bit without an
+    // eight-byte alignment requirement on each record.
+    root_chunk: u32,
+    root_slot: u32,
+    at: u16,
+    end: u16,
     root_offset: u16,
     observed_extra: u16,
     furthest_extra: i16,
@@ -59,9 +62,10 @@ impl PackedLeaf {
                 keys.len() - 1
             };
             packed.push(SmallEntry {
-                root: hit.root,
-                at: u32::try_from(entry.at - base).ok()?,
-                end: hit.end_offset,
+                root_chunk: hit.root.chunk(),
+                root_slot: hit.root.slot() as u32,
+                at: u16::try_from(entry.at - base).ok()?,
+                end: u16::try_from(hit.end_offset).ok()?,
                 root_offset: u16::try_from(hit.root_offset).ok()?,
                 observed_extra: u16::try_from(
                     hit.observed_offset.checked_sub(u64::from(hit.end_offset))?,
@@ -86,9 +90,9 @@ impl PackedLeaf {
             at: self.base + i64::from(e.at),
             key: self.keys[(e.key_depth >> 11) as usize],
             hit: Hit {
-                root: e.root,
+                root: SubtreeId::new(e.root_chunk, e.root_slot),
                 root_offset: u32::from(e.root_offset),
-                end_offset: e.end,
+                end_offset: u32::from(e.end),
                 observed_offset: u64::from(e.end) + u64::from(e.observed_extra),
                 furthest_offset: (i64::from(e.end) + i64::from(e.furthest_extra)) as u32,
                 depth: u32::from(e.key_depth & 2047),
@@ -131,7 +135,7 @@ impl LeafStore {
                 let at = u32::try_from(at - leaf.base).ok()?;
                 leaf.entries
                     .binary_search_by_key(&(at, key), |e| {
-                        (e.at, leaf.keys[(e.key_depth >> 11) as usize])
+                        (u32::from(e.at), leaf.keys[(e.key_depth >> 11) as usize])
                     })
                     .ok()
                     .map(|i| leaf.entry(&leaf.entries[i]).hit)
@@ -659,7 +663,7 @@ mod tests {
         let mut counter = crate::syntax::memory::Counter::default();
         index.visit_allocations(&mut |kind, id, bytes| counter.add(kind, id, bytes));
         assert!(
-            counter.total() < 100_000 * 36,
+            counter.total() < 100_000 * 32,
             "{} bytes for regular checkpoints",
             counter.total()
         );
@@ -733,6 +737,29 @@ mod tests {
                 in_token: 0,
             };
             assert!(deferred.get(at, key) == eager.get(at, key), "{at}");
+        }
+    }
+    #[test]
+    fn compact_and_wide_leaf_boundaries_preserve_all_handle_bits_and_offsets() {
+        let mut values = Vec::new();
+        for (i, width) in [65535, 65536, u32::MAX].into_iter().enumerate() {
+            let mut value = hit(2);
+            value.root = SubtreeId::new(u32::MAX - 1, u32::MAX);
+            value.end_offset = width;
+            value.observed_offset = u64::from(width) + 1;
+            value.furthest_offset = width;
+            values.push((i as u32 * 70000, key(), value));
+        }
+        let index = Index::from_entries(values.iter().copied());
+        let (edited, _) = index.edit([35000, 35001], 7);
+        for (at, key, value) in values {
+            assert!(index.get(at, key) == Some(value));
+            if at == 0 {
+                // The first fact observes across the edit and must be invalidated.
+                assert!(edited.get(at, key).is_none());
+            } else {
+                assert!(edited.get(at + 7, key) == Some(value));
+            }
         }
     }
 }

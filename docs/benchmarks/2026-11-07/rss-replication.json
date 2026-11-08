@@ -1,0 +1,143 @@
+{
+  "case": "csharp-dense-4m-rss-replication",
+  "samples": [
+    [
+      {
+        "diagnostics": 11331,
+        "elapsed_ns": 5639948334,
+        "fallbacks": 0,
+        "fingerprint": "1dcf4fada308e34b",
+        "native_lexical_calls": 1389776,
+        "native_syntax_calls": 8268209,
+        "nodes": 1756313,
+        "source_bytes": 4183161,
+        "work": 160035991,
+        "process_wall_ns": 6104128417,
+        "peak_rss_bytes": 732168192
+      },
+      {
+        "diagnostics": 11331,
+        "elapsed_ns": 5833220750,
+        "fallbacks": 0,
+        "fingerprint": "1dcf4fada308e34b",
+        "native_lexical_calls": 1390012,
+        "native_syntax_calls": 8267701,
+        "nodes": 1756313,
+        "source_bytes": 4183161,
+        "work": 160036107,
+        "process_wall_ns": 6315048209,
+        "peak_rss_bytes": 730169344
+      },
+      {
+        "diagnostics": 11331,
+        "elapsed_ns": 5851875375,
+        "fallbacks": 0,
+        "fingerprint": "1dcf4fada308e34b",
+        "native_lexical_calls": 1390697,
+        "native_syntax_calls": 8271418,
+        "nodes": 1756313,
+        "source_bytes": 4183161,
+        "work": 160035991,
+        "process_wall_ns": 6334552542,
+        "peak_rss_bytes": 730808320
+      },
+      {
+        "diagnostics": 11331,
+        "elapsed_ns": 5643110791,
+        "fallbacks": 0,
+        "fingerprint": "1dcf4fada308e34b",
+        "native_lexical_calls": 1389665,
+        "native_syntax_calls": 8265886,
+        "nodes": 1756313,
+        "source_bytes": 4183161,
+        "work": 160035993,
+        "process_wall_ns": 6116447041,
+        "peak_rss_bytes": 725041152
+      },
+      {
+        "diagnostics": 11331,
+        "elapsed_ns": 5721218709,
+        "fallbacks": 0,
+        "fingerprint": "1dcf4fada308e34b",
+        "native_lexical_calls": 1389425,
+        "native_syntax_calls": 8264126,
+        "nodes": 1756313,
+        "source_bytes": 4183161,
+        "work": 160036108,
+        "process_wall_ns": 6195843708,
+        "peak_rss_bytes": 735641600
+      }
+    ],
+    [
+      {
+        "diagnostics": 11331,
+        "elapsed_ns": 5418669292,
+        "fallbacks": 0,
+        "fingerprint": "1dcf4fada308e34b",
+        "native_lexical_calls": 1390095,
+        "native_syntax_calls": 8266874,
+        "nodes": 1756313,
+        "source_bytes": 4183161,
+        "work": 160035991,
+        "process_wall_ns": 5885516375,
+        "peak_rss_bytes": 733167616
+      },
+      {
+        "diagnostics": 11331,
+        "elapsed_ns": 5463517667,
+        "fallbacks": 0,
+        "fingerprint": "1dcf4fada308e34b",
+        "native_lexical_calls": 1390096,
+        "native_syntax_calls": 8268649,
+        "nodes": 1756313,
+        "source_bytes": 4183161,
+        "work": 160035991,
+        "process_wall_ns": 5941176167,
+        "peak_rss_bytes": 729628672
+      },
+      {
+        "diagnostics": 11331,
+        "elapsed_ns": 5625297000,
+        "fallbacks": 0,
+        "fingerprint": "1dcf4fada308e34b",
+        "native_lexical_calls": 1390307,
+        "native_syntax_calls": 8271451,
+        "nodes": 1756313,
+        "source_bytes": 4183161,
+        "work": 160035991,
+        "process_wall_ns": 6115596000,
+        "peak_rss_bytes": 731709440
+      },
+      {
+        "diagnostics": 11331,
+        "elapsed_ns": 5682216292,
+        "fallbacks": 0,
+        "fingerprint": "1dcf4fada308e34b",
+        "native_lexical_calls": 1389959,
+        "native_syntax_calls": 8269230,
+        "nodes": 1756313,
+        "source_bytes": 4183161,
+        "work": 160036108,
+        "process_wall_ns": 6148776250,
+        "peak_rss_bytes": 720224256
+      },
+      {
+        "diagnostics": 11331,
+        "elapsed_ns": 5795533250,
+        "fallbacks": 0,
+        "fingerprint": "1dcf4fada308e34b",
+        "native_lexical_calls": 1390150,
+        "native_syntax_calls": 8268782,
+        "nodes": 1756313,
+        "source_bytes": 4183161,
+        "work": 160035991,
+        "process_wall_ns": 6277803792,
+        "peak_rss_bytes": 732217344
+      }
+    ]
+  ],
+  "median_rss": [
+    730808320,
+    731709440
+  ]
+}

@@ -41,6 +41,7 @@ fn language(extra: &'static [Helper<'static>]) -> &'static Language<'static> {
     ];
     helpers.extend(extra.iter().map(|h| Helper { ..*h }));
     Box::leak(Box::new(Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::Typed,
         start: 0,
         source_hash: "test",

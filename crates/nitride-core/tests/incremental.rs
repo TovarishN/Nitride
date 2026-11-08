@@ -46,6 +46,7 @@ fn language(lookahead: bool) -> &'static Language<'static> {
         r.lexical = false;
     }
     Box::leak(Box::new(Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         rules: Box::leak(rules.into_boxed_slice()),
         start: 0,
@@ -121,6 +122,7 @@ fn append_at_eof_invalidates_negative_predicate() {
         ]),
     );
     let language = Box::leak(Box::new(Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         rules: Box::leak(vec![rule].into_boxed_slice()),
         start: 0,
@@ -184,6 +186,7 @@ fn nested_token_visibility_is_part_of_memo_context() {
     }
     rules[5].owner = Some(4);
     let language = Box::leak(Box::new(Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         rules: Box::leak(rules.into_boxed_slice()),
         start: 0,

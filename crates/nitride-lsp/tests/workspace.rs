@@ -182,8 +182,23 @@ fn missing_grammar_is_reported_on_its_nproj() {
 fn repo_manifest_loads() {
     let mut registry = Registry::default();
     registry.reload(&[repo()], &|_| None);
-    // The 13 nitride.nproj languages, and languages/signed's signed Portable.
-    assert_eq!(registry.languages().len(), 14);
+    // Verify the newly served profiles rather than fixing the total inventory.
+    assert_eq!(
+        registry
+            .for_path(&repo().join("sample.calendar"))
+            .unwrap()
+            .entry
+            .name,
+        "Calendar"
+    );
+    assert_eq!(
+        registry
+            .for_path(&repo().join("sample.json"))
+            .unwrap()
+            .entry
+            .trivia,
+        nitride_core::TriviaPolicy::Json
+    );
     assert_eq!(registry.languages().iter().filter(|l| l.signed).count(), 1);
     for language in registry.languages() {
         assert!(

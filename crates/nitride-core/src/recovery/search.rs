@@ -229,7 +229,7 @@ pub(super) fn recover<'g>(
 }
 
 /// Recovery's grammar tables, derived from the language alone.
-pub(super) struct Tables<'g> {
+pub(crate) struct Tables<'g> {
     graph: Grammar<'g>,
     /// Distinct grammar literals, grouped by their first byte.
     literal_tokens: Vec<Vec<&'g str>>,
@@ -237,7 +237,7 @@ pub(super) struct Tables<'g> {
     lexical: Vec<u16>,
 }
 impl<'g> Tables<'g> {
-    fn new(language: &'g Language<'g>) -> Self {
+    pub(crate) fn new(language: &'g Language<'g>) -> Self {
         let graph = Grammar::new(language);
         let mut literal_tokens = vec![Vec::new(); 256];
         let mut character_tokens = Vec::new();
@@ -271,32 +271,6 @@ impl<'g> Tables<'g> {
             character_tokens,
             lexical,
         }
-    }
-}
-impl Tables<'static> {
-    /// One analysis per language for the life of the process: languages are
-    /// `'static`, so their addresses identify them for good.
-    pub(super) fn shared(language: &'static Language<'static>) -> std::sync::Arc<Self> {
-        type Cache = std::sync::Mutex<Vec<(usize, std::sync::Arc<Tables<'static>>)>>;
-        static CACHE: Cache = std::sync::Mutex::new(Vec::new());
-        let key = std::ptr::from_ref(language) as usize;
-        let find = |cache: &[(usize, std::sync::Arc<Tables<'static>>)]| {
-            cache
-                .iter()
-                .find(|(k, _)| *k == key)
-                .map(|(_, t)| t.clone())
-        };
-        if let Some(tables) = find(&CACHE.lock().unwrap_or_else(|e| e.into_inner())) {
-            return tables;
-        }
-        // Analyze outside the lock; a racing thread's result is equivalent.
-        let tables = std::sync::Arc::new(Self::new(language));
-        let mut cache = CACHE.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some(existing) = find(&cache) {
-            return existing;
-        }
-        cache.push((key, tables.clone()));
-        tables
     }
 }
 
@@ -449,7 +423,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
         Ok(())
     }
     fn trivia(&mut self, state: &mut State) {
-        state.position = self.source.trivia_end(state.position);
+        state.position = self.source.trivia_end(state.position, self.language.trivia);
     }
     fn literal_end(&self, text: &str, at: usize) -> Option<usize> {
         let end = at.checked_add(text.len())?;
@@ -1478,7 +1452,8 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
             id
         };
         builder.nodes[root as usize].span = [0, self.source.len() as u32];
-        let mut diagnostics = repair_diagnostics(&repairs, self.source.flat());
+        let mut diagnostics =
+            repair_diagnostics(&repairs, self.source.flat(), self.language.trivia);
         diagnostics.extend(exhausted);
         if let Some(error) = failure {
             diagnostics.push(error);
@@ -1628,7 +1603,7 @@ impl<'g> Builder<'g> {
     }
 }
 
-fn repair_diagnostics(repairs: &[Repair], source: &str) -> Vec<Diagnostic> {
+fn repair_diagnostics(repairs: &[Repair], source: &str, policy: TriviaPolicy) -> Vec<Diagnostic> {
     let mut result: Vec<Diagnostic> = vec![];
     for repair in repairs {
         let (span, message) = match repair {
@@ -1639,7 +1614,7 @@ fn repair_diagnostics(repairs: &[Repair], source: &str) -> Vec<Diagnostic> {
             if previous.span[1] <= span[0]
                 && source[previous.span[1] as usize..span[0] as usize]
                     .chars()
-                    .all(char::is_whitespace)
+                    .all(|c| policy.whitespace(c))
             {
                 previous.span[1] = span[1];
                 continue;
@@ -1685,18 +1660,21 @@ fn coverage(
             (tokens[tk][1] as usize, CoverageKind::Retained)
         } else {
             let rest = &source[at..];
-            if rest.starts_with("//") {
+            if language.trivia.comments() && rest.starts_with("//") {
                 (
                     at + rest.find('\n').unwrap_or(rest.len()),
                     CoverageKind::Trivia,
                 )
-            } else if rest.starts_with("/*") && rest[2..].contains("*/") {
+            } else if language.trivia.comments()
+                && rest.starts_with("/*")
+                && rest[2..].contains("*/")
+            {
                 (at + rest[2..].find("*/").unwrap() + 4, CoverageKind::Trivia)
             } else {
                 let c = rest.chars().next().unwrap();
                 (
                     at + c.len_utf8(),
-                    if c.is_whitespace() {
+                    if language.trivia.whitespace(c) {
                         CoverageKind::Trivia
                     } else {
                         CoverageKind::Retained

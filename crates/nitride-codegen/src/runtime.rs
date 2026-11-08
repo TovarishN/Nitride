@@ -332,6 +332,11 @@ impl Builder {
     fn language(&mut self, node: &Node) -> Result<Language<'static>, String> {
         let f = fields(node)?;
         Ok(Language {
+            trivia: match f.get("trivia")? {
+                Node::Path(p) if tail(p) == "Nitrogen" => TriviaPolicy::Nitrogen,
+                Node::Path(p) if tail(p) == "Json" => TriviaPolicy::Json,
+                other => return Err(format!("generated table: bad trivia policy {other:?}")),
+            },
             profile: match f.get("profile")? {
                 Node::Path(p) if tail(p) == "Typed" => Profile::Typed,
                 Node::Path(p) if tail(p) == "SyntaxOnly" => Profile::SyntaxOnly,

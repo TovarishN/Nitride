@@ -76,9 +76,10 @@ checksum = "cf8baf1c55e62ffcace7a9f06f4bd9cd3f0c4beb022d3b367256b91b87513d98"
 
 [[package]]
 name = "nitride-codegen"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "nitride-core",
+ "self_cell",
  "serde_json",
 ]
 
@@ -94,11 +95,11 @@ dependencies = [
 
 [[package]]
 name = "nitride-core"
-version = "0.1.0"
+version = "0.3.0"
 
 [[package]]
 name = "nitride-prepare"
-version = "0.1.0"
+version = "0.3.0"
 dependencies = [
  "nitride-codegen",
  "nitride-core",
@@ -123,6 +124,12 @@ checksum = "1fbf4db142a473a8d80c26bbf18454ed458bf8d26c8219c331daecfdbd079001"
 dependencies = [
  "proc-macro2",
 ]
+
+[[package]]
+name = "self_cell"
+version = "1.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2ab42ca02749e120097e328d91d415325bdf43b1c72c4c8badf37375fe40a813"
 
 [[package]]
 name = "serde"
