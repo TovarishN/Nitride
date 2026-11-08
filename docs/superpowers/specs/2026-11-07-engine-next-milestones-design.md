@@ -10,6 +10,11 @@ Approved by the user ("appoved"); implementation is complete in the companion
 plan. See [final measurements and verification](../../benchmark-2026-11-07.md)
 for the November 8 results and remaining boundaries.
 
+Product direction clarified November 8: Nitride should advance independently.
+Nitrogen compatibility is a nice-to-have, not a project goal or acceptance gate.
+References to comparisons and DateCalc-shaped examples below describe engineering
+evidence and useful workflows, not a parity roadmap.
+
 ## Starting point
 
 Version 0.3.0 is published. GitHub main `297b75f` merges the current checkout's

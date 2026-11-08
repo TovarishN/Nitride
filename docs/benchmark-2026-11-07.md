@@ -134,8 +134,9 @@ copies/manual progress records were used without editing installed skills.
 Manual VS Code interaction and new hosted Windows/Linux CI were not performed.
 Reviewers did not independently rerun the full test/benchmark suite; the counts
 above are implementer-run evidence. No release, push, merge or upstream project
-change is included. Full Nitrogen/DateCalc parity, modern C# semantics and no_std
-remain outside these milestones.
+change is included. Nitrogen compatibility and reproducing DateCalc are not
+project goals; reference comparisons are optional engineering evidence. Modern
+C# semantics and no_std remain outside these milestones.
 
 ## Reproduction
 

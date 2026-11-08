@@ -2,7 +2,7 @@
 
 See [current project status](docs/status.md) for unreleased development milestones and verification.
 
-Nitride is an experimental Rust implementation of the language-engine ideas in
+Nitride is an independent Rust language engine, building on ideas from
 [Nitrogen](https://github.com/TovarishN/Nitrogen). It prepares `.ngr` grammars,
 generates native parsers, and provides binding, type checking, typed intermediate
 representation (HIR), and execution for explicitly supported language profiles.
@@ -10,8 +10,10 @@ It includes shared incremental syntax snapshots, error recovery, and a language
 server with a VS Code extension.
 
 The target is ordinary macOS, Linux, and Windows applications that want to embed
-a language without deploying .NET. Nitrogen compatibility is partial and tested
-feature by feature. Nitride is a working name; package-name availability has not
+a language without deploying .NET. The goal is to advance language-engine
+capabilities, performance and tooling on Nitride's own terms. Nitrogen
+compatibility is a nice-to-have, not a development goal or completeness gate.
+Nitride is a working name; package-name availability has not
 been checked.
 
 ## Why Nitride exists
@@ -23,7 +25,7 @@ and editor tools. Nitride explores carrying that model into a native Rust librar
 The motivation is deployment: a Rust application should be able to embed its DSL
 engine directly. Native preparation reads supported grammars and catalogs without
 starting .NET; Cargo generates parsers for bundled languages. The .NET exporter
-remains an independent development reference for compatibility checks.
+remains an optional independent reference for selected differential checks.
 
 Rust makes ownership and retained syntax storage explicit, providing a way to
 investigate memory use and subtree sharing. It does not guarantee smaller trees
@@ -32,15 +34,15 @@ benchmarks show substantial remaining costs, especially for recovery.
 
 Portability has a deliberate boundary: arbitrary C# semantic helpers are not
 translated. Supported semantics use declarative grammar clauses, catalog metadata,
-and explicit host bindings. The native execution contract stays inspectable;
-broader Nitrogen compatibility remains unfinished.
+and explicit host bindings. The native execution contract stays inspectable.
+Feature choices follow Nitride's use cases rather than a compatibility backlog.
 
 ## Nitride, Nitrogen, and Roslyn
 
 [Nitrogen](https://github.com/TovarishN/Nitrogen) is the upstream .NET language
-workbench and compatibility reference. Its grammars, language model, and reference
-implementation underpin Nitride. This separate implementation does not replace
-existing Nitrogen tools.
+workbench that inspired Nitride. Its grammars and reference implementation are
+useful sources of ideas, fixtures and selected comparisons. Nitride develops
+independently and can diverge where that improves its capabilities or design.
 
 [Roslyn](https://github.com/dotnet/roslyn) is Microsoft's open-source C# and Visual
 Basic compiler platform. Its syntax API is an independent C# parsing baseline.
@@ -182,9 +184,9 @@ Unsupported constructs and incompatible catalogs fail preparation.
 - A native grammar frontend bootstrapped from a checked-in Rust seed, with a
   [regeneration fixed-point check](docs/stage9-evidence.md).
 
-Full Nitrogen grammar/semantic compatibility and the complete DateCalc language
-are unfinished. Arbitrary C# helpers, full quotation APIs, and list splices are
-outside the admitted native profiles. Native execution uses finite `f64`;
+Full Nitrogen compatibility and reproducing the complete DateCalc language are
+not project goals. Arbitrary C# helpers, full quotation APIs, and list splices are
+outside the supported native profiles. Native execution uses finite `f64`;
 Nitrogen's numeric literal representation differs, so broad floating-point parity
 is not claimed. Embedded targets and `no_std` are not current requirements.
 
@@ -238,7 +240,7 @@ The [CI workflow](.github/workflows/ci.yml) runs native checks on Linux, macOS,
 and Windows. Recorded evidence describes specific checkpoints; it is not a claim
 that tests were rerun for every documentation update.
 
-Live Nitrogen parity checks additionally require a sibling `../Nitrogen` checkout
+Optional live Nitrogen differential checks require a sibling `../Nitrogen` checkout
 and the .NET 10 SDK. If needed, set `-p:NitrogenRoot=/absolute/path/to/Nitrogen`
 when building the reference tool:
 
@@ -249,7 +251,8 @@ python3 scripts/check_reference.py
 ```
 
 Reference adapters and helper metadata are development tools. Frozen observations
-and corpus provenance remain versioned for independent compatibility checks.
+and corpus provenance remain versioned for independent differential checks;
+agreement with Nitrogen is not a product acceptance requirement.
 
 | Evidence | Scope |
 |---|---|

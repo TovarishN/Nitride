@@ -37,9 +37,14 @@ current feature set.
 
 ## Boundaries and subsequent directions
 
-Nitrogen compatibility is partial. CSharp4 remains syntax-only; full DateCalc,
-arbitrary C# semantic helpers, modern C# semantics, embedded targets and no_std
-are unfinished. Distributed native binaries omit the component runtime;
+Nitride's goal is to advance as an independent language engine. Nitrogen is a
+source of ideas and optional comparisons; compatibility is a nice-to-have, not
+a roadmap goal or completeness requirement. Existing reference fixtures remain
+useful regression evidence without defining which features Nitride must adopt.
+
+CSharp4 remains syntax-only. Reproducing DateCalc or arbitrary C# semantic helpers
+is not a target. Modern C# semantics, embedded targets and no_std are outside the
+current scope. Distributed native binaries omit the component runtime;
 process-only Calendar is the native deployment example.
 
 The next engineering decisions should use measured editor phase costs:
