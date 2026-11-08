@@ -13,6 +13,8 @@ milestones on `codex/engine-next-milestones` are local, unreleased development w
   versions and reuses recovering syntax snapshots for workspace programs.
   Binding, structural checks, navigation indexes and hints still recompute for
   the whole document; frontend authoring files retain full analysis.
+  [Diagnostic scheduling](lsp-scheduling.md) keeps unrelated traffic from
+  postponing due analysis and schedules idle file-watch reloads.
 - Projects can select [trivia policies](trivia.md). Strict JSON accepts only its
   four whitespace characters and no comments outside tokens. Generated and
   runtime parsers pass the pinned JSONTestSuite acceptance/rejection corpus.

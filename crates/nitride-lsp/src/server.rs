@@ -10,6 +10,7 @@ use std::collections::{BTreeSet, HashMap};
 use std::io::{self, BufRead, Write};
 use std::path::{Path, PathBuf};
 use std::sync::mpsc::{self, RecvTimeoutError};
+use std::time::{Duration, Instant};
 
 pub const PARSE_ERROR: i64 = -32700;
 pub const INVALID_REQUEST: i64 = -32600;
@@ -29,6 +30,8 @@ pub struct Server<W: Write> {
     pub documents: HashMap<String, Document>,
     /// Documents whose analysis is out of date.
     pending: BTreeSet<String>,
+    debounce: Duration,
+    analysis_deadline: Option<Instant>,
     folders: Vec<PathBuf>,
     pub registry: Registry,
     /// Manifests, grammars or catalogs changed since languages were loaded.
@@ -59,21 +62,27 @@ pub fn run(
             }
         }
     });
-    let mut server = Server::new(output);
+    let mut server = Server::new(output, options.debounce);
     loop {
-        let incoming = if server.pending.is_empty() || options.debounce.is_zero() {
-            match receiver.recv() {
-                Ok(incoming) => incoming,
-                Err(_) => return Ok(()),
-            }
-        } else {
-            match receiver.recv_timeout(options.debounce) {
+        if server.pending.is_empty() && !server.reload {
+            server.analysis_deadline = None;
+        }
+        let deadline = server
+            .analysis_deadline
+            .filter(|_| !options.debounce.is_zero());
+        let incoming = if let Some(deadline) = deadline {
+            match receiver.recv_timeout(deadline.saturating_duration_since(Instant::now())) {
                 Ok(incoming) => incoming,
                 Err(RecvTimeoutError::Timeout) => {
                     server.flush()?;
                     continue;
                 }
                 Err(RecvTimeoutError::Disconnected) => return Ok(()),
+            }
+        } else {
+            match receiver.recv() {
+                Ok(incoming) => incoming,
+                Err(_) => return Ok(()),
             }
         };
         match incoming {
@@ -84,19 +93,27 @@ pub fn run(
             }
             Incoming::Malformed(error) => server.error(Value::Null, PARSE_ERROR, &error)?,
         }
-        if options.debounce.is_zero() {
+        // Give the next queued edit/close/exit a chance to supersede old work,
+        // then enforce expiry even if unrelated input keeps the queue occupied.
+        if options.debounce.is_zero()
+            || server
+                .analysis_deadline
+                .is_some_and(|due| Instant::now() >= due)
+        {
             server.flush()?;
         }
     }
 }
 
 impl<W: Write> Server<W> {
-    fn new(output: W) -> Self {
+    fn new(output: W, debounce: Duration) -> Self {
         Self {
             output,
             shutdown: false,
             documents: HashMap::new(),
             pending: BTreeSet::new(),
+            debounce,
+            analysis_deadline: None,
             folders: Vec::new(),
             registry: Registry::default(),
             reload: false,
@@ -104,6 +121,10 @@ impl<W: Write> Server<W> {
             grammars: None,
             palette: false,
         }
+    }
+
+    fn schedule(&mut self) {
+        self.analysis_deadline = Instant::now().checked_add(self.debounce);
     }
 
     fn send(&mut self, message: Value) -> io::Result<()> {
@@ -500,16 +521,21 @@ impl<W: Write> Server<W> {
     fn notification(&mut self, method: &str, params: Value) -> io::Result<bool> {
         match method {
             "exit" => return Ok(true),
+            "initialized" if self.reload => self.schedule(),
             "workspace/didChangeWatchedFiles" => {
                 // The client watches every file; only some change the languages.
                 let changes = params["changes"].as_array().cloned().unwrap_or_default();
-                self.reload |= changes.iter().any(|change| {
+                let relevant = changes.iter().any(|change| {
                     let path = change["uri"].as_str().and_then(uri::to_path);
                     let kind = change["type"].as_u64().unwrap_or(2);
                     path.is_some_and(|p| {
                         crate::registry::watched_change_matters(&self.registry, &p, kind)
                     })
                 });
+                self.reload |= relevant;
+                if relevant {
+                    self.schedule();
+                }
             }
             "workspace/didChangeWorkspaceFolders" => {
                 let folders = |key: &str| -> Vec<PathBuf> {
@@ -524,6 +550,7 @@ impl<W: Write> Server<W> {
                 self.folders.retain(|f| !removed.contains(f));
                 self.folders.extend(folders("added"));
                 self.reload = true;
+                self.schedule();
             }
             "textDocument/didOpen" => {
                 let document = &params["textDocument"];
@@ -541,6 +568,7 @@ impl<W: Write> Server<W> {
                     self.pending.insert(uri.into());
                     // Grammars and signed grammars are language inputs.
                     self.reload |= language_input(uri) || crate::signed::declares_grammar(text);
+                    self.schedule();
                 }
             }
             "textDocument/didChange" => {
@@ -555,6 +583,7 @@ impl<W: Write> Server<W> {
                         self.reload |= language_input(uri)
                             || was_signed
                             || crate::signed::declares_grammar(&document.text);
+                        self.schedule();
                     }
                 }
             }
@@ -569,8 +598,12 @@ impl<W: Write> Server<W> {
                     self.publish(&uri, vec![])?;
                 }
                 // The file on disk replaces the closed buffer.
-                self.reload |= language_input(&uri)
+                let reload = language_input(&uri)
                     || closed.is_some_and(|d| crate::signed::declares_grammar(&d.text));
+                self.reload |= reload;
+                if reload {
+                    self.schedule();
+                }
             }
             _ => {}
         }
@@ -579,6 +612,7 @@ impl<W: Write> Server<W> {
 
     /// Brings every pending document's analysis up to date.
     fn flush(&mut self) -> io::Result<()> {
+        self.analysis_deadline = None;
         if std::mem::take(&mut self.reload) {
             self.reload_languages()?;
         }
@@ -724,4 +758,63 @@ pub fn range(lines: &LineIndex, span: [u32; 2]) -> Value {
 /// An LSP diagnostic; severity 1 is an error, 2 a warning.
 pub fn diagnostic(lines: &LineIndex, span: [u32; 2], severity: u8, message: &str) -> Value {
     json!({"range":range(lines, span),"severity":severity,"source":"nitride","message":message})
+}
+
+#[cfg(test)]
+mod scheduling_tests {
+    use super::*;
+
+    #[test]
+    fn unrelated_stale_and_invalid_notifications_keep_the_edit_deadline() {
+        let mut server = Server::new(Vec::new(), Duration::from_millis(20));
+        let uri = "file:///document.simple";
+        server
+            .notification(
+                "textDocument/didOpen",
+                json!({"textDocument":{
+            "uri":uri,"version":1,"text":"ok"}}),
+            )
+            .unwrap();
+        let deadline = Some(Instant::now() + Duration::from_secs(60));
+        server.analysis_deadline = deadline;
+        for (method, params) in [
+            ("$/cancelRequest", json!({"id":7})),
+            (
+                "workspace/didChangeWatchedFiles",
+                json!({"changes":[{"uri":"file:///unrelated.txt","type":2}]}),
+            ),
+            (
+                "textDocument/didChange",
+                json!({"textDocument":{"uri":uri,"version":1},"contentChanges":[{"text":"stale"}]}),
+            ),
+            (
+                "textDocument/didChange",
+                json!({"textDocument":{"uri":uri,"version":2},"contentChanges":[{
+                "range":{"start":{"line":2,"character":0},"end":{"line":2,"character":1}},"text":"invalid"}]}),
+            ),
+        ] {
+            server.notification(method, params).unwrap();
+            assert_eq!(server.analysis_deadline, deadline, "{method}");
+        }
+        assert_eq!(server.documents[uri].text, "ok");
+        server
+            .notification(
+                "textDocument/didChange",
+                json!({"textDocument":{"uri":uri,"version":2},
+            "contentChanges":[{"text":"updated"}]}),
+            )
+            .unwrap();
+        assert_ne!(server.analysis_deadline, deadline);
+        assert_eq!(server.documents[uri].text, "updated");
+    }
+
+    #[test]
+    fn initial_reload_waits_for_the_initialized_notification() {
+        let mut server = Server::new(Vec::new(), Duration::from_millis(20));
+        server.initialize(&json!({}));
+        assert!(server.reload);
+        assert!(server.analysis_deadline.is_none());
+        server.notification("initialized", json!({})).unwrap();
+        assert!(server.analysis_deadline.is_some());
+    }
 }
