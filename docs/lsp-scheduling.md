@@ -117,9 +117,11 @@ cargo test --locked -p nitride-lsp --no-default-features
 cargo test --locked -p nitride-cli --no-default-features --test lsp_binary
 ```
 
-Manual VS Code acceptance remains unverified. Current hosted cross-platform
-results for this follow-up are reported in
-[PR #44](https://github.com/TovarishN/Nitride/pull/44). PR #43's preceding synchronous milestones passed
+Packaged VS Code extension-host acceptance is now recorded in the
+[November 9 baseline](benchmark-2026-11-09-editor-responsiveness.md); manual visual
+acceptance remains unverified. Hosted background and independent scheduling
+checks passed in [PR #44](https://github.com/TovarishN/Nitride/pull/44) and
+[PR #45](https://github.com/TovarishN/Nitride/pull/45). PR #43's preceding synchronous milestones passed
 Linux, macOS, Windows, quality and release-tooling CI after the package-safe
 README link fix. See the [design](superpowers/specs/2026-11-08-background-analysis-design.md)
 and [plan](superpowers/plans/2026-11-08-background-analysis.md) for the follow-up scope.
