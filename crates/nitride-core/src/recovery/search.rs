@@ -1452,7 +1452,8 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
             id
         };
         builder.nodes[root as usize].span = [0, self.source.len() as u32];
-        let mut diagnostics = repair_diagnostics(&repairs, self.source.flat(), self.language.trivia);
+        let mut diagnostics =
+            repair_diagnostics(&repairs, self.source.flat(), self.language.trivia);
         diagnostics.extend(exhausted);
         if let Some(error) = failure {
             diagnostics.push(error);
@@ -1664,7 +1665,10 @@ fn coverage(
                     at + rest.find('\n').unwrap_or(rest.len()),
                     CoverageKind::Trivia,
                 )
-            } else if language.trivia.comments() && rest.starts_with("/*") && rest[2..].contains("*/") {
+            } else if language.trivia.comments()
+                && rest.starts_with("/*")
+                && rest[2..].contains("*/")
+            {
                 (at + rest[2..].find("*/").unwrap() + 4, CoverageKind::Trivia)
             } else {
                 let c = rest.chars().next().unwrap();

@@ -72,9 +72,13 @@ impl LineIndex {
         let end = self.content_end(line as usize);
         let mut units = 0;
         for (i, c) in self.text[start..end].char_indices() {
-            if units == column { return Some((start + i) as u32); }
+            if units == column {
+                return Some((start + i) as u32);
+            }
             units += c.len_utf16() as u32;
-            if units > column { return None; }
+            if units > column {
+                return None;
+            }
         }
         (units == column).then_some(end as u32)
     }

@@ -65,7 +65,8 @@ fn local_edit_does_not_allocate_a_temporary_wide_child_list() {
                 max: u32::MAX,
             },
         };
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -247,7 +248,8 @@ fn local_edit_does_not_allocate_a_temporary_wide_child_list() {
 #[test]
 fn cold_parse_sorts_facts_without_a_per_byte_table() {
     let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
-    let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+    let language = Box::leak(Box::new(Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 0,
         types: &[],
@@ -302,7 +304,8 @@ fn cold_parse_sorts_facts_without_a_per_byte_table() {
 #[test]
 fn edit_near_the_start_of_a_large_file_allocates_for_the_edit() {
     let _serial = SERIAL.lock().unwrap_or_else(|e| e.into_inner());
-    let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+    let language = Box::leak(Box::new(Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 0,
         types: &[],

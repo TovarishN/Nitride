@@ -319,7 +319,8 @@ mod tests {
     use crate::syntax::arena::{ArenaBuilder, Child};
     use crate::{Action, Expr, Profile, Rule};
     fn language() -> &'static Language<'static> {
-        Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],

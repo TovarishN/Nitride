@@ -83,7 +83,16 @@ pub struct Problem {
     pub code: Option<String>,
 }
 
+#[derive(Debug, Clone, Copy, Default)]
+pub struct AnalysisTimings {
+    pub parse_ns: u128,
+    pub materialize_ns: u128,
+    pub semantic_ns: u128,
+    pub editor_ns: u128,
+}
+
 pub struct Analysis {
+    pub timings: AnalysisTimings,
     pub snapshot: Option<nitride_codegen::RuntimeSnapshot>,
     pub lines: LineIndex,
     pub tree: Option<Tree>,
@@ -184,7 +193,12 @@ fn fixes(tree: &SyntaxTree<'_>) -> Vec<Fix> {
 }
 
 /// Analyses one document; `None` when no language serves it.
-pub fn analyze(registry: &Registry, path: &Path, text: &str, open: &dyn Fn(&Path) -> Option<String>) -> Option<Analysis> {
+pub fn analyze(
+    registry: &Registry,
+    path: &Path,
+    text: &str,
+    open: &dyn Fn(&Path) -> Option<String>,
+) -> Option<Analysis> {
     analyze_incremental(registry, path, text, open, None)
 }
 
@@ -208,10 +222,13 @@ pub fn analyze_incremental(
     // parsed with them masked to spaces, so offsets are unchanged.
     let header = crate::signed::read(text);
     let source = header.masked.as_str();
-    let previous = previous.filter(|old| old.header == header.masked_spans && old.header.iter().all(|span| {
-        let range = span[0] as usize..span[1] as usize;
-        old.lines.text().get(range.clone()) == text.get(range)
-    }));
+    let previous = previous.filter(|old| {
+        old.header == header.masked_spans
+            && old.header.iter().all(|span| {
+                let range = span[0] as usize..span[1] as usize;
+                old.lines.text().get(range.clone()) == text.get(range)
+            })
+    });
     let header_problems = header.diagnostics.iter().map(|(span, message)| Problem {
         span: *span,
         severity: 1,
@@ -224,7 +241,8 @@ pub fn analyze_incremental(
         match select(registry, path, signature) {
             Ok(state) => program(state, text, source, previous),
             Err(message) => Analysis {
-        snapshot: None,
+                timings: AnalysisTimings::default(),
+                snapshot: None,
                 problems: vec![Problem {
                     span: signature.span,
                     severity: 1,
@@ -290,6 +308,7 @@ fn select<'r>(
 /// An analysis of `text` with nothing in it.
 fn empty(text: &str) -> Analysis {
     Analysis {
+        timings: AnalysisTimings::default(),
         snapshot: None,
         lines: LineIndex::new(text),
         tree: None,
@@ -306,7 +325,12 @@ fn empty(text: &str) -> Analysis {
 
 /// A program of `state`'s language: `text` as the editor holds it, parsed
 /// from `source` (the text with any signature masked).
-fn program(state: &LanguageState, text: &str, source: &str, previous: Option<&Analysis>) -> Analysis {
+fn program(
+    state: &LanguageState,
+    text: &str,
+    source: &str,
+    previous: Option<&Analysis>,
+) -> Analysis {
     let lines = LineIndex::new(text);
     let Some(loaded) = state.current.clone() else {
         let reason = state
@@ -314,7 +338,8 @@ fn program(state: &LanguageState, text: &str, source: &str, previous: Option<&An
             .first()
             .map_or_else(|| "it did not prepare".to_owned(), |e| e.to_string());
         return Analysis {
-        snapshot: None,
+            timings: AnalysisTimings::default(),
+            snapshot: None,
             lines,
             tree: None,
             problems: vec![Problem {
@@ -333,7 +358,13 @@ fn program(state: &LanguageState, text: &str, source: &str, previous: Option<&An
         };
     };
     let limits = Limits::default();
-    let cached = previous.and_then(|old| old.snapshot.as_ref().filter(|s| s.same_language(&loaded.language)).map(|s| (old, s)));
+    let cached = previous.and_then(|old| {
+        old.snapshot
+            .as_ref()
+            .filter(|s| s.same_language(&loaded.language))
+            .map(|s| (old, s))
+    });
+    let started = std::time::Instant::now();
     let snapshot = match cached {
         Some((old, snapshot)) => {
             let before = crate::signed::read(old.lines.text()).masked;
@@ -342,11 +373,27 @@ fn program(state: &LanguageState, text: &str, source: &str, previous: Option<&An
                 None => Ok(snapshot.clone()),
             }
         }
-        None => nitride_codegen::RuntimeSnapshot::parse(loaded.language.clone(), source, limits, SnapshotMode::Recovering(RecoveryOptions::default())),
+        None => nitride_codegen::RuntimeSnapshot::parse(
+            loaded.language.clone(),
+            source,
+            limits,
+            SnapshotMode::Recovering(RecoveryOptions::default()),
+        ),
     };
+    let parse_ns = started.elapsed().as_nanos();
     if let Ok(snapshot) = snapshot {
         let diagnostics = snapshot.diagnostics();
-        if let Ok(mut analysis) = snapshot.with_analyzed(limits, |tree, checked| program_analysis(loaded.clone(), text, tree, &diagnostics, checked)) {
+        if let Ok(mut analysis) = snapshot.with_analyzed_timed(limits, |tree, checked, times| {
+            let started = std::time::Instant::now();
+            let mut result = program_analysis(loaded.clone(), text, tree, &diagnostics, checked);
+            result.timings = AnalysisTimings {
+                parse_ns,
+                materialize_ns: times.materialize_ns,
+                semantic_ns: times.semantic_ns,
+                editor_ns: started.elapsed().as_nanos(),
+            };
+            result
+        }) {
             analysis.snapshot = Some(snapshot);
             return analysis;
         }
@@ -355,10 +402,22 @@ fn program(state: &LanguageState, text: &str, source: &str, previous: Option<&An
     let language = loaded.language.language();
     let parsed = parse_recovering(language, source, limits, RecoveryOptions::default());
     let checked = compile_recovering(language, &parsed, limits);
-    program_analysis(loaded.clone(), text, &parsed.tree, &parsed.diagnostics, checked)
+    program_analysis(
+        loaded.clone(),
+        text,
+        &parsed.tree,
+        &parsed.diagnostics,
+        checked,
+    )
 }
 
-fn program_analysis(loaded: Arc<Loaded>, text: &str, tree: &SyntaxTree<'_>, syntax_diagnostics: &[Diagnostic], checked: RecoveredAnalysis<'_>) -> Analysis {
+fn program_analysis(
+    loaded: Arc<Loaded>,
+    text: &str,
+    tree: &SyntaxTree<'_>,
+    syntax_diagnostics: &[Diagnostic],
+    checked: RecoveredAnalysis<'_>,
+) -> Analysis {
     let language = loaded.language.language();
     let lines = LineIndex::new(text);
     let mut problems: Vec<Problem> = Vec::new();
@@ -393,6 +452,7 @@ fn program_analysis(loaded: Arc<Loaded>, text: &str, tree: &SyntaxTree<'_>, synt
     let repairs = fixes(tree);
     let tree = Tree::new(Grammar::Workspace(loaded.clone()), tree);
     Analysis {
+        timings: AnalysisTimings::default(),
         snapshot: None,
         lines,
         tree: Some(tree),
@@ -487,6 +547,7 @@ fn grammar(
     })
     .unwrap_or_default();
     Analysis {
+        timings: AnalysisTimings::default(),
         snapshot: None,
         lines,
         tree: Some(Tree::new(Grammar::Frontend, &parsed.tree)),
@@ -579,6 +640,7 @@ fn project(
         }
     };
     Analysis {
+        timings: AnalysisTimings::default(),
         snapshot: None,
         lines,
         tree: Some(Tree::new(Grammar::Project, &parsed.tree)),
@@ -628,6 +690,7 @@ fn catalog(
         text: text.to_owned(),
     };
     Analysis {
+        timings: AnalysisTimings::default(),
         snapshot: None,
         lines,
         tree: Some(Tree::new(Grammar::Catalog, &parsed.tree)),
@@ -704,6 +767,7 @@ fn binding(
         }
     }
     Analysis {
+        timings: AnalysisTimings::default(),
         snapshot: None,
         lines,
         tree: Some(Tree::new(Grammar::Binding, &parsed.tree)),

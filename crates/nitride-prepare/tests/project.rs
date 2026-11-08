@@ -198,12 +198,23 @@ fn json_trivia_policy_round_trips_and_changes_prepared_identity() {
     let path = directory();
     fixture(&path);
     let default = prepare_project(&path.join("project.json")).unwrap();
-    std::fs::write(path.join("project.json"), r#"{"grammars":["Test.ngr"],"start":"Test.Start","mode":"syntax","trivia":"json"}"#).unwrap();
+    std::fs::write(
+        path.join("project.json"),
+        r#"{"grammars":["Test.ngr"],"start":"Test.Start","mode":"syntax","trivia":"json"}"#,
+    )
+    .unwrap();
     let strict = prepare_project(&path.join("project.json")).unwrap();
     assert_eq!(strict.data["trivia"], "json");
     assert_ne!(strict.data["source_hash"], default.data["source_hash"]);
-    std::fs::write(path.join("Test.nproj"), "language Test { extensions .test; grammar Test.ngr; start Test.Start; trivia json; }").unwrap();
-    assert_eq!(prepare_project(&path.join("Test.nproj")).unwrap().data, strict.data);
+    std::fs::write(
+        path.join("Test.nproj"),
+        "language Test { extensions .test; grammar Test.ngr; start Test.Start; trivia json; }",
+    )
+    .unwrap();
+    assert_eq!(
+        prepare_project(&path.join("Test.nproj")).unwrap().data,
+        strict.data
+    );
     for policy in ["\"typo\"", "false", "null"] {
         std::fs::write(path.join("project.json"), format!(r#"{{"grammars":["Test.ngr"],"start":"Test.Start","mode":"syntax","trivia":{policy}}}"#)).unwrap();
         assert!(prepare_project(&path.join("project.json")).is_err());

@@ -30,6 +30,30 @@ class CheckpointTests(unittest.TestCase):
                                     {"case": "valid", "input_sha256": "a", "medians": {"elapsed_ns": 8}})
         self.assertEqual(result["ratios"]["elapsed_ns"], 0.8)
 
+    def test_edit_comparison_requires_oracle_and_fingerprints(self):
+        def row(sample):
+            return {"case": "records-edits", "input_sha256": "a", "medians": {},
+                    "requires_equivalence": True, "samples": [sample]}
+        for sample in ({}, {"fingerprint": "tree"}, {"equivalence_checked": True}):
+            with self.assertRaisesRegex(ValueError, "equivalence"):
+                checkpoint.compare(row(sample), row(sample))
+        checked = row({"fingerprint": "tree", "equivalence_checked": True})
+        self.assertEqual(checkpoint.compare(checked, checked)["case"], "records-edits")
+
+    def test_edit_comparison_rejects_different_checked_trees(self):
+        def row(fingerprint):
+            return {"case": "records-edits", "input_sha256": "a", "medians": {},
+                    "requires_equivalence": True,
+                    "samples": [{"fingerprint": fingerprint, "equivalence_checked": True}]}
+        with self.assertRaisesRegex(ValueError, "fingerprint"):
+            checkpoint.compare(row("correct"), row("incorrect"))
+
+    def test_legacy_edit_samples_cannot_bypass_equivalence_requirement(self):
+        row = {"case": "records-edits", "input_sha256": "a", "medians": {},
+               "samples": [{"edits": 10, "fingerprint": "unverified"}]}
+        with self.assertRaisesRegex(ValueError, "equivalence"):
+            checkpoint.compare(row, row)
+
     def test_source_identity_includes_untracked_code(self):
         with tempfile.TemporaryDirectory() as folder:
             root = pathlib.Path(folder)

@@ -1,4 +1,4 @@
-//! The repository's `.nproj` files say what Nitrogen's JSON manifests say, and their
+//! Legacy Nitrogen entries match the shared subset of Nitride projects; their
 //! resolved snapshots (Nitrogen's parity contract) are current.
 use nitride_prepare::{ProjectLanguage, Source, read_language, read_workspace, snapshot};
 use serde_json::Value;
@@ -95,9 +95,17 @@ fn nproj_matches_nitrogen_json() {
         "XmlReference" => "Xml".to_owned(),
         other => other.to_owned(),
     };
-    // Same languages, in the same order (nitride.json, now retired, matched too).
+    // The legacy Nitrogen inventory is a shared subset. Native Calendar and
+    // strict JSON are additionally served by Nitride without claiming a .NET
+    // reference implementation of their native contracts/policies.
     assert_eq!(
-        languages.iter().map(|l| l.name.clone()).collect::<Vec<_>>(),
+        languages
+            .iter()
+            .filter(|l| entries
+                .iter()
+                .any(|e| rename(e["name"].as_str().unwrap()) == l.name))
+            .map(|l| l.name.clone())
+            .collect::<Vec<_>>(),
         entries
             .iter()
             .map(|e| rename(e["name"].as_str().unwrap()))
@@ -162,6 +170,11 @@ fn nproj_matches_project_json() {
         );
         let typed = manifest["mode"].as_str().unwrap_or("typed") == "typed";
         assert_eq!(language.typed(), typed, "{name}");
+        assert_eq!(
+            language.trivia.name(),
+            manifest["trivia"].as_str().unwrap_or("nitrogen"),
+            "{name}"
+        );
         compared += 1;
     }
     // Every language folder but `signed` has a project.json (`project`'s goes

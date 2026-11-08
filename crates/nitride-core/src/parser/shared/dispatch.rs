@@ -35,7 +35,11 @@ impl Start {
     }
     fn with_trivia(self, policy: crate::TriviaPolicy) -> Self {
         if policy == crate::TriviaPolicy::Json {
-            return self.union(Self { ascii: [(1 << 32) | (1 << 9) | (1 << 10) | (1 << 13), 0], wide: false, nullable: false });
+            return self.union(Self {
+                ascii: [(1 << 32) | (1 << 9) | (1 << 10) | (1 << 13), 0],
+                wide: false,
+                nullable: false,
+            });
         }
         // Non-ASCII is deliberately unclassified: Unicode whitespace is legal.
         self.union(Self {
@@ -480,7 +484,8 @@ impl<'g> Dispatch<'g> {
         }
         if !completed || solve(&mut starts, &mut budget).is_none() {
             return Self {
-                trivia: language.trivia,                starts: vec![Start::UNKNOWN; language.rules.len()],
+                trivia: language.trivia,
+                starts: vec![Start::UNKNOWN; language.rules.len()],
                 tails: vec![None; language.rules.len()],
                 leads: Leads::default(),
                 tail_leads: Leads::default(),
@@ -543,7 +548,8 @@ impl<'g> Dispatch<'g> {
             })
             .collect();
         let mut dispatch = Self {
-            trivia: language.trivia,            starts,
+            trivia: language.trivia,
+            starts,
             tails,
             leads: Leads::default(),
             tail_leads: Leads::default(),
@@ -612,11 +618,7 @@ impl<'g> Dispatch<'g> {
         self.first_bytes[id as usize]
     }
     /// Possible beginnings of a non-lexical alternative that cannot match empty.
-    pub(super) fn alternative_lead(
-        &self,
-        expr: &'g Expr<'g>,
-        language: &'g Language<'g>,
-    ) -> Lead {
+    pub(super) fn alternative_lead(&self, expr: &'g Expr<'g>, language: &'g Language<'g>) -> Lead {
         let mut analysis = Analysis {
             language,
             starts: &self.starts,
@@ -897,12 +899,7 @@ impl<'g> Analysis<'_, 'g> {
         }
         leads
     }
-    fn sequence(
-        &mut self,
-        parts: &'g [Expr<'g>],
-        leads: Table<'_>,
-        depth: usize,
-    ) -> Option<Found> {
+    fn sequence(&mut self, parts: &'g [Expr<'g>], leads: Table<'_>, depth: usize) -> Option<Found> {
         let mut result = Found::EMPTY;
         for part in parts {
             // Later parts matter only after an empty or an open prefix.
@@ -920,12 +917,7 @@ impl<'g> Analysis<'_, 'g> {
     }
     /// Beginnings of the matches of `expr` in a non-lexical context.
     /// Zero-width parts contribute nothing; nullability is over-approximated.
-    fn lead(
-        &mut self,
-        expr: &'g Expr<'g>,
-        leads: Table<'_>,
-        depth: usize,
-    ) -> Option<Found> {
+    fn lead(&mut self, expr: &'g Expr<'g>, leads: Table<'_>, depth: usize) -> Option<Found> {
         if depth > 64 || self.budget == 0 {
             return None;
         }
@@ -1281,7 +1273,8 @@ mod tests {
     }
     #[test]
     fn choice_selectors_leave_uncertain_or_zero_width_prefixes_eligible() {
-        let language = Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules: &[],
             start: 0,
@@ -1390,7 +1383,8 @@ mod tests {
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
         );
-        let language = Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules,
             start: 0,
@@ -1420,7 +1414,9 @@ mod tests {
         assert!(plan.starts[6].allows(None));
         assert!(plan.starts[7].allows(Some('!'))); // unproductive cycles stay unfiltered
     }
-    fn leads_for(bodies: Vec<(bool, Expr<'static>)>) -> (Dispatch<'static>, &'static Language<'static>) {
+    fn leads_for(
+        bodies: Vec<(bool, Expr<'static>)>,
+    ) -> (Dispatch<'static>, &'static Language<'static>) {
         let rules = Box::leak(
             bodies
                 .into_iter()
@@ -1440,7 +1436,8 @@ mod tests {
                 .collect::<Vec<_>>()
                 .into_boxed_slice(),
         );
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules,
             start: 0,

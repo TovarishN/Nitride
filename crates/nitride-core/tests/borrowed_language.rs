@@ -42,7 +42,8 @@ fn borrowed_language_parses() {
             },
         ),
     ];
-    let language = Language {trivia: crate::TriviaPolicy::Nitrogen,
+    let language = Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         rules: &rules,
         start: 0,

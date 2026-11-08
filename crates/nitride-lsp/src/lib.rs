@@ -4,8 +4,8 @@
 //! wire and UTF-8 byte offsets inside; `lines` converts at the boundary.
 pub mod actions;
 pub mod analysis;
-pub mod document;
 mod completion;
+pub mod document;
 mod format;
 pub mod grammar_index;
 pub mod index;

@@ -15,10 +15,10 @@ impl SubtreeId {
     pub(crate) fn new(chunk: u32, slot: u32) -> Self {
         Self((u64::from(chunk) << 32) | u64::from(slot))
     }
-    fn chunk(self) -> u32 {
+    pub(crate) fn chunk(self) -> u32 {
         (self.0 >> 32) as u32
     }
-    fn slot(self) -> usize {
+    pub(crate) fn slot(self) -> usize {
         self.0 as u32 as usize
     }
 }

@@ -415,7 +415,8 @@ pub(crate) fn recover_snapshot<'g>(
         root.span[0],
         SnapshotMode::Recovering(options),
     );
-    snapshot.tables = previous.and_then(|(old, _)| old.tables.clone())
+    snapshot.tables = previous
+        .and_then(|(old, _)| old.tables.clone())
         .or_else(|| seed.map(|s| s.tables.clone()));
     snapshot.dispatch = snapshot.tables.as_ref().map(|t| t.dispatch.clone());
     if !compact {

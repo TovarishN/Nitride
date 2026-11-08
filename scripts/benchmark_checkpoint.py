@@ -58,6 +58,13 @@ def summarize(case, input_hash, samples):
 def compare(before, after):
     if before["case"] != after["case"] or before["input_sha256"] != after["input_sha256"]:
         raise ValueError("cannot compare different cases or input hashes")
+    edit_samples = any(type(s.get("edits")) is int
+                       for row in (before, after) for s in row.get("samples", []))
+    if before.get("requires_equivalence") or after.get("requires_equivalence") or edit_samples:
+        for row in (before, after):
+            samples = row.get("samples", [])
+            if not samples or any(not s.get("equivalence_checked") or not s.get("fingerprint") for s in samples):
+                raise ValueError("missing fresh-parse equivalence evidence")
     for key in ("fingerprint",):
         a = {s[key] for s in before.get("samples", []) if key in s}
         b = {s[key] for s in after.get("samples", []) if key in s}
@@ -123,8 +130,18 @@ def main():
             if not executable.is_file():
                 raise FileNotFoundError(f"build benchmark first: {executable}")
             run = [executable, *tail]
+            oracle = None
+            if tail[0] == "edit":
+                oracle = measured([executable, "edit-check", *tail[1:]])
+                if not oracle.get("oracle_checked") or len(oracle.get("edit_fingerprints", [])) != int(tail[-1]):
+                    raise ValueError("missing JSON edit equivalence oracle")
             measured(run)  # Explicit unrecorded fresh process.
             samples = [measured(run) for _ in range(repeats)]
+            if oracle:
+                for sample in samples:
+                    if sample.get("edit_fingerprints") != oracle["edit_fingerprints"]:
+                        raise ValueError("timed JSON edit differs from fresh-parse oracle")
+                    sample["equivalence_checked"] = True
             row = summarize(case, sha(path.read_bytes()), samples)
             row["executable"] = {"path": str(executable), "sha256": sha(executable.read_bytes())}
             rows.append(row)

@@ -545,7 +545,12 @@ pub(crate) fn prepare(
     for source in sources.iter().chain(&catalogs).chain(&bindings) {
         source.text.hash(&mut hasher);
     }
-    (&state.entry.start, state.entry.mode == Mode::Typed, state.entry.trivia).hash(&mut hasher);
+    (
+        &state.entry.start,
+        state.entry.mode == Mode::Typed,
+        state.entry.trivia,
+    )
+        .hash(&mut hasher);
     state.inputs = hasher.finish();
     if let Some(old) = old.filter(|o| o.inputs == state.inputs) {
         state.errors = old.errors;
@@ -567,20 +572,22 @@ pub(crate) fn prepare(
         Ok(mut prepared) => {
             nitride_prepare::apply_trivia(&mut prepared.data, state.entry.trivia);
             match LoadedLanguage::load(&prepared.data.to_string()) {
-            Ok(language) => {
-                state.warnings = prepared.warnings.clone();
-                let declares = |rule: &str| prepared.declarations.iter().any(|d| d.rule == rule);
-                let roles = Arc::new(crate::roles::roles(language.language(), &declares));
-                let components = components(&bindings, &catalog.value);
-                state.current = Some(Arc::new(Loaded {
-                    language: Arc::new(language),
-                    prepared,
-                    components,
-                    roles,
-                }));
+                Ok(language) => {
+                    state.warnings = prepared.warnings.clone();
+                    let declares =
+                        |rule: &str| prepared.declarations.iter().any(|d| d.rule == rule);
+                    let roles = Arc::new(crate::roles::roles(language.language(), &declares));
+                    let components = components(&bindings, &catalog.value);
+                    state.current = Some(Arc::new(Loaded {
+                        language: Arc::new(language),
+                        prepared,
+                        components,
+                        roles,
+                    }));
+                }
+                Err(message) => state.errors.push(manifest_error(message)),
             }
-            Err(message) => state.errors.push(manifest_error(message)),
-        }},
+        }
         Err(errors) => state.errors.extend(errors),
     }
     state

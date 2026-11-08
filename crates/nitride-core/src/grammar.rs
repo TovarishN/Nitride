@@ -14,11 +14,22 @@ impl TriviaPolicy {
         }
     }
     #[inline]
-    pub fn comments(self) -> bool { self == Self::Nitrogen }
-    pub fn named(name: &str) -> Option<Self> {
-        match name { "nitrogen" => Some(Self::Nitrogen), "json" => Some(Self::Json), _ => None }
+    pub fn comments(self) -> bool {
+        self == Self::Nitrogen
     }
-    pub fn name(self) -> &'static str { match self { Self::Nitrogen => "nitrogen", Self::Json => "json" } }
+    pub fn named(name: &str) -> Option<Self> {
+        match name {
+            "nitrogen" => Some(Self::Nitrogen),
+            "json" => Some(Self::Json),
+            _ => None,
+        }
+    }
+    pub fn name(self) -> &'static str {
+        match self {
+            Self::Nitrogen => "nitrogen",
+            Self::Json => "json",
+        }
+    }
 }
 
 #[derive(Debug)]

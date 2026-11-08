@@ -213,11 +213,19 @@ pub fn read_language(
             "Trivia" => {
                 let policy = d.field(m, "Policy");
                 if trivia.is_some() {
-                    errors.push(source.project_error_at(policy.span, "trivia policy is declared more than once"));
+                    errors.push(
+                        source.project_error_at(
+                            policy.span,
+                            "trivia policy is declared more than once",
+                        ),
+                    );
                 } else if let Some(value) = nitride_core::TriviaPolicy::named(&policy.text) {
                     trivia = Some(value);
                 } else {
-                    errors.push(source.project_error_at(policy.span, "unknown trivia policy; expected nitrogen or json"));
+                    errors.push(source.project_error_at(
+                        policy.span,
+                        "unknown trivia policy; expected nitrogen or json",
+                    ));
                 }
             }
             "Start" => {

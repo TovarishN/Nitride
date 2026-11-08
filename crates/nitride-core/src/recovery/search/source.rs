@@ -108,10 +108,17 @@ pub(super) enum Cursor<'a> {
     Shared(Reader<'a>),
 }
 impl Cursor<'_> {
-    pub(super) fn ascii_whitespace_end(&mut self, at: usize, limit: usize, policy: crate::TriviaPolicy) -> usize {
+    pub(super) fn ascii_whitespace_end(
+        &mut self,
+        at: usize,
+        limit: usize,
+        policy: crate::TriviaPolicy,
+    ) -> usize {
         if policy == crate::TriviaPolicy::Json {
             let mut end = at;
-            while end < limit && self.character(end).is_some_and(|c| policy.whitespace(c)) { end += 1; }
+            while end < limit && self.character(end).is_some_and(|c| policy.whitespace(c)) {
+                end += 1;
+            }
             return end;
         }
         match self {

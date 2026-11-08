@@ -118,12 +118,7 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
         self.children.len()
     }
     #[inline]
-    pub fn label(
-        &mut self,
-        label: &'g str,
-        from: usize,
-        depth: u32,
-    ) -> Result<(), Diagnostic> {
+    pub fn label(&mut self, label: &'g str, from: usize, depth: u32) -> Result<(), Diagnostic> {
         if self.children.len() > from {
             let label = self.parser.intern(label)?;
             self.parser.work = self
@@ -212,7 +207,8 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    static LANGUAGE: Language = Language {trivia: crate::TriviaPolicy::Nitrogen,
+    static LANGUAGE: Language = Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 0,
         types: &[],

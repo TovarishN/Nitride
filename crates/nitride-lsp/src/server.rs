@@ -545,12 +545,16 @@ impl<W: Write> Server<W> {
             }
             "textDocument/didChange" => {
                 let uri = params["textDocument"]["uri"].as_str().unwrap_or_default();
-                let version = params["textDocument"]["version"].as_i64().and_then(|v| i32::try_from(v).ok());
+                let version = params["textDocument"]["version"]
+                    .as_i64()
+                    .and_then(|v| i32::try_from(v).ok());
                 if let (Some(document), Some(version)) = (self.documents.get_mut(uri), version) {
                     let was_signed = crate::signed::declares_grammar(&document.text);
                     if document.apply(version, &params["contentChanges"]) {
                         self.pending.insert(uri.into());
-                        self.reload |= language_input(uri) || was_signed || crate::signed::declares_grammar(&document.text);
+                        self.reload |= language_input(uri)
+                            || was_signed
+                            || crate::signed::declares_grammar(&document.text);
                     }
                 }
             }
@@ -590,9 +594,13 @@ impl<W: Write> Server<W> {
             return Ok(());
         };
         let buffers = self.buffers();
-        let analysis = analysis::analyze_incremental(&self.registry, &path, &document.text, &|p: &Path| {
-            buffers.get(p)
-        }, self.analyses.get(uri));
+        let analysis = analysis::analyze_incremental(
+            &self.registry,
+            &path,
+            &document.text,
+            &|p: &Path| buffers.get(p),
+            self.analyses.get(uri),
+        );
         match analysis {
             Some(analysis) => {
                 let diagnostics = analysis

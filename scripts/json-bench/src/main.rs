@@ -37,6 +37,28 @@ fn parse(source: &str) -> Result<ParseSnapshot, Diagnostic> {
     )
 }
 
+fn fingerprint(tree: &SyntaxTree<'_>) -> String {
+    let mut hash = 0xcbf29ce484222325u64;
+    let mut feed = |bytes: &[u8]| {
+        for byte in bytes {
+            hash = (hash ^ u64::from(*byte)).wrapping_mul(0x100000001b3);
+        }
+    };
+    feed(&tree.root.to_le_bytes());
+    for (id, node) in tree.nodes.iter().enumerate() {
+        feed(&node.rule.to_le_bytes());
+        feed(&node.span[0].to_le_bytes());
+        feed(&node.span[1].to_le_bytes());
+        feed(&node.child_count.to_le_bytes());
+        for edge in tree.children(id as u32) {
+            feed(&edge.node.to_le_bytes());
+            feed(tree.label(edge).as_bytes());
+            feed(&[0xff]);
+        }
+    }
+    format!("{hash:016x}")
+}
+
 fn main() {
     let args: Vec<_> = std::env::args().skip(1).collect();
     match args.first().map(String::as_str) {
@@ -61,12 +83,17 @@ fn main() {
             let warm: usize = args[2].parse().unwrap();
             let mut samples = Vec::with_capacity(warm + 1);
             let mut nodes = 0;
+            let mut tree_fingerprint = String::new();
             for _ in 0..=warm {
                 let start = Instant::now();
                 let snapshot = parse(&source).expect("parse");
                 samples.push(start.elapsed().as_nanos() as u64);
                 assert_eq!(snapshot.diagnostic_count(), 0);
-                nodes = snapshot.materialize().unwrap().nodes.len();
+                let tree = snapshot.materialize().unwrap();
+                nodes = tree.nodes.len();
+                let hash = fingerprint(&tree);
+                assert!(tree_fingerprint.is_empty() || tree_fingerprint == hash);
+                tree_fingerprint = hash;
             }
             let cold = samples[0];
             let mut rest = samples[1..].to_vec();
@@ -75,7 +102,7 @@ fn main() {
                 "{}",
                 serde_json::json!({
                     "engine": "nitride", "source_bytes": source.len(), "nodes": nodes,
-                    "cold_ns": cold, "warm_median_ns": rest.get(rest.len() / 2),
+                    "fingerprint": tree_fingerprint, "cold_ns": cold, "warm_median_ns": rest.get(rest.len() / 2),
                     "warm_min_ns": rest.first(),
                 })
             );
@@ -94,25 +121,35 @@ fn main() {
             let before = heap::LIVE.load(Relaxed);
             heap::PEAK.store(before, Relaxed);
             let snapshot = parse(&source).expect("parse");
+            let peak = heap::PEAK.load(Relaxed) - before;
+            let kept = heap::LIVE.load(Relaxed) - before;
+            let hash = fingerprint(&snapshot.materialize().unwrap());
             println!(
                 "{}",
                 serde_json::json!({
                     "source_bytes": source.len(),
-                    "peak_bytes": heap::PEAK.load(Relaxed) - before,
-                    "live_after_bytes": heap::LIVE.load(Relaxed) - before,
+                    "peak_bytes": peak,
+                    "fingerprint": hash,
+                    "live_after_bytes": kept,
                 })
             );
             drop(snapshot);
         }
         // Successive one-digit edits, each on the previous snapshot.
-        Some("edit") if args.len() == 3 => {
+        Some("edit" | "edit-check") if args.len() == 3 => {
+            let verify = args[0] == "edit-check";
             let mut source = std::fs::read_to_string(&args[1]).unwrap();
             let count: usize = args[2].parse().unwrap();
             let mut snapshot = parse(&source).expect("parse");
             let mut samples = Vec::with_capacity(count);
+            let mut fingerprints = Vec::with_capacity(count);
             for i in 0..count {
                 let from = i * source.len() / count;
-                let at = from + source[from..].find(|c: char| c.is_ascii_digit()).unwrap();
+                let at = from
+                    + source.as_bytes()[from..]
+                        .iter()
+                        .position(u8::is_ascii_digit)
+                        .unwrap();
                 let digit = if &source[at..=at] == "1" { "2" } else { "1" };
                 let edit = TextEdit {
                     range: [at as u32, at as u32 + 1],
@@ -123,6 +160,14 @@ fn main() {
                 samples.push(start.elapsed().as_nanos() as u64);
                 assert_eq!(snapshot.diagnostic_count(), 0);
                 source.replace_range(at..=at, digit);
+                // Export and independent fresh parsing stay outside the edit timer.
+                let hash = fingerprint(&snapshot.materialize().unwrap());
+                if verify {
+                    let fresh = parse(&source).expect("fresh edited parse");
+                    assert_eq!(fresh.diagnostic_count(), 0);
+                    assert_eq!(hash, fingerprint(&fresh.materialize().unwrap()), "edit {i}");
+                }
+                fingerprints.push(hash);
             }
             let first = samples[0];
             samples.sort_unstable();
@@ -131,6 +176,8 @@ fn main() {
                 serde_json::json!({
                     "edits": count, "first_edit_ns": first,
                     "median_edit_ns": samples[samples.len() / 2],
+                    "fingerprint": fingerprints.join(","),
+                    "edit_fingerprints": fingerprints, "oracle_checked": verify,
                 })
             );
         }

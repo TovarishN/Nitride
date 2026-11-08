@@ -32,7 +32,7 @@ pub fn parse_recovering<'g>(
 }
 
 pub(crate) mod incremental;
-pub use incremental::{SnapshotRecovery, BorrowedSnapshotRecovery};
+pub use incremental::{BorrowedSnapshotRecovery, SnapshotRecovery};
 
 /// Continue recovery after an equivalent strict recognizer has already failed.
 pub(crate) fn recover_after_strict<'g>(

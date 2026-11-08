@@ -1,6 +1,7 @@
 use nitride_core::*;
 
-static LANGUAGE: Language = Language {trivia: crate::TriviaPolicy::Nitrogen,
+static LANGUAGE: Language = Language {
+    trivia: crate::TriviaPolicy::Nitrogen,
     profile: Profile::Typed,
     start: 0,
     rules: &[
@@ -284,7 +285,8 @@ fn random_utf8_damage_terminates_with_complete_coverage() {
 
 #[test]
 fn local_search_matches_exhaustive_small_repair_oracle() {
-    static SINGLE: Language = Language {trivia: crate::TriviaPolicy::Nitrogen,
+    static SINGLE: Language = Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
         profile: Profile::SyntaxOnly,
         start: 1,
         rules: LANGUAGE.rules,
@@ -381,7 +383,11 @@ fn with_root(expr: Expr<'static>) -> &'static Language<'static> {
         action: Action::None,
         ..LANGUAGE.rules[0]
     }]));
-    Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen, rules, ..LANGUAGE }))
+    Box::leak(Box::new(Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
+        rules,
+        ..LANGUAGE
+    }))
 }
 
 #[test]
@@ -453,7 +459,11 @@ fn lexical_interiors_are_never_repaired() {
             ..LANGUAGE.rules[2]
         },
     ]));
-    let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen, rules, ..LANGUAGE }));
+    let language = Box::leak(Box::new(Language {
+        trivia: crate::TriviaPolicy::Nitrogen,
+        rules,
+        ..LANGUAGE
+    }));
     let source = "(a); (ab);";
     let parsed = parse_recovering(
         language,

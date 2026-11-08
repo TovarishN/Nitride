@@ -27,7 +27,8 @@ fn invalid_pratt_rule_ids_return_diagnostics() {
             origin: None,
             action: Action::None,
         };
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::Typed,
             rules: Box::leak(
                 vec![rule("Start", expr), rule("Value", Expr::Literal("x"))].into_boxed_slice(),

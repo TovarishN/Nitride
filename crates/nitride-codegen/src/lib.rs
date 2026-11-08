@@ -5,7 +5,7 @@ mod syntax;
 use serde_json::Value;
 mod runtime;
 mod runtime_snapshot;
-pub use runtime_snapshot::RuntimeSnapshot;
+pub use runtime_snapshot::{RuntimeAnalysisTimings, RuntimeSnapshot};
 mod wit;
 pub use interfaces::interfaces;
 pub use runtime::LoadedLanguage;

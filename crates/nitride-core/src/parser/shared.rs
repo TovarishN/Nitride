@@ -94,31 +94,48 @@ impl Memo {
 pub(crate) struct LanguageTables<'g> {
     pub(crate) dispatch: std::sync::Arc<dispatch::Dispatch<'g>>,
     minimum_sensitive: std::sync::Arc<[bool]>,
-    recovery: std::sync::Arc<std::sync::OnceLock<std::sync::Arc<crate::recovery::search::Tables<'g>>>>,
+    recovery:
+        std::sync::Arc<std::sync::OnceLock<std::sync::Arc<crate::recovery::search::Tables<'g>>>>,
 }
 impl<'g> LanguageTables<'g> {
     fn new(language: &'g Language<'g>) -> Self {
         Self {
             dispatch: std::sync::Arc::new(dispatch::Dispatch::new(language)),
-            minimum_sensitive: language.rules.iter().map(|r| minimum_sensitive(language, r)).collect(),
+            minimum_sensitive: language
+                .rules
+                .iter()
+                .map(|r| minimum_sensitive(language, r))
+                .collect(),
             recovery: Default::default(),
         }
     }
-    pub(crate) fn recovery(&self, language: &'g Language<'g>) -> std::sync::Arc<crate::recovery::search::Tables<'g>> {
-        self.recovery.get_or_init(|| std::sync::Arc::new(crate::recovery::search::Tables::new(language))).clone()
+    pub(crate) fn recovery(
+        &self,
+        language: &'g Language<'g>,
+    ) -> std::sync::Arc<crate::recovery::search::Tables<'g>> {
+        self.recovery
+            .get_or_init(|| std::sync::Arc::new(crate::recovery::search::Tables::new(language)))
+            .clone()
     }
 }
 impl LanguageTables<'static> {
-    fn of(language: &'static Language<'static>) -> Self {
-        type Cache = std::sync::Mutex<Vec<(usize, LanguageTables<'static>)>>;
+    fn of(language: &'static Language<'static>) -> std::sync::Arc<Self> {
+        type Cache = std::sync::Mutex<Vec<(usize, std::sync::Arc<LanguageTables<'static>>)>>;
         static CACHE: Cache = std::sync::Mutex::new(Vec::new());
         let key = std::ptr::from_ref(language) as usize;
-        if let Some((_, tables)) = CACHE.lock().unwrap_or_else(|e| e.into_inner()).iter().find(|(k, _)| *k == key) {
+        if let Some((_, tables)) = CACHE
+            .lock()
+            .unwrap_or_else(|e| e.into_inner())
+            .iter()
+            .find(|(k, _)| *k == key)
+        {
             return tables.clone();
         }
-        let tables = Self::new(language);
+        let tables = std::sync::Arc::new(Self::new(language));
         let mut cache = CACHE.lock().unwrap_or_else(|e| e.into_inner());
-        if let Some((_, existing)) = cache.iter().find(|(k, _)| *k == key) { return existing.clone(); }
+        if let Some((_, existing)) = cache.iter().find(|(k, _)| *k == key) {
+            return existing.clone();
+        }
         cache.push((key, tables.clone()));
         tables
     }
@@ -218,10 +235,26 @@ struct Generated<'a> {
     lexers: &'static crate::lexical::CompiledLexers,
     source: &'a str,
 }
-pub fn parse_snapshot(language: &'static Language<'static>, source: &str, limits: Limits, mode: SnapshotMode) -> Result<ParseSnapshot, Diagnostic> {
-    parse_borrowed_with_tables(language, source, limits, mode, Some(&LanguageTables::of(language)))
+pub fn parse_snapshot(
+    language: &'static Language<'static>,
+    source: &str,
+    limits: Limits,
+    mode: SnapshotMode,
+) -> Result<ParseSnapshot, Diagnostic> {
+    parse_borrowed_with_tables(
+        language,
+        source,
+        limits,
+        mode,
+        Some(LanguageTables::of(language)),
+    )
 }
-pub fn parse_borrowed_snapshot<'g>(language: &'g Language<'g>, source: &str, limits: Limits, mode: SnapshotMode) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
+pub fn parse_borrowed_snapshot<'g>(
+    language: &'g Language<'g>,
+    source: &str,
+    limits: Limits,
+    mode: SnapshotMode,
+) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     parse_borrowed_with_tables(language, source, limits, mode, None)
 }
 fn parse_borrowed_with_tables<'g>(
@@ -229,14 +262,14 @@ fn parse_borrowed_with_tables<'g>(
     source: &str,
     limits: Limits,
     mode: SnapshotMode,
-    tables: Option<&LanguageTables<'g>>,
+    tables: Option<std::sync::Arc<LanguageTables<'g>>>,
 ) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
     let text = SourceText::new(source)?;
     match mode {
         SnapshotMode::Strict(options) => parse_with_spill(
             language,
             Input {
-                    tables: tables.map(|t| std::sync::Arc::new(t.clone())),
+                tables: tables.clone(),
                 compiled: None,
                 lexers: None,
                 text: &text,
@@ -251,7 +284,7 @@ fn parse_borrowed_with_tables<'g>(
         SnapshotMode::Recovering(_) => recover_cold(
             language,
             Input {
-                    tables: tables.map(|t| std::sync::Arc::new(t.clone())),
+                tables: tables.clone(),
                 compiled: None,
                 lexers: None,
                 text: &text,
@@ -336,7 +369,7 @@ fn parse_snapshot_specialized(
             p.bodies.len() != language.rules.len() || p.tails.len() != language.rules.len()
         })
     {
-        return parse_borrowed_with_tables(language, source, limits, mode, Some(&tables));
+        return parse_borrowed_with_tables(language, source, limits, mode, Some(tables.clone()));
     }
     let text = SourceText::new(source)?;
     let options = match mode {
@@ -350,7 +383,7 @@ fn parse_snapshot_specialized(
     let result = parse_with_spill(
         language,
         Input {
-                    tables: Some(std::sync::Arc::new(tables.clone())),
+            tables: Some(tables.clone()),
             lexers: Some(lexers),
             compiled,
             text: &text,
@@ -382,7 +415,7 @@ fn parse_snapshot_specialized(
         }
         (Err(_), _) => {
             drop(text);
-            parse_borrowed_with_tables(language, source, limits, mode, Some(&tables))
+            parse_borrowed_with_tables(language, source, limits, mode, Some(tables.clone()))
         }
     }
 }
@@ -416,7 +449,7 @@ impl<'g> BorrowedParseSnapshot<'g> {
                     match parse_with_spill(
                         self.language,
                         Input {
-                    tables: None,
+                            tables: None,
                             compiled: None,
                             lexers: None,
                             text: &text,
@@ -664,7 +697,9 @@ impl<'a, 'g> Parser<'a, 'g> {
         index: Index,
     ) -> Self {
         let text = input.text;
-        let tables = input.tables.clone()
+        let tables = input
+            .tables
+            .clone()
             .or_else(|| base.and_then(|b| b.tables.clone()))
             .unwrap_or_else(|| std::sync::Arc::new(LanguageTables::new(language)));
         let labels = base.map_or_else(|| vec![""], |b| b.arena.labels.to_vec());
@@ -739,7 +774,7 @@ impl<'a, 'g> Parser<'a, 'g> {
         }
     }
 }
-fn label_ids<'g>(labels: &[&'g str]) -> FastMap<(usize, usize), u16> {
+fn label_ids(labels: &[&str]) -> FastMap<(usize, usize), u16> {
     labels
         .iter()
         .enumerate()
@@ -2936,12 +2971,7 @@ impl<'a, 'g> SharedProbe<'a, 'g> {
     /// the generated parser; only the fragment's own structure is
     /// interpreted. `None` when there is no generated parser or the run
     /// reached a limit, which the interpreted predicate then decides.
-    fn generated_predicate(
-        &mut self,
-        expr: &'g Expr<'g>,
-        at: usize,
-        reuse: bool,
-    ) -> Option<bool> {
+    fn generated_predicate(&mut self, expr: &'g Expr<'g>, at: usize, reuse: bool) -> Option<bool> {
         let generated = self.generated?;
         let parser = &mut self.parser;
         let saved = (parser.work, parser.max_depth, parser.furthest);
@@ -3126,11 +3156,7 @@ impl<'a, 'g> SharedProbe<'a, 'g> {
         }
         self.rule(id, at, 0)
     }
-    pub(crate) fn predicate(
-        &mut self,
-        expr: &'g Expr<'g>,
-        at: usize,
-    ) -> Result<bool, Diagnostic> {
+    pub(crate) fn predicate(&mut self, expr: &'g Expr<'g>, at: usize) -> Result<bool, Diagnostic> {
         self.retire_borrowed();
         self.enforce_budget();
         let prerecognized = self.prerecognize_reference(expr, at);
@@ -3571,7 +3597,8 @@ mod tests {
                 origin: None,
                 action: Action::None,
             };
-            let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+            let language = Box::leak(Box::new(Language {
+                trivia: crate::TriviaPolicy::Nitrogen,
                 rules: Box::leak(vec![root].into_boxed_slice()),
                 ..*template
             }));
@@ -3610,7 +3637,7 @@ mod tests {
             Parser::new(
                 language,
                 Input {
-                tables: None,
+                    tables: None,
                     compiled: None,
                     lexers: None,
                     text: &text,
@@ -3672,7 +3699,8 @@ mod tests {
             origin: None,
             action: Action::None,
         };
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(vec![root].into_boxed_slice()),
             ..*template
         }));
@@ -3778,7 +3806,8 @@ mod tests {
                 Expr::Literal(if index == 64 { "z" } else { "x" }),
             ));
         }
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -3857,7 +3886,8 @@ mod tests {
                 make("Good", Expr::Literal("y"), Some(0)),
                 make("X", Expr::Literal("x"), None),
             ];
-            let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+            let language = Box::leak(Box::new(Language {
+                trivia: crate::TriviaPolicy::Nitrogen,
                 rules: Box::leak(rules.into_boxed_slice()),
                 ..*template
             }));
@@ -3912,7 +3942,8 @@ mod tests {
                 u32::MAX,
             ),
         ];
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -3964,7 +3995,8 @@ mod tests {
             ),
             make("Other", Expr::Literal("y"), Some(0)),
         ];
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -4028,7 +4060,8 @@ mod tests {
                 action: Action::None,
             },
         ];
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -4094,7 +4127,8 @@ mod tests {
                 action: Action::None,
             });
         }
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             rules: Box::leak(rules.into_boxed_slice()),
             ..*template
         }));
@@ -4183,7 +4217,8 @@ mod tests {
                 make("Value", Expr::Literal("a"), Some(0), 0),
             ]
         };
-        Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4308,7 +4343,8 @@ mod tests {
     }
     #[test]
     fn construction_hint_cache_does_not_retain_every_source_position() {
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4370,7 +4406,8 @@ mod tests {
     }
     #[test]
     fn warm_maintenance_uses_the_approved_retention_allowance() {
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4491,7 +4528,8 @@ mod tests {
             origin: None,
             action: Action::None,
         };
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4548,7 +4586,8 @@ mod tests {
             origin: None,
             action: Action::None,
         };
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4612,7 +4651,8 @@ mod tests {
             origin: None,
             action: Action::None,
         };
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4682,7 +4722,8 @@ mod tests {
             origin: None,
             action: Action::None,
         };
-        let language = Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        let language = Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             start: 0,
             types: &[],
@@ -4803,7 +4844,8 @@ mod tests {
             ),
             make("Wrap", Expr::Label("Value", &Expr::Ref(4)), false),
         ];
-        Box::leak(Box::new(Language {trivia: crate::TriviaPolicy::Nitrogen,
+        Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
             rules: Box::leak(rules.into_boxed_slice()),
             start: 0,
@@ -4901,7 +4943,7 @@ mod tests {
             let mut parser = Parser::new(
                 backtracking_list(),
                 Input {
-                tables: None,
+                    tables: None,
                     compiled: None,
                     lexers: None,
                     text: &text,
@@ -4929,17 +4971,36 @@ mod tests {
         let initial = parse_snapshot(language, "[1,2]", Limits::default(), mode).unwrap();
         let lexers = Box::leak(Box::new(crate::lexical::CompiledLexers::new(language, &[])));
         let fallback = parse_snapshot_compiled(lexers, "[1,2]", Limits::default(), mode).unwrap();
-        assert!(std::sync::Arc::ptr_eq(initial.dispatch.as_ref().unwrap(), fallback.dispatch.as_ref().unwrap()));
+        assert!(std::sync::Arc::ptr_eq(
+            initial.dispatch.as_ref().unwrap(),
+            fallback.dispatch.as_ref().unwrap()
+        ));
     }
     #[test]
     fn flat_recovery_keeps_owner_scoped_analysis_for_later_edits() {
         let language = backtracking_list();
-        let mode = SnapshotMode::Recovering(RecoveryOptions { max_states: 0, ..Default::default() });
+        let mode = SnapshotMode::Recovering(RecoveryOptions {
+            max_states: 0,
+            ..Default::default()
+        });
         let initial = parse_snapshot(language, "[1,2]", Limits::default(), mode).unwrap();
-        let broken = initial.edit(&TextEdit { range: [4,5], replacement: String::new() }, Limits::default()).unwrap();
+        let broken = initial
+            .edit(
+                &TextEdit {
+                    range: [4, 5],
+                    replacement: String::new(),
+                },
+                Limits::default(),
+            )
+            .unwrap();
         assert_eq!(broken.stats().full_parse_fallbacks, 1);
-        assert!(broken.tables.is_some(), "flat fallback discarded its owner's analysis");
-        assert!(std::sync::Arc::ptr_eq(initial.dispatch.as_ref().unwrap(), broken.dispatch.as_ref().unwrap()));
+        assert!(
+            broken.tables.is_some(),
+            "flat fallback discarded its owner's analysis"
+        );
+        assert!(std::sync::Arc::ptr_eq(
+            initial.dispatch.as_ref().unwrap(),
+            broken.dispatch.as_ref().unwrap()
+        ));
     }
-
 }

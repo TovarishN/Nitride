@@ -10,5 +10,14 @@ fn main() {
     let mut bindings = host::bindings(&LANGUAGE);
     bindings.extend(gregorian::bindings(&LANGUAGE, Arc::new(FixtureCalendar)));
     let report = execute(&program, &bindings, Limits::default()).expect("run Calendar");
-    println!("{}", serde_json::json!(report.values.iter().map(nitride_cli::datum).collect::<Vec<_>>()));
+    println!(
+        "{}",
+        serde_json::json!(
+            report
+                .values
+                .iter()
+                .map(nitride_cli::datum)
+                .collect::<Vec<_>>()
+        )
+    );
 }

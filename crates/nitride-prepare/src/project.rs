@@ -242,9 +242,15 @@ pub fn write_prepared(project: &PreparedProject, path: &Path) -> Result<(), Prep
 /// Include a non-default trivia policy in prepared identity and generated tables.
 /// Call once after preparation; default profiles retain reference-export parity.
 pub fn apply_trivia(data: &mut Value, policy: nitride_core::TriviaPolicy) {
-    if policy == nitride_core::TriviaPolicy::Nitrogen { return; }
+    if policy == nitride_core::TriviaPolicy::Nitrogen {
+        return;
+    }
     use sha2::{Digest, Sha256};
-    let identity = format!("{};trivia={}", data["source_hash"].as_str().unwrap_or_default(), policy.name());
+    let identity = format!(
+        "{};trivia={}",
+        data["source_hash"].as_str().unwrap_or_default(),
+        policy.name()
+    );
     data["source_hash"] = format!("{:x}", Sha256::digest(identity.as_bytes())).into();
     data["trivia"] = policy.name().into();
 }

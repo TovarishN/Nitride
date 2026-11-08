@@ -566,7 +566,11 @@ impl<'g> Parser<'g, '_> {
         loop {
             self.tick(0)?;
             let rest = &self.source[self.position..];
-            if let Some(c) = rest.chars().next().filter(|&c| self.language.trivia.whitespace(c)) {
+            if let Some(c) = rest
+                .chars()
+                .next()
+                .filter(|&c| self.language.trivia.whitespace(c))
+            {
                 self.position += c.len_utf8();
             } else if !self.language.trivia.comments() {
                 return Ok(());
@@ -1117,6 +1121,6 @@ impl<'g> Parser<'g, '_> {
 
 pub(crate) mod shared;
 pub use shared::{
-    CompiledParser, SyntaxContext, SyntaxMark, parse_snapshot, parse_borrowed_snapshot, parse_snapshot_compiled,
-    parse_snapshot_generated,
+    CompiledParser, SyntaxContext, SyntaxMark, parse_borrowed_snapshot, parse_snapshot,
+    parse_snapshot_compiled, parse_snapshot_generated,
 };

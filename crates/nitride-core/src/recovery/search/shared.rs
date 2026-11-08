@@ -96,7 +96,9 @@ fn recover_once<'a, 'g>(
         limits,
         options,
         SharedProbe::new(language, text, limits, base, index, seed),
-        seed.map(|s| s.tables.recovery(language)).or_else(|| base.and_then(|b| b.tables.as_ref().map(|t| t.recovery(language)))).unwrap_or_else(|| Arc::new(Tables::new(language))),
+        seed.map(|s| s.tables.recovery(language))
+            .or_else(|| base.and_then(|b| b.tables.as_ref().map(|t| t.recovery(language))))
+            .unwrap_or_else(|| Arc::new(Tables::new(language))),
     );
     let (state, failure) = match engine.run() {
         Ok(state) => (state, None),
@@ -268,7 +270,8 @@ impl<'g> Engine<'g, '_, SharedProbe<'_, 'g>> {
             self.budget().saturating_sub(recognition_work),
             state.position as u32,
         );
-        let mut diagnostics = repair_diagnostics_source(&repairs, self.source, self.language.trivia, &mut metadata)?;
+        let mut diagnostics =
+            repair_diagnostics_source(&repairs, self.source, self.language.trivia, &mut metadata)?;
         diagnostics.extend(exhausted);
         if let Some(error) = failure {
             diagnostics.push(error)
@@ -528,9 +531,12 @@ fn repair_diagnostics_source(
         };
         if let Some(previous) = result.last_mut() {
             if previous.span[1] <= span[0]
-                && source.all_whitespace(previous.span[1] as usize, span[0] as usize, policy, || {
-                    work.charge(1)
-                })?
+                && source.all_whitespace(
+                    previous.span[1] as usize,
+                    span[0] as usize,
+                    policy,
+                    || work.charge(1),
+                )?
             {
                 previous.span[1] = span[1];
                 continue;
@@ -587,8 +593,7 @@ fn coverage_source(
                 cursor.find(at, "\n").unwrap_or(source.len()),
                 CoverageKind::Trivia,
             )
-        } else if let Some(close) = cursor
-            .matches(at, "/*")
+        } else if let Some(close) = (policy.comments() && cursor.matches(at, "/*"))
             .then(|| cursor.find(at + 2, "*/"))
             .flatten()
         {
