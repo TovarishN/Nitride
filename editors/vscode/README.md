@@ -65,9 +65,12 @@ recovering syntax snapshots, with incremental UTF-16 text synchronization.
 Binding, structural checks, navigation indexes and value hints are recomputed
 for the whole document. Grammar/catalog/project reloads invalidate cached syntax;
 frontend authoring files continue to use full analysis.
-Diagnostic debounce deadlines follow accepted edits and relevant language-input
-changes; unrelated traffic does not postpone them. File-watch reloads also run
-when no document is pending. See [LSP scheduling](https://github.com/TovarishN/Nitride/blob/main/docs/lsp-scheduling.md)
+Normal debounced document analysis runs on one background worker. Requests
+wait for fresh results; cancellation applies to waiting requests, and obsolete
+results cannot publish after edits, close/reopen or language invalidation.
+In-flight parsing is not interrupted. Debounce follows accepted edits and
+relevant language changes; unrelated traffic does not postpone it. File-watch
+reloads also run when no document is pending. See [LSP scheduling](https://github.com/TovarishN/Nitride/blob/main/docs/lsp-scheduling.md)
 for ordering and remaining synchronous-analysis limits.
 
 ## Settings

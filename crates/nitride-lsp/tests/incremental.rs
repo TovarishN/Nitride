@@ -246,3 +246,106 @@ fn empty_changes_advance_version_and_keep_same_version_updates_stale() {
     assert_eq!(document.text, "1;");
     assert!(!document.apply(2, &json!([{"text":"stale"}])));
 }
+
+#[test]
+fn background_and_synchronous_protocol_outputs_match() {
+    use serde_json::Value;
+    use std::time::Duration;
+    let dir = scratch("background-protocol-parity");
+    manifest(
+        &dir,
+        "nitride.nproj",
+        "Portable",
+        ".portable",
+        &[repo().join("languages/portable/Portable.ngr")],
+        "Portable.Program",
+        Some(&repo().join("languages/portable/Portable.ncatalog")),
+    );
+    let path = dir.join("x.portable");
+    for (initial, edited, expected) in [
+        ("let x: Scalar=2; x+3;", None, Some("= 5")),
+        ("let x: Scalar=;", None, None),
+        (
+            "let x: Scalar=;",
+            Some("let x: Scalar=7; x+3;"),
+            Some("= 10"),
+        ),
+    ] {
+        let source = edited.unwrap_or(initial);
+        let offset = source.find("x+3").unwrap_or(4);
+        let document = json!({"textDocument":{"uri":uri(&path)}});
+        let position =
+            json!({"textDocument":{"uri":uri(&path)},"position":{"line":0,"character":offset}});
+        let span =
+            json!({"start":{"line":0,"character":0},"end":{"line":0,"character":source.len()}});
+        let mut input = frame(&initialize(1, &dir));
+        input.extend(frame(&notification("initialized", json!({}))));
+        input.extend(frame(&open(&path, initial)));
+        if let Some(edited) = edited {
+            input.extend(frame(&change(&path, 2, edited)));
+        }
+        for (id, method, params) in [
+            (2, "textDocument/semanticTokens/full", document.clone()),
+            (3, "textDocument/documentSymbol", document.clone()),
+            (4, "textDocument/hover", position.clone()),
+            (5, "textDocument/definition", position.clone()),
+            (
+                6,
+                "textDocument/inlayHint",
+                json!({"textDocument":{"uri":uri(&path)},"range":span}),
+            ),
+            (
+                7,
+                "textDocument/formatting",
+                json!({"textDocument":{"uri":uri(&path)},"options":{"tabSize":2,"insertSpaces":true}}),
+            ),
+            (8, "textDocument/foldingRange", document.clone()),
+            (
+                9,
+                "textDocument/selectionRange",
+                json!({"textDocument":{"uri":uri(&path)},"positions":[{"line":0,"character":0}]}),
+            ),
+            (
+                10,
+                "textDocument/codeAction",
+                json!({"textDocument":{"uri":uri(&path)},"range":span,"context":{"diagnostics":[]}}),
+            ),
+            (11, "textDocument/completion", position.clone()),
+            (12, "textDocument/signatureHelp", position),
+        ] {
+            input.extend(frame(&request(id, method, params)));
+        }
+        input.extend(frame(&request(9999, "shutdown", Value::Null)));
+        input.extend(frame(&notification("exit", Value::Null)));
+        let synchronous = Session::raw_with(input.clone(), Duration::ZERO);
+        let background = Session::raw_with(input, Duration::from_millis(20));
+        for id in 2..=12 {
+            assert_eq!(
+                response(&background, id),
+                response(&synchronous, id),
+                "request {id}, source {source}"
+            );
+        }
+        assert_eq!(
+            diagnostics(&background, &path),
+            diagnostics(&synchronous, &path)
+        );
+        if let Some(label) = expected {
+            assert!(
+                response(&background, 6)["result"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|h| h["label"] == label)
+            );
+            assert_eq!(diagnostics(&background, &path), json!([]));
+        } else {
+            assert!(
+                !diagnostics(&background, &path)
+                    .as_array()
+                    .unwrap()
+                    .is_empty()
+            );
+        }
+    }
+}
