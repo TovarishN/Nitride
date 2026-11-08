@@ -76,3 +76,14 @@ jobs:
       - run: cargo +stable test --workspace --locked
       - name: Test native-only CLI, process bindings and LSP startup
         run: cargo +stable test --locked -p nitride-cli --no-default-features --test native_only --test process --test lsp_binary
+      - name: Verify release LSP training against the native binary
+        run: |
+          python3 - <<'PY'
+          import os
+          import sys
+          from pathlib import Path
+          sys.path.insert(0, 'scripts')
+          from release.train import lsp
+          binary = Path('target/debug/nitride' + ('.exe' if os.name == 'nt' else '')).resolve()
+          lsp(binary, os.environ.copy())
+          PY

@@ -11,6 +11,39 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "scripts"))
 
 
+class TrainingTests(unittest.TestCase):
+    def test_lsp_training_keeps_requested_documents_stable_until_shutdown(self):
+        from unittest.mock import patch
+        from release import train
+
+        sessions = []
+
+        def invoke(binary, args, env, data):
+            messages = train.responses(data)
+            sessions.append(messages)
+            requested = False
+            for message in messages:
+                method = message['method']
+                if method.startswith('textDocument/') and 'id' in message:
+                    requested = True
+                if requested:
+                    self.assertNotIn(method, ['textDocument/didOpen',
+                                             'textDocument/didChange',
+                                             'textDocument/didClose'])
+            return b''.join(train.frame({'id': m['id'], 'result': None})
+                            for m in messages if 'id' in m)
+
+        with patch.object(train, 'invoke', side_effect=invoke):
+            train.lsp(Path('nitride'), {})
+        self.assertEqual(len(sessions), 2)
+        self.assertEqual([s[2]['params']['textDocument']['languageId'] for s in sessions],
+                         ['portable', 'ngr'])
+        for session in sessions:
+            self.assertEqual(sum(m['method'] == 'textDocument/didChange' for m in session), 2)
+            self.assertEqual(session[-2]['method'], 'shutdown')
+            self.assertEqual(session[-1]['method'], 'exit')
+
+
 class VersionTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
