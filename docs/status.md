@@ -8,7 +8,8 @@ release-training fix were merged through [PR #43](https://github.com/TovarishN/N
 [PR #46](https://github.com/TovarishN/Nitride/pull/46), all with passing hosted CI.
 The [November 9 editor baseline](benchmark-2026-11-09-editor-responsiveness.md)
 adds packaged VS Code extension-host acceptance and checked syntax/typed phase
-measurements. Visual acceptance and painted-frame latency remain unverified.
+measurements, merged in [PR #47](https://github.com/TovarishN/Nitride/pull/47)
+with all hosted checks passing. Visual acceptance and painted-frame latency remain unverified.
 
 ## Implemented in merged development
 
@@ -36,6 +37,15 @@ measurements. Visual acceptance and painted-frame latency remain unverified.
 - Snapshot materialization avoids per-node temporary child vectors and repeated
   chunk-directory searches through a local borrowed reader. Follow-up matched
   editor benchmarks record the allocation and update-time improvements.
+
+## Current measured follow-up
+
+The direct snapshot-to-editor projection branch avoids temporary full-tree export
+for eligible syntax-only workspace languages while preserving the dense editor
+tree. [Matched November 9 measurements](benchmark-2026-11-09-editor-projection.md)
+reduce cached valid 4 MiB C# analysis from 38.5 to 31.4 ms (18.6%, five process
+pairs). Typed/metadata/structural-check paths remain established. Local correctness
+and strict lint checks passed; current branch review/hosted checks are separate.
 
 ## Evidence
 
@@ -66,9 +76,9 @@ is not a target. Modern C# semantics, embedded targets and no_std are outside th
 current scope. Distributed native binaries omit the component runtime;
 process-only Calendar is the native deployment example.
 
-Fresh measurements select snapshot-native access for syntax-only workspace
-documents as the next steady-state large-document investigation: flat-tree
-materialization accounts for most cached 4 MiB C# analysis time. Typed indexing,
+Direct snapshot projection is the first measured step for syntax-only workspace
+documents; fully snapshot-native feature queries and retained projections remain
+possible follow-ups because dense editor arrays still rebuild after each edit. Typed indexing,
 cold multi-language preparation, cooperative parser interruption and narrower
 reload invalidation remain separate follow-ups. Larger language
 coverage and automatic bindings from non-component metadata are separate

@@ -9,6 +9,8 @@ use std::collections::HashMap;
 use std::path::Path;
 use std::sync::Arc;
 
+mod projection;
+
 /// The language a tree was parsed with: a workspace language, or the
 /// compiled grammar frontend for `.ngr` files, catalog frontend for
 /// `.ncatalog` files, binding frontend for `.nbind` files or project
@@ -87,6 +89,7 @@ pub struct Problem {
 pub struct AnalysisTimings {
     pub parse_ns: u128,
     pub materialize_ns: u128,
+    pub syntax_projection_ns: u128,
     pub semantic_ns: u128,
     pub editor_ns: u128,
 }
@@ -175,8 +178,11 @@ fn fixes(tree: &SyntaxTree<'_>) -> Vec<Fix> {
     let Some(recovery) = tree.recovery() else {
         return vec![];
     };
-    recovery
-        .repairs
+    repair_fixes(&recovery.repairs)
+}
+
+fn repair_fixes(repairs: &[Repair<'_>]) -> Vec<Fix> {
+    repairs
         .iter()
         .filter_map(|repair| match repair {
             Repair::Missing {
@@ -382,18 +388,8 @@ fn program(
     };
     let parse_ns = started.elapsed().as_nanos();
     if let Ok(snapshot) = snapshot {
-        let diagnostics = snapshot.diagnostics();
-        if let Ok(mut analysis) = snapshot.with_analyzed_timed(limits, |tree, checked, times| {
-            let started = std::time::Instant::now();
-            let mut result = program_analysis(loaded.clone(), text, tree, &diagnostics, checked);
-            result.timings = AnalysisTimings {
-                parse_ns,
-                materialize_ns: times.materialize_ns,
-                semantic_ns: times.semantic_ns,
-                editor_ns: started.elapsed().as_nanos(),
-            };
-            result
-        }) {
+        if let Ok(mut analysis) = projection::analyze(loaded.clone(), text, &snapshot, limits) {
+            analysis.timings.parse_ns = parse_ns;
             analysis.snapshot = Some(snapshot);
             return analysis;
         }

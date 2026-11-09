@@ -122,6 +122,22 @@ impl RuntimeSnapshot {
         })
     }
 
+    /// Inspect immutable snapshot syntax without materializing a flat tree.
+    /// The shared snapshot is cloned under the store lock; no lock is held
+    /// during the callback, which may read or edit other handles in this session.
+    pub fn with_snapshot<R>(&self, f: impl for<'g> FnOnce(&BorrowedParseSnapshot<'g>) -> R) -> R {
+        self.session.with_dependent(|_, store| {
+            let snapshot = {
+                let store = store.lock().unwrap_or_else(|e| e.into_inner());
+                store.slots[self.slot.id]
+                    .as_ref()
+                    .expect("live snapshot slot")
+                    .clone()
+            };
+            f(&snapshot)
+        })
+    }
+
     /// Materialize once and run the established whole-document checker,
     /// including structural checks on syntax-only languages.
     pub fn with_analyzed<R>(

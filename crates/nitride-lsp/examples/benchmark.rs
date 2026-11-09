@@ -67,15 +67,36 @@ fn main() {
         if i > 0 {
             samples.push(json!({"incremental_ns": incremental_ns, "fresh_ns": fresh_ns,
                 "parse_update_ns": next.timings.parse_ns, "materialize_ns": next.timings.materialize_ns,
+                "syntax_projection_ns": next.timings.syntax_projection_ns,
                 "semantic_ns": next.timings.semantic_ns, "editor_ns": next.timings.editor_ns,
                 "reused_subtrees": stats.reused_subtrees, "work": stats.work}));
         }
         previous = next;
     }
+    // Check the final editor projection against the established full export,
+    // after all timed iterations so this oracle cannot warm later samples.
+    previous
+        .snapshot
+        .as_ref()
+        .unwrap()
+        .with_tree(|flat| {
+            let flat_shape: Vec<_> = flat
+                .nodes
+                .iter()
+                .map(|n| (n.rule, n.span, n.first_child, n.child_count))
+                .collect();
+            assert_eq!(shape(&previous), flat_shape);
+            assert_eq!(previous.tree.as_ref().unwrap().root, flat.root);
+            assert_eq!(
+                previous.tree.as_ref().unwrap().edges,
+                flat.edges.iter().map(|e| e.node).collect::<Vec<_>>()
+            );
+        })
+        .unwrap();
     println!(
         "{}",
         json!({"source_bytes": source.len(), "registry_load_ns": load_ns,
         "initial_analysis_ns": initial_ns, "samples": samples,
-        "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings"})
+        "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings; final editor tree checked against full snapshot export after all timed iterations; syntax_projection_ns measures direct editor projection, separate from full materialize_ns"})
     );
 }
