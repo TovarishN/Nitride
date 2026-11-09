@@ -147,3 +147,9 @@ PR #50: unscoped cached analysis improves 10.9% against this initial build;
 active-scope total time is effectively unchanged. Direct pre-cancellation
 comparison still shows 8.6% cached / 6.9% fresh active-scope overhead. The
 original measurements above remain historical evidence for `ec674f6`.
+
+The later [active-polling layout follow-up](benchmark-2026-11-09-active-polling.md)
+updates PR #50 again: active cached analysis improves 2.5%, active fresh analysis
+5.9%, with a 5.2% unscoped cached regression against the scope-specialized build.
+Its direct pre-cancellation comparison shows 5.1% cached / 0.3% fresh overhead.
+The measurements above remain the historical record for the earlier build.

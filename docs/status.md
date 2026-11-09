@@ -60,12 +60,14 @@ batched polling through parsing, recovery and spill threads. Obsolete LSP jobs
 stop at checkpoints without publishing partial snapshots or cancellation
 problems; cancelling a waiting request still preserves diagnostic work.
 Semantic/host calls and bulk maintenance remain explicit interruption limits.
-The [polling follow-up](benchmark-2026-11-09-polling.md) reduces
-unscoped cached-analysis time by 10.9% relative to the initial cancellation build.
-Final local 4 MiB C# trials return cancellation in 0.08–0.74 ms; the direct
-pre-cancellation comparison still shows 8.6% cached / 6.9% fresh overhead with
-an active scope. Reducing active polling cost remains a concrete follow-up.
-This milestone is unreleased.
+The [polling follow-up](benchmark-2026-11-09-polling.md) specializes traversal
+by scope. The subsequent [active-polling layout change](benchmark-2026-11-09-active-polling.md)
+improves active cached analysis by 2.5% and fresh analysis by 5.9% against that
+build. Unscoped fresh analysis also improves 4.2%, with a 5.2% unscoped cached
+regression in the measured round. Final local cancellation trials return in
+0.07–0.64 ms; a direct pre-cancellation comparison shows 5.1% cached / 0.3% fresh
+active-scope overhead. Further work should address cached-analysis cost while
+preserving cancellation responsiveness. This milestone is unreleased.
 
 ## Evidence
 

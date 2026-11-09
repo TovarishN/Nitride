@@ -128,3 +128,9 @@ not editor projection. Traversal polling is covered by deterministic logical
 work and boundary tests; no timed whole-editor cancellation claim is added.
 
 Raw [latency evidence](benchmarks/2026-11-09/polling-latency.json).
+
+The later [active-polling layout follow-up](benchmark-2026-11-09-active-polling.md)
+updates PR #50 again: active cached analysis improves 2.5%, active fresh analysis
+5.9%, with a 5.2% unscoped cached regression against the scope-specialized build.
+Its direct pre-cancellation comparison shows 5.1% cached / 0.3% fresh overhead.
+The measurements above remain the historical record for the earlier build.

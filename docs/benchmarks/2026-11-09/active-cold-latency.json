@@ -1,0 +1,253 @@
+{
+  "complete": true,
+  "rows": [
+    {
+      "case": "valid",
+      "input_sha256": "bfa28dd3a2fa6c86836d2706d48026317228b2209d169ee355a7274f5ee2f919",
+      "calibration_ns": 1522624250,
+      "calibration_polls": 147288,
+      "metric": "Signal precedes release of an intentionally false gated poll; latency includes next polling batch, unwind/local cleanup and thread join. Gate percentages describe checkpoint ordinals, not wall-time progress or parser phase. Calibration uses a counting false predicate, not a normal-overhead measurement. No universal deadline or GUI claim.",
+      "samples": [
+        {
+          "gate_percent_of_calibrated_polls": 10,
+          "gate_poll": 14728,
+          "observed_polls": 14729,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 89459,
+          "stop_span": [
+            409754,
+            409754
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 10,
+          "gate_poll": 14728,
+          "observed_polls": 14729,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 83541,
+          "stop_span": [
+            409754,
+            409754
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 10,
+          "gate_poll": 14728,
+          "observed_polls": 14729,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 70625,
+          "stop_span": [
+            409754,
+            409754
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 50,
+          "gate_poll": 73644,
+          "observed_polls": 73645,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 176125,
+          "stop_span": [
+            2086594,
+            2086594
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 50,
+          "gate_poll": 73644,
+          "observed_polls": 73645,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 142042,
+          "stop_span": [
+            2086594,
+            2086594
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 50,
+          "gate_poll": 73644,
+          "observed_polls": 73645,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 179916,
+          "stop_span": [
+            2086594,
+            2086594
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 90,
+          "gate_poll": 132559,
+          "observed_polls": 132560,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 259459,
+          "stop_span": [
+            3765178,
+            3765178
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 90,
+          "gate_poll": 132559,
+          "observed_polls": 132560,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 207708,
+          "stop_span": [
+            3765178,
+            3765178
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 90,
+          "gate_poll": 132559,
+          "observed_polls": 132560,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 203042,
+          "stop_span": [
+            3765178,
+            3765178
+          ]
+        }
+      ],
+      "source_bytes": 4194492
+    },
+    {
+      "case": "missing-semicolon",
+      "input_sha256": "d73208f5ec37051de89b68773a099dd4e50d9c10cee5c0bf5f62690efe4fd84c",
+      "calibration_ns": 6154748041,
+      "calibration_polls": 461303,
+      "metric": "Signal precedes release of an intentionally false gated poll; latency includes next polling batch, unwind/local cleanup and thread join. Gate percentages describe checkpoint ordinals, not wall-time progress or parser phase. Calibration uses a counting false predicate, not a normal-overhead measurement. No universal deadline or GUI claim.",
+      "samples": [
+        {
+          "gate_percent_of_calibrated_polls": 10,
+          "gate_poll": 46130,
+          "observed_polls": 46131,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 135333,
+          "stop_span": [
+            1303532,
+            1303532
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 10,
+          "gate_poll": 46130,
+          "observed_polls": 46131,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 131250,
+          "stop_span": [
+            1303532,
+            1303532
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 10,
+          "gate_poll": 46130,
+          "observed_polls": 46131,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 125292,
+          "stop_span": [
+            1303532,
+            1303532
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 50,
+          "gate_poll": 230651,
+          "observed_polls": 230652,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 562167,
+          "stop_span": [
+            2953390,
+            2953390
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 50,
+          "gate_poll": 230651,
+          "observed_polls": 230652,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 637625,
+          "stop_span": [
+            2953390,
+            2953390
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 50,
+          "gate_poll": 230651,
+          "observed_polls": 230652,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 579083,
+          "stop_span": [
+            2953390,
+            2953390
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 90,
+          "gate_poll": 415172,
+          "observed_polls": 415173,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 625458,
+          "stop_span": [
+            3969186,
+            3969186
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 90,
+          "gate_poll": 415172,
+          "observed_polls": 415173,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 607625,
+          "stop_span": [
+            3969186,
+            3969186
+          ]
+        },
+        {
+          "gate_percent_of_calibrated_polls": 90,
+          "gate_poll": 415172,
+          "observed_polls": 415173,
+          "outcome": "cancelled",
+          "signal_to_return_ns": 603791,
+          "stop_span": [
+            3969186,
+            3969186
+          ]
+        }
+      ],
+      "source_bytes": 4194491
+    }
+  ],
+  "source": {
+    "revision": "4c13a2924b0abd47339bc4e72ead8193d0b1e6ad",
+    "diff_sha256": "86e757273a74a51c3886785151a119a4f12ebaf02fde7d6ca3f413dd98cba2a9",
+    "dirty": true
+  },
+  "binary_sha256": "1c56e20a82aca766adad9fa6860efa5e8541c7d56df669c4d6f95fbc2ab8b989",
+  "host": "macOS-27.2-arm64-arm-64bit-Mach-O",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1\n",
+  "source_hashes": {
+    "crates/nitride-core/src/syntax/shared.rs": "e7e7270b5d8a65609f4c410ed350e41938a5f58272538306f0474dba889735e7",
+    "crates/nitride-core/src/syntax/arena.rs": "7507888f3d9a0eec84c1e81f7359926b8bc585d15ac58a669c0c50ab7b239ff4",
+    "crates/nitride-codegen/src/runtime_snapshot.rs": "9e77e318c16b48df4aae7d34bd6faf7cfb0e067ac918801aefd1e3500430beef",
+    "crates/nitride-lsp/src/analysis.rs": "5d55e5a39ebb55077a949d6f890ba9d21c18324714e27c8d10cb5bc0bca70447",
+    "crates/nitride-lsp/src/analysis/projection.rs": "ed6087d8f09fc58061f4140bb0ed403902d76f696adc33419968d79467d7ee87",
+    "crates/nitride-lsp/examples/benchmark.rs": "8c3b594748c4ea0643248bfb7acefa2c885f2a3bd02815eb12472c672fe17def",
+    "crates/nitride-core/src/cancellation.rs": "4f79e99b0dd3795c8c505f59d487cf8cd61f95f34bc2e9f0f9cb8c20b6c29691",
+    "crates/nitride-core/src/lib.rs": "8f5bc8836c073574683c1e399b1577e35e69e804afc27d06f93360fb7cc2522d",
+    "crates/nitride-core/src/parser.rs": "7a15f2e257bc891ca3ee15cc9825875dcc1cfdb98bfee366e045545287e0d386",
+    "crates/nitride-core/src/parser/shared.rs": "56c9d68e2ea570078726b4d8c19fca166a107b904a7a330978222d9ca28d5cc4",
+    "crates/nitride-core/src/parser/shared/generated.rs": "1f8aeebd45df69e4f032a0da2d440162f7ad5616d9dc7be5b3d9c743a190d4ed",
+    "crates/nitride-core/src/lexical.rs": "c7d9d3cabe3b49071d6054f9cdd92ccd2a5aabe4c4525830583e75c808acb07e",
+    "crates/nitride-core/src/recovery/mod.rs": "cb33a2ed7424c7dcf364191ab5aab0366edcdb0710bc584ba0d96da8c0f4c346",
+    "crates/nitride-core/src/recovery/incremental.rs": "98f28179d130842d173d1def66853b2475501be9399377fc359a5dc08940fdd0",
+    "crates/nitride-core/src/recovery/tree.rs": "9a9e3936b4f591f9ec3e8ab17e291e34ee746240fde64aa4335db0c462fdff2b",
+    "crates/nitride-core/src/recovery/search.rs": "f7ea7bdbd73707c67f396f4aec173b382a82d88311dbb5359e4e16a51df2e612",
+    "crates/nitride-core/src/recovery/search/shared.rs": "d880773a98203105a5b58dcf8fb6ad145966b191c3ce3078b9a8c40c8874785e",
+    "crates/nitride-lsp/src/background.rs": "9c3cf27d684e2c56baf1d1cce7c38176a18e592216a29b87dbe126077593d8be",
+    "crates/nitride-lsp/examples/cancellation.rs": "3d62b7171b8f648c2f0ed220fcff658dfb7b1153f2ae344ab5e5802649d8a545"
+  },
+  "definition": "Native RuntimeSnapshot parse, valid/broken 4 MiB source. Signal precedes release of an intentionally false gated poll; includes next polling batch, local cleanup and join. Checkpoint ordinals are not elapsed-time percentages or phase tags. Preparation excluded; no hard deadline or GUI/whole-LSP latency claim."
+}

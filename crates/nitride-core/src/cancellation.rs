@@ -80,6 +80,8 @@ impl Context {
             .as_ref()
             .is_some_and(|tokens| tokens.iter().any(CancellationToken::is_cancelled))
     }
+    #[cold]
+    #[inline(never)]
     fn check(&self, span: [u32; 2]) -> Result<(), Diagnostic> {
         if self.is_cancelled() {
             Err(Diagnostic::new("cancelled", span, "analysis cancelled"))
