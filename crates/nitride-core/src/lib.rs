@@ -117,4 +117,8 @@ pub use checks::{placeholders, rule_diagnostics, rule_diagnostics_with, validate
 pub mod quote_match;
 mod templates;
 
+mod cancellation;
 mod incremental;
+pub use cancellation::{
+    CancellationToken, cancellation_requested, checkpoint as check_cancellation, with_cancellation,
+};

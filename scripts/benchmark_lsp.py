@@ -17,7 +17,14 @@ from recovery_scaling import damaged
 
 SOURCES = ('crates/nitride-core/src/syntax/shared.rs', 'crates/nitride-core/src/syntax/arena.rs',
            'crates/nitride-codegen/src/runtime_snapshot.rs', 'crates/nitride-lsp/src/analysis.rs',
-           'crates/nitride-lsp/src/analysis/projection.rs', 'crates/nitride-lsp/examples/benchmark.rs')
+           'crates/nitride-lsp/src/analysis/projection.rs', 'crates/nitride-lsp/examples/benchmark.rs',
+           'crates/nitride-core/src/cancellation.rs', 'crates/nitride-core/src/lib.rs',
+           'crates/nitride-core/src/parser.rs', 'crates/nitride-core/src/parser/shared.rs',
+           'crates/nitride-core/src/parser/shared/generated.rs', 'crates/nitride-core/src/lexical.rs',
+           'crates/nitride-core/src/recovery/mod.rs', 'crates/nitride-core/src/recovery/incremental.rs',
+           'crates/nitride-core/src/recovery/tree.rs',
+           'crates/nitride-core/src/recovery/search.rs', 'crates/nitride-core/src/recovery/search/shared.rs',
+           'crates/nitride-lsp/src/background.rs')
 
 
 def source_hashes(revision, files, root=ROOT):

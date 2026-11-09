@@ -67,8 +67,17 @@ Shutdown drains accepted analyses and waiting requests before acknowledging.
 Pipelined exit/EOF after an accepted shutdown preserves that barrier; bare
 exit/EOF terminates without joining in-flight analysis. Late results are dropped.
 
-Cancellation skips obsolete work before it starts and rejects obsolete results
-once it finishes. **It does not interrupt an in-flight parser or component call.**
+Obsolete jobs now signal a scoped core cancellation token. Strict, shared,
+generated and recovering parsers poll in batches of logical work; spill threads
+inherit the scope. Snapshot parsing/editing returns a distinct `cancelled`
+outcome, without restarting full parsing or committing a partial snapshot.
+Projection/export boundaries also check the signal. The worker discards cancelled
+analysis, and generation checks remain the final publication barrier. Waiting
+request cancellation alone still leaves diagnostic analysis running.
+
+This is cooperative interruption, not a wall-clock deadline. Individual primitive
+scans, bulk index/arena maintenance, grammar-table preparation, mutex waits,
+allocation/destruction and semantic/host/component calls may delay return.
 Existing engine limits still apply. Unwinding worker panics produce an internal
 error and complete affected waiters; release builds retain `panic=abort`, so no
 release panic-isolation guarantee is added.
@@ -77,8 +86,7 @@ Registry preparation/reload, grammar-index construction, request response
 formatting and RPC writes remain synchronous on the message loop. Continuous
 edits can keep their own document waiting for quiet; shared language-input
 changes still affect all open documents under the current registry invalidation
-policy. Cooperative parser interruption and language-scoped reloads remain
-possible follow-ups. No end-to-end GUI latency claim is made here.
+policy. Language-scoped reloads remain a possible follow-up. No end-to-end GUI latency claim is made here.
 
 ## Evidence and reproduction
 
@@ -133,3 +141,6 @@ ordering, resetting ready work, close cleanup and expediting. Metadata tests cov
 missing/aliased declared inputs and cold-start recovery before a language resolves.
 Independent review found the cold-start gap; it was reproduced, fixed and verified
 through creation, malformed project/workspace text and project removal.
+
+The [cooperative cancellation report](benchmark-2026-11-09-cancellation.md) records
+the opt-in API, deterministic regressions, measured latency and overhead.

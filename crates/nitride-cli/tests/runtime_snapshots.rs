@@ -10,6 +10,52 @@ fn owner() -> Arc<LoadedLanguage> {
 }
 
 #[test]
+fn cancelled_owned_edit_preserves_slot_reader_and_future_edit() {
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    let owner = owner();
+    let weak = Arc::downgrade(&owner);
+    let source = "1 + 2;\n".repeat(4000);
+    let original = RuntimeSnapshot::parse(
+        owner,
+        &source,
+        Limits::default(),
+        SnapshotMode::Recovering(Default::default()),
+    )
+    .unwrap();
+    let calls = AtomicUsize::new(0);
+    let token = nitride_core::CancellationToken::from_predicate(move || {
+        calls.fetch_add(1, Ordering::Relaxed) >= 6
+    });
+    let result = nitride_core::with_cancellation(&token, || {
+        original.edit(
+            &TextEdit {
+                range: [0, source.len() as u32],
+                replacement: "3 + 4;\n".repeat(6000),
+            },
+            Limits::default(),
+        )
+    });
+    assert_eq!(result.err().expect("edit cancelled").category, "cancelled");
+    assert_eq!(
+        original.with_tree(|tree| tree.source.clone()).unwrap(),
+        source
+    );
+    let next = original
+        .edit(
+            &TextEdit {
+                range: [0, 1],
+                replacement: "5".into(),
+            },
+            Limits::default(),
+        )
+        .unwrap();
+    assert!(next.with_tree(|tree| tree.source.starts_with('5')).unwrap());
+    drop(next);
+    drop(original);
+    assert!(weak.upgrade().is_none());
+}
+
+#[test]
 fn scoped_snapshot_projection_allows_reentrant_reads_and_edits() {
     let snapshot = RuntimeSnapshot::parse(
         owner(),

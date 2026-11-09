@@ -19,6 +19,17 @@ fn shape(analysis: &Analysis) -> Vec<(u16, [u32; 2], u32, u32)> {
         .unwrap_or_default()
 }
 fn main() {
+    if std::env::var_os("NITRIDE_BENCH_CANCELLATION").is_some() {
+        let flag = std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false));
+        let token = nitride_core::CancellationToken::from_flag(flag.clone());
+        std::hint::black_box(&flag);
+        nitride_core::with_cancellation(&token, run);
+        std::hint::black_box(flag);
+    } else {
+        run();
+    }
+}
+fn run() {
     let args: Vec<_> = std::env::args().skip(1).collect();
     assert_eq!(args.len(), 2, "usage: benchmark WORKSPACE SOURCE");
     let workspace = PathBuf::from(&args[0]);

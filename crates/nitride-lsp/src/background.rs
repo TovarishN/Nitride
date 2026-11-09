@@ -29,13 +29,30 @@ pub(crate) struct Job {
 }
 impl Job {
     pub fn analyze(&self) -> Option<Analysis> {
-        analysis::analyze_incremental(
-            &self.registry,
-            &self.path,
-            &self.text,
-            &|p| self.buffers.get(&crate::server::canonical(p)).cloned(),
-            self.previous.as_deref(),
-        )
+        let token = nitride_core::CancellationToken::from_flag(self.cancelled.clone());
+        self.analyze_with_cancellation(&token)
+    }
+    fn analyze_with_cancellation(
+        &self,
+        token: &nitride_core::CancellationToken,
+    ) -> Option<Analysis> {
+        nitride_core::with_cancellation(token, || {
+            if nitride_core::cancellation_requested() {
+                return None;
+            }
+            let result = analysis::analyze_incremental(
+                &self.registry,
+                &self.path,
+                &self.text,
+                &|p| self.buffers.get(&crate::server::canonical(p)).cloned(),
+                self.previous.as_deref(),
+            );
+            if nitride_core::cancellation_requested() {
+                None
+            } else {
+                result
+            }
+        })
     }
 }
 pub(crate) enum Outcome {
@@ -107,6 +124,86 @@ mod tests {
     }
     fn completion(receiver: &mpsc::Receiver<Completion>) -> Completion {
         receiver.recv_timeout(Duration::from_secs(3)).unwrap()
+    }
+
+    fn served_job(ticket: u64) -> Job {
+        static REGISTRY: std::sync::OnceLock<std::sync::Mutex<Registry>> =
+            std::sync::OnceLock::new();
+        let registry = REGISTRY
+            .get_or_init(|| {
+                let mut registry = Registry::default();
+                registry.reload(
+                    &[Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")],
+                    &|_| None,
+                );
+                std::sync::Mutex::new(registry)
+            })
+            .lock()
+            .unwrap()
+            .clone();
+        let mut job = job(ticket);
+        job.registry = registry;
+        job.path = "sample.csharp4".into();
+        job.text = "class Current {}".into();
+        job
+    }
+
+    #[test]
+    fn job_analysis_scopes_its_existing_obsolete_flag() {
+        let job = served_job(1);
+        job.cancelled.store(true, Ordering::Relaxed);
+        assert!(
+            job.analyze().is_none(),
+            "cancelled job must not analyze a served document"
+        );
+    }
+
+    #[test]
+    fn real_parser_releases_worker_after_cancellation_then_runs_latest_job() {
+        use std::sync::atomic::AtomicUsize;
+        let (send, receive) = mpsc::channel();
+        let (entered, start) = mpsc::channel();
+        let (release, gate) = mpsc::channel();
+        let gate = std::sync::Mutex::new(gate);
+        let mut obsolete = served_job(1);
+        obsolete.text = "class Obsolete { int field; }\n".repeat(10_000);
+        let flag = obsolete.cancelled.clone();
+        let observed_flag = flag.clone();
+        let calls = AtomicUsize::new(0);
+        let token = nitride_core::CancellationToken::from_predicate(move || {
+            if calls.fetch_add(1, Ordering::Relaxed) == 8 {
+                entered.send(()).unwrap();
+                gate.lock().unwrap().recv().unwrap();
+            }
+            observed_flag.load(Ordering::Relaxed)
+        });
+        let worker = Worker::spawn(
+            move |done| {
+                send.send(done).unwrap();
+            },
+            Box::new(move |job| {
+                if job.ticket == 1 {
+                    job.analyze_with_cancellation(&token)
+                } else {
+                    job.analyze()
+                }
+            }),
+        );
+        assert!(worker.submit(obsolete));
+        start
+            .recv_timeout(Duration::from_secs(5))
+            .expect("actual parser checkpoints reached");
+        flag.store(true, Ordering::Relaxed);
+        release.send(()).unwrap();
+        assert!(matches!(completion(&receive).outcome, Outcome::Cancelled));
+        assert!(worker.submit(served_job(2)));
+        match completion(&receive).outcome {
+            Outcome::Analyzed(Some(analysis)) => {
+                assert_eq!(analysis.lines.text(), "class Current {}");
+                assert!(analysis.problems.is_empty());
+            }
+            _ => panic!("latest job must succeed after cancellation"),
+        }
     }
     #[test]
     fn owned_job_executes_on_worker_and_returns_its_identity() {

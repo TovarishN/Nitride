@@ -1,0 +1,882 @@
+{
+  "source": {
+    "revision": "ec674f6df1ac858d33294a4b0658f687ac753504",
+    "diff_sha256": "459fbb98d5857c14ba479699da801ade4bac1811854b4b37fea939af94161619",
+    "dirty": true
+  },
+  "host": "macOS-27.2-arm64-arm-64bit-Mach-O",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1\n",
+  "cpu": "Apple M4 Pro",
+  "executables": [
+    {
+      "path": "/private/tmp/nitride-polling-before",
+      "sha256": "8e217474449142c842d3d310e73b8cd9515a4598db63b827485221e0492d6c52"
+    },
+    {
+      "path": "/Users/dmitrikamenetski/.codex/worktrees/engine-next-milestones/Nitride/target/release/examples/benchmark",
+      "sha256": "e6711311a80e4e6e87aa54fcdd7ca63e8d7ae28837f1d9367128f46d6f2c0cfb"
+    }
+  ],
+  "declared_baseline_revision": "ec674f6",
+  "source_hashes": {
+    "crates/nitride-core/src/syntax/shared.rs": {
+      "before": "3a24d51a7bff68575c7ee4964b980f1f560e344b3d49b80cadbd52ebf4a3a447",
+      "after": "e7e7270b5d8a65609f4c410ed350e41938a5f58272538306f0474dba889735e7"
+    },
+    "crates/nitride-core/src/syntax/arena.rs": {
+      "before": "7507888f3d9a0eec84c1e81f7359926b8bc585d15ac58a669c0c50ab7b239ff4",
+      "after": "7507888f3d9a0eec84c1e81f7359926b8bc585d15ac58a669c0c50ab7b239ff4"
+    },
+    "crates/nitride-codegen/src/runtime_snapshot.rs": {
+      "before": "9e77e318c16b48df4aae7d34bd6faf7cfb0e067ac918801aefd1e3500430beef",
+      "after": "9e77e318c16b48df4aae7d34bd6faf7cfb0e067ac918801aefd1e3500430beef"
+    },
+    "crates/nitride-lsp/src/analysis.rs": {
+      "before": "5d55e5a39ebb55077a949d6f890ba9d21c18324714e27c8d10cb5bc0bca70447",
+      "after": "5d55e5a39ebb55077a949d6f890ba9d21c18324714e27c8d10cb5bc0bca70447"
+    },
+    "crates/nitride-lsp/src/analysis/projection.rs": {
+      "before": "ed6087d8f09fc58061f4140bb0ed403902d76f696adc33419968d79467d7ee87",
+      "after": "ed6087d8f09fc58061f4140bb0ed403902d76f696adc33419968d79467d7ee87"
+    },
+    "crates/nitride-lsp/examples/benchmark.rs": {
+      "before": "8c3b594748c4ea0643248bfb7acefa2c885f2a3bd02815eb12472c672fe17def",
+      "after": "8c3b594748c4ea0643248bfb7acefa2c885f2a3bd02815eb12472c672fe17def"
+    },
+    "crates/nitride-core/src/cancellation.rs": {
+      "before": "351b9a5d6d585810fee07b89da415a4434c39fe84dce99fd51ea230e5c4db4a1",
+      "after": "9d83ac15dde5e6724a6d59b240f98e9b2412d09229997e824649bffae03dc292"
+    },
+    "crates/nitride-core/src/lib.rs": {
+      "before": "8f5bc8836c073574683c1e399b1577e35e69e804afc27d06f93360fb7cc2522d",
+      "after": "8f5bc8836c073574683c1e399b1577e35e69e804afc27d06f93360fb7cc2522d"
+    },
+    "crates/nitride-core/src/parser.rs": {
+      "before": "7a15f2e257bc891ca3ee15cc9825875dcc1cfdb98bfee366e045545287e0d386",
+      "after": "7a15f2e257bc891ca3ee15cc9825875dcc1cfdb98bfee366e045545287e0d386"
+    },
+    "crates/nitride-core/src/parser/shared.rs": {
+      "before": "56c9d68e2ea570078726b4d8c19fca166a107b904a7a330978222d9ca28d5cc4",
+      "after": "56c9d68e2ea570078726b4d8c19fca166a107b904a7a330978222d9ca28d5cc4"
+    },
+    "crates/nitride-core/src/parser/shared/generated.rs": {
+      "before": "1f8aeebd45df69e4f032a0da2d440162f7ad5616d9dc7be5b3d9c743a190d4ed",
+      "after": "1f8aeebd45df69e4f032a0da2d440162f7ad5616d9dc7be5b3d9c743a190d4ed"
+    },
+    "crates/nitride-core/src/lexical.rs": {
+      "before": "c7d9d3cabe3b49071d6054f9cdd92ccd2a5aabe4c4525830583e75c808acb07e",
+      "after": "c7d9d3cabe3b49071d6054f9cdd92ccd2a5aabe4c4525830583e75c808acb07e"
+    },
+    "crates/nitride-core/src/recovery/mod.rs": {
+      "before": "cb33a2ed7424c7dcf364191ab5aab0366edcdb0710bc584ba0d96da8c0f4c346",
+      "after": "cb33a2ed7424c7dcf364191ab5aab0366edcdb0710bc584ba0d96da8c0f4c346"
+    },
+    "crates/nitride-core/src/recovery/incremental.rs": {
+      "before": "98f28179d130842d173d1def66853b2475501be9399377fc359a5dc08940fdd0",
+      "after": "98f28179d130842d173d1def66853b2475501be9399377fc359a5dc08940fdd0"
+    },
+    "crates/nitride-core/src/recovery/tree.rs": {
+      "before": "9a9e3936b4f591f9ec3e8ab17e291e34ee746240fde64aa4335db0c462fdff2b",
+      "after": "9a9e3936b4f591f9ec3e8ab17e291e34ee746240fde64aa4335db0c462fdff2b"
+    },
+    "crates/nitride-core/src/recovery/search.rs": {
+      "before": "f7ea7bdbd73707c67f396f4aec173b382a82d88311dbb5359e4e16a51df2e612",
+      "after": "f7ea7bdbd73707c67f396f4aec173b382a82d88311dbb5359e4e16a51df2e612"
+    },
+    "crates/nitride-core/src/recovery/search/shared.rs": {
+      "before": "d880773a98203105a5b58dcf8fb6ad145966b191c3ce3078b9a8c40c8874785e",
+      "after": "d880773a98203105a5b58dcf8fb6ad145966b191c3ce3078b9a8c40c8874785e"
+    },
+    "crates/nitride-lsp/src/background.rs": {
+      "before": "9c3cf27d684e2c56baf1d1cce7c38176a18e592216a29b87dbe126077593d8be",
+      "after": "9c3cf27d684e2c56baf1d1cce7c38176a18e592216a29b87dbe126077593d8be"
+    }
+  },
+  "declared_build": "Locked release native-only ec674f6 versus specialized postorder unit polling; both executables under unsignalled from_flag scopes, same host/toolchain, no concurrent builds/tests.",
+  "case_selection": "large-valid-only",
+  "definitions": "In-process analysis, excluding registry load/debounce/stdio/GUI. One warm edit then five samples per process, always update before fresh analysis. Each update compares tree shape/edges, values and problems to fresh analysis outside timing. Alternating executable order across fresh processes; medians below are medians of process medians.",
+  "complete": true,
+  "rows": [
+    {
+      "case": "4194304-valid",
+      "input_sha256": "bfa28dd3a2fa6c86836d2706d48026317228b2209d169ee355a7274f5ee2f919",
+      "before": [
+        {
+          "initial_analysis_ns": 1735823667,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings; final editor tree checked against full snapshot export after all timed iterations; syntax_projection_ns measures direct editor projection, separate from full materialize_ns",
+          "registry_load_ns": 1755837666,
+          "samples": [
+            {
+              "editor_ns": 1257041,
+              "fresh_ns": 1746762125,
+              "incremental_ns": 32632084,
+              "materialize_ns": 0,
+              "parse_update_ns": 4607792,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25227750,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1386917,
+              "fresh_ns": 1715589125,
+              "incremental_ns": 33953250,
+              "materialize_ns": 0,
+              "parse_update_ns": 4742292,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25945583,
+              "work": 59676
+            },
+            {
+              "editor_ns": 2230750,
+              "fresh_ns": 1752192209,
+              "incremental_ns": 34591916,
+              "materialize_ns": 0,
+              "parse_update_ns": 4661458,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 26248792,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1282875,
+              "fresh_ns": 1732690959,
+              "incremental_ns": 33503334,
+              "materialize_ns": 0,
+              "parse_update_ns": 4621291,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 26184334,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1495292,
+              "fresh_ns": 1718070166,
+              "incremental_ns": 33204583,
+              "materialize_ns": 0,
+              "parse_update_ns": 4331916,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25848458,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 1386917,
+            "fresh_ns": 1732690959,
+            "incremental_ns": 33503334,
+            "materialize_ns": 0,
+            "parse_update_ns": 4621291,
+            "reused_subtrees": 11341,
+            "semantic_ns": 0,
+            "syntax_projection_ns": 25945583,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 2105196000,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings; final editor tree checked against full snapshot export after all timed iterations; syntax_projection_ns measures direct editor projection, separate from full materialize_ns",
+          "registry_load_ns": 1938897125,
+          "samples": [
+            {
+              "editor_ns": 1344291,
+              "fresh_ns": 1725817708,
+              "incremental_ns": 37732500,
+              "materialize_ns": 0,
+              "parse_update_ns": 6028375,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 28039708,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1285584,
+              "fresh_ns": 1707668125,
+              "incremental_ns": 33225750,
+              "materialize_ns": 0,
+              "parse_update_ns": 4416250,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25976208,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1785834,
+              "fresh_ns": 1695489125,
+              "incremental_ns": 33130458,
+              "materialize_ns": 0,
+              "parse_update_ns": 4282459,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25625958,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1308834,
+              "fresh_ns": 1719409417,
+              "incremental_ns": 33756208,
+              "materialize_ns": 0,
+              "parse_update_ns": 4524625,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 26425792,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1723209,
+              "fresh_ns": 1729332542,
+              "incremental_ns": 33316541,
+              "materialize_ns": 0,
+              "parse_update_ns": 4402375,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25758750,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 1344291,
+            "fresh_ns": 1719409417,
+            "incremental_ns": 33316541,
+            "materialize_ns": 0,
+            "parse_update_ns": 4416250,
+            "reused_subtrees": 11341,
+            "semantic_ns": 0,
+            "syntax_projection_ns": 25976208,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1775544625,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings; final editor tree checked against full snapshot export after all timed iterations; syntax_projection_ns measures direct editor projection, separate from full materialize_ns",
+          "registry_load_ns": 1777911875,
+          "samples": [
+            {
+              "editor_ns": 1274584,
+              "fresh_ns": 1708830708,
+              "incremental_ns": 34160958,
+              "materialize_ns": 0,
+              "parse_update_ns": 5084792,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25813917,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1456542,
+              "fresh_ns": 1679675667,
+              "incremental_ns": 33582709,
+              "materialize_ns": 0,
+              "parse_update_ns": 4583083,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25835708,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1268333,
+              "fresh_ns": 1718425459,
+              "incremental_ns": 33128125,
+              "materialize_ns": 0,
+              "parse_update_ns": 4607542,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25731333,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1629792,
+              "fresh_ns": 1714909333,
+              "incremental_ns": 33985458,
+              "materialize_ns": 0,
+              "parse_update_ns": 4707542,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 26172500,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1407334,
+              "fresh_ns": 1745540125,
+              "incremental_ns": 33956667,
+              "materialize_ns": 0,
+              "parse_update_ns": 4746625,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 26278500,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 1407334,
+            "fresh_ns": 1714909333,
+            "incremental_ns": 33956667,
+            "materialize_ns": 0,
+            "parse_update_ns": 4707542,
+            "reused_subtrees": 11341,
+            "semantic_ns": 0,
+            "syntax_projection_ns": 25835708,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1742876834,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings; final editor tree checked against full snapshot export after all timed iterations; syntax_projection_ns measures direct editor projection, separate from full materialize_ns",
+          "registry_load_ns": 1816079250,
+          "samples": [
+            {
+              "editor_ns": 1785500,
+              "fresh_ns": 1757130584,
+              "incremental_ns": 35360916,
+              "materialize_ns": 0,
+              "parse_update_ns": 4613709,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 27060917,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1263417,
+              "fresh_ns": 1735992917,
+              "incremental_ns": 33216541,
+              "materialize_ns": 0,
+              "parse_update_ns": 4569209,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25435333,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1786958,
+              "fresh_ns": 1732442458,
+              "incremental_ns": 34715333,
+              "materialize_ns": 0,
+              "parse_update_ns": 4632416,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 26252667,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1820500,
+              "fresh_ns": 1722511958,
+              "incremental_ns": 34653416,
+              "materialize_ns": 0,
+              "parse_update_ns": 4411166,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 26555291,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1751416,
+              "fresh_ns": 1749876333,
+              "incremental_ns": 34903583,
+              "materialize_ns": 0,
+              "parse_update_ns": 4746459,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 26419250,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 1785500,
+            "fresh_ns": 1735992917,
+            "incremental_ns": 34715333,
+            "materialize_ns": 0,
+            "parse_update_ns": 4613709,
+            "reused_subtrees": 11341,
+            "semantic_ns": 0,
+            "syntax_projection_ns": 26419250,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1784475833,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings; final editor tree checked against full snapshot export after all timed iterations; syntax_projection_ns measures direct editor projection, separate from full materialize_ns",
+          "registry_load_ns": 1806748292,
+          "samples": [
+            {
+              "editor_ns": 1267167,
+              "fresh_ns": 1729784833,
+              "incremental_ns": 32679250,
+              "materialize_ns": 0,
+              "parse_update_ns": 4588875,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25338417,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1359292,
+              "fresh_ns": 1737583334,
+              "incremental_ns": 32736375,
+              "materialize_ns": 0,
+              "parse_update_ns": 4555584,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25377500,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1837000,
+              "fresh_ns": 1722219333,
+              "incremental_ns": 34933708,
+              "materialize_ns": 0,
+              "parse_update_ns": 4794917,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 26340208,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1269500,
+              "fresh_ns": 1749977209,
+              "incremental_ns": 32901500,
+              "materialize_ns": 0,
+              "parse_update_ns": 4282916,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25809625,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1272084,
+              "fresh_ns": 1681883583,
+              "incremental_ns": 32922583,
+              "materialize_ns": 0,
+              "parse_update_ns": 4338791,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25430708,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 1272084,
+            "fresh_ns": 1729784833,
+            "incremental_ns": 32901500,
+            "materialize_ns": 0,
+            "parse_update_ns": 4555584,
+            "reused_subtrees": 11341,
+            "semantic_ns": 0,
+            "syntax_projection_ns": 25430708,
+            "work": 59676
+          }
+        }
+      ],
+      "after": [
+        {
+          "initial_analysis_ns": 1810926667,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings; final editor tree checked against full snapshot export after all timed iterations; syntax_projection_ns measures direct editor projection, separate from full materialize_ns",
+          "registry_load_ns": 1726716125,
+          "samples": [
+            {
+              "editor_ns": 1764875,
+              "fresh_ns": 2123156958,
+              "incremental_ns": 33248209,
+              "materialize_ns": 0,
+              "parse_update_ns": 4692166,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 24870250,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1518125,
+              "fresh_ns": 1883663000,
+              "incremental_ns": 41586042,
+              "materialize_ns": 0,
+              "parse_update_ns": 5543541,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 32218625,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1832042,
+              "fresh_ns": 1724964666,
+              "incremental_ns": 34387458,
+              "materialize_ns": 0,
+              "parse_update_ns": 4789750,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 26048500,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1754834,
+              "fresh_ns": 1691001917,
+              "incremental_ns": 33138875,
+              "materialize_ns": 0,
+              "parse_update_ns": 4741458,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25194959,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1443000,
+              "fresh_ns": 1746543417,
+              "incremental_ns": 33829917,
+              "materialize_ns": 0,
+              "parse_update_ns": 4870792,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 26016208,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 1754834,
+            "fresh_ns": 1746543417,
+            "incremental_ns": 33829917,
+            "materialize_ns": 0,
+            "parse_update_ns": 4789750,
+            "reused_subtrees": 11341,
+            "semantic_ns": 0,
+            "syntax_projection_ns": 26016208,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 2063750084,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings; final editor tree checked against full snapshot export after all timed iterations; syntax_projection_ns measures direct editor projection, separate from full materialize_ns",
+          "registry_load_ns": 1757565583,
+          "samples": [
+            {
+              "editor_ns": 1400375,
+              "fresh_ns": 1710155458,
+              "incremental_ns": 32290792,
+              "materialize_ns": 0,
+              "parse_update_ns": 4674917,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 24275709,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1753375,
+              "fresh_ns": 1627430417,
+              "incremental_ns": 32316959,
+              "materialize_ns": 0,
+              "parse_update_ns": 4546458,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 24125292,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1702791,
+              "fresh_ns": 1672601458,
+              "incremental_ns": 31804041,
+              "materialize_ns": 0,
+              "parse_update_ns": 4301041,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 23953833,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1703875,
+              "fresh_ns": 1708015667,
+              "incremental_ns": 32947833,
+              "materialize_ns": 0,
+              "parse_update_ns": 4549166,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 24748333,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1813000,
+              "fresh_ns": 1841613958,
+              "incremental_ns": 33916792,
+              "materialize_ns": 0,
+              "parse_update_ns": 4973250,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25259375,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 1703875,
+            "fresh_ns": 1708015667,
+            "incremental_ns": 32316959,
+            "materialize_ns": 0,
+            "parse_update_ns": 4549166,
+            "reused_subtrees": 11341,
+            "semantic_ns": 0,
+            "syntax_projection_ns": 24275709,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1749880958,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings; final editor tree checked against full snapshot export after all timed iterations; syntax_projection_ns measures direct editor projection, separate from full materialize_ns",
+          "registry_load_ns": 1776705125,
+          "samples": [
+            {
+              "editor_ns": 1292708,
+              "fresh_ns": 1742781875,
+              "incremental_ns": 33307125,
+              "materialize_ns": 0,
+              "parse_update_ns": 5078459,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25040625,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1323792,
+              "fresh_ns": 1732156125,
+              "incremental_ns": 32635708,
+              "materialize_ns": 0,
+              "parse_update_ns": 4772084,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25049792,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1307584,
+              "fresh_ns": 1741852917,
+              "incremental_ns": 32823667,
+              "materialize_ns": 0,
+              "parse_update_ns": 4765416,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 24852625,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1697875,
+              "fresh_ns": 1745655459,
+              "incremental_ns": 34116583,
+              "materialize_ns": 0,
+              "parse_update_ns": 4736125,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25650375,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1740833,
+              "fresh_ns": 1771080959,
+              "incremental_ns": 34042834,
+              "materialize_ns": 0,
+              "parse_update_ns": 4675625,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25687042,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 1323792,
+            "fresh_ns": 1742781875,
+            "incremental_ns": 33307125,
+            "materialize_ns": 0,
+            "parse_update_ns": 4765416,
+            "reused_subtrees": 11341,
+            "semantic_ns": 0,
+            "syntax_projection_ns": 25049792,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1791996667,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings; final editor tree checked against full snapshot export after all timed iterations; syntax_projection_ns measures direct editor projection, separate from full materialize_ns",
+          "registry_load_ns": 1753722333,
+          "samples": [
+            {
+              "editor_ns": 1457375,
+              "fresh_ns": 1737292125,
+              "incremental_ns": 33844916,
+              "materialize_ns": 0,
+              "parse_update_ns": 4832416,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25689291,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1333209,
+              "fresh_ns": 1785979250,
+              "incremental_ns": 32572666,
+              "materialize_ns": 0,
+              "parse_update_ns": 4570083,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 24894959,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1331791,
+              "fresh_ns": 1735628917,
+              "incremental_ns": 33160708,
+              "materialize_ns": 0,
+              "parse_update_ns": 4541250,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25695917,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1843541,
+              "fresh_ns": 1759771875,
+              "incremental_ns": 35564209,
+              "materialize_ns": 0,
+              "parse_update_ns": 4696292,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 27049625,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1767417,
+              "fresh_ns": 1734727417,
+              "incremental_ns": 33069292,
+              "materialize_ns": 0,
+              "parse_update_ns": 4632625,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25249709,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 1457375,
+            "fresh_ns": 1737292125,
+            "incremental_ns": 33160708,
+            "materialize_ns": 0,
+            "parse_update_ns": 4632625,
+            "reused_subtrees": 11341,
+            "semantic_ns": 0,
+            "syntax_projection_ns": 25689291,
+            "work": 59676
+          }
+        },
+        {
+          "initial_analysis_ns": 1712986417,
+          "metric": "in-process analyze API through ready diagnostics/hints/navigation; registry loading separate; parse update includes source-difference preparation; one untimed edit then five samples; fresh/incremental outputs compared outside timings; final editor tree checked against full snapshot export after all timed iterations; syntax_projection_ns measures direct editor projection, separate from full materialize_ns",
+          "registry_load_ns": 1757073625,
+          "samples": [
+            {
+              "editor_ns": 1567541,
+              "fresh_ns": 1693202833,
+              "incremental_ns": 33221583,
+              "materialize_ns": 0,
+              "parse_update_ns": 4404209,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25820792,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1758667,
+              "fresh_ns": 1703991958,
+              "incremental_ns": 31880708,
+              "materialize_ns": 0,
+              "parse_update_ns": 4610500,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 24084833,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1787709,
+              "fresh_ns": 1756432375,
+              "incremental_ns": 33842625,
+              "materialize_ns": 0,
+              "parse_update_ns": 4782041,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25280458,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1892667,
+              "fresh_ns": 1764169041,
+              "incremental_ns": 34899292,
+              "materialize_ns": 0,
+              "parse_update_ns": 5032084,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 25949666,
+              "work": 59676
+            },
+            {
+              "editor_ns": 1785709,
+              "fresh_ns": 1689833291,
+              "incremental_ns": 32587417,
+              "materialize_ns": 0,
+              "parse_update_ns": 4670125,
+              "reused_subtrees": 11341,
+              "semantic_ns": 0,
+              "syntax_projection_ns": 24713459,
+              "work": 59676
+            }
+          ],
+          "source_bytes": 4194492,
+          "medians": {
+            "editor_ns": 1785709,
+            "fresh_ns": 1703991958,
+            "incremental_ns": 33221583,
+            "materialize_ns": 0,
+            "parse_update_ns": 4670125,
+            "reused_subtrees": 11341,
+            "semantic_ns": 0,
+            "syntax_projection_ns": 25280458,
+            "work": 59676
+          }
+        }
+      ],
+      "medians": {
+        "before": {
+          "editor_ns": 1386917,
+          "fresh_ns": 1729784833,
+          "incremental_ns": 33503334,
+          "materialize_ns": 0,
+          "parse_update_ns": 4613709,
+          "reused_subtrees": 11341,
+          "semantic_ns": 0,
+          "syntax_projection_ns": 25945583,
+          "work": 59676
+        },
+        "after": {
+          "editor_ns": 1703875,
+          "fresh_ns": 1737292125,
+          "incremental_ns": 33221583,
+          "materialize_ns": 0,
+          "parse_update_ns": 4670125,
+          "reused_subtrees": 11341,
+          "semantic_ns": 0,
+          "syntax_projection_ns": 25280458,
+          "work": 59676
+        }
+      },
+      "ratios": {
+        "editor_ns": 1.2285342237495107,
+        "fresh_ns": 1.0043400149294754,
+        "incremental_ns": 0.9915903593355814,
+        "parse_update_ns": 1.0122279060079429,
+        "reused_subtrees": 1.0,
+        "syntax_projection_ns": 0.9743646153566871,
+        "work": 1.0
+      }
+    }
+  ]
+}

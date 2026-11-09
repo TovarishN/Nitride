@@ -46,12 +46,28 @@ export for eligible syntax-only workspace languages while preserving the dense
 editor tree. [Matched measurements](benchmark-2026-11-09-editor-projection.md)
 reduced cached valid 4 MiB C# analysis from 38.5 to 31.4 ms (18.6%, five pairs).
 
-The next [record-reuse follow-up](benchmark-2026-11-09-projection-walk.md) retains
+[PR #49](https://github.com/TovarishN/Nitride/pull/49) merged with all hosted
+checks passing. Its [record-reuse follow-up](benchmark-2026-11-09-projection-walk.md) retains
 node records within each walk and completes leaves inline while preserving
 logical budgets. Large-valid medians improve by 5.2% and 9.4% in two rounds;
 nine of ten pairs improve, with all samples retained. Smaller-case evidence is
-exploratory. Local correctness/lint checks passed; branch review and hosted
-checks remain separate. The final editor tree is still dense.
+exploratory. The final editor tree is still dense.
+
+## Current cancellation milestone
+
+[Cooperative cancellation](benchmark-2026-11-09-cancellation.md) adds opt-in
+batched polling through parsing, recovery and spill threads. Obsolete LSP jobs
+stop at checkpoints without publishing partial snapshots or cancellation
+problems; cancelling a waiting request still preserves diagnostic work.
+Semantic/host calls and bulk maintenance remain explicit interruption limits.
+The [polling follow-up](benchmark-2026-11-09-polling.md) specializes traversal
+by scope. The subsequent [active-polling layout change](benchmark-2026-11-09-active-polling.md)
+improves active cached analysis by 2.5% and fresh analysis by 5.9% against that
+build. Unscoped fresh analysis also improves 4.2%, with a 5.2% unscoped cached
+regression in the measured round. Final local cancellation trials return in
+0.07–0.64 ms; a direct pre-cancellation comparison shows 5.1% cached / 0.3% fresh
+active-scope overhead. Further work should address cached-analysis cost while
+preserving cancellation responsiveness. This milestone is unreleased.
 
 ## Evidence
 
@@ -85,8 +101,7 @@ process-only Calendar is the native deployment example.
 Direct snapshot projection is the first measured step for syntax-only workspace
 documents; fully snapshot-native feature queries and retained projections remain
 possible follow-ups because dense editor arrays still rebuild after each edit. Typed indexing,
-cold multi-language preparation, cooperative parser interruption and narrower
-reload invalidation remain separate follow-ups. Larger language
+cold multi-language preparation and narrower reload invalidation remain separate follow-ups. Larger language
 coverage and automatic bindings from non-component metadata are separate
 projects. Packaged extension-host checks, manual visual acceptance and hosted cross-platform
 validation remain distinct evidence.

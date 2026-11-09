@@ -215,6 +215,9 @@ pub fn analyze_incremental(
     open: &dyn Fn(&Path) -> Option<String>,
     previous: Option<&Analysis>,
 ) -> Option<Analysis> {
+    if cancellation_requested() {
+        return None;
+    }
     if path.extension().is_some_and(|e| e == "ncatalog") {
         return Some(catalog(registry, path, text, open));
     }
@@ -268,7 +271,11 @@ pub fn analyze_incremental(
     };
     analysis.problems.splice(0..0, header_problems);
     analysis.header = header.masked_spans.clone();
-    Some(analysis)
+    if cancellation_requested() {
+        None
+    } else {
+        Some(analysis)
+    }
 }
 
 /// The language a `language` signature names: a quoted path to a signed
@@ -387,6 +394,9 @@ fn program(
         ),
     };
     let parse_ns = started.elapsed().as_nanos();
+    if cancellation_requested() {
+        return empty(text);
+    }
     if let Ok(snapshot) = snapshot {
         if let Ok(mut analysis) = projection::analyze(loaded.clone(), text, &snapshot, limits) {
             analysis.timings.parse_ns = parse_ns;
@@ -395,8 +405,14 @@ fn program(
         }
     }
     // A bounded snapshot failure retains the established flat diagnostic path.
+    if cancellation_requested() {
+        return empty(text);
+    }
     let language = loaded.language.language();
     let parsed = parse_recovering(language, source, limits, RecoveryOptions::default());
+    if cancellation_requested() {
+        return empty(text);
+    }
     let checked = compile_recovering(language, &parsed, limits);
     program_analysis(
         loaded.clone(),

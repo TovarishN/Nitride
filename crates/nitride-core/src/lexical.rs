@@ -52,6 +52,7 @@ pub struct LexicalContext<'a> {
     frames: u32,
     stack_base: usize,
     stack_budget: usize,
+    cancellation: crate::cancellation::Poll,
 }
 #[inline(never)]
 fn stack_position() -> usize {
@@ -77,11 +78,15 @@ impl<'a> LexicalContext<'a> {
             frames,
             stack_base,
             stack_budget,
+            cancellation: crate::cancellation::Poll::new(),
         }
     }
     #[inline]
     pub fn step(&mut self, depth: u32) -> Option<()> {
         self.work = self.work.checked_add(1)?;
+        self.cancellation
+            .check(self.work, [self.position as u32; 2])
+            .ok()?;
         self.max_depth = self.max_depth.max(depth);
         (depth <= self.frames && self.work <= self.work_budget).then_some(())
     }
@@ -111,6 +116,9 @@ impl<'a> LexicalContext<'a> {
         }
         let maximum = depth.checked_add(((entry >> 16) & 0xff) as u32)?;
         let total = self.work.checked_add(work)?;
+        self.cancellation
+            .check(total, [self.position as u32; 2])
+            .ok()?;
         if maximum > self.frames || total > self.work_budget {
             return None;
         }
@@ -151,6 +159,17 @@ impl<'a> LexicalContext<'a> {
             return 0;
         }
         let count = plan.scan(&bytes[..length]);
+        if self
+            .cancellation
+            .check(
+                self.work
+                    .saturating_add(count as u64 * u64::from(plan.work)),
+                [self.position as u32; 2],
+            )
+            .is_err()
+        {
+            return 0;
+        }
         self.position += count;
         self.work += count as u64 * u64::from(plan.work);
         self.max_depth = self.max_depth.max(max_depth);
@@ -292,6 +311,24 @@ mod tests {
         let mut c = context("", 100, 3);
         c.stack_budget = 0;
         assert_eq!(c.enter(0), None);
+    }
+
+    #[test]
+    fn generated_lexical_steps_honor_batched_cancellation() {
+        use std::sync::atomic::{AtomicUsize, Ordering};
+        let calls = AtomicUsize::new(0);
+        let token = crate::CancellationToken::from_predicate(move || {
+            calls.fetch_add(1, Ordering::Relaxed) >= 2
+        });
+        let source = "x".repeat(10_000);
+        let consumed = crate::with_cancellation(&token, || {
+            let mut scanner = context(&source, 100_000, 100);
+            while scanner.step(0).is_some() {
+                assert!(scanner.any());
+            }
+            scanner.position()
+        });
+        assert!(consumed > 0 && consumed < source.len());
     }
     fn state(c: &LexicalContext<'_>) -> (usize, u64, u64, u32) {
         (c.position, c.observed, c.work, c.max_depth)

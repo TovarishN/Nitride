@@ -88,8 +88,9 @@ pub(super) fn fallback<'g>(
     diagnostic: Diagnostic,
 ) -> RecoveredParse<'g> {
     let span = [0, source.len() as u32];
+    let cancelled = diagnostic.category == "cancelled";
     let diagnostics = vec![diagnostic];
-    let repairs = if source.is_empty() {
+    let repairs = if source.is_empty() || cancelled {
         vec![]
     } else {
         vec![Repair::Skipped { span }]
