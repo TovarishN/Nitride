@@ -46,12 +46,23 @@ export for eligible syntax-only workspace languages while preserving the dense
 editor tree. [Matched measurements](benchmark-2026-11-09-editor-projection.md)
 reduced cached valid 4 MiB C# analysis from 38.5 to 31.4 ms (18.6%, five pairs).
 
-The next [record-reuse follow-up](benchmark-2026-11-09-projection-walk.md) retains
+[PR #49](https://github.com/TovarishN/Nitride/pull/49) merged with all hosted
+checks passing. Its [record-reuse follow-up](benchmark-2026-11-09-projection-walk.md) retains
 node records within each walk and completes leaves inline while preserving
 logical budgets. Large-valid medians improve by 5.2% and 9.4% in two rounds;
 nine of ten pairs improve, with all samples retained. Smaller-case evidence is
-exploratory. Local correctness/lint checks passed; branch review and hosted
-checks remain separate. The final editor tree is still dense.
+exploratory. The final editor tree is still dense.
+
+## Current cancellation milestone
+
+[Cooperative cancellation](benchmark-2026-11-09-cancellation.md) adds opt-in
+batched polling through parsing, recovery and spill threads. Obsolete LSP jobs
+stop at checkpoints without publishing partial snapshots or cancellation
+problems; cancelling a waiting request still preserves diagnostic work.
+Semantic/host calls and bulk maintenance remain explicit interruption limits.
+Local 4 MiB C# trials returned cancellation in 0.08–0.66 ms, with
+6–7% fresh-analysis and 11–12% cached-analysis overhead in matched runs.
+Reducing polling overhead is a concrete follow-up. This milestone is unreleased.
 
 ## Evidence
 
@@ -85,8 +96,7 @@ process-only Calendar is the native deployment example.
 Direct snapshot projection is the first measured step for syntax-only workspace
 documents; fully snapshot-native feature queries and retained projections remain
 possible follow-ups because dense editor arrays still rebuild after each edit. Typed indexing,
-cold multi-language preparation, cooperative parser interruption and narrower
-reload invalidation remain separate follow-ups. Larger language
+cold multi-language preparation and narrower reload invalidation remain separate follow-ups. Larger language
 coverage and automatic bindings from non-component metadata are separate
 projects. Packaged extension-host checks, manual visual acceptance and hosted cross-platform
 validation remain distinct evidence.

@@ -14,11 +14,13 @@ pub(super) fn analyze(
     snapshot: &nitride_codegen::RuntimeSnapshot,
     limits: Limits,
 ) -> Result<Analysis, Diagnostic> {
+    check_cancellation([0, 0])?;
     if eligible(&loaded)
         && let Ok(result) = project(loaded.clone(), text, snapshot, limits)
     {
         return Ok(result);
     }
+    check_cancellation([0, 0])?;
     let diagnostics = snapshot.diagnostics();
     snapshot.with_analyzed_timed(limits, |tree, checked, times| {
         let started = std::time::Instant::now();

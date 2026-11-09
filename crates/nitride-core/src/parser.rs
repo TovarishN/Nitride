@@ -133,6 +133,7 @@ fn parse_from<'g>(
     start: u16,
     holes: &[&Hole<'_>],
 ) -> Result<SyntaxTree<'g>, Diagnostic> {
+    crate::cancellation::checkpoint([0, 0])?;
     match parse_on_stack(
         language,
         source,
@@ -148,12 +149,15 @@ fn parse_from<'g>(
         {
             // Leave headroom on the spill thread for frames between checks.
             let budget = limits.parser_spill_stack_bytes - limits.parser_spill_stack_bytes / 8;
+            let cancellation = crate::cancellation::Context::capture();
             std::thread::scope(|scope| {
                 std::thread::Builder::new()
                     .name("nitride-parse".into())
                     .stack_size(limits.parser_spill_stack_bytes)
                     .spawn_scoped(scope, || {
-                        parse_on_stack(language, source, limits, options, start, holes, budget)
+                        cancellation.run(|| {
+                            parse_on_stack(language, source, limits, options, start, holes, budget)
+                        })
                     })
                     .map_err(|_| {
                         Diagnostic::new("limit", [0, 0], "cannot start a deep-parse thread")
@@ -191,13 +195,14 @@ fn parse_on_stack<'g>(
     }
     // Parsing is finished: do not overlap scratch high-water storage with the
     // returned tree's owned source copy.
+    crate::cancellation::checkpoint([parser.position as u32; 2])?;
     drop(parser.edge_buffers);
     drop(parser.node_buffers);
     drop(parser.memo);
     // A tree is kept (an editor holds one per document): no growth slack.
     parser.nodes.shrink_to_fit();
     parser.edges.shrink_to_fit();
-    Ok(SyntaxTree {
+    let tree = SyntaxTree {
         language,
         source: source.into(),
         nodes: parser.nodes,
@@ -205,7 +210,9 @@ fn parse_on_stack<'g>(
         labels: parser.labels,
         root: root.unwrap(),
         recovery: None,
-    })
+    };
+    crate::cancellation::checkpoint([source.len() as u32; 2])?;
+    Ok(tree)
 }
 
 #[derive(Clone, Copy)]
@@ -232,6 +239,7 @@ struct Parser<'g, 'a> {
     position: usize,
     furthest: usize,
     work: u64,
+    cancellation: crate::cancellation::Poll,
     nodes: Vec<Node>,
     edges: Vec<Edge>,
     // Free lists belong to this parse only. Recursive frames own taken buffers.
@@ -295,6 +303,7 @@ impl<'g, 'a> Parser<'g, 'a> {
             position: 0,
             furthest: 0,
             work: 0,
+            cancellation: crate::cancellation::Poll::new(),
             nodes: Vec::new(),
             edges: Vec::new(),
             edge_buffers: Vec::new(),
@@ -560,6 +569,8 @@ impl<'g> Parser<'g, '_> {
                 "parser depth/work limit exceeded",
             ));
         }
+        self.cancellation
+            .check(self.work, [self.position as u32; 2])?;
         Ok(())
     }
     fn trivia(&mut self) -> Result<(), Diagnostic> {

@@ -68,6 +68,7 @@ impl RuntimeSnapshot {
         limits: Limits,
         mode: SnapshotMode,
     ) -> Result<Self, Diagnostic> {
+        check_cancellation([0, 0])?;
         let session = Arc::new(Session::try_new(owner, |owner| {
             let snapshot = parse_borrowed_snapshot(owner.language(), source, limits, mode)?;
             Ok::<_, Diagnostic>(Mutex::new(Store {
@@ -93,6 +94,7 @@ impl RuntimeSnapshot {
     }
 
     pub fn edit(&self, edit: &TextEdit, limits: Limits) -> Result<Self, Diagnostic> {
+        check_cancellation(edit.range)?;
         let id = self.session.with_dependent(|_, store| {
             let mut store = store.lock().unwrap_or_else(|e| e.into_inner());
             let snapshot = store.slots[self.slot.id]
@@ -110,6 +112,7 @@ impl RuntimeSnapshot {
         &self,
         f: impl for<'g> FnOnce(&SyntaxTree<'g>) -> R,
     ) -> Result<R, Diagnostic> {
+        check_cancellation([0, 0])?;
         self.session.with_dependent(|_, store| {
             let tree = {
                 let store = store.lock().unwrap_or_else(|e| e.into_inner());
@@ -118,6 +121,7 @@ impl RuntimeSnapshot {
                     .expect("live snapshot slot")
                     .materialize()?
             };
+            check_cancellation([0, 0])?;
             Ok(f(&tree))
         })
     }
@@ -168,9 +172,11 @@ impl RuntimeSnapshot {
                 }
             };
             let materialize_ns = started.elapsed().as_nanos();
+            check_cancellation([0, 0])?;
             let started = std::time::Instant::now();
             let checked = compile_recovering(owner.language(), &parsed, limits);
             let semantic_ns = started.elapsed().as_nanos();
+            check_cancellation([0, 0])?;
             Ok(f(
                 &parsed.tree,
                 checked,

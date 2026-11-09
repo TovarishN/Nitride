@@ -64,12 +64,15 @@ pub(crate) fn recover<'a, 'g>(
                 - limits.parser_spill_stack_bytes / 8,
             ..limits
         };
+        let cancellation = crate::cancellation::Context::capture();
         std::thread::scope(|scope| {
             std::thread::Builder::new()
                 .name("nitride-shared-recovery".into())
                 .stack_size(limits.parser_spill_stack_bytes)
                 .spawn_scoped(scope, move || {
-                    recover_once(language, text, spill, options, base, index, edit, seed)
+                    cancellation.run(|| {
+                        recover_once(language, text, spill, options, base, index, edit, seed)
+                    })
                 })
                 .map_err(|_| Diagnostic::new("limit", [0, 0], "cannot start a deep-parse thread"))?
                 .join()
@@ -103,6 +106,9 @@ fn recover_once<'a, 'g>(
     let (state, failure) = match engine.run() {
         Ok(state) => (state, None),
         Err(error) => {
+            if error.category == "cancelled" {
+                return Err(error);
+            }
             let Some(state) = engine.best.clone() else {
                 return Err(error);
             };
@@ -162,9 +168,12 @@ impl<'g> Engine<'g, '_, SharedProbe<'_, 'g>> {
         base: Option<&BorrowedParseSnapshot<'g>>,
         edit: Option<&TextEdit>,
     ) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
+        crate::cancellation::checkpoint([state.position as u32; 2])?;
+        let cancellation = crate::cancellation::Poll::new();
         let mut events = Vec::new();
         let mut history = state.history;
         while history > 0 {
+            cancellation.check(events.len() as u64, [state.position as u32; 2])?;
             let (previous, event) = self.history[history as usize];
             events.push(event);
             history = previous;
@@ -178,7 +187,9 @@ impl<'g> Engine<'g, '_, SharedProbe<'_, 'g>> {
         }];
         let mut repairs = Vec::new();
         let mut exhausted = Vec::new();
-        for event in events {
+        let event_base = events.len() as u64;
+        for (offset, event) in events.into_iter().enumerate() {
+            cancellation.check(event_base + offset as u64, [state.position as u32; 2])?;
             match event {
                 Event::Exhausted { at } => {
                     exhausted.push(Diagnostic::new("limit", [at as u32; 2], super::EXHAUSTED))
@@ -513,6 +524,7 @@ impl<'g> Engine<'g, '_, SharedProbe<'_, 'g>> {
             .work
             .saturating_add(self.stats.work)
             .saturating_add(metadata.used);
+        crate::cancellation::checkpoint([text.len(); 2])?;
         Ok(snapshot)
     }
 }
@@ -633,6 +645,7 @@ struct MetadataWork {
     remaining: u64,
     used: u64,
     at: u32,
+    cancellation: crate::cancellation::Poll,
 }
 impl MetadataWork {
     fn new(remaining: u64, at: u32) -> Self {
@@ -640,9 +653,12 @@ impl MetadataWork {
             remaining,
             used: 0,
             at,
+            cancellation: crate::cancellation::Poll::new(),
         }
     }
     fn charge(&mut self, units: u64) -> Result<(), Diagnostic> {
+        self.cancellation
+            .check(self.used.saturating_add(units), [self.at; 2])?;
         if units > self.remaining {
             return Err(Diagnostic::new(
                 "limit",

@@ -57,6 +57,9 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
     #[inline]
     pub fn step(&mut self, depth: u32) -> Result<(), Diagnostic> {
         self.parser.work += 1;
+        self.parser
+            .cancellation
+            .check(self.parser.work, [self.parser.position as u32; 2])?;
         self.parser.max_depth = self.parser.max_depth.max(depth);
         if depth > self.parser.limits.parser_frames || self.parser.work > self.parser.work_budget {
             return Err(Diagnostic::new(

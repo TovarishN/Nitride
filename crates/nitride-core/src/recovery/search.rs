@@ -192,6 +192,7 @@ struct Engine<'g, 'a, P> {
     queue: BinaryHeap<(Rank, usize)>,
     seen: FastMap<StateKey, RepairRank>,
     stats: RecoveryStats,
+    cancellation: crate::cancellation::Poll,
     epoch_states: usize,
     serial: u64,
     best: Option<State>,
@@ -219,6 +220,9 @@ pub(super) fn recover<'g>(
     match engine.run() {
         Ok(state) => engine.finish(state, None),
         Err(error) => {
+            if error.category == "cancelled" {
+                return tree::fallback(language, source, error);
+            }
             if let Some(state) = engine.best.clone() {
                 engine.finish(state, Some(error))
             } else {
@@ -296,6 +300,7 @@ fn engine<'g, 'a, P: Probe<'g>>(
         queue: BinaryHeap::new(),
         seen: FastMap::default(),
         stats: RecoveryStats::default(),
+        cancellation: crate::cancellation::Poll::new(),
         epoch_states: 0,
         serial: 0,
         best: None,
@@ -402,6 +407,8 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
     }
     fn tick(&mut self, state: &State) -> Result<(), Diagnostic> {
         self.stats.work += 1;
+        self.cancellation
+            .check(self.stats.work, [state.position as u32; 2])?;
         if self.stats.work.saturating_add(self.probe.work()) > self.budget() {
             return Err(Diagnostic::new(
                 "limit",
@@ -1278,6 +1285,7 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
                             break;
                         }
                         self.stats.work += 1;
+                        self.cancellation.check(self.stats.work, [at as u32; 2])?;
                         if self.stats.work.saturating_add(self.probe.work()) > self.budget() {
                             return Err(Diagnostic::new(
                                 "limit",
@@ -1344,10 +1352,25 @@ impl<'g, P: Probe<'g>> Engine<'g, '_, P> {
     }
 }
 impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
-    fn finish(mut self, state: State, failure: Option<Diagnostic>) -> RecoveredParse<'g> {
+    fn finish(self, state: State, failure: Option<Diagnostic>) -> RecoveredParse<'g> {
+        let language = self.language;
+        let source = self.source.flat();
+        match self.finish_checked(state, failure) {
+            Ok(parsed) => parsed,
+            Err(error) => tree::fallback(language, source, error),
+        }
+    }
+    fn finish_checked(
+        mut self,
+        state: State,
+        failure: Option<Diagnostic>,
+    ) -> Result<RecoveredParse<'g>, Diagnostic> {
+        crate::cancellation::checkpoint([state.position as u32; 2])?;
+        let mut work = ConstructionWork::new();
         let mut events = Vec::new();
         let mut history = state.history;
         while history > 0 {
+            work.tick([state.position as u32; 2])?;
             let (previous, event) = self.history[history as usize];
             events.push(event);
             history = previous;
@@ -1368,13 +1391,14 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
                 _ => ["", ""],
             }))
         {
+            work.tick([state.position as u32; 2])?;
             if !label_ids.contains_key(label) {
                 let Ok(id) = u16::try_from(labels.len()) else {
-                    return super::tree::fallback(
-                        self.language,
-                        self.source.flat(),
-                        Diagnostic::new("limit", [0, 0], "too many syntax edge labels"),
-                    );
+                    return Err(Diagnostic::new(
+                        "limit",
+                        [0, 0],
+                        "too many syntax edge labels",
+                    ));
                 };
                 label_ids.insert(label, id);
                 labels.push(label);
@@ -1384,6 +1408,7 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
         let mut repairs = Vec::new();
         let mut exhausted = Vec::new();
         for event in events {
+            work.tick([state.position as u32; 2])?;
             match event {
                 Event::Exhausted { at } => {
                     exhausted.push(Diagnostic::new("limit", [at as u32; 2], EXHAUSTED))
@@ -1395,7 +1420,9 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
                     children: vec![],
                 }),
                 Event::Close { end } => builder.close(end),
-                Event::Strict { root, label } => builder.strict(root, label, &self.probe),
+                Event::Strict { root, label } => {
+                    builder.strict(root, label, &self.probe, &mut work)?
+                }
                 Event::Missing { expected, at } => repairs.push(Repair::Missing {
                     expected,
                     at: at as u32,
@@ -1435,6 +1462,7 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
             }
         }
         while builder.frames.len() > 1 {
+            work.tick([state.position as u32; 2])?;
             builder.close(state.position);
         }
         let mut roots = builder.frames.pop().unwrap().children;
@@ -1452,8 +1480,12 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
             id
         };
         builder.nodes[root as usize].span = [0, self.source.len() as u32];
-        let mut diagnostics =
-            repair_diagnostics(&repairs, self.source.flat(), self.language.trivia);
+        let mut diagnostics = repair_diagnostics(
+            &repairs,
+            self.source.flat(),
+            self.language.trivia,
+            &mut work,
+        )?;
         diagnostics.extend(exhausted);
         if let Some(error) = failure {
             diagnostics.push(error);
@@ -1465,30 +1497,37 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
                 "incomplete syntax",
             ));
         }
-        let missing: HashSet<_> = repairs
-            .iter()
-            .filter_map(|r| match r {
-                Repair::Missing {
-                    expected: Expected::Rule(rule),
-                    at,
-                } => Some((self.language.node_rule(*rule), *at)),
-                _ => None,
-            })
-            .collect();
-        let damaged_nodes = builder
-            .nodes
-            .iter()
-            .enumerate()
-            .filter(|(_, n)| n.span[0] == n.span[1] && missing.contains(&(n.rule, n.span[0])))
-            .map(|(id, _)| id as u32)
-            .collect();
-        let coverage = coverage(self.source.flat(), &repairs, &builder.nodes, self.language);
+        let mut missing = HashSet::new();
+        for repair in &repairs {
+            work.tick([state.position as u32; 2])?;
+            if let Repair::Missing {
+                expected: Expected::Rule(rule),
+                at,
+            } = repair
+            {
+                missing.insert((self.language.node_rule(*rule), *at));
+            }
+        }
+        let mut damaged_nodes = Vec::new();
+        for (id, node) in builder.nodes.iter().enumerate() {
+            work.tick(node.span)?;
+            if node.span[0] == node.span[1] && missing.contains(&(node.rule, node.span[0])) {
+                damaged_nodes.push(id as u32);
+            }
+        }
+        let coverage = coverage(
+            self.source.flat(),
+            &repairs,
+            &builder.nodes,
+            self.language,
+            &mut work,
+        )?;
         self.stats.repair_count = repairs.len() as u64;
         self.stats.work += self.probe.work();
         builder.nodes.shrink_to_fit();
         builder.edges.shrink_to_fit();
         builder.labels.shrink_to_fit();
-        RecoveredParse {
+        let parsed = RecoveredParse {
             tree: SyntaxTree {
                 language: self.language,
                 source: self.source.flat().into(),
@@ -1505,7 +1544,26 @@ impl<'g> Engine<'g, '_, StrictProbe<'g, '_>> {
             },
             diagnostics,
             stats: self.stats,
+        };
+        crate::cancellation::checkpoint([state.position as u32; 2])?;
+        Ok(parsed)
+    }
+}
+
+struct ConstructionWork {
+    poll: crate::cancellation::Poll,
+    work: u64,
+}
+impl ConstructionWork {
+    fn new() -> Self {
+        Self {
+            poll: crate::cancellation::Poll::new(),
+            work: 0,
         }
+    }
+    fn tick(&mut self, span: [u32; 2]) -> Result<(), Diagnostic> {
+        self.work = self.work.saturating_add(1);
+        self.poll.check(self.work, span)
     }
 }
 
@@ -1570,29 +1628,42 @@ impl<'g> Builder<'g> {
             node,
         });
     }
-    fn strict(&mut self, root: u32, label: &'g str, probe: &StrictProbe<'g, '_>) {
+    fn strict(
+        &mut self,
+        root: u32,
+        label: &'g str,
+        probe: &StrictProbe<'g, '_>,
+        work: &mut ConstructionWork,
+    ) -> Result<(), Diagnostic> {
         if root == u32::MAX {
-            return;
+            return Ok(());
         }
         let mut pending = vec![(root, false)];
         let mut mapped = HashMap::new();
         while let Some((old, visited)) = pending.pop() {
             let n = probe.nodes()[old as usize];
+            work.tick(n.span)?;
             let children =
                 &probe.edges()[n.first_child as usize..(n.first_child + n.child_count) as usize];
             if !visited {
                 pending.push((old, true));
-                pending.extend(children.iter().rev().map(|e| (e.node, false)));
+                for child in children.iter().rev() {
+                    work.tick(n.span)?;
+                    pending.push((child.node, false));
+                }
             } else {
                 let node = self.nodes.len() as u32;
                 self.nodes.push(Node {
                     first_child: self.edges.len() as u32,
                     ..n
                 });
-                self.edges.extend(children.iter().map(|e| Edge {
-                    label: self.label_ids[probe.label(e)],
-                    node: mapped[&e.node],
-                }));
+                for edge in children {
+                    work.tick(n.span)?;
+                    self.edges.push(Edge {
+                        label: self.label_ids[probe.label(edge)],
+                        node: mapped[&edge.node],
+                    });
+                }
                 mapped.insert(old, node);
             }
         }
@@ -1600,12 +1671,19 @@ impl<'g> Builder<'g> {
             label: self.label_ids[label],
             node: mapped[&root],
         });
+        Ok(())
     }
 }
 
-fn repair_diagnostics(repairs: &[Repair], source: &str, policy: TriviaPolicy) -> Vec<Diagnostic> {
+fn repair_diagnostics(
+    repairs: &[Repair],
+    source: &str,
+    policy: TriviaPolicy,
+    work: &mut ConstructionWork,
+) -> Result<Vec<Diagnostic>, Diagnostic> {
     let mut result: Vec<Diagnostic> = vec![];
     for repair in repairs {
+        work.tick([0, source.len() as u32])?;
         let (span, message) = match repair {
             Repair::Missing { expected, at } => ([*at, *at], format!("missing {expected:?}")),
             Repair::Skipped { span } => (*span, "unexpected source".into()),
@@ -1622,7 +1700,7 @@ fn repair_diagnostics(repairs: &[Repair], source: &str, policy: TriviaPolicy) ->
         }
         result.push(Diagnostic::new("syntax", span, message));
     }
-    result
+    Ok(result)
 }
 
 fn coverage(
@@ -1630,24 +1708,28 @@ fn coverage(
     repairs: &[Repair],
     nodes: &[Node],
     language: &Language,
-) -> Vec<Coverage> {
-    let mut skipped: Vec<_> = repairs
-        .iter()
-        .filter_map(|r| match r {
-            Repair::Skipped { span } => Some(*span),
-            _ => None,
-        })
-        .collect();
+    work: &mut ConstructionWork,
+) -> Result<Vec<Coverage>, Diagnostic> {
+    let mut skipped = Vec::new();
+    for repair in repairs {
+        work.tick([0, source.len() as u32])?;
+        if let Repair::Skipped { span } = repair {
+            skipped.push(*span);
+        }
+    }
     skipped.sort_unstable();
-    let mut tokens: Vec<_> = nodes
-        .iter()
-        .filter(|n| language.rules[n.rule as usize].lexical && n.span[0] < n.span[1])
-        .map(|n| n.span)
-        .collect();
+    let mut tokens = Vec::new();
+    for node in nodes {
+        work.tick(node.span)?;
+        if language.rules[node.rule as usize].lexical && node.span[0] < node.span[1] {
+            tokens.push(node.span);
+        }
+    }
     tokens.sort_unstable();
     let (mut sk, mut tk, mut at) = (0, 0, 0usize);
     let mut result: Vec<Coverage> = vec![];
     while at < source.len() {
+        work.tick([at as u32; 2])?;
         while sk < skipped.len() && skipped[sk][1] as usize <= at {
             sk += 1;
         }
@@ -1698,5 +1780,63 @@ fn coverage(
         }
         at = end;
     }
-    result
+    Ok(result)
+}
+
+#[cfg(test)]
+mod cancellation_finish_tests {
+    use super::*;
+    #[test]
+    fn flat_recovery_finishing_observes_cancellation_without_repairs() {
+        let rules = [Rule {
+            name: "Root",
+            lexical: false,
+            expr: Expr::Repeat {
+                inner: &Expr::Literal("x"),
+                min: 0,
+                max: u32::MAX,
+            },
+            except: &[],
+            precedence: 0,
+            right_associative: false,
+            transparent: false,
+            alias: false,
+            owner: None,
+            origin: None,
+            action: Action::None,
+        }];
+        let language = Language {
+            trivia: TriviaPolicy::Nitrogen,
+            profile: Profile::SyntaxOnly,
+            rules: &rules,
+            start: 0,
+            types: &[],
+            operations: &[],
+            handlers: &[],
+            checks: &[],
+            helpers: &[],
+            rule_checks: &[],
+            patterns: &[],
+            source_hash: "finish-cancel",
+        };
+        let source = format!("{}?", "x ".repeat(5000));
+        for after in [0, 3] {
+            let mut engine = engine(
+                &language,
+                Source::Flat(&source),
+                Limits::default(),
+                RecoveryOptions::default(),
+                StrictProbe::new(&language, &source, Limits::default()),
+                std::sync::Arc::new(Tables::new(&language)),
+            );
+            let state = engine.run().unwrap();
+            let calls = std::sync::atomic::AtomicUsize::new(0);
+            let token = CancellationToken::from_predicate(move || {
+                calls.fetch_add(1, std::sync::atomic::Ordering::Relaxed) >= after
+            });
+            let result = with_cancellation(&token, || engine.finish(state, None));
+            assert!(result.diagnostics.iter().any(|d| d.category == "cancelled"));
+            assert!(result.tree.recovery.as_ref().unwrap().repairs.is_empty());
+        }
+    }
 }

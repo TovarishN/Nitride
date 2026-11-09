@@ -61,11 +61,14 @@ pub(crate) fn recover_after_strict<'g>(
                     - limits.parser_spill_stack_bytes / 8,
                 ..limits
             };
+            let cancellation = crate::cancellation::Context::capture();
             std::thread::scope(|scope| {
                 std::thread::Builder::new()
                     .name("nitride-recovery".into())
                     .stack_size(limits.parser_spill_stack_bytes)
-                    .spawn_scoped(scope, || search::recover(language, source, spill, options))
+                    .spawn_scoped(scope, || {
+                        cancellation.run(|| search::recover(language, source, spill, options))
+                    })
                     .map(|thread| {
                         thread.join().unwrap_or_else(|_| {
                             tree::fallback(

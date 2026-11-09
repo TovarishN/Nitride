@@ -179,6 +179,7 @@ struct Parser<'a, 'g> {
     position: usize,
     furthest: usize,
     work: u64,
+    cancellation: crate::cancellation::Poll,
     work_budget: u64,
     arena: ArenaBuilder<'g>,
     edge_buffers: Vec<Children>,
@@ -241,6 +242,7 @@ pub fn parse_snapshot(
     limits: Limits,
     mode: SnapshotMode,
 ) -> Result<ParseSnapshot, Diagnostic> {
+    crate::cancellation::checkpoint([0, 0])?;
     parse_borrowed_with_tables(
         language,
         source,
@@ -264,6 +266,7 @@ fn parse_borrowed_with_tables<'g>(
     mode: SnapshotMode,
     tables: Option<std::sync::Arc<LanguageTables<'g>>>,
 ) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
+    crate::cancellation::checkpoint([0, 0])?;
     let text = SourceText::new(source)?;
     match mode {
         SnapshotMode::Strict(options) => parse_with_spill(
@@ -362,6 +365,7 @@ fn parse_snapshot_specialized(
     limits: Limits,
     mode: SnapshotMode,
 ) -> Result<ParseSnapshot, Diagnostic> {
+    crate::cancellation::checkpoint([0, 0])?;
     let language = lexers.language;
     let tables = LanguageTables::of(language);
     if lexers.scanners.len() != language.rules.len()
@@ -413,6 +417,7 @@ fn parse_snapshot_specialized(
                 seed.as_ref(),
             )
         }
+        (Err(error), _) if error.category == "cancelled" => Err(error),
         (Err(_), _) => {
             drop(text);
             parse_borrowed_with_tables(language, source, limits, mode, Some(tables.clone()))
@@ -421,6 +426,7 @@ fn parse_snapshot_specialized(
 }
 impl<'g> BorrowedParseSnapshot<'g> {
     pub fn edit(&self, edit: &TextEdit, limits: Limits) -> Result<Self, Diagnostic> {
+        crate::cancellation::checkpoint(edit.range)?;
         let text = self.source.replace(edit)?;
         let delta = edit.replacement.len() as i64 - i64::from(edit.range[1] - edit.range[0]);
         let (index, _) = self.recognitions.edit(edit.range, delta);
@@ -509,13 +515,16 @@ fn parse_with_spill<'a, 'g>(
         .is_err_and(|e| e.message == super::STACK_EXHAUSTED)
         && limits.parser_spill_stack_bytes > limits.parser_stack_bytes
     {
+        let cancellation = crate::cancellation::Context::capture();
         std::thread::scope(|scope| {
             let budget = limits.parser_spill_stack_bytes - limits.parser_spill_stack_bytes / 8;
             std::thread::Builder::new()
                 .name("nitride-shared-parse".into())
                 .stack_size(limits.parser_spill_stack_bytes)
                 .spawn_scoped(scope, move || {
-                    parse_source(language, text, limits, options, budget, base, index, seed)
+                    cancellation.run(|| {
+                        parse_source(language, text, limits, options, budget, base, index, seed)
+                    })
                 })
                 .map_err(|_| Diagnostic::new("limit", [0, 0], "cannot start a deep-parse thread"))?
                 .join()
@@ -564,6 +573,7 @@ fn publish<'g>(
     base: Option<&BorrowedParseSnapshot<'g>>,
     mode: SnapshotMode,
 ) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
+    crate::cancellation::checkpoint([parser.position as u32; 2])?;
     parser.arena.retain(root.node);
     parser.clear_memo(0);
     parser.clear_memo(1);
@@ -679,6 +689,7 @@ fn publish<'g>(
     } else {
         0
     };
+    crate::cancellation::checkpoint([text.len(); 2])?;
     Ok(snapshot)
 }
 /// Points each fact at its syntax's new id after compaction, dropping facts
@@ -732,6 +743,7 @@ impl<'a, 'g> Parser<'a, 'g> {
             position: 0,
             furthest: 0,
             work: 0,
+            cancellation: crate::cancellation::Poll::new(),
             work_budget: limits
                 .work
                 .max(u64::from(text.len()).saturating_mul(limits.parser_work_per_byte)),
@@ -1794,6 +1806,8 @@ impl<'a, 'g> Parser<'a, 'g> {
         {
             return Err(self.tick_error(stack));
         }
+        self.cancellation
+            .check(self.work, [self.position as u32; 2])?;
         Ok(())
     }
     /// The stack limit takes precedence over the depth and work limits.
@@ -2017,6 +2031,8 @@ impl<'a, 'g> Parser<'a, 'g> {
             ));
         }
         self.work += extra;
+        self.cancellation
+            .check(self.work, [self.position as u32; 2])?;
         Ok(())
     }
     /// An ordered choice. `attempt` runs alternative `index` at the choice's
@@ -2070,6 +2086,7 @@ impl<'a, 'g> Parser<'a, 'g> {
         }
         let saved = (self.position, self.work, self.max_depth, self.furthest);
         let peek = self.dispatch_peek(!lexical);
+        self.cancellation.rewind(self.work, saved.1);
         (self.position, self.work, self.max_depth, self.furthest) = saved;
         // Prediction never commits work or errors before an alternative's own
         // checks. Keep read observations conservatively; replay real matching
@@ -2224,6 +2241,7 @@ impl<'a, 'g> Parser<'a, 'g> {
         let saved = (self.position, self.work, self.max_depth, self.furthest);
         self.position = end;
         let result = self.dispatch_peek(true);
+        self.cancellation.rewind(self.work, saved.1);
         (self.position, self.work, self.max_depth, self.furthest) = saved;
         let value = result?;
         peek.remember_after(end, value);
@@ -2964,6 +2982,7 @@ impl<'a, 'g> SharedProbe<'a, 'g> {
         parser.compiled = None;
         parser.lexers = None;
         parser.optimize_recognition = false;
+        parser.cancellation.rewind(parser.work, saved.0);
         (parser.work, parser.max_depth, parser.furthest) = saved;
         failed
     }
@@ -2988,6 +3007,7 @@ impl<'a, 'g> SharedProbe<'a, 'g> {
         parser.compiled = None;
         parser.lexers = None;
         parser.optimize_recognition = false;
+        parser.cancellation.rewind(parser.work, saved.0);
         (parser.work, parser.max_depth, parser.furthest) = saved;
         result.ok()
     }
@@ -3037,6 +3057,7 @@ impl<'a, 'g> SharedProbe<'a, 'g> {
         self.parser.position = at;
         let skipped = self.parser.trivia();
         let start = self.parser.position;
+        self.parser.cancellation.rewind(self.parser.work, saved.0);
         (
             self.parser.work,
             self.parser.max_depth,
@@ -3565,6 +3586,48 @@ impl TokenCache {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn repeated_generated_trivia_speculation_preserves_cancellation_credit() {
+        use std::sync::{
+            Arc,
+            atomic::{AtomicUsize, Ordering},
+        };
+        let language = prefix_fact_fixture(false);
+        let lexers = Box::leak(Box::new(crate::lexical::CompiledLexers::new(language, &[])));
+        let source = format!("{}a", " ".repeat(4096));
+        let text = SourceText::new(&source).unwrap();
+        let calls = Arc::new(AtomicUsize::new(0));
+        let count = calls.clone();
+        let token = crate::CancellationToken::from_predicate(move || {
+            count.fetch_add(1, Ordering::Relaxed);
+            false
+        });
+        crate::with_cancellation(&token, || {
+            let mut probe = SharedProbe::new(
+                language,
+                &text,
+                Limits::default(),
+                None,
+                Index::default(),
+                None,
+            );
+            probe.generated = Some(Generated {
+                compiled: None,
+                lexers,
+                source: &source,
+            });
+            probe.prerecognize_reference(&Expr::Ref(1), 0);
+            let first = calls.load(Ordering::Relaxed);
+            for _ in 0..4 {
+                probe.prerecognize_reference(&Expr::Ref(1), 0);
+            }
+            assert!(
+                calls.load(Ordering::Relaxed) >= first + 12,
+                "repeated speculative trivia must keep consuming polling credit"
+            );
+        });
+    }
+
     #[test]
     fn choice_limits_precede_speculative_trivia_errors() {
         for (wrapped, frames, work) in [(false, 2, 7), (true, 3, 8)] {

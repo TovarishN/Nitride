@@ -180,6 +180,7 @@ impl<'g> BorrowedParseSnapshot<'g> {
         }
     }
     pub(crate) fn indexed(&self, limit: u64) -> Result<Occurrences, Diagnostic> {
+        let cancellation = crate::cancellation::Poll::new();
         let mut reader = self.arena.reader();
         let mut pending = vec![(self.root(), false)];
         let mut completed: Vec<u32> = Vec::new();
@@ -191,10 +192,13 @@ impl<'g> BorrowedParseSnapshot<'g> {
             .map_or_else(Default::default, |r| r.damaged().collect());
         let mut damaged_nodes = Vec::new();
         let mut work = 0_u64;
+        let mut polling_work = 0_u64;
         while let Some((view, visited)) = pending.pop() {
             work = work.saturating_add(1);
             let node = reader.node(view.id).expect("reachable node");
             let span = [view.start, view.start + node.width];
+            polling_work = polling_work.saturating_add(1);
+            cancellation.check(polling_work, span)?;
             if work > limit {
                 return Err(Diagnostic::new(
                     "limit",
@@ -207,6 +211,8 @@ impl<'g> BorrowedParseSnapshot<'g> {
                 let base = pending.len();
                 let mut position = view.start;
                 for child in reader.children(view.id) {
+                    polling_work = polling_work.saturating_add(1);
+                    cancellation.check(polling_work, span)?;
                     position += child.extent;
                     let start = position - reader.node(child.node).expect("owned child").width;
                     pending.push((
@@ -225,6 +231,8 @@ impl<'g> BorrowedParseSnapshot<'g> {
                 let base = completed.len() - child_count as usize;
                 let first_child = edges.len() as u32;
                 for (child, id) in reader.children(view.id).zip(completed.drain(base..)) {
+                    polling_work = polling_work.saturating_add(1);
+                    cancellation.check(polling_work, span)?;
                     edges.push(Edge {
                         label: child.label,
                         node: id,
@@ -250,6 +258,7 @@ impl<'g> BorrowedParseSnapshot<'g> {
                 completed.push(id);
             }
         }
+        crate::cancellation::checkpoint([0, self.source.len()])?;
         Ok(Occurrences {
             nodes,
             edges,
@@ -268,6 +277,7 @@ impl<'g> BorrowedParseSnapshot<'g> {
         limit: u64,
         mut visit: impl FnMut(u32, Node, &[u32]),
     ) -> Result<u32, Diagnostic> {
+        let cancellation = crate::cancellation::Poll::new();
         let mut reader = self.arena.reader();
         let root = reader.node(self.root).expect("reachable root");
         let mut pending = vec![(self.root, root, self.start, false)];
@@ -278,6 +288,7 @@ impl<'g> BorrowedParseSnapshot<'g> {
         while let Some((id, node, start, visited)) = pending.pop() {
             work = work.saturating_add(1);
             let span = [start, start + node.width];
+            cancellation.check(work, span)?;
             if work > limit {
                 return Err(Diagnostic::new(
                     "limit",
@@ -294,12 +305,14 @@ impl<'g> BorrowedParseSnapshot<'g> {
                         "occurrence projection child scheduling work limit exceeded",
                     ));
                 }
+                let scheduling_base = work;
                 work = scheduled_work;
                 if node.child_count() != 0 {
                     pending.push((id, node, start, true));
                     let base = pending.len();
                     let mut position = start;
-                    for child in reader.children(id) {
+                    for (offset, child) in reader.children(id).enumerate() {
+                        cancellation.check(scheduling_base + offset as u64 + 1, span)?;
                         let record = reader.node(child.node).expect("owned child");
                         position += child.extent;
                         pending.push((child.node, record, position - record.width, false));
@@ -347,7 +360,7 @@ impl<'g> BorrowedParseSnapshot<'g> {
 
     pub fn materialize(&self) -> Result<SyntaxTree<'g>, Diagnostic> {
         let indexed = self.indexed(u64::MAX)?;
-        Ok(SyntaxTree {
+        let tree = SyntaxTree {
             language: self.language,
             source: self.source.slice([0, self.source.len()])?.into_owned(),
             nodes: indexed.nodes,
@@ -362,7 +375,9 @@ impl<'g> BorrowedParseSnapshot<'g> {
                     damaged_nodes: indexed.damaged_nodes,
                 })
             }),
-        })
+        };
+        crate::cancellation::checkpoint([0, self.source.len()])?;
+        Ok(tree)
     }
 }
 
@@ -569,6 +584,19 @@ mod tests {
             .unwrap_err();
         assert_eq!(error.span, [0, CHILDREN]);
         assert!(error.message.contains("scheduling"));
+        let calls = std::sync::atomic::AtomicUsize::new(0);
+        let token = crate::CancellationToken::from_predicate(move || {
+            calls.fetch_add(1, std::sync::atomic::Ordering::Relaxed) >= 1
+        });
+        let error = crate::with_cancellation(&token, || snapshot.indexed(u64::MAX))
+            .err()
+            .unwrap();
+        assert_eq!(error.category, "cancelled");
+        assert_eq!(
+            error.span,
+            [0, CHILDREN],
+            "cancel during wide-root scheduling, before visiting a leaf"
+        );
         let mut emitted = 0;
         crate::syntax::arena::reset_record_reads();
         let root_id = snapshot

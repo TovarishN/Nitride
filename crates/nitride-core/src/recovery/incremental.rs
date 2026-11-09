@@ -281,6 +281,11 @@ pub(crate) fn recover_snapshot<'g>(
     strict_error: Option<Diagnostic>,
     seed: Option<&crate::parser::shared::Seed<'_, 'g>>,
 ) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
+    let strict_error = match strict_error {
+        Some(error) if error.category == "cancelled" => return Err(error),
+        other => other,
+    };
+    crate::cancellation::checkpoint([0, 0])?;
     if options.max_states > 0
         && strict_error
             .as_ref()
@@ -301,7 +306,12 @@ pub(crate) fn recover_snapshot<'g>(
             previous.map(|(_, edit)| edit),
             seed,
         );
+        let result = match result {
+            Err(error) if error.category == "cancelled" => return Err(error),
+            other => other,
+        };
         if let Ok(mut snapshot) = result {
+            crate::cancellation::checkpoint([0, 0])?;
             // A local search exhaustion is decided by the search's state count,
             // which both engines share; other limits depend on engine-specific
             // accounting and fall back to the flat recovery.
@@ -317,11 +327,13 @@ pub(crate) fn recover_snapshot<'g>(
             }
         }
     }
+    crate::cancellation::checkpoint([0, 0])?;
     let source = text.slice([0, text.len()])?;
     let parsed = match strict_error {
         Some(error) => super::recover_after_strict(language, &source, limits, options, error),
         None => parse_recovering(language, &source, limits, options),
     };
+    crate::cancellation::checkpoint([0, 0])?;
     let tree = &parsed.tree;
     let mut candidates: HashMap<(u16, [u32; 2]), Vec<BorrowedNodeView<'_, 'g>>> = HashMap::new();
     if let Some((old, edit)) = previous {
@@ -439,6 +451,7 @@ pub(crate) fn recover_snapshot<'g>(
     snapshot.stats.work = parsed.stats.work;
     snapshot.stats.reparsed_bytes = u64::from(text.len());
     snapshot.stats.source_bytes_copied = u64::from(text.len());
+    crate::cancellation::checkpoint([text.len(); 2])?;
     Ok(snapshot)
 }
 
