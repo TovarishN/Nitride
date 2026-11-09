@@ -15,6 +15,9 @@ processes, components or grants. `--kind syntax` creates a smaller syntax-only
 assignment language; use `nitride parse` for that preset. `--dry-run --json`
 returns a deterministic file plan without creating the directory.
 
+Generated projects include a native [`tests.ntest` suite](language-testing.md). Run
+`nitride test` in their directory or use VS Code’s Testing view.
+
 In VS Code, **Nitride: New Language** asks for the workspace folder, language
 name, extension and preset. It creates the same files and offers to open the
 standalone folder in a new window. It does not alter a parent workspace's

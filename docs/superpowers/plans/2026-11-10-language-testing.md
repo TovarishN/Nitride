@@ -40,10 +40,10 @@ Interfaces: InputSnapshot owns normalized path/text overrides with read/exists/i
 
 ### Task3: Starter suites and user documentation
 Files: prepare/src/authoring.rs and tests/authoring.rs; testing/tests/starters.rs; cli/tests/authoring.rs; docs/language-testing.md and docs/authoring.md; release/train.py.
-- [ ] RED tests for both generated presets, exact expected file count/new tests.ntest, quoted/raw source correctness and genuine diagnostic codes/spans. Ensure all generated suites pass with native CLI. Keep no-overwrite/manifest-last/conservative rollback tests meaningful with the new file.
-- [ ] Add starter suites and README commands using shared planner only. Include parse accept/reject, typed42 and compile rejection; run against the actual engine before freezing expected diagnostics.
-- [ ] Update native training to run generated suites, retaining version/library/runtime checks. Write usage/phase/snapshot/protocol/capability boundaries documentation.
-- [ ] Run focused authoring/testing/CLI/tooling checks; commit starter workflow.
+- [x] RED tests for both generated presets, exact expected file count/new tests.ntest, quoted/raw source correctness and genuine diagnostic codes/spans. Ensure all generated suites pass with native CLI. Keep no-overwrite/manifest-last/conservative rollback tests meaningful with the new file.
+- [x] Add starter suites and README commands using shared planner only. Include parse accept/reject, typed42 and compile rejection; run against the actual engine before freezing expected diagnostics.
+- [x] Update native training to run generated suites, retaining version/library/runtime checks. Write usage/phase/snapshot/protocol/capability boundaries documentation.
+- [x] Run focused authoring/testing/CLI/tooling checks; commit starter workflow.
 
 ### Task4: VS Code Testing and final acceptance
 Files: extension src/{testing,testingProtocol,testingWorker}.ts with helper tests; extension.ts/server.ts/package.json; syntax ntest.tmLanguage.json; acceptance.cjs and scripts/editor_acceptance.py as needed; docs/status.md and acceptance evidence.

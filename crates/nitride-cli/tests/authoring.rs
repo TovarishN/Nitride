@@ -26,7 +26,7 @@ fn native_templates_dry_run_create_and_execute() {
     );
     assert!(!target.exists());
     let plan: serde_json::Value = serde_json::from_slice(&dry.stdout).unwrap();
-    assert_eq!(plan["files"].as_array().unwrap().len(), 5);
+    assert_eq!(plan["files"].as_array().unwrap().len(), 6);
     let created = Command::new(binary).args(args).output().unwrap();
     assert!(
         created.status.success(),
