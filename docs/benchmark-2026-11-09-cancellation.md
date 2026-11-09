@@ -141,3 +141,9 @@ separate rounds do not isolate the token adapter cost.
 Raw complete artifacts: [latency](benchmarks/2026-11-09/cancellation-latency.json),
 [ordinary APIs](benchmarks/2026-11-09/cancellation-default-overhead.json),
 [unsignalled scope](benchmarks/2026-11-09/cancellation-scoped-overhead.json).
+
+The subsequent [polling optimization](benchmark-2026-11-09-polling.md) updates
+PR #50: unscoped cached analysis improves 10.9% against this initial build;
+active-scope total time is effectively unchanged. Direct pre-cancellation
+comparison still shows 8.6% cached / 6.9% fresh active-scope overhead. The
+original measurements above remain historical evidence for `ec674f6`.

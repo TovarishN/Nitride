@@ -129,6 +129,19 @@ impl Poll {
         }
         Ok(())
     }
+    pub(crate) fn enabled(&self) -> bool {
+        self.context.0.is_some()
+    }
+    /// For walks that visit every consecutive logical work value, including
+    /// virtual exits. Unlike `check`, this must not be used across work jumps
+    /// or speculative rewinds. Work zero checks the entry boundary.
+    #[inline]
+    pub(crate) fn check_unit(&self, work: u64, span: [u32; 2]) -> Result<(), Diagnostic> {
+        if work & 1023 == 0 {
+            self.context.check(span)?;
+        }
+        Ok(())
+    }
     /// Speculative parser work is rolled back, but its polling credit is not.
     #[inline]
     pub(crate) fn rewind(&self, from: u64, to: u64) {

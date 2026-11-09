@@ -275,11 +275,26 @@ impl<'g> BorrowedParseSnapshot<'g> {
     pub fn visit_postorder(
         &self,
         limit: u64,
-        mut visit: impl FnMut(u32, Node, &[u32]),
+        visit: impl FnMut(u32, Node, &[u32]),
     ) -> Result<u32, Diagnostic> {
         let cancellation = crate::cancellation::Poll::new();
+        if cancellation.enabled() {
+            self.visit_postorder_inner::<true>(limit, visit, &cancellation)
+        } else {
+            self.visit_postorder_inner::<false>(limit, visit, &cancellation)
+        }
+    }
+    fn visit_postorder_inner<const CANCEL: bool>(
+        &self,
+        limit: u64,
+        mut visit: impl FnMut(u32, Node, &[u32]),
+        cancellation: &crate::cancellation::Poll,
+    ) -> Result<u32, Diagnostic> {
         let mut reader = self.arena.reader();
         let root = reader.node(self.root).expect("reachable root");
+        if CANCEL {
+            cancellation.check_unit(0, [self.start, self.start + root.width])?;
+        }
         let mut pending = vec![(self.root, root, self.start, false)];
         let mut completed = Vec::new();
         let mut work = 0_u64;
@@ -288,7 +303,9 @@ impl<'g> BorrowedParseSnapshot<'g> {
         while let Some((id, node, start, visited)) = pending.pop() {
             work = work.saturating_add(1);
             let span = [start, start + node.width];
-            cancellation.check(work, span)?;
+            if CANCEL {
+                cancellation.check_unit(work, span)?;
+            }
             if work > limit {
                 return Err(Diagnostic::new(
                     "limit",
@@ -312,7 +329,9 @@ impl<'g> BorrowedParseSnapshot<'g> {
                     let base = pending.len();
                     let mut position = start;
                     for (offset, child) in reader.children(id).enumerate() {
-                        cancellation.check(scheduling_base + offset as u64 + 1, span)?;
+                        if CANCEL {
+                            cancellation.check_unit(scheduling_base + offset as u64 + 1, span)?;
+                        }
                         let record = reader.node(child.node).expect("owned child");
                         position += child.extent;
                         pending.push((child.node, record, position - record.width, false));
@@ -323,6 +342,9 @@ impl<'g> BorrowedParseSnapshot<'g> {
                 // Elide an empty child iterator and leaf exit frame, but keep
                 // the exit's logical work charge and failure position.
                 work = work.saturating_add(1);
+                if CANCEL {
+                    cancellation.check_unit(work, span)?;
+                }
                 if work > limit {
                     return Err(Diagnostic::new(
                         "limit",
@@ -354,6 +376,9 @@ impl<'g> BorrowedParseSnapshot<'g> {
             completed.push(nodes as u32);
             nodes += 1;
             edges += u64::from(count);
+        }
+        if CANCEL {
+            crate::cancellation::checkpoint([self.start, self.start + root.width])?;
         }
         Ok(completed[0])
     }
@@ -616,6 +641,29 @@ mod tests {
         assert!(
             crate::syntax::arena::record_reads() <= u64::from(CHILDREN + 1) * 2,
             "projection should resolve at most two records per occurrence"
+        );
+        let cancelled = crate::CancellationToken::new();
+        cancelled.cancel();
+        let error = crate::with_cancellation(&cancelled, || {
+            snapshot.visit_postorder(u64::MAX, |_, _, _| panic!("cancelled at entry"))
+        })
+        .unwrap_err();
+        assert_eq!(
+            error.span,
+            [0, CHILDREN],
+            "preserve the full root cancellation span"
+        );
+        let token = crate::CancellationToken::new();
+        let result = crate::with_cancellation(&token, || {
+            snapshot.visit_postorder(u64::MAX, |id, _, _| {
+                if id == CHILDREN {
+                    token.cancel();
+                }
+            })
+        });
+        assert_eq!(
+            result.expect_err("cancelled at final callback").category,
+            "cancelled"
         );
     }
 }

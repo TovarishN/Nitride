@@ -1,0 +1,25 @@
+--- a/crates/nitride-core/src/cancellation.rs
++++ b/crates/nitride-core/src/cancellation.rs
+@@ -113,16 +113,17 @@
+ }
+ impl Poll {
+     pub(crate) fn new() -> Self {
++        let context = Context::capture();
++        // Disabled polling shares the same hot path: ordinary work never
++        // reaches this threshold, so no context load is needed per step.
++        let next = if context.0.is_some() { 0 } else { u64::MAX };
+         Self {
+-            next: Cell::new(0),
+-            context: Context::capture(),
++            next: Cell::new(next),
++            context,
+         }
+     }
+     #[inline]
+     pub(crate) fn check(&self, work: u64, span: [u32; 2]) -> Result<(), Diagnostic> {
+-        if self.context.0.is_none() {
+-            return Ok(());
+-        }
+         if work >= self.next.get() {
+             self.next.set(work.saturating_add(1024));
+             self.context.check(span)?;
