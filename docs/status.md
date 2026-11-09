@@ -38,14 +38,20 @@ with all hosted checks passing. Visual acceptance and painted-frame latency rema
   chunk-directory searches through a local borrowed reader. Follow-up matched
   editor benchmarks record the allocation and update-time improvements.
 
-## Current measured follow-up
+## Measured projection improvements
 
-The direct snapshot-to-editor projection branch avoids temporary full-tree export
-for eligible syntax-only workspace languages while preserving the dense editor
-tree. [Matched November 9 measurements](benchmark-2026-11-09-editor-projection.md)
-reduce cached valid 4 MiB C# analysis from 38.5 to 31.4 ms (18.6%, five process
-pairs). Typed/metadata/structural-check paths remain established. Local correctness
-and strict lint checks passed; current branch review/hosted checks are separate.
+[PR #48](https://github.com/TovarishN/Nitride/pull/48) merged with all hosted checks
+passing. Its direct snapshot-to-editor projection avoids temporary full-tree
+export for eligible syntax-only workspace languages while preserving the dense
+editor tree. [Matched measurements](benchmark-2026-11-09-editor-projection.md)
+reduced cached valid 4 MiB C# analysis from 38.5 to 31.4 ms (18.6%, five pairs).
+
+The next [record-reuse follow-up](benchmark-2026-11-09-projection-walk.md) retains
+node records within each walk and completes leaves inline while preserving
+logical budgets. Large-valid medians improve by 5.2% and 9.4% in two rounds;
+nine of ten pairs improve, with all samples retained. Smaller-case evidence is
+exploratory. Local correctness/lint checks passed; branch review and hosted
+checks remain separate. The final editor tree is still dense.
 
 ## Evidence
 

@@ -1,6 +1,9 @@
 //! Immutable structure is separate from its occurrence in a source snapshot.
 pub type ParseSnapshot = BorrowedParseSnapshot<'static>;
 pub type NodeView<'a> = BorrowedNodeView<'a, 'static>;
+#[cfg(test)]
+#[path = "projection_tests.rs"]
+mod projection_tests;
 use super::{SourceText, SubtreeId, arena::PublishedArena, sidecars::DiagnosticStore};
 use crate::{Diagnostic, Edge, Language, Node, ParseOptions, RecoveryOptions, SyntaxTree};
 use std::{borrow::Cow, sync::Arc};
@@ -266,15 +269,15 @@ impl<'g> BorrowedParseSnapshot<'g> {
         mut visit: impl FnMut(u32, Node, &[u32]),
     ) -> Result<u32, Diagnostic> {
         let mut reader = self.arena.reader();
-        let mut pending = vec![(self.root(), false)];
+        let root = reader.node(self.root).expect("reachable root");
+        let mut pending = vec![(self.root, root, self.start, false)];
         let mut completed = Vec::new();
         let mut work = 0_u64;
         let mut nodes = 0_u64;
         let mut edges = 0_u64;
-        while let Some((view, visited)) = pending.pop() {
+        while let Some((id, node, start, visited)) = pending.pop() {
             work = work.saturating_add(1);
-            let node = reader.node(view.id).expect("reachable node");
-            let span = [view.start, view.start + node.width];
+            let span = [start, start + node.width];
             if work > limit {
                 return Err(Diagnostic::new(
                     "limit",
@@ -292,47 +295,52 @@ impl<'g> BorrowedParseSnapshot<'g> {
                     ));
                 }
                 work = scheduled_work;
-                pending.push((view, true));
-                let base = pending.len();
-                let mut position = view.start;
-                for child in reader.children(view.id) {
-                    position += child.extent;
-                    let start = position - reader.node(child.node).expect("owned child").width;
-                    pending.push((
-                        BorrowedNodeView {
-                            snapshot: self,
-                            id: child.node,
-                            start,
-                        },
-                        false,
-                    ));
+                if node.child_count() != 0 {
+                    pending.push((id, node, start, true));
+                    let base = pending.len();
+                    let mut position = start;
+                    for child in reader.children(id) {
+                        let record = reader.node(child.node).expect("owned child");
+                        position += child.extent;
+                        pending.push((child.node, record, position - record.width, false));
+                    }
+                    pending[base..].reverse();
+                    continue;
                 }
-                pending[base..].reverse();
-            } else {
-                let count = node.child_count();
-                if nodes >= u64::from(u32::MAX) || edges + u64::from(count) > u64::from(u32::MAX) {
+                // Elide an empty child iterator and leaf exit frame, but keep
+                // the exit's logical work charge and failure position.
+                work = work.saturating_add(1);
+                if work > limit {
                     return Err(Diagnostic::new(
                         "limit",
                         span,
-                        "syntax storage capacity exceeded",
+                        "occurrence projection work limit exceeded",
                     ));
                 }
-                let base = completed.len() - count as usize;
-                visit(
-                    nodes as u32,
-                    Node {
-                        rule: node.rule,
-                        span,
-                        first_child: edges as u32,
-                        child_count: count,
-                    },
-                    &completed[base..],
-                );
-                completed.truncate(base);
-                completed.push(nodes as u32);
-                nodes += 1;
-                edges += u64::from(count);
             }
+            let count = node.child_count();
+            if nodes >= u64::from(u32::MAX) || edges + u64::from(count) > u64::from(u32::MAX) {
+                return Err(Diagnostic::new(
+                    "limit",
+                    span,
+                    "syntax storage capacity exceeded",
+                ));
+            }
+            let base = completed.len() - count as usize;
+            visit(
+                nodes as u32,
+                Node {
+                    rule: node.rule,
+                    span,
+                    first_child: edges as u32,
+                    child_count: count,
+                },
+                &completed[base..],
+            );
+            completed.truncate(base);
+            completed.push(nodes as u32);
+            nodes += 1;
+            edges += u64::from(count);
         }
         Ok(completed[0])
     }
@@ -418,7 +426,7 @@ mod tests {
     use super::*;
     use crate::syntax::arena::{ArenaBuilder, Child};
     use crate::{Action, Expr, Profile, Rule};
-    fn language() -> &'static Language<'static> {
+    pub(super) fn language() -> &'static Language<'static> {
         Box::leak(Box::new(Language {
             trivia: crate::TriviaPolicy::Nitrogen,
             profile: Profile::SyntaxOnly,
@@ -562,6 +570,7 @@ mod tests {
         assert_eq!(error.span, [0, CHILDREN]);
         assert!(error.message.contains("scheduling"));
         let mut emitted = 0;
+        crate::syntax::arena::reset_record_reads();
         let root_id = snapshot
             .visit_postorder(u64::from(CHILDREN + 1) * 3, |id, node, children| {
                 assert_eq!(id, emitted);
@@ -576,5 +585,9 @@ mod tests {
             .unwrap();
         assert_eq!(root_id, CHILDREN);
         assert_eq!(emitted, CHILDREN + 1);
+        assert!(
+            crate::syntax::arena::record_reads() <= u64::from(CHILDREN + 1) * 2,
+            "projection should resolve at most two records per occurrence"
+        );
     }
 }

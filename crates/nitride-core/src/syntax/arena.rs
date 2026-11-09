@@ -8,6 +8,19 @@ use std::sync::{
     atomic::{AtomicU32, Ordering},
 };
 
+#[cfg(test)]
+thread_local! {
+    static RECORD_READS: std::cell::Cell<u64> = const { std::cell::Cell::new(0) };
+}
+#[cfg(test)]
+pub(super) fn reset_record_reads() {
+    RECORD_READS.with(|reads| reads.set(0));
+}
+#[cfg(test)]
+pub(super) fn record_reads() -> u64 {
+    RECORD_READS.with(std::cell::Cell::get)
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub struct SubtreeId(u64);
 impl SubtreeId {
@@ -174,9 +187,13 @@ impl<'a> ArenaReader<'a, '_> {
         Some(chunk)
     }
     pub(crate) fn node(&mut self, id: SubtreeId) -> Option<StoredNode> {
+        #[cfg(test)]
+        RECORD_READS.with(|reads| reads.set(reads.get() + 1));
         self.chunk(id)?.nodes.get(id.slot()).copied()
     }
     pub(crate) fn children(&mut self, id: SubtreeId) -> Children<'a> {
+        #[cfg(test)]
+        RECORD_READS.with(|reads| reads.set(reads.get() + 1));
         let chunk = self.chunk(id).expect("owned subtree chunk");
         chunk.children(chunk.nodes[id.slot()])
     }
