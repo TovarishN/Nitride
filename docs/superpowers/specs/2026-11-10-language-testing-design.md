@@ -12,65 +12,115 @@ The builder retains Rust/native CLI and the existing VS Code extension. This is
 one feature milestone, delivered through independently verifiable increments.
 No engine release or version bump is part of this work.
 
-The following details are proposed implementation choices, not additional user
-requirements: versioned JSON suites, strict parser/compiler observations, a
-native worker process for editor runs, and snapshot overlays for unsaved files.
+The user requires `.ntest` files rather than `.ntest.json`. The proposed authoring
+format is a dedicated Nitride test language; JSON remains a machine protocol.
+Strict parser/compiler observations, a native worker process for editor runs and
+snapshot overlays are proposed implementation choices.
 
 ## 1. Suite format
 
-A suite is a UTF-8 `*.ntest.json` file with this shape:
+A suite is a UTF-8 `*.ntest` file. It uses a dedicated grammar described in
+Nitride's own `.ngr` format, rather than JSON with a renamed extension:
 
-```json
-{
-  "version": 1,
-  "project": "nitride.nproj",
-  "tests": [
-    {
-      "name": "a binding evaluates",
-      "source": "let answer = 42; show answer;",
-      "expect": { "phase": "run", "accepted": true, "values": [42] }
-    },
-    {
-      "name": "an incomplete binding is rejected",
-      "source": "let answer = ;",
-      "expect": { "phase": "parse", "accepted": false }
-    }
-  ]
+```ntest
+tests version 1 {
+  project "nitride.nproj";
+
+  test "a binding evaluates" {
+    source <[
+let answer = 42;
+show answer;
+]>;
+    expect run values [42];
+  }
+
+  test "an incomplete binding is rejected" {
+    source "let answer = ;";
+    expect parse reject;
+  }
+
+  test "a fixture parses" {
+    file "fixtures/valid.calc";
+    expect parse accept;
+  }
 }
 ```
 
-`project` is required and names one language `.nproj` or supported JSON project,
-relative to the suite's directory. Workspace `.nproj` files are not language
-projects. Each test has a unique, nonempty `name` and exactly one of `source`
-(inline text) or `file` (UTF-8 fixture path relative to the suite). Test names are
-identities within their suite; array order defines execution/report order.
-Unknown fields, duplicate object keys, unknown versions/phases, empty suites,
-duplicate test names and contradictory assertions are configuration errors.
+`tests version 1` is required. The body contains exactly one `project` declaration
+and one or more tests, in any declaration order. Project paths are quoted and
+name one language `.nproj` or supported JSON project relative to the suite's
+directory. Workspace `.nproj` files are not language projects. Each test has a
+unique, nonempty quoted name and exactly one `source` or `file` declaration plus
+exactly one `expect` declaration; source/file and expect may appear in either
+order. Test names are stable identities within their suite; lexical test order
+defines execution/report order. Unknown declarations, repeated declarations,
+unknown versions/phases, empty suites, duplicate names and contradictory
+assertions are suite errors with original `.ntest` source spans.
 
-`phase` is `parse`, `compile` or `run`. `accepted` is required. `values` is allowed
-only with successful run expectations and compares the complete ordered show
-result list. Successful run expectations require `values`, including `[]`.
-An optional `diagnostics` array is allowed only with rejected expectations. If
-omitted, any ordinary error at the requested phase satisfies rejection. If
-present, it must be nonempty and matches the entire ordered strict diagnostic
-list. Each expected diagnostic requires `category` and may assert `code`
-(string or null) and/or `span` (`[start,end]` UTF-8 byte offsets in the original
-test source). Omitted fields do not assert that property; explicit null means
-no code. Expected spans must be ordered, in bounds and at UTF-8 boundaries.
-Messages are reported but are not assertion keys in version 1.
+`source` accepts a normal double-quoted string or a raw `<[ ... ]>` block.
+Quoted strings use JSON string escapes and Unicode decoding. Raw blocks preserve
+all content bytes exactly, including leading/trailing newlines, indentation and
+line endings; neither comments nor escapes are interpreted inside them. The
+first `]>` closes the block. Tests containing that sequence can use a quoted
+string or a fixture instead. No implicit interpolation or indentation stripping.
+Outside strings/blocks, the test language accepts the engine's nitrogen trivia
+policy, including line/block comments. Names, paths and diagnostic categories
+use quoted strings, so target-language keywords and file names need no new
+identifier rules. Parsing and decoding must use the engine grammar frontend and
+retained source spans, not regular-expression extraction.
 
-Value JSON follows the CLI's existing numbers/booleans/strings/ordered list and
-record-field-array representation. Structural order and types matter. Numeric
+Expectations have these forms:
+
+```ntest
+expect parse accept;
+expect compile accept;
+expect run values [42, true, "text", [1, 2]];
+expect parse reject;
+expect compile reject {
+  diagnostic "category-from-engine" code "code-from-engine" span [0, 6];
+}
+expect run reject;
+```
+
+The diagnostic example illustrates syntax; actual categories/codes come from
+engine observations and must not be invented in generated tests. A successful
+run always requires `values`, including `[]`; `expect run accept;` is rejected.
+Parse/compile successes take `accept`; rejected expectations take `reject`, with
+either a terminating semicolon or a nonempty diagnostic block. A reject without
+a block accepts any ordinary error at that exact phase. A diagnostic block
+matches the entire ordered strict diagnostic list. Each diagnostic requires a
+quoted category and may assert `code "..."` or `code none`, and/or
+`span [start, end]`; these clauses may appear in either order but not repeat.
+Omitted clauses do not assert that property; `code none` means no diagnostic code.
+Spans are UTF-8 byte offsets in the original test program, must be ordered and in
+bounds, and must lie at UTF-8 boundaries. Messages are displayed but are not
+assertion keys in version 1. A diagnostic block ends with `}` without an extra
+semicolon.
+
+Expected values use finite signed decimal/exponent numbers, double-quoted
+strings, booleans and recursively nested comma-separated arrays. Their notation
+resembles literal values, not a JSON document format. No objects, null values,
+trailing commas, expressions, variables or embedded host code in version 1.
+
+Structured result JSON follows the CLI's existing numbers/booleans/strings/ordered
+list and record-field-array representation. Expected literals compare against
+that same value model. Structural order and types matter. Numeric
 comparison treats 42 and 42.0 as equal while preserving exact integer comparisons,
 including integers beyond 2^53; it must not silently round distinct integers via
 f64. No tolerance, unordered comparison or implicit expected-value update.
 
 ## 2. Shared runner and phase behavior
 
-A small shared `nitride-testing` Rust crate owns decoding, validation, test
+A small shared `nitride-testing` Rust crate owns the generated test-language
+frontend, decoding with retained declaration/source spans, validation, test
 selection, observations, comparisons and structured reports. It consumes the
 existing prepare/codegen/core APIs; the CLI adapts arguments and output, and the
-extension consumes the CLI protocol. It does not duplicate parser semantics.
+extension consumes the CLI protocol. It does not duplicate parser semantics. Store the test grammar and its project
+under the repository's language sources, reusing the pinned lexical library
+where its policies fit. Generate its native frontend using the existing preparer
+and code generator; a build-generated frontend avoids a bootstrap dependency on
+the test runner. Test suite parsing uses this frontend; runner validation lowers
+the parsed suite into the existing typed internal test model.
 
 Prepare/load each distinct project once per immutable run snapshot and release
 it afterward, without static leaks. Each case gets fresh syntax, semantic and
@@ -101,8 +151,8 @@ with conformance tooling. Native testing works with `--no-default-features`.
 
 ## 3. CLI and protocol
 
-`nitride test [suite.ntest.json ...]` runs explicit suites; without paths it uses
-`tests.ntest.json` in the current directory. It does not search arbitrary project
+`nitride test [suite.ntest ...]` runs explicit suites; without paths it uses
+`tests.ntest` in the current directory. It does not search arbitrary project
 trees. Repeated canonical suite paths are configuration errors.
 `--case NAME` selects a named case and requires exactly one suite; an unknown
 name is an error. The editor may request several cases through repeated --case.
@@ -149,12 +199,24 @@ Untitled suites need a saved file location to establish their project directory.
 ## 5. VS Code Testing view
 
 Use a standard TestController with suite items and child case items. Discovery
-covers workspace `*.ntest.json` files, excluding `.git`, `target` and
+covers workspace `*.ntest` files, excluding `.git`, `target` and
 `node_modules`, plus matching open file-URI suite buffers. Invalid suites remain
 visible with a useful error. Discovery never executes cases. Suite items reveal
 the suite file; fixture diagnostics can reveal the fixture at converted UTF-16
 ranges. Inline-source failures display byte spans and expected/actual details;
-no fabricated editor range into an escaped JSON string is promised.
+raw-block source ranges map directly back into their `.ntest` body. For quoted
+sources, use a decoded-source offset map if implemented; otherwise display byte
+spans without fabricating a range into escaped text. Frozen-source locations
+must be omitted or identified as stale when the current document has changed.
+List-mode suite/case metadata includes original `.ntest` declaration/name spans,
+so TestItems can reveal individual cases without a second TypeScript parser.
+
+Contribute an `ntest` language with comments/brackets/strings and raw source-block
+highlighting. Native list-mode syntax/validation errors populate a dedicated
+suite diagnostic collection, guarded by document revision; parsing errors stay
+visible while editing. Test discovery remains on its own worker path and does
+not add suite execution to the LSP. JSON is used only for machine reports,
+events and snapshot envelopes, not suite authoring.
 
 Support Run All, suite and individual cases, with exclude selections honored.
 Launch a separate native CLI worker per suite using the same executable selection
@@ -174,7 +236,7 @@ read semantics. Discovery/launch errors explain the concrete path or operation.
 
 ## 6. Starter projects and compatibility
 
-The shared authoring planner emits `tests.ntest.json` for both presets. Syntax
+The shared authoring planner emits `tests.ntest` for both presets. Syntax
 starters include a passing assignment and a rejected malformed assignment. Typed
 starters additionally check the existing sample's values `[42]` and a rejected
 unresolved reference at the compile phase. Record actual engine diagnostic codes
@@ -186,9 +248,11 @@ existing prepared execution JSON/library 1.0.0 sources remain unchanged.
 
 ## 7. Acceptance and delivery
 
-1. Shared suite decoder/runner: positive and negative phase assertions, exact
+1. Self-described suite grammar and shared decoder/runner: comments, quoted
+   strings, raw blocks, declaration spans, malformed syntax and decoding;
+   positive and negative phase assertions, exact
    code/null/span matching, non-ASCII offsets, numeric precision, state isolation,
-   invalid schemas and infrastructure errors. Differential observations against
+   invalid suite declarations and infrastructure errors. Differential observations against
    direct engine APIs; no duplicate homegrown language engine.
 2. Native CLI: real temp projects, both manifest formats, multiple suites,
    selectors/list/report/events/exit codes, relocation, overlays/new buffers,
@@ -203,6 +267,7 @@ existing prepared execution JSON/library 1.0.0 sources remain unchanged.
    packaged acceptance; one fresh whole-branch review and regression-backed
    material fix pass. Isolated branch/PR; preserve the user's main checkout.
 
-Non-goals: a new test DSL, recovery-tree goldens, benchmark framework, watch mode,
+Non-goals: JSON-authored suites, embedded host code, recovery-tree goldens,
+benchmark framework, watch mode,
 debugger integration, remote test executors, process/component test fixtures,
 automatic golden updates, additional stdlib versions or LSP optimization.
