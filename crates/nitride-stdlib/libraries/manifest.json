@@ -1,0 +1,26 @@
+{
+  "libraries": [
+    {
+      "name": "Nitride.Lexical",
+      "version": "1.0.0",
+      "exports": [
+        "AsciiIdentifierStart",
+        "AsciiIdentifierContinue",
+        "AsciiIdentifier",
+        "Digit",
+        "HexDigit",
+        "UnsignedInteger",
+        "UnsignedDecimal",
+        "HexInteger",
+        "JsonString"
+      ],
+      "sources": [
+        {
+          "name": "Lexical.ngr",
+          "uri": "nitride-lib:/Nitride.Lexical/1.0.0/Lexical.ngr",
+          "sha256": "a81b15e29fcb7f358af4de1cd862f0d2f30dbc82542b629e673cc55981f0e250"
+        }
+      ]
+    }
+  ]
+}

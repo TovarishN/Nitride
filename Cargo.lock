@@ -599,6 +599,7 @@ version = "0.4.0"
 dependencies = [
  "nitride-codegen",
  "nitride-core",
+ "nitride-stdlib",
  "serde_json",
  "sha2",
 ]
@@ -609,6 +610,14 @@ version = "0.4.0"
 dependencies = [
  "nitride-core",
  "serde_json",
+]
+
+[[package]]
+name = "nitride-stdlib"
+version = "0.4.0"
+dependencies = [
+ "serde_json",
+ "sha2",
 ]
 
 [[package]]

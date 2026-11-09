@@ -15,6 +15,7 @@ mod parser;
 mod project;
 #[rustfmt::skip]
 mod project_seed;
+pub use nitride_stdlib as stdlib;
 pub use nproj::{
     NitrogenSection, ProjectLanguage, ProjectReference, ProjectWorkspace, read_language,
     read_workspace, snapshot,
