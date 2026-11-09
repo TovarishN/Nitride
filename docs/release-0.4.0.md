@@ -29,7 +29,7 @@ readiness, editor typing, unique current diagnostics, malformed-source recovery,
 neighbor-file fairness, rapid edits and unsaved grammar reload/restore. The
 repository-language run additionally covers a generated 4 MiB C# document's
 initial folds, missing-semicolon recovery, restoration and a uniquely positioned
-fold after rapid edits. Reports retain package/server/harness/input hashes.
+leading comment fold after rapid edits. Reports retain package/server/harness/input hashes.
 
 Launch-to-readiness includes VS Code and extension-test runner overhead. API
 observations do not establish painted-frame latency or manual visual acceptance.
@@ -41,3 +41,9 @@ support; process-only bindings remain available.
 This PR prepares version synchronization, release notes and validation evidence.
 A non-publishing three-platform release rehearsal is a separate gate. Tagging the
 final reviewed commit triggers publication through the existing release workflow.
+
+The [local packaged acceptance report](editor-acceptance-0.4.0.md) records passing
+Portable and full-language/4 MiB sessions and extracted native Calendar smoke
+checks. Ordinary diagnostics were observed in roughly 44–48 ms; large-file
+feature checks took 235–465 ms after edits. Full local correctness/quality gates
+passed. See the release PR for hosted checks and non-publishing rehearsal status.

@@ -116,10 +116,15 @@ exports.run = async function () {
       large = await vscode.workspace.openTextDocument(large.uri);
       await vscode.window.showTextDocument(large);
       const folds = () => vscode.commands.executeCommand('vscode.executeFoldingRangeProvider', large.uri);
-      const ready = async () => {
+      const ready = async expected => {
         const ranges = await folds();
         report.large_fold_count = ranges?.length ?? 0;
-        return ranges?.some(range => range.end === large.lineCount - 2) && diagnostics(large).length === 0;
+        report.large_first_folds = ranges?.slice(0, 6).map(range => ({ start: range.start, end: range.end }));
+        // VS Code applies its default 5,000-region cap even to the provider
+        // command. Keep the final freshness probe early, within that cap.
+        const found = expected ? ranges?.some(range => range.start === expected.start && range.end === expected.end)
+          : ranges?.length > 0;
+        return found && diagnostics(large).length === 0;
       };
       await until(ready, 'large source features and valid diagnostics');
       report.samples.push({ case: 'large-open-to-current-features', ms: performance.now() - opening });
@@ -142,14 +147,15 @@ exports.run = async function () {
         edit.replace(large.uri, new vscode.Range(large.positionAt(at - 1), large.positionAt(at)), String(2 + i % 2));
         assert.equal(await vscode.workspace.applyEdit(edit), true);
       }
+      assert(!(await folds()).some(range => range.start === 1 && range.end === 3), 'final marker fold is absent before edit');
       const final = new vscode.WorkspaceEdit();
-      final.insert(large.uri, large.positionAt(large.getText().length), '\nclass LatestLarge {\nint Value = 1;\n}\n');
+      final.insert(large.uri, large.positionAt(0), '\n// LatestLarge revision\n// freshness marker\n// checkpoint\n');
       const settled = performance.now();
       assert.equal(await vscode.workspace.applyEdit(final), true);
-      await until(ready, 'large latest revision has the newly appended fold');
+      await until(() => ready({ start: 1, end: 3 }), 'large latest revision has the new leading comment fold');
       report.samples.push({ case: 'large-final-edit-to-current-features', ms: performance.now() - settled });
       report.large_latest_document_version = large.version;
-      report.checks.push('4 MiB source opens, recovers, restores and rapid edits expose the final new fold');
+      report.checks.push('4 MiB source opens, recovers, restores and rapid edits expose the final new leading fold');
     }
     report.complete = true;
   } catch (error) {

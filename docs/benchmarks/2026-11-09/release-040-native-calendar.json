@@ -1,0 +1,34 @@
+{
+  "complete": true,
+  "archive_sha256": "3595a77899a1129623b592857c18d16202ec8fa8fed595bcfc2dbe5b89993426",
+  "commands": [
+    {
+      "args": [
+        "--version"
+      ],
+      "exit": 0,
+      "stdout": "Nitride 0.4.0\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "run",
+        "languages/calendar/process/CalendarProcess.nproj",
+        "languages/calendar/planning.calendar"
+      ],
+      "exit": 0,
+      "stdout": "{\"ok\":true,\"trace\":[\"Calendar.ParseDate\",\"Calendar.Days\",\"Calendar.ScalarDuration\",\"Calendar.Later\",\"Calendar.DayOfWeek\",\"Calendar.IsLeapYear\",\"Calendar.Between\",\"Calendar.InDays\",\"Calendar.Days\",\"Calendar.ScalarDuration\",\"Calendar.ScalarDuration\",\"Calendar.InDays\",\"Calendar.Days\",\"Calendar.ScalarDuration\",\"Calendar.NegDuration\",\"Calendar.InDays\",\"Calendar.Days\",\"Calendar.ScalarDuration\",\"Calendar.ScaleDuration\",\"Calendar.DivideDuration\",\"Calendar.InDays\",\"Calendar.Days\",\"Calendar.ScalarDuration\",\"Calendar.ScalarDuration\",\"Calendar.InDays\",\"Calendar.ParseDate\",\"Calendar.Days\",\"Calendar.ScalarDuration\",\"Calendar.NegDuration\",\"Calendar.Earlier\",\"Calendar.SpanOf\",\"Calendar.Mondays\",\"Calendar.Count\",\"Calendar.Nth\"],\"values\":[738957,\"Wednesday\",true,14.0,42.0,-14.0,21.0,42.0,738892,2.0,738955]}\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "conform",
+        "languages/calendar/process/CalendarProcess.nproj"
+      ],
+      "exit": 0,
+      "stdout": "[{\"examples\":13,\"failed\":[],\"implementation\":\"python3\",\"interface\":\"Calendar.Gregorian\",\"skipped\":[]},{\"examples\":1,\"failed\":[],\"implementation\":\"python3\",\"interface\":\"Calendar.Clock\",\"skipped\":[\"example Today() == Today();\"]}]\n",
+      "stderr": ""
+    }
+  ],
+  "binary_sha256": "1e065ae81195333031d1d372370f1d8d96920b08af0fc04b57520f588dc7f8b3"
+}

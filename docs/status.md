@@ -1,6 +1,7 @@
 # Current project status
 
-Updated November 9, 2026. The published checkpoint remains **0.3.0**.
+Updated November 9, 2026. The published checkpoint remains **0.3.0**;
+[0.4.0 is prepared as a release candidate](release-0.4.0.md).
 Engine milestones, background analysis, independent document scheduling and the
 release-training fix were merged through [PR #43](https://github.com/TovarishN/Nitride/pull/43),
 [PR #44](https://github.com/TovarishN/Nitride/pull/44),
@@ -53,9 +54,10 @@ logical budgets. Large-valid medians improve by 5.2% and 9.4% in two rounds;
 nine of ten pairs improve, with all samples retained. Smaller-case evidence is
 exploratory. The final editor tree is still dense.
 
-## Current cancellation milestone
+## Merged cancellation milestone
 
-[Cooperative cancellation](benchmark-2026-11-09-cancellation.md) adds opt-in
+[PR #50](https://github.com/TovarishN/Nitride/pull/50) merged with all hosted checks
+passing. [Cooperative cancellation](benchmark-2026-11-09-cancellation.md) adds opt-in
 batched polling through parsing, recovery and spill threads. Obsolete LSP jobs
 stop at checkpoints without publishing partial snapshots or cancellation
 problems; cancelling a waiting request still preserves diagnostic work.
@@ -68,6 +70,16 @@ regression in the measured round. Final local cancellation trials return in
 0.07–0.64 ms; a direct pre-cancellation comparison shows 5.1% cached / 0.3% fresh
 active-scope overhead. Further work should address cached-analysis cost while
 preserving cancellation responsiveness. This milestone is unreleased.
+
+## Packaged release acceptance
+
+The [0.4.0 acceptance checkpoint](editor-acceptance-0.4.0.md) passes actual editor
+typing, recovery, multi-document fairness, rapid-edit freshness and grammar reload
+in disposable VS Code sessions. Full-language coverage includes a 4 MiB C# source.
+Ordinary diagnostic observations are around 44–48 ms; large-file edit/feature
+checks are 235–465 ms. Native PGO packaging and extracted Calendar process smoke
+checks pass locally. Manual visual and cross-platform GUI acceptance remain
+unverified; the release PR tracks hosted native rehearsal separately.
 
 ## Evidence
 

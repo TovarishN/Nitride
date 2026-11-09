@@ -25,19 +25,31 @@
 
 ### Task 1: Extend acceptance coverage
 Files: scripts/editor_acceptance.py, scripts/test_editor_acceptance.py, editors/vscode/acceptance.cjs.
-- [ ] RED fixture tests for isolated >=4 MiB valid C# source, stable small default and invalid option pairing.
-- [ ] Add opt-in --large-document fixture/environment support and launch-to-readiness telemetry.
-- [ ] Add editor typing, broken/restore and large folding/diagnostic/final-revision checks.
-- [ ] Run Python/Node/extension checks; investigate actual failures before fixes.
+- [x] RED fixture tests for isolated >=4 MiB valid C# source, stable small default and invalid option pairing.
+- [x] Add opt-in --large-document fixture/environment support and launch-to-readiness telemetry.
+- [x] Add editor typing, broken/restore and large folding/diagnostic/final-revision checks.
+- [x] Run Python/Node/extension checks; investigate actual failures before fixes.
 
 ### Task 2: Prepare and validate candidate
 Files: Cargo.toml, Cargo.lock, editors/vscode/package*.json, README.md, docs/release-0.4.0.md.
-- [ ] Synchronize 0.4.0 and write release notes from merged changes; commit candidate for clean provenance.
-- [ ] Build/train/package darwin-arm64 PGO with existing scripts; run full/native/quality checks.
-- [ ] Run packaged Portable and all-language/large-document desktop acceptance sequentially after builds finish.
-- [ ] Record timings as observations, hashes, passed scenarios and explicit unverified boundaries.
+- [x] Synchronize 0.4.0 and write release notes from merged changes; commit candidate for clean provenance.
+- [x] Build/train/package darwin-arm64 PGO with existing scripts; run full/native/quality checks.
+- [x] Run packaged Portable and all-language/large-document desktop acceptance sequentially after builds finish.
+- [x] Record timings as observations, hashes, passed scenarios and explicit unverified boundaries.
 
 ### Task 3: Review and handoff
-- [ ] One independent whole-change review; reproduce/fix material findings with directed regressions.
+- [x] One independent whole-change review; reproduce/fix material findings with directed regressions.
 - [ ] Commit evidence and open release PR; run non-publishing three-platform rehearsal if practical.
 - [ ] Keep main workspace unchanged and branch/worktree clean; report concrete release readiness and outstanding gates.
+
+Ruling: keep VS Code default5,000-fold cap; use a unique leading comment fold
+for final large-file freshness, rather than an end-of-file fold excluded by the
+client limit. Actual desktop attempt1 failed before correction; final two
+profiles pass with the same harness hashes. Failed evidence retained. No product
+regression observed. Local artifacts identify clean candidate6c90667; later
+harness/evidence-only commits do not change its packaged engine. Final-head
+nonpublishing three-platform rehearsal remains a separate PR gate.
+
+Snapshot at the local-evidence source commit: implementation, local checks and
+review are complete. The remaining PR/rehearsal operational gates are reported
+in the PR body after that commit, keeping the native rehearsal source immutable.
