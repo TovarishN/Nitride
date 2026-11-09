@@ -17,6 +17,7 @@ pub struct ProjectLanguage {
     /// The span of each extension, in `extensions` order.
     pub extension_spans: Vec<[usize; 2]>,
     pub grammars: Vec<PathBuf>,
+    pub libraries: Vec<crate::LibraryReference>,
     pub start: String,
     pub start_span: [usize; 2],
     pub catalogs: Vec<PathBuf>,
@@ -178,6 +179,7 @@ pub fn read_language(
     let name = d.field(item, "Name");
     let mut extensions = Vec::new();
     let mut grammars = Vec::new();
+    let mut libraries = Vec::new();
     let mut start: Option<Written> = None;
     let mut catalogs = Vec::new();
     let mut bindings = Vec::new();
@@ -188,6 +190,7 @@ pub fn read_language(
             member,
             &[
                 "Extensions",
+                "Library",
                 "Grammar",
                 "Start",
                 "Catalog",
@@ -197,6 +200,17 @@ pub fn read_language(
             ],
         );
         match d.kind(m) {
+            "Library" => {
+                let name = d.field(m, "Name");
+                let version = d.field(m, "Version");
+                libraries.push(crate::LibraryReference {
+                    name: name.text,
+                    version: version.text,
+                    span: d.span(m),
+                    name_span: name.span,
+                    version_span: version.span,
+                });
+            }
             "Extensions" => extensions.extend(d.fields(m, "Items")),
             "Grammar" => {
                 let paths = resolve(d.fields(m, "Paths"), &mut errors);
@@ -306,6 +320,7 @@ pub fn read_language(
         extension_spans: extensions.iter().map(|e| e.span).collect(),
         extensions: extensions.into_iter().map(|e| e.text).collect(),
         grammars,
+        libraries,
         start: start.text,
         start_span: start.span,
         catalogs,
@@ -441,6 +456,15 @@ pub fn snapshot(language: &ProjectLanguage, root: &Path) -> serde_json::Value {
     if !language.bindings.is_empty() {
         snapshot["bindings"] = serde_json::json!(all(&language.bindings));
     }
+    if !language.libraries.is_empty() {
+        snapshot["libraries"] = serde_json::json!(
+            language
+                .libraries
+                .iter()
+                .map(|l| serde_json::json!({"name":l.name,"version":l.version}))
+                .collect::<Vec<_>>()
+        );
+    }
     snapshot
 }
 
@@ -453,6 +477,7 @@ pub struct ProjectReference {
     pub text: String,
     pub span: [usize; 2],
     pub target: Option<PathBuf>,
+    pub library: Option<crate::LibraryReference>,
 }
 
 /// The language or workspace a `.nproj` declares (kind "language" or
@@ -492,6 +517,7 @@ pub fn references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError
         for path in paths {
             found.push(ProjectReference {
                 kind,
+                library: None,
                 target: Some(base.join(&path.text)),
                 text: path.text,
                 span: path.span,
@@ -512,6 +538,7 @@ pub fn references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError
                 .collect();
             found.push(ProjectReference {
                 kind: "include",
+                library: None,
                 target: (nproj.len() == 1).then(|| nproj[0].clone()),
                 text: path.text,
                 span: path.span,
@@ -525,6 +552,7 @@ pub fn references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError
             member,
             &[
                 "Extensions",
+                "Library",
                 "Grammar",
                 "Start",
                 "Catalog",
@@ -536,6 +564,31 @@ pub fn references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError
             ],
         );
         match d.kind(m) {
+            "Library" => {
+                let name = d.field(m, "Name");
+                let version = d.field(m, "Version");
+                let library = crate::LibraryReference {
+                    name: name.text.clone(),
+                    version: version.text.clone(),
+                    span: d.span(m),
+                    name_span: name.span,
+                    version_span: version.span,
+                };
+                found.push(ProjectReference {
+                    kind: "library",
+                    text: name.text,
+                    span: name.span,
+                    target: None,
+                    library: Some(library.clone()),
+                });
+                found.push(ProjectReference {
+                    kind: "library-version",
+                    text: version.text,
+                    span: version.span,
+                    target: None,
+                    library: Some(library),
+                });
+            }
             "Grammar" => files("grammar", d.fields(m, "Paths"), &mut found),
             "Catalog" => files("catalog", d.fields(m, "Paths"), &mut found),
             "Binding" => files("binding", d.fields(m, "Paths"), &mut found),
@@ -545,6 +598,7 @@ pub fn references(source: &Source) -> Result<Vec<ProjectReference>, PrepareError
                 let rule = d.field(m, "Rule");
                 found.push(ProjectReference {
                     kind: "rule",
+                    library: None,
                     text: rule.text,
                     span: rule.span,
                     target: None,

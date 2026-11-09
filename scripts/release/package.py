@@ -23,9 +23,15 @@ def binary_names(platform):
     return {name + suffix for name in variants}
 
 
+LIBRARY_MANIFEST = Path(__file__).resolve().parents[2] / 'crates/nitride-stdlib/libraries/manifest.json'
+
+
 def verify_metadata(data, platform, current, pgo=True):
     if data['platform'] != platform or data['version'] != current or data['wasmtime'] is not False:
         raise ValueError(f'invalid release metadata for {platform}')
+    expected_libraries = json.loads(LIBRARY_MANIFEST.read_text())['libraries']
+    if data.get('libraries') != expected_libraries:
+        raise ValueError(f'wrong bundled library manifest for {platform}')
     wanted = {'baseline', 'avx2'} if platform.endswith('-x64') else {'baseline'}
     if data['variants'].keys() != wanted:
         raise ValueError(f'missing variants for {platform}')

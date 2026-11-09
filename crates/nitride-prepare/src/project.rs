@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 pub struct PreparedProject {
     pub data: Value,
     pub inputs: Vec<PathBuf>,
+    pub libraries: Vec<crate::ResolvedLibrary>,
 }
 
 fn error(path: &Path, message: impl Into<String>) -> PrepareError {
@@ -43,11 +44,16 @@ fn prepare_nproj(path: PathBuf) -> Result<PreparedProject, PrepareError> {
     let language = crate::read_language(&project, &|p: &Path| p.exists())
         .map_err(|errors| errors.into_iter().next().expect("an error"))?;
     let mut inputs = vec![path.clone()];
-    let sources = language
-        .grammars
-        .iter()
-        .map(|g| load(g, &mut inputs))
-        .collect::<Result<Vec<_>, _>>()?;
+    let libraries = crate::resolve_libraries(&project, &language.libraries)
+        .map_err(|errors| errors.into_iter().next().expect("an error"))?;
+    let mut sources = crate::library_sources(&libraries);
+    sources.extend(
+        language
+            .grammars
+            .iter()
+            .map(|g| load(g, &mut inputs))
+            .collect::<Result<Vec<_>, _>>()?,
+    );
     let catalog_sources = language
         .catalogs
         .iter()
@@ -73,7 +79,12 @@ fn prepare_nproj(path: PathBuf) -> Result<PreparedProject, PrepareError> {
         .data;
     apply_trivia(&mut data, language.trivia);
     with_bindings(&mut data, bindings);
-    Ok(PreparedProject { data, inputs })
+    crate::apply_libraries(&mut data, &libraries);
+    Ok(PreparedProject {
+        data,
+        inputs,
+        libraries,
+    })
 }
 
 /// Prepares a `.nproj` language, or a `project.json` manifest (kept while
@@ -125,6 +136,38 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
             .as_array()
             .ok_or_else(|| error(&path, "bindings must be an array"))?,
     };
+    let refs = match manifest.get("libraries") {
+        None => Vec::new(),
+        Some(value) => value
+            .as_array()
+            .ok_or_else(|| error(&path, "libraries must be an array"))?
+            .iter()
+            .map(|entry| {
+                let field = |key| {
+                    entry[key]
+                        .as_str()
+                        .filter(|s| !s.is_empty())
+                        .map(str::to_owned)
+                        .ok_or_else(|| error(&path, format!("library requires string '{key}'")))
+                };
+                Ok(crate::LibraryReference {
+                    name: field("name")?,
+                    version: field("version")?,
+                    span: [0, 0],
+                    name_span: [0, 0],
+                    version_span: [0, 0],
+                })
+            })
+            .collect::<Result<Vec<_>, PrepareError>>()?,
+    };
+    let libraries = crate::resolve_libraries(
+        &Source {
+            path: path.display().to_string(),
+            text,
+        },
+        &refs,
+    )
+    .map_err(|e| e.into_iter().next().expect("an error"))?;
     let mut inputs = vec![path.clone()];
     let mut load = |entry: &Value, what: &str| -> Result<Source, PrepareError> {
         let name = entry
@@ -133,10 +176,13 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
             .ok_or_else(|| error(&path, format!("{what} path must be a nonempty string")))?;
         load(&path.parent().unwrap().join(name), &mut inputs)
     };
-    let sources = grammars
-        .iter()
-        .map(|g| load(g, "grammar"))
-        .collect::<Result<Vec<_>, _>>()?;
+    let mut sources = crate::library_sources(&libraries);
+    sources.extend(
+        grammars
+            .iter()
+            .map(|g| load(g, "grammar"))
+            .collect::<Result<Vec<_>, _>>()?,
+    );
     let catalog_sources = catalogs
         .iter()
         .map(|c| load(c, "catalog"))
@@ -156,7 +202,12 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
     let mut data = catalog.prepare(&sources, start, mode)?.data;
     apply_trivia(&mut data, policy);
     with_bindings(&mut data, bindings);
-    Ok(PreparedProject { data, inputs })
+    crate::apply_libraries(&mut data, &libraries);
+    Ok(PreparedProject {
+        data,
+        inputs,
+        libraries,
+    })
 }
 
 /// Checked bindings, with paths made relative to the manifest's folder

@@ -35,12 +35,12 @@ Interfaces: Library {name,version,exports,sources}; LibrarySource {name,uri,text
 ### Task2: One project resolver and native discovery
 Files: languages/project/Project.ngr, crates/nitride-prepare/src/{nproj.rs,project.rs,lib.rs,project_seed.rs}; create src/libraries.rs and tests/libraries.rs; CLI main.rs plus library command module/tests; release/{build,package}.py and test_release.py.
 Interfaces: LibraryReference {name,version,span,name_span,version_span}; ResolvedLibrary {name,version,sources}; resolve_libraries(&[LibraryReference])->Result<Vec<ResolvedLibrary>,Vec<PrepareError>>; library_sources(&[ResolvedLibrary])->Vec<Source>. ProjectLanguage/PreparedProject expose library refs/resolved metadata separately from physical paths. Registry metadata JSON equals the checked-in manifest (including canonical URIs/source hashes).
-- [ ] RED `.nproj`/JSON fixtures for exact valid pins, no-library defaults, missing/malformed/duplicate/conflicting versions, precise nproj spans and physical-only input paths.
-- [ ] Extend the actual project grammar and decoder/references/snapshot; regenerate project seed with `cargo run --locked -p nitride-prepare --example bootstrap`, then verify --check.
-- [ ] Merge resolved library sources before local sources in shared preparation, preserving local order. Keep prepared execution JSON self-contained and provenance in sidecars/source fingerprints.
-- [ ] Add `nitride library list [--json]` and `nitride library show Name@Version`; test native binary output and unknown inputs without downloads.
-- [ ] Record bundled manifest in native release metadata; package tests reject mismatched cross-platform/library manifests and retain strict artifact provenance.
-- [ ] Run focused prepare/CLI/release tests, including old profiles and generated/runtime oracle fixtures; commit resolver/discovery.
+- [x] RED `.nproj`/JSON fixtures for exact valid pins, no-library defaults, missing/malformed/duplicate/conflicting versions, precise nproj spans and physical-only input paths.
+- [x] Extend the actual project grammar and decoder/references/snapshot; regenerate project seed with `cargo run --locked -p nitride-prepare --example bootstrap`, then verify --check.
+- [x] Merge resolved library sources before local sources in shared preparation, preserving local order. Keep prepared execution JSON self-contained and provenance in sidecars/source fingerprints.
+- [x] Add `nitride library list [--json]` and `nitride library show Name@Version`; test native binary output and unknown inputs without downloads.
+- [x] Record bundled manifest in native release metadata; package tests reject mismatched cross-platform/library manifests and retain strict artifact provenance.
+- [x] Run focused prepare/CLI/release tests, including old profiles and generated/runtime oracle fixtures; commit resolver/discovery.
 
 ### Task3: Editor resolution and read-only inspection
 Files: LSP manifest.rs, registry.rs, grammar_index.rs, analysis.rs, navigation.rs, completion.rs, server.rs, uri.rs; create library_documents.rs and tests/libraries.rs; VS Code extension.ts and library document provider/helper tests.

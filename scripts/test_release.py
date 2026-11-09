@@ -138,6 +138,19 @@ class LauncherTests(unittest.TestCase):
 
 
 class PackageTests(unittest.TestCase):
+    def test_library_manifest_is_required_and_exact(self):
+        from release import package as packaging
+        data = {'version': 'test', 'platform': 'darwin-arm64', 'wasmtime': False,
+                'variants': {'baseline': {'pgo': True, 'bolt': False}},
+                'libraries': json.loads(packaging.LIBRARY_MANIFEST.read_text())['libraries']}
+        packaging.verify_metadata(data, 'darwin-arm64', 'test')
+        data['libraries'][0]['version'] = '9.0.0'
+        with self.assertRaisesRegex(ValueError, 'library manifest'):
+            packaging.verify_metadata(data, 'darwin-arm64', 'test')
+        del data['libraries']
+        with self.assertRaisesRegex(ValueError, 'library manifest'):
+            packaging.verify_metadata(data, 'darwin-arm64', 'test')
+
     @unittest.skipIf(sys.platform == 'win32', 'Unix directory permissions')
     def test_readonly_container_payload_packages_and_tampering_is_rejected(self):
         from unittest.mock import patch
@@ -151,6 +164,7 @@ class PackageTests(unittest.TestCase):
             (payload / 'nitride').write_bytes(b'release executable fixture')
             (payload / 'release.json').write_text(json.dumps({
                 'version': packaging.version.check(), 'platform': 'darwin-arm64', 'wasmtime': False,
+                'libraries': json.loads((packaging.ROOT / 'crates/nitride-stdlib/libraries/manifest.json').read_text())['libraries'],
                 'variants': {'baseline': {'pgo': True, 'bolt': False}}}))
             (root / 'editors').mkdir()
             (root / 'editors/vscode').symlink_to(ROOT / 'editors/vscode')
@@ -178,6 +192,7 @@ class PackageTests(unittest.TestCase):
             (payload / 'nitride').write_bytes(b'plain executable fixture')
             (payload / 'release.json').write_text(json.dumps({
                 'version': packaging.version.check(), 'platform': 'darwin-arm64', 'wasmtime': False,
+                'libraries': json.loads((packaging.ROOT / 'crates/nitride-stdlib/libraries/manifest.json').read_text())['libraries'],
                 'variants': {'baseline': {'pgo': False, 'bolt': False}}}))
             (root / 'editors').mkdir()
             (root / 'editors/vscode').symlink_to(ROOT / 'editors/vscode')

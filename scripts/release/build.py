@@ -176,7 +176,8 @@ def build(args):
     metadata = {'version': current, 'platform': item['id'], 'target': target,
                 'commit': output(['git', 'rev-parse', 'HEAD']), 'rustc': compiler,
                 'source_dirty': bool(output(['git', 'status', '--porcelain', '--untracked-files=normal'])),
-                'wasmtime': False, 'variants': variants}
+                'wasmtime': False, 'variants': variants,
+                'libraries': json.loads(output([str(payload / f'nitride{suffix}'), 'library', 'list', '--json']))['libraries']}
     (payload / 'release.json').write_text(json.dumps(metadata, indent=2) + '\n')
 
 

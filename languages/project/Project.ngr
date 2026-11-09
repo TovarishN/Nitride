@@ -7,6 +7,7 @@ syntax module NitrideProject
   token IdPart = ['a'..'z' 'A'..'Z' '0'..'9' '_'];
   token Identifier = IdStart IdPart*;
   token QualifiedName = Identifier ("." Identifier)*;
+  token Version = ['0'..'9']+ "." ['0'..'9']+ "." ['0'..'9']+;
   token Extension = "." IdPart+;
   token PathPart = ['a'..'z' 'A'..'Z' '0'..'9' '_' '-' '.']+;
   token Path = PathPart ("/" PathPart)*;
@@ -15,7 +16,8 @@ syntax module NitrideProject
   syntax Workspace = "workspace" "{" Includes:Include* "}";
   syntax Include = "include" Path:Path ";";
   syntax Language = "language" Name:Identifier "{" Members:Member* "}";
-  syntax Member = Extensions / Grammar / Start / Catalog / Binding / Trivia / Nitrogen;
+  syntax Member = Extensions / Grammar / Start / Catalog / Binding / Trivia / Nitrogen / Library;
+  syntax Library = "library" Name:QualifiedName "version" Version:Version ";";
   syntax Extensions = "extensions" Items:(Extension; ",")+ ";";
   syntax Grammar = "grammar" Paths:(Path; ",")+ ";";
   syntax Trivia = "trivia" Policy:Identifier ";";

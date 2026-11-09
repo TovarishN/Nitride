@@ -30,6 +30,46 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
             args.push(arg);
         }
     }
+    if args.first().is_some_and(|a| a == "library") {
+        use nitride_prepare::stdlib;
+        match args[1..]
+            .iter()
+            .map(String::as_str)
+            .collect::<Vec<_>>()
+            .as_slice()
+        {
+            ["list", "--json"] => print!("{}", stdlib::manifest()),
+            ["list"] => {
+                for library in stdlib::libraries() {
+                    println!("{}@{}", library.name, library.version);
+                }
+            }
+            ["show", identity] => {
+                let (name, version) = identity
+                    .split_once('@')
+                    .ok_or("expected Library.Name@1.0.0")?;
+                let library = stdlib::find(name, version).ok_or_else(|| {
+                    format!(
+                        "unavailable library {identity}; available: {}",
+                        stdlib::libraries()
+                            .iter()
+                            .map(|l| format!("{}@{}", l.name, l.version))
+                            .collect::<Vec<_>>()
+                            .join(", ")
+                    )
+                })?;
+                for source in library.sources {
+                    print!("{}", source.text);
+                }
+            }
+            _ => {
+                return Err(
+                    "usage: nitride library list [--json] | library show <name>@<version>".into(),
+                );
+            }
+        }
+        return Ok(true);
+    }
     if args.as_slice() == ["lsp"] {
         nitride_lsp::serve(
             std::io::BufReader::new(std::io::stdin()),

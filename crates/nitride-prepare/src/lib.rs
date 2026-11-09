@@ -8,11 +8,16 @@ mod binding_seed;
 mod binding;
 mod catalog;
 mod functions;
+mod libraries;
 mod literal;
 mod normalize;
 mod nproj;
 mod parser;
 mod project;
+pub use libraries::{
+    LibraryReference, ResolvedLibrary, apply_libraries, library_metadata, library_sources,
+    resolve_libraries,
+};
 #[rustfmt::skip]
 mod project_seed;
 pub use nitride_stdlib as stdlib;
