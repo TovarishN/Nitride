@@ -35,7 +35,9 @@ def main():
         'source_hashes': {name: {
             'before': sha(command(['git', 'show', f'{args.baseline_revision}:{name}'])),
             'after': sha((ROOT / name).read_bytes())}
-            for name in ('crates/nitride-core/src/syntax/shared.rs', 'crates/nitride-core/src/syntax/arena.rs')},
+            for name in ('crates/nitride-core/src/syntax/shared.rs', 'crates/nitride-core/src/syntax/arena.rs',
+                         'crates/nitride-codegen/src/runtime_snapshot.rs',
+                         'crates/nitride-lsp/src/analysis.rs', 'crates/nitride-lsp/examples/benchmark.rs')},
         'declared_build': args.build_description,
         'definitions': 'In-process analysis, excluding registry load/debounce/stdio/GUI. One warm edit then five samples per process, always update before fresh analysis. Each update compares tree shape/edges, values and problems to fresh analysis outside timing. Alternating executable order across fresh processes; medians below are medians of process medians.',
         'complete': False, 'rows': [],

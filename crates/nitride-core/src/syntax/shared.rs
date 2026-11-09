@@ -254,6 +254,89 @@ impl<'g> BorrowedParseSnapshot<'g> {
             damaged_nodes,
         })
     }
+    /// Visit occurrences in flat-tree postorder, without exporting source,
+    /// labels or recovery coverage. Child IDs and node offsets match
+    /// `materialize`; the child slice is scoped to one callback. Each node
+    /// visit and each scheduled child consumes a work unit; a node's children
+    /// must all fit the remaining budget before expansion. An error may
+    /// follow partial visitation, so consumers must discard partial output.
+    pub fn visit_postorder(
+        &self,
+        limit: u64,
+        mut visit: impl FnMut(u32, Node, &[u32]),
+    ) -> Result<u32, Diagnostic> {
+        let mut reader = self.arena.reader();
+        let mut pending = vec![(self.root(), false)];
+        let mut completed = Vec::new();
+        let mut work = 0_u64;
+        let mut nodes = 0_u64;
+        let mut edges = 0_u64;
+        while let Some((view, visited)) = pending.pop() {
+            work = work.saturating_add(1);
+            let node = reader.node(view.id).expect("reachable node");
+            let span = [view.start, view.start + node.width];
+            if work > limit {
+                return Err(Diagnostic::new(
+                    "limit",
+                    span,
+                    "occurrence projection work limit exceeded",
+                ));
+            }
+            if !visited {
+                let scheduled_work = work.saturating_add(u64::from(node.child_count()));
+                if scheduled_work > limit {
+                    return Err(Diagnostic::new(
+                        "limit",
+                        span,
+                        "occurrence projection child scheduling work limit exceeded",
+                    ));
+                }
+                work = scheduled_work;
+                pending.push((view, true));
+                let base = pending.len();
+                let mut position = view.start;
+                for child in reader.children(view.id) {
+                    position += child.extent;
+                    let start = position - reader.node(child.node).expect("owned child").width;
+                    pending.push((
+                        BorrowedNodeView {
+                            snapshot: self,
+                            id: child.node,
+                            start,
+                        },
+                        false,
+                    ));
+                }
+                pending[base..].reverse();
+            } else {
+                let count = node.child_count();
+                if nodes >= u64::from(u32::MAX) || edges + u64::from(count) > u64::from(u32::MAX) {
+                    return Err(Diagnostic::new(
+                        "limit",
+                        span,
+                        "syntax storage capacity exceeded",
+                    ));
+                }
+                let base = completed.len() - count as usize;
+                visit(
+                    nodes as u32,
+                    Node {
+                        rule: node.rule,
+                        span,
+                        first_child: edges as u32,
+                        child_count: count,
+                    },
+                    &completed[base..],
+                );
+                completed.truncate(base);
+                completed.push(nodes as u32);
+                nodes += 1;
+                edges += u64::from(count);
+            }
+        }
+        Ok(completed[0])
+    }
+
     pub fn materialize(&self) -> Result<SyntaxTree<'g>, Diagnostic> {
         let indexed = self.indexed(u64::MAX)?;
         Ok(SyntaxTree {
@@ -408,6 +491,33 @@ mod tests {
         assert_eq!(flat.root, 2);
         assert_eq!(flat.nodes[1].span, [2, 3]);
         assert_eq!(flat.field(2, "Item"), Some(0));
+        let mut projected = Vec::new();
+        let mut child_ids = Vec::new();
+        let root = snapshot
+            .visit_postorder(u64::MAX, |id, node, children| {
+                assert_eq!(id as usize, projected.len());
+                projected.push((node.rule, node.span, node.first_child, node.child_count));
+                child_ids.extend_from_slice(children);
+            })
+            .unwrap();
+        assert_eq!(root, flat.root);
+        assert_eq!(
+            projected,
+            flat.nodes
+                .iter()
+                .map(|n| (n.rule, n.span, n.first_child, n.child_count))
+                .collect::<Vec<_>>()
+        );
+        assert_eq!(
+            child_ids,
+            flat.edges.iter().map(|e| e.node).collect::<Vec<_>>()
+        );
+        let mut emitted = 0;
+        assert!(snapshot.visit_postorder(0, |_, _, _| emitted += 1).is_err());
+        assert_eq!(emitted, 0);
+        let mut partial = 0;
+        assert!(snapshot.visit_postorder(7, |_, _, _| partial += 1).is_err());
+        assert_eq!(partial, 2);
         for (id, node) in flat.nodes.iter().enumerate() {
             assert!(
                 flat.children(id as u32)
@@ -418,5 +528,53 @@ mod tests {
         }
         fn send_sync<T: Send + Sync>() {}
         send_sync::<ParseSnapshot>();
+    }
+
+    #[test]
+    fn wide_projection_rejects_child_scheduling_before_expansion() {
+        const CHILDREN: u32 = 4096;
+        let mut arena = ArenaBuilder::new(vec![""].into());
+        let leaf = arena.add(0, 1, vec![]).unwrap();
+        let root = arena
+            .add(
+                0,
+                CHILDREN,
+                (0..CHILDREN)
+                    .map(|_| Child {
+                        node: leaf,
+                        extent: 1,
+                        label: 0,
+                    })
+                    .collect(),
+            )
+            .unwrap();
+        let snapshot = ParseSnapshot::from_parts(
+            language(),
+            SourceText::new(&"x".repeat(CHILDREN as usize)).unwrap(),
+            arena.finish(),
+            root,
+            0,
+            SnapshotMode::Strict(ParseOptions::default()),
+        );
+        let error = snapshot
+            .visit_postorder(1, |_, _, _| panic!("no completed node fits"))
+            .unwrap_err();
+        assert_eq!(error.span, [0, CHILDREN]);
+        assert!(error.message.contains("scheduling"));
+        let mut emitted = 0;
+        let root_id = snapshot
+            .visit_postorder(u64::from(CHILDREN + 1) * 3, |id, node, children| {
+                assert_eq!(id, emitted);
+                if id < CHILDREN {
+                    assert_eq!(node.span, [id, id + 1]);
+                    assert!(children.is_empty());
+                } else {
+                    assert_eq!(children, (0..CHILDREN).collect::<Vec<_>>());
+                }
+                emitted += 1;
+            })
+            .unwrap();
+        assert_eq!(root_id, CHILDREN);
+        assert_eq!(emitted, CHILDREN + 1);
     }
 }

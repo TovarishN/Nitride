@@ -10,6 +10,35 @@ fn owner() -> Arc<LoadedLanguage> {
 }
 
 #[test]
+fn scoped_snapshot_projection_allows_reentrant_reads_and_edits() {
+    let snapshot = RuntimeSnapshot::parse(
+        owner(),
+        "1;",
+        Limits::default(),
+        SnapshotMode::Strict(ParseOptions::default()),
+    )
+    .unwrap();
+    snapshot.with_snapshot(|view| {
+        assert!(snapshot.stats().work > 0);
+        let next = snapshot
+            .edit(
+                &TextEdit {
+                    range: [0, 1],
+                    replacement: "2".into(),
+                },
+                Limits::default(),
+            )
+            .unwrap();
+        assert_eq!(next.with_tree(|tree| tree.source.clone()).unwrap(), "2;");
+        assert_eq!(view.root().text(), "1;");
+        let mut count = 0;
+        view.visit_postorder(u64::MAX, |_, _, _| count += 1)
+            .unwrap();
+        assert!(count > 0);
+    });
+}
+
+#[test]
 fn edited_snapshots_retain_owner_and_release_it_with_last_handle() {
     let owner = owner();
     let weak = Arc::downgrade(&owner);
