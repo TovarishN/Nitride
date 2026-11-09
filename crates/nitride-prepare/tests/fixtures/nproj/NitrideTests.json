@@ -1,0 +1,17 @@
+{
+  "catalogs": [],
+  "extensions": [],
+  "grammars": [
+    "languages/testing/Testing.ngr"
+  ],
+  "libraries": [
+    {
+      "name": "Nitride.Lexical",
+      "version": "1.0.0"
+    }
+  ],
+  "name": "NitrideTests",
+  "nitrogen": null,
+  "start": "NitrideTests.Suite",
+  "typed": false
+}

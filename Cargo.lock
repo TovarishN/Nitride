@@ -563,6 +563,7 @@ dependencies = [
  "nitride-lsp",
  "nitride-prepare",
  "nitride-process",
+ "nitride-testing",
  "nitride-wasm",
  "serde_json",
 ]

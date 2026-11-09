@@ -16,15 +16,37 @@ fn error(path: &Path, message: impl Into<String>) -> PrepareError {
     }
     .project_error(message)
 }
-fn read(path: &Path) -> Result<String, PrepareError> {
-    std::fs::read_to_string(path).map_err(|e| error(path, e.to_string()))
+/// Read-only project input source; editors can supply unsaved buffers.
+pub trait ProjectReader {
+    fn read(&self, path: &Path) -> std::io::Result<String>;
+    fn exists(&self, path: &Path) -> bool;
+    fn canonical(&self, path: &Path) -> std::io::Result<PathBuf>;
+}
+pub struct DiskProjectReader;
+impl ProjectReader for DiskProjectReader {
+    fn read(&self, path: &Path) -> std::io::Result<String> {
+        std::fs::read_to_string(path)
+    }
+    fn exists(&self, path: &Path) -> bool {
+        path.exists()
+    }
+    fn canonical(&self, path: &Path) -> std::io::Result<PathBuf> {
+        path.canonicalize()
+    }
+}
+fn read(path: &Path, reader: &dyn ProjectReader) -> Result<String, PrepareError> {
+    reader.read(path).map_err(|e| error(path, e.to_string()))
 }
 
 /// Reads `file` as a project input, recording it in `inputs`.
-fn load(file: &Path, inputs: &mut Vec<PathBuf>) -> Result<Source, PrepareError> {
-    let text = read(file)?;
-    let file = file
-        .canonicalize()
+fn load(
+    file: &Path,
+    inputs: &mut Vec<PathBuf>,
+    reader: &dyn ProjectReader,
+) -> Result<Source, PrepareError> {
+    let text = read(file, reader)?;
+    let file = reader
+        .canonical(file)
         .map_err(|e| error(file, e.to_string()))?;
     let source = Source {
         path: file.display().to_string(),
@@ -36,12 +58,15 @@ fn load(file: &Path, inputs: &mut Vec<PathBuf>) -> Result<Source, PrepareError> 
 
 /// A `.nproj` language: typed when it lists catalogs. Start rule problems are
 /// reported at its `start`.
-fn prepare_nproj(path: PathBuf) -> Result<PreparedProject, PrepareError> {
+fn prepare_nproj(
+    path: PathBuf,
+    reader: &dyn ProjectReader,
+) -> Result<PreparedProject, PrepareError> {
     let project = Source {
         path: path.display().to_string(),
-        text: read(&path)?,
+        text: read(&path, reader)?,
     };
-    let language = crate::read_language(&project, &|p: &Path| p.exists())
+    let language = crate::read_language(&project, &|p: &Path| reader.exists(p))
         .map_err(|errors| errors.into_iter().next().expect("an error"))?;
     let mut inputs = vec![path.clone()];
     let libraries = crate::resolve_libraries(&project, &language.libraries)
@@ -51,19 +76,19 @@ fn prepare_nproj(path: PathBuf) -> Result<PreparedProject, PrepareError> {
         language
             .grammars
             .iter()
-            .map(|g| load(g, &mut inputs))
+            .map(|g| load(g, &mut inputs, reader))
             .collect::<Result<Vec<_>, _>>()?,
     );
     let catalog_sources = language
         .catalogs
         .iter()
-        .map(|c| load(c, &mut inputs))
+        .map(|c| load(c, &mut inputs, reader))
         .collect::<Result<Vec<_>, _>>()?;
     let catalog = crate::catalog(&catalog_sources)?;
     let binding_sources = language
         .bindings
         .iter()
-        .map(|b| load(b, &mut inputs))
+        .map(|b| load(b, &mut inputs, reader))
         .collect::<Result<Vec<_>, _>>()?;
     let bindings = located(&binding_sources, &catalog.value, &path)?;
     let mode = if language.typed() { "typed" } else { "syntax" };
@@ -90,13 +115,19 @@ fn prepare_nproj(path: PathBuf) -> Result<PreparedProject, PrepareError> {
 /// Prepares a `.nproj` language, or a `project.json` manifest (kept while
 /// Nitrogen reads it).
 pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
-    let path = path
-        .canonicalize()
+    prepare_project_with(path, &DiskProjectReader)
+}
+pub fn prepare_project_with(
+    path: &Path,
+    reader: &dyn ProjectReader,
+) -> Result<PreparedProject, PrepareError> {
+    let path = reader
+        .canonical(path)
         .map_err(|e| error(path, e.to_string()))?;
     if path.extension().is_some_and(|e| e == "nproj") {
-        return prepare_nproj(path);
+        return prepare_nproj(path, reader);
     }
-    let text = read(&path)?;
+    let text = read(&path, reader)?;
     let manifest: Value = serde_json::from_str(&text)
         .map_err(|e| error(&path, format!("invalid manifest JSON: {e}")))?;
     let required = |key: &str| {
@@ -174,7 +205,7 @@ pub fn prepare_project(path: &Path) -> Result<PreparedProject, PrepareError> {
             .as_str()
             .filter(|s| !s.is_empty())
             .ok_or_else(|| error(&path, format!("{what} path must be a nonempty string")))?;
-        load(&path.parent().unwrap().join(name), &mut inputs)
+        load(&path.parent().unwrap().join(name), &mut inputs, reader)
     };
     let mut sources = crate::library_sources(&libraries);
     sources.extend(

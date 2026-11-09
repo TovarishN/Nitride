@@ -16,6 +16,7 @@ name = "nitride-profile"
 path = "src/bin/profile.rs"
 
 [dependencies]
+nitride-testing = { path = "../nitride-testing" }
 nitride-prepare = { path = "../nitride-prepare" }
 nitride-core = { path = "../nitride-core" }
 nitride-lsp = { path = "../nitride-lsp", default-features = false }
