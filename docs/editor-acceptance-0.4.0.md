@@ -100,3 +100,23 @@ python3 scripts/editor_acceptance.py --code '/Applications/Visual Studio Code.ap
 Use a clean candidate commit for trustworthy native provenance and avoid concurrent
 builds/tests when collecting timing observations. The harness removes its own
 profiles/workspaces and reaps its own process tree on interruption/timeout.
+
+## Publication follow-through
+
+The exact rehearsal commit `4dcc669aa5ed0ed5985ce9221bbf09e3fd147898` was tagged
+and [published as v0.4.0](https://github.com/TovarishN/Nitride/releases/tag/v0.4.0).
+All three native PGO jobs passed (Linux also uses BOLT), and all published files
+match the verified rehearsal files byte-for-byte.
+
+The CI-built macOS VSIX was additionally exercised before promotion in
+[Portable](benchmarks/2026-11-09/editor-host-040-rehearsal-portable.json) and
+[full-language/large-file](benchmarks/2026-11-09/editor-host-040-rehearsal-repository.json)
+sessions using the same final harness. Both pass, recording the exact rehearsal
+commit and clean provenance. Diagnostic medians are 45.2/42.6 ms; large-file edit
+checks are 246–476 ms. Its extracted CLI also passes [Calendar process checks](benchmarks/2026-11-09/release-040-rehearsal-calendar.json).
+These reports identify the rehearsal artifact that was then promoted unchanged;
+they are not a claim that GUI timing was rerun after publication.
+
+The [published-file verification](benchmarks/2026-11-09/release-040-published.json)
+records all 13 hashes. Manual visual/IME/accessibility and Windows/Linux GUI
+acceptance boundaries above remain unchanged.
