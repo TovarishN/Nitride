@@ -35,6 +35,53 @@ exports.run = async function () {
     report.activation_wait_ms = performance.now() - started;
     report.vscode_version = vscode.version;
     report.checks.push('isolated packaged extension activated with bundled server');
+    // Author a new standalone language with the actual bundled native CLI.
+    const bundled = path.join(extension.extensionPath, 'server', process.platform === 'win32' ? 'nitride.exe' : 'nitride');
+    const { execFileSync } = require('node:child_process');
+    const authored = path.join(root, 'Calculator');
+    execFileSync(bundled, ['new', 'language', 'Calculator', '--directory', authored, '--extension', '.calc']);
+    const evaluated = JSON.parse(execFileSync(bundled, ['run', 'nitride.nproj', 'sample.calc'], { cwd: authored, encoding: 'utf8' }));
+    assert.deepEqual(evaluated.values, [42]);
+    assert(vscode.workspace.updateWorkspaceFolders(vscode.workspace.workspaceFolders.length, 0, { uri: vscode.Uri.file(authored), name: 'Calculator' }));
+    await until(() => {
+      report.authoring_workspace_folders = vscode.workspace.workspaceFolders.map(f => f.uri.toString());
+      return vscode.workspace.workspaceFolders.some(f => f.uri.fsPath === authored);
+    }, 'new standalone workspace folder applied');
+    let authoredGrammar = await vscode.workspace.openTextDocument(path.join(authored, 'Calculator.ngr'));
+    const lexicalPosition = authoredGrammar.positionAt(authoredGrammar.getText().indexOf('AsciiIdentifier') + 2);
+    let libraryLocation;
+    await until(async () => {
+      const locations = await vscode.commands.executeCommand('vscode.executeDefinitionProvider', authoredGrammar.uri, lexicalPosition);
+      report.authoring_definition = locations;
+      report.authoring_grammar_language = authoredGrammar.languageId;
+      report.authoring_diagnostics = vscode.languages.getDiagnostics(authoredGrammar.uri);
+      libraryLocation = locations?.find(l => (l.uri ?? l.targetUri)?.scheme === 'nitride-lib');
+      return !!libraryLocation;
+    }, 'pinned lexical definition');
+    const libraryUri = libraryLocation.uri ?? libraryLocation.targetUri;
+    const libraryDoc = await vscode.workspace.openTextDocument(libraryUri);
+    assert(libraryDoc.getText().includes('token AsciiIdentifier'));
+    const formats = await vscode.commands.executeCommand('vscode.executeFormatDocumentProvider', libraryUri, { tabSize: 2, insertSpaces: true });
+    assert.equal(formats?.length ?? 0, 0);
+    report.checks.push('new typed language executes42; pinned library opens through read-only content provider');
+    const authoredProject = await vscode.workspace.openTextDocument(path.join(authored, 'nitride.nproj'));
+    const initialProject = authoredProject.getText();
+    await replace(authoredProject, initialProject.replace('grammar Calculator.ngr;', 'grammar Calculator.ngr;\n  grammar Extra.ngr;'));
+    await until(() => vscode.languages.getDiagnostics(authoredProject.uri).some(d => d.code === 'NPROJ0001'), 'missing referenced grammar diagnostic');
+    let creation;
+    await until(async () => {
+      const actions = await vscode.commands.executeCommand('vscode.executeCodeActionProvider', authoredProject.uri, new vscode.Range(0,0,authoredProject.lineCount,0), 'quickfix', 100);
+      creation = actions?.find(a => a.title === 'Create Extra.ngr' && a.edit);
+      return !!creation;
+    }, 'resolved create-only grammar quick fix');
+    assert.equal(await vscode.workspace.applyEdit(creation.edit), true);
+    const extra = await vscode.workspace.openTextDocument(path.join(authored, 'Extra.ngr'));
+    await extra.save();
+    assert(extra.getText().includes('syntax module Extra'));
+    assert(!extra.getText().includes('syntax Program'), 'existing start rule is not duplicated');
+    await until(() => !vscode.languages.getDiagnostics(authoredProject.uri).some(d => d.code === 'NPROJ0001'), 'created grammar clears missing-file diagnostic');
+    await authoredProject.save();
+    report.checks.push('structured missing-file diagnostic resolves via create-only quick fix without duplicating start');
     const opening = performance.now();
     let one = await vscode.workspace.openTextDocument(path.join(root, 'one.portable'));
     let two = await vscode.workspace.openTextDocument(path.join(root, 'two.portable'));

@@ -1,4 +1,5 @@
 use nitride_core::*;
+mod new_language;
 
 fn main() -> std::process::ExitCode {
     match run() {
@@ -29,6 +30,10 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         } else {
             args.push(arg);
         }
+    }
+    if args.first().is_some_and(|a| a == "new") {
+        new_language::run(&args)?;
+        return Ok(true);
     }
     if args.first().is_some_and(|a| a == "library") {
         use nitride_prepare::stdlib;

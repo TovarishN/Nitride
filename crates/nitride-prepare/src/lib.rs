@@ -5,6 +5,7 @@ mod grammar_seed;
 mod catalog_seed;
 #[rustfmt::skip]
 mod binding_seed;
+pub mod authoring;
 mod binding;
 mod catalog;
 mod functions;

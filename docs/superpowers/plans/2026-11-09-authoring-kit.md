@@ -55,21 +55,21 @@ Interfaces: explicit origin for index sources (physical path or bundled library 
 ### Task4: Shared templates and exclusive creation
 Files: create prepare/src/authoring.rs plus authoring/{templates,execute}.rs and tests/authoring.rs; CLI authoring command/tests; LSP authoring command handler; VS Code commands/new-language helper, package.json command contribution and tests.
 Interfaces: TemplateKind::{Syntax,Typed}; TemplateOptions {name,extension,kind}; PlannedFile {relative_path,contents,kind}; ProjectPlan {files}; plan_language(&TemplateOptions)->Result<ProjectPlan,AuthoringError>; create_language(target:&Path,plan:&ProjectPlan)->Result<CreationReport,AuthoringError>. Pure planner is shared; executor records exclusively owned writes/partial failure info.
-- [ ] RED temporary-project tests for both presets: prepare/parse, typed run42 with no-default-features, exact pinned library and deterministic plans. Reject bad identifiers/extensions, existing directories and filename collisions.
-- [ ] Implement minimal syntax/typed recipes and README commands; use stdlib refs, no copied lexical grammar, no custom operations/handlers in typed starter.
-- [ ] RED executor tests for denied writes, collision/race and injected mid-creation failure. Use exclusive creation, manifest last, conservative rollback of only untouched owned files; report retained partial paths.
-- [ ] Add CLI `new language NAME --directory PATH --extension .suffix --kind syntax|typed` (typed default), --dry-run and --json planning output. Validate invocation and native execution.
-- [ ] Add server create-language command and standard VS Code inputs. Restrict editor targets to a normalized, symlink-checked open workspace; offer opening the created standalone folder in a new window. Do not edit parent include lists or close existing editors.
-- [ ] Run authoring/CLI/extension and command protocol tests; commit templates/creation.
+- [x] RED temporary-project tests for both presets: prepare/parse, typed run42 with no-default-features, exact pinned library and deterministic plans. Reject bad identifiers/extensions, existing directories and filename collisions.
+- [x] Implement minimal syntax/typed recipes and README commands; use stdlib refs, no copied lexical grammar, no custom operations/handlers in typed starter.
+- [x] RED executor tests for denied writes, collision/race and injected mid-creation failure. Use exclusive creation, manifest last, conservative rollback of only untouched owned files; report retained partial paths.
+- [x] Add CLI `new language NAME --directory PATH --extension .suffix --kind syntax|typed` (typed default), --dry-run and --json planning output. Validate invocation and native execution.
+- [x] Add server create-language command and standard VS Code inputs. Restrict editor targets to a normalized, symlink-checked open workspace; offer opening the created standalone folder in a new window. Do not edit parent include lists or close existing editors.
+- [x] Run authoring/CLI/extension and command protocol tests; commit templates/creation.
 
 ### Task5: Structured project file/library quick fixes
 Files: prepare nproj diagnostics/project references and authoring planner; LSP project_actions.rs, analysis/server/actions, protocol tests; extension capability/acceptance integration.
 Interfaces: ProjectIssue {code,kind,span,target,project}; ProjectActionPlan references current project identity/version and bounded CreateFile or project text edits. Shared helpers produce appropriate missing grammar/catalog scaffolds. Resolve actions from current context, not diagnostic message parsing.
-- [ ] RED tests for missing declared grammar/catalog, explicit qualified Lexical reference without pin, ambiguous owners, existing start declarations and unrelated diagnostics/ranges.
-- [ ] Add typed issue metadata and contextual recipes; missing file actions resolve only that reference and may leave truthful semantic diagnostics. No inferred short-identifier imports or fake host bindings.
-- [ ] RED protocol tests: stale versions, current open targets, filesystem collisions/symlinks/outside roots, virtual targets, unsupported client resource capabilities and requested action kinds.
-- [ ] Implement create-only workspace edits with overwrite=false/ignoreIfExists=false and versioned existing-document edits. Suppress unsafe/stale actions; preserve normal client failure/undo behavior without promising global resource atomicity.
-- [ ] Run action/native protocol suites and project-focused packaged editor workflows; commit targeted quick fixes.
+- [x] RED tests for missing declared grammar/catalog, explicit qualified Lexical reference without pin, ambiguous owners, existing start declarations and unrelated diagnostics/ranges.
+- [x] Add typed issue metadata and contextual recipes; missing file actions resolve only that reference and may leave truthful semantic diagnostics. No inferred short-identifier imports or fake host bindings.
+- [x] RED protocol tests: stale versions, current open targets, filesystem collisions/symlinks/outside roots, virtual targets, unsupported client resource capabilities and requested action kinds.
+- [x] Implement create-only workspace edits with overwrite=false/ignoreIfExists=false and versioned existing-document edits. Suppress unsafe/stale actions; preserve normal client failure/undo behavior without promising global resource atomicity.
+- [x] Run action/native protocol suites and project-focused packaged editor workflows; commit targeted quick fixes.
 
 ### Task6: End-to-end authoring evidence and integration
 Files: docs authoring guide/status; extend disposable editor acceptance/tooling tests as needed, release training/library metadata gates and checked raw reports.

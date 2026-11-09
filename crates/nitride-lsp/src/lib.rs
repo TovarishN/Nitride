@@ -14,6 +14,7 @@ pub mod lines;
 pub mod manifest;
 pub mod navigation;
 mod palette;
+mod project_actions;
 pub mod registry;
 pub mod roles;
 mod rpc;

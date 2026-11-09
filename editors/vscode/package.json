@@ -816,6 +816,12 @@
           ]
         }
       }
+    ],
+    "commands": [
+      {
+        "command": "nitride.newLanguage",
+        "title": "Nitride: New Language"
+      }
     ]
   },
   "scripts": {

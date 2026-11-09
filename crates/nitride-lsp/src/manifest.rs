@@ -69,6 +69,22 @@ fn projects(
         text,
     };
     let exists = |path: &Path| open(path).is_some() || path.exists();
+    if nitride_prepare::project_outline(&source)
+        .is_ok_and(|items| items.first().is_some_and(|i| i.kind == "language"))
+    {
+        let parsed = nitride_prepare::read_language(&source, &exists)
+            .map(|language| (vec![entry(language)], vec![]))
+            .map_err(|errors| {
+                errors
+                    .into_iter()
+                    .map(|e| ManifestError {
+                        span: e.span.map(|v| v as u32),
+                        message: e.message,
+                    })
+                    .collect()
+            });
+        return vec![(workspace.to_owned(), parsed)];
+    }
     let resolved = nitride_prepare::read_workspace(&source, read, &exists);
     if resolved.damaged {
         // Mid-edit, often: the registry keeps the languages it included.
@@ -108,26 +124,27 @@ pub fn language_beside(
     let mut files: Vec<PathBuf> = std::fs::read_dir(grammar.parent()?)
         .ok()?
         .filter_map(|e| Some(e.ok()?.path()))
-        .filter(|p| {
-            p.extension().is_some_and(|e| e == "nproj")
-                && p.file_name().is_some_and(|n| n != NAMES[0])
-        })
+        .filter(|p| p.extension().is_some_and(|e| e == "nproj"))
         .collect();
     files.sort();
     let exists = |path: &Path| open(path).is_some() || path.exists();
-    files.into_iter().find_map(|path| {
-        let text = open(&path).or_else(|| std::fs::read_to_string(&path).ok())?;
-        let source = Source {
-            path: path.display().to_string(),
-            text,
-        };
-        let language = nitride_prepare::read_language(&source, &exists).ok()?;
-        language
-            .grammars
-            .iter()
-            .any(|g| crate::registry::same_file(g, grammar))
-            .then(|| (path, entry(language)))
-    })
+    let mut found = files
+        .into_iter()
+        .filter_map(|path| {
+            let text = open(&path).or_else(|| std::fs::read_to_string(&path).ok())?;
+            let source = Source {
+                path: path.display().to_string(),
+                text,
+            };
+            let language = nitride_prepare::read_language(&source, &exists).ok()?;
+            language
+                .grammars
+                .iter()
+                .any(|g| crate::registry::same_file(g, grammar))
+                .then(|| (path, entry(language)))
+        })
+        .collect::<Vec<_>>();
+    (found.len() == 1).then(|| found.remove(0))
 }
 
 fn entry(language: ProjectLanguage) -> Entry {

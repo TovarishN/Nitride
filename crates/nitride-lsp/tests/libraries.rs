@@ -158,3 +158,76 @@ fn ambiguous_owners_do_not_choose_a_library_context() {
             .is_empty()
     );
 }
+
+#[test]
+fn adding_standalone_workspace_folder_supplies_library_navigation() {
+    let root = scratch("standalone-library-folder");
+    std::fs::write(root.join("nitride.nproj"), "workspace { }").unwrap();
+    let target = root.join("Calculator");
+    let plan =
+        nitride_prepare::authoring::plan_language(&nitride_prepare::authoring::TemplateOptions {
+            name: "Calculator".into(),
+            extension: ".calc".into(),
+            kind: nitride_prepare::authoring::TemplateKind::Typed,
+        })
+        .unwrap();
+    nitride_prepare::authoring::create_language(&target, &plan).unwrap();
+    let grammar = target.join("Calculator.ngr");
+    let text = std::fs::read_to_string(&grammar).unwrap();
+    let before = &text[..text.find("AsciiIdentifier").unwrap()];
+    let line = before.bytes().filter(|b| *b == b'\n').count();
+    let character = before.rsplit('\n').next().unwrap().len() + 2;
+    let messages = run(
+        &root,
+        true,
+        vec![
+            notification(
+                "workspace/didChangeWorkspaceFolders",
+                json!({"event":{"added":[{"uri":uri(&target),"name":"Calculator"}],"removed":[]}}),
+            ),
+            open(&grammar, &text),
+            request(
+                5,
+                "textDocument/definition",
+                json!({"textDocument":{"uri":uri(&grammar)},"position":{"line":line,"character":character}}),
+            ),
+        ],
+    );
+    assert_eq!(
+        response(&messages, 5)["result"]["uri"],
+        LIB,
+        "{}",
+        response(&messages, 5)
+    );
+}
+
+#[test]
+fn unlisted_standalone_project_supplies_its_own_library_context() {
+    let root = scratch("unlisted-library-project");
+    std::fs::write(root.join("nitride.nproj"), "workspace { }").unwrap();
+    let target = root.join("Nested");
+    let plan =
+        nitride_prepare::authoring::plan_language(&nitride_prepare::authoring::TemplateOptions {
+            name: "Nested".into(),
+            extension: ".nested".into(),
+            kind: nitride_prepare::authoring::TemplateKind::Syntax,
+        })
+        .unwrap();
+    nitride_prepare::authoring::create_language(&target, &plan).unwrap();
+    let grammar = target.join("Nested.ngr");
+    let text = std::fs::read_to_string(&grammar).unwrap();
+    let messages = run(
+        &root,
+        true,
+        vec![
+            open(&grammar, &text),
+            request(
+                5,
+                "textDocument/definition",
+                json!({"textDocument":{"uri":uri(&grammar)},"position":{"line":2,"character":50}}),
+            ),
+        ],
+    );
+    assert_eq!(diagnostics(&messages, &grammar), json!([]));
+    assert_eq!(response(&messages, 5)["result"]["uri"], LIB);
+}

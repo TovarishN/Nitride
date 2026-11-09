@@ -54,3 +54,7 @@ test('manifest: an include with two .nproj files is skipped', () => {
   });
   assert.deepEqual(manifestExtensions(read, list), []);
 });
+
+test('manifest: standalone generated language routes its source extension', () => {
+  assert.deepEqual(manifestExtensions(files({ 'nitride.nproj': '// starter\nlanguage Calculator { extensions .calc; library Nitride.Lexical version 1.0.0; }' })), ['.calc']);
+});

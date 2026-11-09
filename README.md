@@ -280,3 +280,5 @@ third-party notices when redistributing those sources.
 See [release versioning and build instructions](docs/releases.md) for the
 three native VS Code packages and CLI archives, PGO/LTO/AVX2/BOLT settings,
 CPU compatibility, and the native release configuration without Wasmtime.
+
+Language authors can start with the [versioned lexical library, project templates and editor fixes](docs/authoring.md).

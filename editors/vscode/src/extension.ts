@@ -1,6 +1,6 @@
 import * as fs from 'fs';
 import * as path from 'path';
-import { ExtensionContext, languages, Range, TextDocument, workspace } from 'vscode';
+import { commands, ExtensionContext, languages, Range, TextDocument, Uri, window, workspace } from 'vscode';
 import { DocumentSelector, LanguageClient, LanguageClientOptions } from 'vscode-languageclient/node';
 import { manifestExtensions } from './manifest';
 import { serverCommand } from './server';
@@ -53,11 +53,36 @@ export async function activate(context: ExtensionContext): Promise<void> {
   const options: LanguageClientOptions = {
     documentSelector: selector,
     synchronize: { fileEvents: watcher },
+    middleware: {
+      resolveCodeAction: async (action, token, next) => {
+        const data = client?.code2ProtocolConverter.asCodeActionSync(action).data as { code?: string; project?: string } | undefined;
+        if (data?.code === 'NLIB0004' && data.project) await workspace.openTextDocument(Uri.parse(data.project));
+        return next(action, token);
+      },
+    },
     // Colour with the theme's TextMate palette (contributes.semanticTokenScopes).
     initializationOptions: { paletteTokens: true, libraryDocuments: true },
   };
   client = new LanguageClient('nitride', 'Nitride', server, options);
   await client.start();
+  context.subscriptions.push(commands.registerCommand('nitride.newLanguage', async () => {
+    try {
+      const folders = workspace.workspaceFolders ?? [];
+      if (!folders.length) { await window.showInformationMessage('Open a workspace folder before creating a language.'); return; }
+      const folder = folders.length === 1 ? folders[0] : (await window.showQuickPick(folders.map(folder => ({ label: folder.name, folder })), { placeHolder: 'Create inside workspace' }))?.folder;
+      if (!folder) return;
+      const name = await window.showInputBox({ prompt: 'Language name', value: 'Calculator', validateInput: value => /^[A-Za-z_][A-Za-z0-9_]*$/.test(value) ? undefined : 'Use an ASCII identifier' });
+      if (!name) return;
+      const extension = await window.showInputBox({ prompt: 'Source file extension', value: '.calc', validateInput: value => /^\.[A-Za-z0-9_]+$/.test(value) ? undefined : 'Use a dot followed by letters, digits or underscores' });
+      if (!extension) return;
+      const kind = await window.showQuickPick(['typed', 'syntax'], { placeHolder: 'Language starter' });
+      if (!kind) return;
+      const directory = Uri.joinPath(folder.uri, name);
+      await client?.sendRequest('workspace/executeCommand', { command: 'nitride.createLanguage', arguments: [{ directory: directory.toString(), name, extension, kind }] });
+      const choice = await window.showInformationMessage(`Created ${name} in ${directory.fsPath}`, 'Open in New Window');
+      if (choice) await commands.executeCommand('vscode.openFolder', directory, { forceNewWindow: true });
+    } catch (error) { await window.showErrorMessage(`Cannot create language: ${String(error)}`); }
+  }));
   context.subscriptions.push(workspace.registerTextDocumentContentProvider('nitride-lib', {
     provideTextDocumentContent: async uri => {
       if (!client) throw new Error('Nitride server is unavailable');

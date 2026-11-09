@@ -13,6 +13,9 @@ function projectExtensions(
   list: (dir: string) => string[],
 ): string[] {
   const extensions: string[] = [];
+  if (/^\s*language\b/.test(code(text))) {
+    for (const [, items] of code(text).matchAll(/\bextensions\s+([^;]*);/g)) extensions.push(...items.split(',').map(e => e.trim()).filter(Boolean));
+  }
   for (const [, dir] of code(text).matchAll(/\binclude\s+([^;\s]+)\s*;/g)) {
     const files = list(dir).filter(name => name.endsWith('.nproj'));
     const language = files.length === 1 ? read(`${dir}/${files[0]}`) : undefined;

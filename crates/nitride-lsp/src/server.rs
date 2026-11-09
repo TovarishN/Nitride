@@ -51,6 +51,8 @@ pub struct Server<W: Write> {
     /// The client colours palette token types (`initializationOptions.paletteTokens`).
     palette: bool,
     library_documents: bool,
+    project_create: bool,
+    action_resolve: bool,
     jobs: jobs::State,
 }
 
@@ -179,6 +181,8 @@ impl<W: Write> Server<W> {
             grammars: None,
             palette: false,
             library_documents: false,
+            project_create: false,
+            action_resolve: false,
             jobs: jobs::State::default(),
         }
     }
@@ -235,12 +239,22 @@ impl<W: Write> Server<W> {
             .unwrap_or_else(|| params["rootUri"].as_str().into_iter().collect::<Vec<_>>());
         self.folders = folders.into_iter().filter_map(uri::to_path).collect();
         self.reload = true;
+        self.project_create = params["capabilities"]["workspace"]["workspaceEdit"]["documentChanges"]
+            == true
+            && params["capabilities"]["workspace"]["workspaceEdit"]["resourceOperations"]
+                .as_array()
+                .is_some_and(|a| a.iter().any(|v| v == "create"));
+        self.action_resolve =
+            params["capabilities"]["textDocument"]["codeAction"]["resolveSupport"]["properties"]
+                .as_array()
+                .is_some_and(|a| a.iter().any(|v| v == "edit"));
         self.library_documents =
             params["initializationOptions"]["libraryDocuments"].as_bool() == Some(true);
         self.palette = params["initializationOptions"]["paletteTokens"].as_bool() == Some(true);
         json!({
             "capabilities": {
                 "positionEncoding": "utf-16",
+                "executeCommandProvider":{"commands":["nitride.createLanguage"]},
                 "textDocumentSync": 2,
                 "workspace": {"workspaceFolders": {"supported": true, "changeNotifications": true}},
                 "semanticTokensProvider": {
@@ -258,7 +272,7 @@ impl<W: Write> Server<W> {
                 "renameProvider": {"prepareProvider": true},
                 "workspaceSymbolProvider": true,
                 "inlayHintProvider": true,
-                "codeActionProvider": {"codeActionKinds": ["quickfix", "source.fixAll"]},
+                "codeActionProvider": {"codeActionKinds": ["quickfix", "source.fixAll"], "resolveProvider":true},
                 "completionProvider": {"triggerCharacters": ["."]},
                 "signatureHelpProvider": {"triggerCharacters": ["(", ","]},
                 "documentFormattingProvider": true,
@@ -295,6 +309,60 @@ impl<W: Write> Server<W> {
             };
         }
         match method {
+            "codeAction/resolve" => {
+                if std::mem::take(&mut self.reload) {
+                    self.reload_languages()
+                        .map_err(|e| (INVALID_REQUEST, e.to_string()))?;
+                }
+                Ok(self.project_action_context().resolve_action(params))
+            }
+            "workspace/executeCommand" => {
+                if params["command"] != "nitride.createLanguage" {
+                    return Err((INVALID_PARAMS, "unknown command".into()));
+                }
+                let options = &params["arguments"][0];
+                let field = |key| {
+                    options[key]
+                        .as_str()
+                        .ok_or_else(|| (INVALID_PARAMS, format!("missing {key}")))
+                };
+                let directory = uri::to_path(field("directory")?)
+                    .ok_or_else(|| (INVALID_PARAMS, "target requires file URI".into()))?;
+                let directory =
+                    nitride_prepare::authoring::workspace_target(&directory, &self.folders)
+                        .map_err(|e| (INVALID_PARAMS, e.to_string()))?;
+                let kind = match options["kind"].as_str().unwrap_or("typed") {
+                    "typed" => nitride_prepare::authoring::TemplateKind::Typed,
+                    "syntax" => nitride_prepare::authoring::TemplateKind::Syntax,
+                    _ => return Err((INVALID_PARAMS, "unknown template kind".into())),
+                };
+                let plan = nitride_prepare::authoring::plan_language(
+                    &nitride_prepare::authoring::TemplateOptions {
+                        name: field("name")?.into(),
+                        extension: field("extension")?.into(),
+                        kind,
+                    },
+                )
+                .map_err(|e| (INVALID_PARAMS, e.to_string()))?;
+                if plan.files.iter().any(|file| {
+                    self.documents
+                        .keys()
+                        .filter_map(|u| uri::to_path(u))
+                        .any(|p| {
+                            crate::registry::same_file(&p, &directory.join(&file.relative_path))
+                        })
+                }) {
+                    return Err((
+                        INVALID_PARAMS,
+                        "a planned target is already open in the editor".into(),
+                    ));
+                }
+                let report = nitride_prepare::authoring::create_language(&directory, &plan)
+                    .map_err(|e| (INVALID_PARAMS, e.to_string()))?;
+                Ok(
+                    json!({"directory":uri::from_path(&directory),"created":report.created.iter().map(|p|uri::from_path(p)).collect::<Vec<_>>()}),
+                )
+            }
             "nitride/librarySource" => {
                 let source = params["uri"]
                     .as_str()
@@ -502,13 +570,15 @@ impl<W: Write> Server<W> {
                     .flatten()
                     .filter_map(|k| k.as_str().map(str::to_owned))
                     .collect();
-                Ok(crate::actions::actions(
-                    analysis,
-                    &uri,
-                    at("start"),
-                    at("end"),
-                    &only,
-                ))
+                let (start, end) = (at("start"), at("end"));
+                let mut actions = crate::actions::actions(analysis, &uri, start, end, &only);
+                if let Some(items) = actions.as_array_mut() {
+                    items.extend(
+                        self.project_action_context()
+                            .actions(&uri, start, end, &only),
+                    );
+                }
+                Ok(actions)
             }
             "textDocument/inlayHint" => {
                 let Some(analysis) = self.current(&uri) else {
@@ -586,6 +656,16 @@ impl<W: Write> Server<W> {
         }
     }
 
+    fn project_action_context(&self) -> crate::project_actions::Context<'_> {
+        crate::project_actions::Context {
+            documents: &self.documents,
+            registry: &self.registry,
+            roots: &self.folders,
+            create: self.project_create,
+            resolve: self.action_resolve,
+        }
+    }
+
     /// The byte offset of the request's position in an up-to-date analysis,
     /// with the grammar index when the document is a grammar.
     fn located(
@@ -620,10 +700,28 @@ impl<W: Write> Server<W> {
             || self.registry.signed_at(&path).is_some();
         let grammar = is_grammar.then(|| {
             let buffers = self.buffers();
-            let set = self.registry.grammar_set(&path);
+            let mut set = self.registry.grammar_set(&path);
+            let mut libraries = self.registry.libraries_at(&path);
+            if self.registry.using_grammar(&path).next().is_none()
+                && self.registry.using_catalog(&path).next().is_none()
+                && let Some((manifest, entry)) =
+                    crate::manifest::language_beside(&path, &|p| buffers.get(p))
+            {
+                let text = buffers
+                    .get(&manifest)
+                    .or_else(|| std::fs::read_to_string(&manifest).ok())
+                    .unwrap_or_default();
+                let source = nitride_prepare::Source {
+                    path: manifest.display().to_string(),
+                    text,
+                };
+                libraries = nitride_prepare::resolve_libraries(&source, &entry.libraries)
+                    .unwrap_or_default();
+                set = entry.grammars.into_iter().chain(entry.catalogs).collect();
+            }
             let uri_of = self.uri_of();
             let mut index = grammar_index::build(&set, &|p: &Path| buffers.get(p), &uri_of);
-            index.add_libraries(&self.registry.libraries_at(&path));
+            index.add_libraries(&libraries);
             let file = index.file(&path)?;
             Some((index, file))
         });
@@ -861,6 +959,14 @@ impl<W: Write> Server<W> {
                         let mut d = diagnostic(&analysis.lines, p.span, p.severity, &p.message);
                         if let Some(code) = &p.code {
                             d["code"] = json!(code);
+                        }
+                        if uri.ends_with(".nproj") {
+                            let source=nitride_prepare::Source {path:uri::to_path(uri).map(|p|p.display().to_string()).unwrap_or_default(),text:analysis.lines.text().into()};
+                            let issues=nitride_prepare::authoring::project_issues(&source,&|p|self.buffers().get(p).is_some()||p.exists());
+                            if let Some(issue)=issues.iter().find(|i|i.span.map(|b|b as u32)==p.span) {
+                                d["code"]=json!(issue.code);
+                                d["data"]=json!({"kind":issue.code,"project":uri,"target":issue.target.as_ref().map(|p|uri::from_path(p)),"version":self.documents.get(uri).map(|d|d.version)});
+                            }
                         }
                         d
                     })
