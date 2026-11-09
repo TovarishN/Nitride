@@ -32,7 +32,7 @@ jobs:
           npm ci
           npm run compile
           npm test
-      - run: python3 -m unittest scripts/test_release.py scripts/test_editor_acceptance.py scripts/test_benchmark_editor.py scripts/test_benchmark_checkpoint.py
+      - run: python3 -m unittest scripts/test_release.py scripts/test_editor_acceptance.py scripts/test_benchmark_editor.py scripts/test_benchmark_checkpoint.py scripts/test_benchmark_lsp.py
       - run: node --check editors/vscode/acceptance.cjs
       - run: rustc --edition=2024 --test scripts/release/launcher.rs -o /tmp/nitride-launcher-test && /tmp/nitride-launcher-test
 

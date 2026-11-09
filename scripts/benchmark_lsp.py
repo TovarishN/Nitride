@@ -15,6 +15,19 @@ from benchmark_checkpoint import ROOT, command, sha, source_identity
 from csharp4_scaling import generated
 from recovery_scaling import damaged
 
+SOURCES = ('crates/nitride-core/src/syntax/shared.rs', 'crates/nitride-core/src/syntax/arena.rs',
+           'crates/nitride-codegen/src/runtime_snapshot.rs', 'crates/nitride-lsp/src/analysis.rs',
+           'crates/nitride-lsp/src/analysis/projection.rs', 'crates/nitride-lsp/examples/benchmark.rs')
+
+
+def source_hashes(revision, files, root=ROOT):
+    present = set(command(['git', 'ls-tree', '-r', '--name-only', revision, '--', *files], root)
+                  .decode().splitlines())
+    return {name: {'before': sha(command(['git', 'show', f'{revision}:{name}'], root))
+                   if name in present else None,
+                   'after': sha((root / name).read_bytes())}
+            for name in files}
+
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
@@ -23,6 +36,8 @@ def main():
     parser.add_argument('--output', type=pathlib.Path, required=True)
     parser.add_argument('--baseline-revision', default='2d31168')
     parser.add_argument('--build-description', default='unspecified; executable hashes identify the supplied binaries')
+    parser.add_argument('--large-valid-only', action='store_true',
+                        help='repeat only the primary 4 MiB valid case (five process pairs)')
     args = parser.parse_args()
     binaries = [args.before.resolve(), args.after.resolve()]
     report = {
@@ -32,13 +47,9 @@ def main():
         if platform.system() == 'Darwin' else platform.processor(),
         'executables': [{'path': str(p), 'sha256': sha(p.read_bytes())} for p in binaries],
         'declared_baseline_revision': args.baseline_revision,
-        'source_hashes': {name: {
-            'before': sha(command(['git', 'show', f'{args.baseline_revision}:{name}'])),
-            'after': sha((ROOT / name).read_bytes())}
-            for name in ('crates/nitride-core/src/syntax/shared.rs', 'crates/nitride-core/src/syntax/arena.rs',
-                         'crates/nitride-codegen/src/runtime_snapshot.rs',
-                         'crates/nitride-lsp/src/analysis.rs', 'crates/nitride-lsp/examples/benchmark.rs')},
+        'source_hashes': source_hashes(args.baseline_revision, SOURCES),
         'declared_build': args.build_description,
+        'case_selection': 'large-valid-only' if args.large_valid_only else 'all',
         'definitions': 'In-process analysis, excluding registry load/debounce/stdio/GUI. One warm edit then five samples per process, always update before fresh analysis. Each update compares tree shape/edges, values and problems to fresh analysis outside timing. Alternating executable order across fresh processes; medians below are medians of process medians.',
         'complete': False, 'rows': [],
     }
@@ -46,6 +57,8 @@ def main():
         for size in (256 << 10, 4 << 20):
             base = generated(size)
             for pattern in ('valid', 'one'):
+                if args.large_valid_only and (size != 4 << 20 or pattern != 'valid'):
+                    continue
                 path = pathlib.Path(folder) / f'{size}-{pattern}.csharp4'
                 path.write_text(base if pattern == 'valid' else damaged(base, 'one'))
                 row = {'case': path.stem, 'input_sha256': sha(path.read_bytes()),
