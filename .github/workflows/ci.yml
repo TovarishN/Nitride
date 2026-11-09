@@ -73,6 +73,17 @@ jobs:
         run: |
           rustup toolchain install stable --profile minimal
           rustup override set stable
+      - uses: actions/setup-node@v7
+        if: runner.os == 'Windows'
+        with:
+          node-version: '22'
+      - name: Verify Windows editor worker cleanup and controller guards
+        if: runner.os == 'Windows'
+        working-directory: editors/vscode
+        run: |
+          npm ci
+          npm run compile
+          npm test
       - uses: Swatinem/rust-cache@v2
       - run: cargo +stable test --workspace --locked
       - name: Test native-only CLI, process bindings and LSP startup

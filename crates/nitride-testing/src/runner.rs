@@ -217,6 +217,8 @@ impl<'a> Runner<'a> {
                 }
             };
             let mut result = result;
+            result["expected_text"] = result["expected"].to_string().into();
+            result["actual_text"] = result["actual"].to_string().into();
             result["source"] = match &case.input {
                 Input::Inline { raw_span, .. } => {
                     json!({"suite":discovery.path,"raw_span":raw_span})
@@ -247,7 +249,7 @@ impl<'a> Runner<'a> {
 fn diagnostics(phase: Phase, errors: Vec<Diagnostic>) -> Result<Value, String> {
     if errors
         .iter()
-        .any(|e| matches!(e.category, "limit" | "cancelled"))
+        .any(|e| matches!(e.category, "limit" | "cancelled" | "capability"))
     {
         return Err(errors[0].message.clone());
     }

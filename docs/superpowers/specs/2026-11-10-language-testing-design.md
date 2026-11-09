@@ -107,7 +107,9 @@ list and record-field-array representation. Expected literals compare against
 that same value model. Structural order and types matter. Numeric
 comparison treats 42 and 42.0 as equal while preserving exact integer comparisons,
 including integers beyond 2^53; it must not silently round distinct integers via
-f64. No tolerance, unordered comparison or implicit expected-value update.
+f64. Plain integral expectations outside signed64/unsigned64 are rejected before
+decoding; decimal/exponent literals use binary64 precision. No tolerance,
+unordered comparison or implicit expected-value update.
 
 ## 2. Shared runner and phase behavior
 

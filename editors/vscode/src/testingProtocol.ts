@@ -34,6 +34,8 @@ export interface Result {
     message?: string;
     actual?: unknown;
     expected?: unknown;
+    expected_text?: string;
+    actual_text?: string;
 }
 export interface Report {
     version: number;
@@ -61,6 +63,9 @@ function result(value: unknown): Result {
     const r = object(value);
     if (typeof r.suite !== 'string' || typeof r.name !== 'string' || !['passed', 'failed', 'errored'].includes(String(r.status)))
         throw new Error('Invalid test result');
+    for (const field of ['message', 'expected_text', 'actual_text'])
+        if (r[field] !== undefined && typeof r[field] !== 'string')
+            throw new Error('Invalid test result text');
     return r as unknown as Result;
 }
 export function listResponse(value: unknown): {

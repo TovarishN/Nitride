@@ -34,7 +34,11 @@ all bytes, including newlines and indentation. The first `]>` closes the block;
 use a JSON-escaped quoted string or an external file to test that delimiter.
 Comments are supported outside strings and raw blocks. Arrays contain finite
 numbers, strings, booleans or nested arrays. Values compare the complete show
-result list; integer precision is preserved and 42 equals 42.0.
+result list; integer precision is preserved and 42 equals 42.0. Plain integral
+expectations must fit signed or unsigned 64-bit integer ranges; larger magnitudes are rejected
+before decoding. Decimal/exponent literals use the engine’s binary64 precision. Native reports
+include exact expected/actual JSON text for editor diffs, preserving integral
+spelling even when JavaScript cannot represent the number.
 
 Use `expect parse accept;`, `expect compile accept;`, `expect run values [...];`
 or `expect PHASE reject;`. A reject block asserts the complete ordered strict

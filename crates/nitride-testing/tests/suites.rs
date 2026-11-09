@@ -44,3 +44,16 @@ fn rejects_invalid_native_declarations_and_assertions() {
         assert!(parse_suite(&text).is_err(), "{text}");
     }
 }
+
+#[test]
+fn integral_expectations_outside_exact_json_integer_range_are_rejected() {
+    for number in ["18446744073709551617", "-9223372036854775809"] {
+        let text = format!(
+            "tests version 1 {{project \"x\";test \"precision\"{{source \"show 1;\";expect run values [{number}];}}}}"
+        );
+        assert!(
+            parse_suite(&text).is_err(),
+            "integer literal rounded: {number}"
+        );
+    }
+}

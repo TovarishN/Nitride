@@ -1,0 +1,20 @@
+const fs=require('fs'), path=require('path'), Module=require('module');
+const root=fs.mkdtempSync(path.join(require('os').tmpdir(),'nitride-controller-regression-'));
+const repo=path.resolve(__dirname,'../../..');
+const paths=['tests.ntest','nitride.nproj','fixture.calc'].map(p=>path.join(root,p));
+paths.forEach(p=>fs.writeFileSync(p,'old'));
+const canonical=paths.map(p=>fs.realpathSync(p));
+const events={change:[],open:[],close:[]};
+const event=(kind,cb)=>{events[kind].push(cb);return{dispose(){events[kind]=events[kind].filter(x=>x!==cb);}}};
+const uri=p=>({scheme:'file',fsPath:p,path:p,toString(){return 'file://'+p;}});
+class Collection { constructor(){this.map=new Map();}get(k){return this.map.get(k)}add(i){this.map.set(i.id,i)}delete(k){this.map.delete(k)}replace(items){this.map.clear();items.forEach(i=>{i.parent=this.owner;this.add(i)})}forEach(cb){this.map.forEach(cb)}}
+const calls=[];const subscriptions=[];
+const controller={items:new Collection(),createTestItem(id,label,u){const i={id,label,uri:u,children:new Collection()};i.children.owner=i;return i},createRunProfile(){},createTestRun(){return new Proxy({}, {get:(_,method)=>(...args)=>calls.push([method,args[0]?.label])})},dispose(){}};
+const workspace={workspaceFolders:[{uri:uri(root)}],textDocuments:[],isTrusted:true,findFiles:async()=>[],onDidChangeTextDocument:cb=>event('change',cb),onDidCloseTextDocument:cb=>event('close',cb),onDidOpenTextDocument:cb=>event('open',cb),createFileSystemWatcher(){return{onDidCreate(){return{dispose(){}}},onDidChange(){return{dispose(){}}},onDidDelete(){return{dispose(){}}},dispose(){}}}};
+const vscode={workspace,tests:{createTestController:()=>controller},languages:{createDiagnosticCollection:()=>({set(){},delete(){},dispose(){}})},TestRunProfileKind:{Run:1},TestMessage:class{constructor(message){this.message=message}},Uri:{file:uri}};
+let resolveStarted, resolveContinue;
+const started=new Promise(r=>resolveStarted=r), cont=new Promise(r=>resolveContinue=r);
+const workerSource=`export class SuiteRefresh {schedule(){}dispose(){}};export const nativeWorker=(...args)=>global.worker(...args);export const executeTests=(...args)=>global.execute(...args);`;
+global.worker=async()=>({text:JSON.stringify({version:1,suites:[{path:canonical[0],project:canonical[1],dependencies:canonical,tests:[{name:'test',span:[0,0],name_span:[0,0],phase:'run',source:{file:'fixture.calc'}}]}],errors:[]}),code:0});
+global.execute=async(command,suite,names,snapshot,signal,onResult)=>{resolveStarted();await cont;global.wasAborted=signal.aborted;const result={suite,name:'test',status:'passed'};onResult(result);return{errors:[],results:[result]}};
+(async()=>{await require(path.join(__dirname,'../node_modules/esbuild')).build({entryPoints:[path.join(repo,'editors/vscode/src/testing.ts')],bundle:true,platform:'node',format:'cjs',external:['vscode'],outfile:path.join(root,'controller.cjs'),plugins:[{name:'worker',setup(b){b.onResolve({filter:/testingWorker$/},()=>({path:'worker',namespace:'mock'}));b.onLoad({filter:/.*/,namespace:'mock'},()=>({contents:workerSource,loader:'ts'}))}}]});const original=Module._load;Module._load=function(id,...args){return id==='vscode'?vscode:original.call(this,id,...args)};const api=require(path.join(root,'controller.cjs')).activateTesting({subscriptions:subscriptions},'unused');const state=await api.discover(uri(paths[0]));const running=api.run({include:[state.item]},{onCancellationRequested(){return{dispose(){}}},isCancellationRequested:false});await started;let text='old';const doc={uri:uri(paths[2]),version:1,getText:()=>text};workspace.textDocuments.push(doc);events.open.forEach(cb=>cb(doc));doc.version=2;text='changed unsaved';events.change.forEach(cb=>cb({document:doc}));resolveContinue();const results=await running;console.log(JSON.stringify({aborted:global.wasAborted,results,calls}));for(const disposable of subscriptions)disposable.dispose();fs.rmSync(root,{recursive:true,force:true});})().catch(e=>{console.error(e);process.exitCode=1});

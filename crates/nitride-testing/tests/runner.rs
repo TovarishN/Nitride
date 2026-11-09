@@ -124,3 +124,54 @@ fn editor_snapshot_roots_are_enforced_before_reading_project_inputs() {
     std::fs::remove_file(outside).unwrap();
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn unavailable_compile_capability_never_satisfies_rejection() {
+    let root = std::env::temp_dir().join(format!("nitride-test-capability-{}", std::process::id()));
+    std::fs::create_dir(&root).unwrap();
+    std::fs::write(
+        root.join("nitride.nproj"),
+        "language Test {grammar Test.ngr;start Test.Start;}",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("Test.ngr"),
+        "syntax module Test {syntax Start = \"x\";}",
+    )
+    .unwrap();
+    let suite = root.join("tests.ntest");
+    std::fs::write(&suite,"tests version 1 {project \"nitride.nproj\";test \"unsupported\"{source \"x\";expect compile reject;}}").unwrap();
+    let snapshot = Snapshot::default();
+    let result = Runner::new(&snapshot).run(&suite, &[], &mut |_| {});
+    assert_eq!(result.exit_code(), 2, "{}", result.json());
+    assert_eq!(result.results[0]["status"], "errored");
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn reports_preserve_exact_expected_integer_text_for_javascript_clients() {
+    let root = std::env::temp_dir().join(format!(
+        "nitride-test-integer-report-{}",
+        std::process::id()
+    ));
+    let plan =
+        nitride_prepare::authoring::plan_language(&nitride_prepare::authoring::TemplateOptions {
+            name: "Test".into(),
+            extension: ".test".into(),
+            kind: nitride_prepare::authoring::TemplateKind::Typed,
+        })
+        .unwrap();
+    nitride_prepare::authoring::create_language(&root, &plan).unwrap();
+    let suite = root.join("tests.ntest");
+    std::fs::write(&suite,"tests version 1 {project \"nitride.nproj\";test \"exact\"{source \"show 9007199254740992;\";expect run values [9007199254740993];}}").unwrap();
+    let snapshot = Snapshot::default();
+    let result = Runner::new(&snapshot).run(&suite, &[], &mut |_| {});
+    assert_eq!(result.exit_code(), 1);
+    assert!(
+        result.results[0]["expected_text"]
+            .as_str()
+            .unwrap()
+            .contains("9007199254740993")
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}

@@ -118,8 +118,20 @@ impl Decoder<'_> {
             )),
             "StringValue" => Ok(self.string(self.field(id, "Value"))?.into()),
             "BooleanValue" => Ok(Value::Bool(self.text(id).trim() == "true")),
-            _ => serde_json::from_str(self.text(self.field(id, "Value")))
-                .map_err(|e| self.error(id, format!("invalid finite value: {e}"))),
+            _ => {
+                let text = self.text(self.field(id, "Value"));
+                if !text.contains(['.', 'e', 'E'])
+                    && text.parse::<i64>().is_err()
+                    && text.parse::<u64>().is_err()
+                {
+                    return Err(self.error(
+                        id,
+                        "integral expected value exceeds the exact signed/unsigned64 range",
+                    ));
+                }
+                serde_json::from_str(text)
+                    .map_err(|e| self.error(id, format!("invalid finite value: {e}")))
+            }
         }
     }
     fn diagnostic(&self, id: u32) -> Result<ExpectedDiagnostic, SuiteError> {

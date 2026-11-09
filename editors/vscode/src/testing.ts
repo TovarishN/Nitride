@@ -216,6 +216,30 @@ export function activateTesting(context: vscode.ExtensionContext, command: strin
                     if (!current(state.versions))
                         stale();
                 });
+                // A dependency captured from disk can become an unsaved buffer
+                // after launch. Register its revision, or invalidate changed text.
+                const opened = vscode.workspace.onDidOpenTextDocument(doc => {
+                    if (doc.uri.scheme !== 'file')
+                        return;
+                    try {
+                        const file = physicalPath(doc.uri.fsPath);
+                        if (!state.info.dependencies.some(p => physicalPath(p) === file))
+                            return;
+                        const frozen = (state.snapshot as {
+                            files: {
+                                path: string;
+                                text: string;
+                            }[];
+                        }).files.find(f => physicalPath(f.path) === file);
+                        if (!frozen || frozen.text !== doc.getText())
+                            stale();
+                        else
+                            state.versions.set(doc.uri.toString(), doc.version);
+                    }
+                    catch {
+                        stale();
+                    }
+                });
                 const closed = vscode.workspace.onDidCloseTextDocument(() => {
                     if (!current(state.versions))
                         stale();
@@ -247,8 +271,8 @@ export function activateTesting(context: vscode.ExtensionContext, command: strin
                             run.passed(item);
                         else {
                             const message = new vscode.TestMessage(result.message ?? 'Test expectation mismatch');
-                            message.expectedOutput = JSON.stringify(result.expected, null, 2);
-                            message.actualOutput = JSON.stringify(result.actual, null, 2);
+                            message.expectedOutput = result.expected_text ?? JSON.stringify(result.expected, null, 2);
+                            message.actualOutput = result.actual_text ?? JSON.stringify(result.actual, null, 2);
                             try {
                                 const test = state.info.tests.find(t => t.name === result.name)!;
                                 const actual = result.actual as {
@@ -285,6 +309,11 @@ export function activateTesting(context: vscode.ExtensionContext, command: strin
                                 run.errored(item, message);
                         }
                     }));
+                    if (abort.signal.aborted) {
+                        for (const [name, item] of items)
+                            if (!seen.has(name))
+                                run.skipped(item);
+                    }
                     if (report.errors.length)
                         run.errored(suiteItem, new vscode.TestMessage(report.errors.map(e => e.message).join('\n')));
                     if (report.errors.length)
@@ -307,6 +336,7 @@ export function activateTesting(context: vscode.ExtensionContext, command: strin
                 finally {
                     changed.dispose();
                     closed.dispose();
+                    opened.dispose();
                     disk.dispose();
                     diskChanges.forEach(d => d.dispose());
                 }

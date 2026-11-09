@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { EventStream, Report, Result } from './testingProtocol';
-const LIMIT = 32 * 1024 * 1024;
+const LIMIT = 64 * 1024 * 1024 + 65536;
 /** One bounded, cancellable native worker. Arguments never pass through a shell. */
 export function nativeWorker(command: string, args: string[], snapshot: unknown, signal: AbortSignal, onLine?: (value: unknown) => void): Promise<{
     text: string;
@@ -22,7 +22,7 @@ export function nativeWorker(command: string, args: string[], snapshot: unknown,
         child.stdout.on('data', (chunk: string) => {
             size += Buffer.byteLength(chunk);
             if (size > LIMIT) {
-                failure = new Error('Test output exceeds32 MiB');
+                failure = new Error('Test output exceeds64 MiB');
                 stop();
                 return;
             }
@@ -85,8 +85,15 @@ export async function executeTests(command: string, suite: string, names: string
 export class SuiteRefresh {
     private timers = new Map<string, ReturnType<typeof setTimeout>>();
     constructor(private delay = 150) { }
-    schedule(key: string, work: () => void): void { const previous = this.timers.get(key); if (previous)
-        clearTimeout(previous); this.timers.set(key, setTimeout(() => { this.timers.delete(key); work(); }, this.delay)); }
-    dispose(): void { for (const timer of this.timers.values())
-        clearTimeout(timer); this.timers.clear(); }
+    schedule(key: string, work: () => void): void {
+        const previous = this.timers.get(key);
+        if (previous)
+            clearTimeout(previous);
+        this.timers.set(key, setTimeout(() => { this.timers.delete(key); work(); }, this.delay));
+    }
+    dispose(): void {
+        for (const timer of this.timers.values())
+            clearTimeout(timer);
+        this.timers.clear();
+    }
 }
