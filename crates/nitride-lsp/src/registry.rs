@@ -184,6 +184,7 @@ impl Registry {
         let sidecar = folder.join(format!("{stem}.ncatalog"));
         let catalogs: Vec<_> = sidecar.exists().then_some(sidecar).into_iter().collect();
         let entry = Entry {
+            libraries: vec![],
             trivia: nitride_core::TriviaPolicy::Nitrogen,
             name: declaration.name.clone(),
             extensions: declaration.extensions.clone(),
@@ -344,6 +345,40 @@ impl Registry {
             set.push(path.to_owned());
         }
         set
+    }
+
+    /// An ambiguous physical input has no selected library context for edits/navigation.
+    pub fn libraries_at(&self, path: &Path) -> Vec<nitride_prepare::ResolvedLibrary> {
+        let mut users = self.using_grammar(path).chain(self.using_catalog(path));
+        let Some(first) = users.next() else {
+            return Vec::new();
+        };
+        let identity = |l: &LanguageState| {
+            l.entry
+                .libraries
+                .iter()
+                .map(|r| (r.name.clone(), r.version.clone()))
+                .collect::<Vec<_>>()
+        };
+        if users.any(|other| identity(other) != identity(first)) {
+            return Vec::new();
+        }
+        let source = Source {
+            path: first.manifest.display().to_string(),
+            text: std::fs::read_to_string(&first.manifest).unwrap_or_default(),
+        };
+        let references = first
+            .entry
+            .libraries
+            .iter()
+            .map(|r| nitride_prepare::LibraryReference {
+                span: [0, 0],
+                name_span: [0, 0],
+                version_span: [0, 0],
+                ..r.clone()
+            })
+            .collect::<Vec<_>>();
+        nitride_prepare::resolve_libraries(&source, &references).unwrap_or_default()
     }
 
     /// Languages whose grammars include `path`.
@@ -595,7 +630,18 @@ pub(crate) fn prepare(
         project: true,
         code: None,
     };
-    let mut sources = Vec::new();
+    let project = Source {
+        path: manifest.display().to_string(),
+        text: read(manifest, open).unwrap_or_default(),
+    };
+    let libraries = match nitride_prepare::resolve_libraries(&project, &state.entry.libraries) {
+        Ok(libraries) => libraries,
+        Err(errors) => {
+            state.errors = errors;
+            return state;
+        }
+    };
+    let mut sources = nitride_prepare::library_sources(&libraries);
     for grammar in &state.entry.grammars {
         match read(grammar, open) {
             Ok(text) => sources.push(Source {
@@ -636,6 +682,9 @@ pub(crate) fn prepare(
         })
         .collect();
     let mut hasher = DefaultHasher::new();
+    nitride_prepare::library_metadata(&libraries)
+        .to_string()
+        .hash(&mut hasher);
     for source in sources.iter().chain(&catalogs).chain(&bindings) {
         source.text.hash(&mut hasher);
     }
@@ -665,6 +714,7 @@ pub(crate) fn prepare(
     match prepared {
         Ok(mut prepared) => {
             nitride_prepare::apply_trivia(&mut prepared.data, state.entry.trivia);
+            nitride_prepare::apply_libraries(&mut prepared.data, &libraries);
             match LoadedLanguage::load(&prepared.data.to_string()) {
                 Ok(language) => {
                     state.warnings = prepared.warnings.clone();
@@ -721,6 +771,7 @@ mod input_classification_tests {
             2
         ));
         let entry = Entry {
+            libraries: vec![],
             name: "Test".into(),
             extensions: vec![".test".into()],
             grammars: vec!["/virtual/grammar.json".into()],

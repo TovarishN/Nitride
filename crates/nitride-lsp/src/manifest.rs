@@ -15,6 +15,7 @@ pub struct Entry {
     pub name: String,
     pub extensions: Vec<String>,
     pub grammars: Vec<PathBuf>,
+    pub libraries: Vec<nitride_prepare::LibraryReference>,
     pub start: String,
     /// The `.ncatalog` files of a typed language, in merge order.
     pub catalogs: Vec<PathBuf>,
@@ -140,6 +141,7 @@ fn entry(language: ProjectLanguage) -> Entry {
         name: language.name,
         extensions: language.extensions,
         grammars: language.grammars,
+        libraries: language.libraries,
         start: language.start,
         start_span: Some(language.start_span.map(|v| v as u32)),
         catalogs: language.catalogs,
@@ -186,6 +188,7 @@ fn nitrogen(text: &str, folder: &Path) -> Parsed {
                 .map(|g| folder.join(g))
                 .collect(),
             start: string("start")?,
+            libraries: vec![],
             catalogs: vec![],
             bindings: vec![],
             mode: Mode::Syntax,

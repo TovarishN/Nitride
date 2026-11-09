@@ -82,7 +82,10 @@ pub fn items(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
     let mut names: Vec<Value> = Vec::new();
     if let Some(GrammarAt { index, file }) = grammar {
         // Grammars name rules; catalogs also name their own members.
-        let catalog = crate::grammar_index::is_catalog(&index.files[file].path);
+        let catalog = index.files[file]
+            .path
+            .as_deref()
+            .is_some_and(crate::grammar_index::is_catalog);
         for rule in index.definitions().iter().filter(|d| {
             crate::grammar_index::DEFINING.contains(&d.item.kind)
                 || catalog && matches!(d.item.kind, "type" | "operation" | "overload")
@@ -92,7 +95,12 @@ pub fn items(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
                 "function" | "helper" | "operation" | "overload" => FUNCTION,
                 _ => CLASS,
             };
-            names.push(item(&rule.item.name, kind, Some(&rule.module)));
+            let label = if typed.contains('.') {
+                format!("{}.{}", rule.module, rule.item.name)
+            } else {
+                rule.item.name.clone()
+            };
+            names.push(item(&label, kind, Some(&rule.module)));
         }
     } else {
         for definition in analysis

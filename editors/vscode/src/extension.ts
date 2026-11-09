@@ -38,6 +38,7 @@ export async function activate(context: ExtensionContext): Promise<void> {
   });
   const selector: DocumentSelector = [
     { scheme: 'file', language: 'ngr' },
+    { scheme: 'nitride-lib', language: 'ngr' },
     { scheme: 'file', language: 'ncatalog' },
     { scheme: 'file', language: 'nbind' },
     { scheme: 'file', language: 'nproj' },
@@ -53,10 +54,19 @@ export async function activate(context: ExtensionContext): Promise<void> {
     documentSelector: selector,
     synchronize: { fileEvents: watcher },
     // Colour with the theme's TextMate palette (contributes.semanticTokenScopes).
-    initializationOptions: { paletteTokens: true },
+    initializationOptions: { paletteTokens: true, libraryDocuments: true },
   };
   client = new LanguageClient('nitride', 'Nitride', server, options);
   await client.start();
+  context.subscriptions.push(workspace.registerTextDocumentContentProvider('nitride-lib', {
+    provideTextDocumentContent: async uri => {
+      if (!client) throw new Error('Nitride server is unavailable');
+      return client.sendRequest<string>('nitride/librarySource', { uri: uri.toString() });
+    },
+  }));
+  context.subscriptions.push(workspace.onDidOpenTextDocument(document => {
+    if (document.uri.scheme === 'nitride-lib' && document.languageId !== 'ngr') void languages.setTextDocumentLanguage(document, 'ngr');
+  }));
   // A signed grammar (`#!nitrogen grammar`) is a grammar whatever its name, and a program with a
   // `#!nitrogen language` header belongs to Nitride: give each its language, so only these documents
   // (not every file) reach the server. The header is in the leading trivia: the first lines suffice.

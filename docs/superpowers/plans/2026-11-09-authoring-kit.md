@@ -45,12 +45,12 @@ Interfaces: LibraryReference {name,version,span,name_span,version_span}; Resolve
 ### Task3: Editor resolution and read-only inspection
 Files: LSP manifest.rs, registry.rs, grammar_index.rs, analysis.rs, navigation.rs, completion.rs, server.rs, uri.rs; create library_documents.rs and tests/libraries.rs; VS Code extension.ts and library document provider/helper tests.
 Interfaces: explicit origin for index sources (physical path or bundled library identity); GrammarFile keeps URI plus optional physical path/read-only metadata. `nitride/librarySource {uri}` returns canonical content only. Initialization option libraryDocuments enables virtual navigation. Entry carries pins; registry uses Task2 resolver and library identities in fingerprints.
-- [ ] RED registry tests for selected token use and bad pins preserving visible errors/last-good policy; injected two-version registry tests for isolated projects, equal-text identity changes and retained old readers.
-- [ ] Load bundled sources through the shared resolver; never route their URIs through canonical filesystem paths/watch inputs. Include library identity/version/hash in cache keys.
-- [ ] Add scoped grammar indexing/completion/hover/definitions; respect selected project pins. Where one physical input has ambiguous owning pins, do not silently select a version or offer edits; return the valid definition alternatives or explicit unresolved context.
-- [ ] RED protocol tests for exact read-only source retrieval, unsupported/malformed URIs, virtual changes, rename/format/action rejection (also from a local reference), and a client without virtual-source capability.
-- [ ] Implement content request and VS Code read-only provider; preserve normal grammar coloring/outline/navigation and ordinary file behavior. Keep library exports out of indiscriminate workspace-symbol flooding.
-- [ ] Run focused LSP/extension suites and bootstrap fixed point; commit editor library support.
+- [x] RED registry tests for selected token use and bad pins preserving visible errors/last-good policy; resolver-injected equal-text version fingerprint test (Task2), ambiguous-owner context rejection and retained old reader tests.
+- [x] Load bundled sources through the shared resolver; never route their URIs through canonical filesystem paths/watch inputs. Include library identity/version/hash in cache keys.
+- [x] Add scoped grammar indexing/completion/hover/definitions; respect selected project pins. Where one physical input has ambiguous owning pins, do not silently select a version or offer edits; return the valid definition alternatives or explicit unresolved context.
+- [x] RED protocol tests for exact read-only source retrieval, unsupported/malformed URIs, virtual changes, rename/format/action rejection (also from a local reference), and a client without virtual-source capability.
+- [x] Implement content request and VS Code read-only provider; preserve normal grammar coloring/outline/navigation and ordinary file behavior. Keep library exports out of indiscriminate workspace-symbol flooding.
+- [x] Run focused LSP/extension suites and bootstrap fixed point; commit editor library support.
 
 ### Task4: Shared templates and exclusive creation
 Files: create prepare/src/authoring.rs plus authoring/{templates,execute}.rs and tests/authoring.rs; CLI authoring command/tests; LSP authoring command handler; VS Code commands/new-language helper, package.json command contribution and tests.
