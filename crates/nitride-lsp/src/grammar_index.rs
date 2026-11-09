@@ -4,7 +4,8 @@ use nitride_prepare::{GrammarItem, GrammarLocal, GrammarReference, HostHandler, 
 use std::path::{Path, PathBuf};
 
 pub struct GrammarFile {
-    pub path: PathBuf,
+    pub path: Option<PathBuf>,
+    pub library: Option<(String, String)>,
     /// The URI to report: the open document's, else the normalized path's.
     pub uri: String,
     /// The file does not parse as written; its structure comes from its
@@ -121,7 +122,8 @@ pub fn build(
             } else {
                 vec![]
             },
-            path: path.clone(),
+            path: Some(path.clone()),
+            library: None,
             text: source.text,
             outline,
             references,
@@ -166,10 +168,38 @@ fn definitions(files: &[GrammarFile]) -> Vec<RuleDef> {
 }
 
 impl GrammarIndex {
+    pub fn add_libraries(&mut self, libraries: &[nitride_prepare::ResolvedLibrary]) {
+        for library in libraries {
+            for source in library.sources {
+                if self.files.iter().any(|f| f.uri == source.uri) {
+                    continue;
+                }
+                let input = Source {
+                    path: source.uri.into(),
+                    text: source.text.into(),
+                };
+                self.files.push(GrammarFile {
+                    path: None,
+                    library: Some((library.name.into(), library.version.into())),
+                    uri: source.uri.into(),
+                    damaged: false,
+                    text: source.text.into(),
+                    outline: nitride_prepare::grammar_outline(&input).unwrap_or_default(),
+                    references: nitride_prepare::grammar_references(&input).unwrap_or_default(),
+                    locals: nitride_prepare::grammar_locals(&input).unwrap_or_default(),
+                    handlers: vec![],
+                });
+            }
+        }
+        self.definitions = definitions(&self.files);
+    }
+
     pub fn file(&self, path: &Path) -> Option<usize> {
-        self.files
-            .iter()
-            .position(|f| crate::registry::same_file(&f.path, path))
+        self.files.iter().position(|f| {
+            f.path
+                .as_ref()
+                .is_some_and(|p| crate::registry::same_file(p, path))
+        })
     }
 
     pub fn definitions(&self) -> &[RuleDef] {

@@ -42,7 +42,7 @@
           ]
         },
         {
-          "begin": "\\b(include|extensions|grammar|start|catalog|binding|trivia|namespace|source)\\b",
+          "begin": "\\b(include|extensions|grammar|start|catalog|binding|trivia|namespace|source|library|version)\\b",
           "beginCaptures": {
             "1": {
               "name": "keyword.other.nproj"

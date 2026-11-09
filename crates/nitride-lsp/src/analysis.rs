@@ -816,3 +816,23 @@ fn standalone(source: &Source) -> Result<Vec<PrepareError>, Vec<PrepareError>> {
     )
     .map(|p| p.warnings)
 }
+
+/// Canonical embedded grammar inspection, with no physical source ownership.
+pub fn library(uri: &str, text: &str) -> Analysis {
+    let parsed = parse_recovering(
+        nitride_prepare::grammar_language(),
+        text,
+        Limits::default(),
+        RecoveryOptions::default(),
+    );
+    let source = Source {
+        path: uri.into(),
+        text: text.into(),
+    };
+    Analysis {
+        tree: Some(Tree::new(Grammar::Frontend, &parsed.tree)),
+        outline: nitride_prepare::grammar_outline(&source).unwrap_or_default(),
+        roles: frontend_roles(),
+        ..empty(text)
+    }
+}

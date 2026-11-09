@@ -5,16 +5,23 @@ mod grammar_seed;
 mod catalog_seed;
 #[rustfmt::skip]
 mod binding_seed;
+pub mod authoring;
 mod binding;
 mod catalog;
 mod functions;
+mod libraries;
 mod literal;
 mod normalize;
 mod nproj;
 mod parser;
 mod project;
+pub use libraries::{
+    LibraryReference, ResolvedLibrary, apply_libraries, library_metadata, library_sources,
+    resolve_libraries,
+};
 #[rustfmt::skip]
 mod project_seed;
+pub use nitride_stdlib as stdlib;
 pub use nproj::{
     NitrogenSection, ProjectLanguage, ProjectReference, ProjectWorkspace, read_language,
     read_workspace, snapshot,

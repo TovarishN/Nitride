@@ -28,7 +28,7 @@ fn extend_target_resolves_across_files() {
     let (index, portable, _) = power_set();
     let at = offset_of(&index, 1, "Portable.Expr", 0) + 10;
     let rule = index.at(1, at).unwrap();
-    assert_eq!(index.files[rule.file].path, portable);
+    assert_eq!(index.files[rule.file].path, Some(portable));
     assert_eq!(
         (
             rule.module.as_str(),

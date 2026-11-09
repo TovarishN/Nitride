@@ -3,6 +3,7 @@
 import json
 from pathlib import Path
 import subprocess
+import tempfile
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -80,6 +81,19 @@ def lsp(binary, env):
 
 def train(binary, env):
     invoke(binary, ['--version'], env)
+    manifest = json.loads(invoke(binary, ['library', 'list', '--json'], env))
+    expected = json.loads((ROOT / 'crates/nitride-stdlib/libraries/manifest.json').read_text())
+    if manifest != expected:
+        raise RuntimeError('native bundled library manifest mismatch')
+    source = invoke(binary, ['library', 'show', 'Nitride.Lexical@1.0.0'], env)
+    if source != (ROOT / 'crates/nitride-stdlib/libraries/Nitride.Lexical/1.0.0/Lexical.ngr').read_bytes():
+        raise RuntimeError('native bundled library source mismatch')
+    with tempfile.TemporaryDirectory(prefix='nitride-authoring-') as directory:
+        target = Path(directory) / 'Calculator'
+        invoke(binary, ['new', 'language', 'Calculator', '--directory', str(target), '--extension', '.calc'], env)
+        result = json.loads(invoke(binary, ['run', str(target / 'nitride.nproj'), str(target / 'sample.calc')], env))
+        if result.get('ok') is not True or result.get('values') != [42]:
+            raise RuntimeError(f'typed starter did not evaluate to42: {result}')
     for profile in ['portable', 'power', 'composition', 'xml', 'namespaces', 'inference',
                     'calls', 'functions', 'dates', 'rewrites', 'csharp4', 'grammar']:
         invoke(binary, ['prepare', f'languages/{profile}/project.json'], env)

@@ -1,0 +1,126 @@
+{
+  "AsciiIdentifierStart": {
+    "valid": [
+      "a",
+      "Z",
+      "_"
+    ],
+    "invalid": [
+      "",
+      "ab",
+      "3",
+      "\u03bb"
+    ]
+  },
+  "AsciiIdentifierContinue": {
+    "valid": [
+      "a",
+      "_",
+      "9"
+    ],
+    "invalid": [
+      "",
+      "ab",
+      "-",
+      "\u03bb"
+    ]
+  },
+  "AsciiIdentifier": {
+    "valid": [
+      "a",
+      "_hello",
+      "A42"
+    ],
+    "invalid": [
+      "",
+      "9a",
+      "a-b",
+      "\u03bb"
+    ]
+  },
+  "Digit": {
+    "valid": [
+      "0",
+      "9"
+    ],
+    "invalid": [
+      "",
+      "10",
+      "a",
+      "\u0661"
+    ]
+  },
+  "HexDigit": {
+    "valid": [
+      "0",
+      "a",
+      "F"
+    ],
+    "invalid": [
+      "",
+      "10",
+      "g",
+      "\u03bb"
+    ]
+  },
+  "UnsignedInteger": {
+    "valid": [
+      "0",
+      "007",
+      "42"
+    ],
+    "invalid": [
+      "",
+      "-1",
+      "1.0",
+      "1e2",
+      "1 2",
+      "1/*x*/2"
+    ]
+  },
+  "UnsignedDecimal": {
+    "valid": [
+      "0",
+      "007.50",
+      "42.1"
+    ],
+    "invalid": [
+      "",
+      "-1",
+      ".5",
+      "1.",
+      "1e2",
+      "1. 2"
+    ]
+  },
+  "HexInteger": {
+    "valid": [
+      "0x1",
+      "0XA",
+      "0xff"
+    ],
+    "invalid": [
+      "",
+      "ff",
+      "0x",
+      "0xG",
+      "-0x1"
+    ]
+  },
+  "JsonString": {
+    "valid": [
+      "\"\"",
+      "\"hello\\nworld\"",
+      "\"\u03bb\"",
+      "\"\\uD800\"",
+      "\"\\u001f\""
+    ],
+    "invalid": [
+      "\"\\x41\"",
+      "\"a\nb\"",
+      "\"\\uZZZZ\"",
+      "\"open",
+      "\"\u0000\""
+    ]
+  }
+}

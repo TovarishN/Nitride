@@ -1,0 +1,13 @@
+// Nitride.Lexical 1.0.0. Policy-specific lexical rules; no global trivia or keywords.
+syntax module Nitride.Lexical
+{
+  token AsciiIdentifierStart = ['a'..'z' 'A'..'Z' '_'];
+  token AsciiIdentifierContinue = ['a'..'z' 'A'..'Z' '0'..'9' '_'];
+  token AsciiIdentifier = AsciiIdentifierStart AsciiIdentifierContinue*;
+  token Digit = ['0'..'9'];
+  token HexDigit = ['0'..'9' 'a'..'f' 'A'..'F'];
+  token UnsignedInteger = Digit+;
+  token UnsignedDecimal = UnsignedInteger ("." Digit+)?;
+  token HexInteger = ("0x" / "0X") HexDigit+;
+  token JsonString = "\"" ([^ '"' '\\' '\u0000'..'\u001f'] / "\\" (['"' '\\' '/' 'b' 'f' 'n' 'r' 't'] / "u" HexDigit HexDigit HexDigit HexDigit))* "\"";
+}

@@ -64,6 +64,11 @@ pub fn hover(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
         }
         return match rule_at(index, file, offset) {
             Some((rule, span)) => {
+                let origin = index.files[rule.file]
+                    .library
+                    .as_ref()
+                    .map(|(name, version)| format!("\n\nBundled `{name}@{version}` (read-only)"))
+                    .unwrap_or_default();
                 let text = &index.files[rule.file].text;
                 let start = rule.item.span[0];
                 let line = text[start..].lines().next().unwrap_or_default().trim();
@@ -74,7 +79,7 @@ pub fn hover(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
                 };
                 json!({
                     "contents": {"kind": "markdown", "value": format!(
-                        "```ngr\n{line}\n```\n*{}* `{name}`", rule_word(rule.item.kind))},
+                        "```ngr\n{line}\n```\n*{}* `{name}`", rule_word(rule.item.kind)) + &origin},
                     "range": range(&analysis.lines, span),
                 })
             }
@@ -275,6 +280,12 @@ pub fn prepare_rename(
         return Ok(Value::Null);
     }
     if let Some(GrammarAt { index, file }) = grammar {
+        if index.files[file].library.is_some()
+            || rule_at(index, file, offset)
+                .is_some_and(|(rule, _)| index.files[rule.file].library.is_some())
+        {
+            return Err(refuse("bundled library definitions are read-only"));
+        }
         if let Some((local, span)) = index.local_at(file, offset) {
             return Ok(json!({"range": range(&analysis.lines, span), "placeholder": local.name}));
         }
@@ -377,7 +388,7 @@ pub fn rename(
             .files
             .iter()
             .filter(|f| f.damaged)
-            .map(|f| &f.path)
+            .filter_map(|f| f.path.as_ref())
             .chain(&index.unreadable)
             .next();
         if let Some(path) = blocked {
@@ -428,7 +439,7 @@ pub fn workspace_symbols<'a>(
     for rule in grammars
         .definitions()
         .iter()
-        .filter(|r| matches(&r.item.name, query))
+        .filter(|r| grammars.files[r.file].library.is_none() && matches(&r.item.name, query))
     {
         let kind = match rule.item.kind {
             "module" | "catalog" => 2,
