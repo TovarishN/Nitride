@@ -55,6 +55,9 @@ exports.run = async function () {
     };
     await until(() => symbol(one, 'one'), 'initial source symbols');
     report.source_open_to_features_ms = performance.now() - opening;
+    const launched = Number(process.env.NITRIDE_ACCEPTANCE_LAUNCH_EPOCH_MS);
+    assert(Number.isFinite(launched) && launched > 0 && Date.now() >= launched);
+    report.host_launch_to_source_features_ms = Date.now() - launched;
     report.checks.push('initial feature provider sees prepared source');
     // A unique unresolved name prevents an old diagnostic satisfying a new edit.
     for (let i = 0; i < 5; i++) {
@@ -64,6 +67,20 @@ exports.run = async function () {
       await until(() => has(one, marker), marker);
       report.samples.push({ case: 'edit-to-current-diagnostic', ms: performance.now() - start });
     }
+    const editor = await vscode.window.showTextDocument(one);
+    editor.selection = new vscode.Selection(one.positionAt(0), one.positionAt(one.getText().length));
+    const typed = performance.now();
+    await vscode.commands.executeCommand('type', { text: 'missing_typed_editor;\n' });
+    await until(() => has(one, 'missing_typed_editor'), 'editor typing diagnostic');
+    report.samples.push({ case: 'editor-type-to-current-diagnostic', ms: performance.now() - typed });
+    editor.selection = new vscode.Selection(one.positionAt(0), one.positionAt(one.getText().length));
+    await vscode.commands.executeCommand('type', { text: 'let typed : Scalar = 1;\ntyped;\n' });
+    await until(async () => await symbol(one, 'typed') && diagnostics(one).length === 0, 'typed valid source');
+    await replace(one, 'let broken : Scalar = ;\n');
+    await until(() => diagnostics(one).length > 0, 'malformed typed source diagnostic');
+    await replace(one, 'let recovered : Scalar = 1;\nrecovered;\n');
+    await until(async () => await symbol(one, 'recovered') && diagnostics(one).length === 0, 'typed source recovers');
+    report.checks.push('editor type command updates diagnostics and malformed source recovers');
     await replace(one, 'missing_independent;\n');
     const start = performance.now();
     // Keep B changing beyond A's debounce period, then inspect A before stopping.
@@ -90,6 +107,56 @@ exports.run = async function () {
     await until(async () => await symbol(one, 'restored') && diagnostics(one).length === 0, 'grammar restored');
     report.samples.push({ case: 'grammar-restore-to-source-features', ms: performance.now() - restore });
     report.checks.push('unsaved grammar change reloads dependent source and restores');
+    if (process.env.NITRIDE_ACCEPTANCE_LARGE) {
+      const opening = performance.now();
+      let large = await vscode.workspace.openTextDocument(process.env.NITRIDE_ACCEPTANCE_LARGE);
+      await until(() => vscode.workspace.textDocuments.some(current =>
+        current.uri.toString() === large.uri.toString() && current.languageId === 'nitride-signed'),
+      'large document routing');
+      large = await vscode.workspace.openTextDocument(large.uri);
+      await vscode.window.showTextDocument(large);
+      const folds = () => vscode.commands.executeCommand('vscode.executeFoldingRangeProvider', large.uri);
+      const ready = async expected => {
+        const ranges = await folds();
+        report.large_fold_count = ranges?.length ?? 0;
+        report.large_first_folds = ranges?.slice(0, 6).map(range => ({ start: range.start, end: range.end }));
+        // VS Code applies its default 5,000-region cap even to the provider
+        // command. Keep the final freshness probe early, within that cap.
+        const found = expected ? ranges?.some(range => range.start === expected.start && range.end === expected.end)
+          : ranges?.length > 0;
+        return found && diagnostics(large).length === 0;
+      };
+      await until(ready, 'large source features and valid diagnostics');
+      report.samples.push({ case: 'large-open-to-current-features', ms: performance.now() - opening });
+      const at = large.getText().lastIndexOf(';');
+      assert(at > 0 && large.getText()[at - 1] === '1');
+      const remove = new vscode.WorkspaceEdit();
+      remove.delete(large.uri, new vscode.Range(large.positionAt(at), large.positionAt(at + 1)));
+      const broken = performance.now();
+      assert.equal(await vscode.workspace.applyEdit(remove), true);
+      await until(async () => { await folds(); return diagnostics(large).length > 0; }, 'large missing-semicolon diagnostic');
+      report.samples.push({ case: 'large-edit-to-recovery-diagnostic', ms: performance.now() - broken });
+      const restore = new vscode.WorkspaceEdit();
+      restore.insert(large.uri, large.positionAt(at), ';');
+      const restored = performance.now();
+      assert.equal(await vscode.workspace.applyEdit(restore), true);
+      await until(ready, 'large source restored');
+      report.samples.push({ case: 'large-restore-to-current-features', ms: performance.now() - restored });
+      for (let i = 0; i < 8; i++) {
+        const edit = new vscode.WorkspaceEdit();
+        edit.replace(large.uri, new vscode.Range(large.positionAt(at - 1), large.positionAt(at)), String(2 + i % 2));
+        assert.equal(await vscode.workspace.applyEdit(edit), true);
+      }
+      assert(!(await folds()).some(range => range.start === 1 && range.end === 3), 'final marker fold is absent before edit');
+      const final = new vscode.WorkspaceEdit();
+      final.insert(large.uri, large.positionAt(0), '\n// LatestLarge revision\n// freshness marker\n// checkpoint\n');
+      const settled = performance.now();
+      assert.equal(await vscode.workspace.applyEdit(final), true);
+      await until(() => ready({ start: 1, end: 3 }), 'large latest revision has the new leading comment fold');
+      report.samples.push({ case: 'large-final-edit-to-current-features', ms: performance.now() - settled });
+      report.large_latest_document_version = large.version;
+      report.checks.push('4 MiB source opens, recovers, restores and rapid edits expose the final new leading fold');
+    }
     report.complete = true;
   } catch (error) {
     report.error = error.stack || String(error);

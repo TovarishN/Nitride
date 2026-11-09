@@ -8,6 +8,7 @@ import shutil
 import signal
 import subprocess
 import tempfile
+import time
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -32,7 +33,9 @@ def extract(vsix, destination):
     return extension
 
 
-def fixture(root, repository_languages=False):
+def fixture(root, repository_languages=False, large_document=False):
+    if large_document and not repository_languages:
+        raise ValueError('large document requires repository languages')
     workspace = root / 'workspace'
     if repository_languages:
         shutil.copytree(ROOT / 'languages', workspace / 'languages')
@@ -42,6 +45,16 @@ def fixture(root, repository_languages=False):
         (workspace / 'nitride.nproj').write_text('workspace { include portable; }\n')
     for name in ['one', 'two']:
         (workspace / f'{name}.portable').write_text(f'let {name} : Scalar = 1;\n{name};\n')
+    if large_document:
+        blocks, size, index = [], 0, 0
+        while size < 4 << 20:
+            block = (f'namespace N{index} {{\nclass C{index} {{\n'
+                     f'int Value = {index};\nint Compute(int x) {{ return x + Value; }}\n}}\n}}\n')
+            blocks.append(block)
+            size += len(block)
+            index += 1
+        blocks.append('class AcceptanceTail {\nint Value = 1;\n}\n')
+        (workspace / 'large.csharp4').write_text(''.join(blocks))
     return workspace
 
 
@@ -73,6 +86,8 @@ def main():
     parser.add_argument('--output', type=Path, required=True)
     parser.add_argument('--repository-languages', action='store_true',
                         help='load all repository languages instead of only Portable')
+    parser.add_argument('--large-document', action='store_true',
+                        help='also exercise a 4 MiB C# document; requires --repository-languages')
     parser.add_argument('--trace', action='store_true', help='enable language-client protocol logging')
     args = parser.parse_args()
     report = {'complete': False,
@@ -97,11 +112,18 @@ def run(args, report):
     with tempfile.TemporaryDirectory(prefix='nre-') as directory:
         root = Path(directory)
         extension = extract(args.vsix, root / 'unpacked')
-        workspace = fixture(root, args.repository_languages)
+        workspace = fixture(root, args.repository_languages, args.large_document)
         report['workspace'] = 'repository-languages' if args.repository_languages else 'portable-only'
         report['release'] = json.loads((extension / 'server/release.json').read_text())
         server = extension / 'server' / ('nitride.exe' if os.name == 'nt' else 'nitride')
         report['bundled_server_sha256'] = hashlib.sha256(server.read_bytes()).hexdigest()
+        report['harness_sha256'] = {
+            'python': hashlib.sha256(Path(__file__).read_bytes()).hexdigest(),
+            'extension_host': hashlib.sha256((ROOT / 'editors/vscode/acceptance.cjs').read_bytes()).hexdigest(),
+        }
+        if args.large_document:
+            source = (workspace / 'large.csharp4').read_bytes()
+            report['large_document'] = {'bytes': len(source), 'sha256': hashlib.sha256(source).hexdigest()}
         result = root / 'result.json'
         env = os.environ.copy()
         env.pop('ELECTRON_RUN_AS_NODE', None)
@@ -109,6 +131,10 @@ def run(args, report):
         env['NITRIDE_ACCEPTANCE_EXTENSION'] = str(extension)
         env['NITRIDE_ACCEPTANCE_GRAMMAR'] = str(workspace / (
             'languages/portable/Portable.ngr' if args.repository_languages else 'portable/Portable.ngr'))
+        if args.large_document:
+            env['NITRIDE_ACCEPTANCE_LARGE'] = str(workspace / 'large.csharp4')
+        else:
+            env.pop('NITRIDE_ACCEPTANCE_LARGE', None)
         settings = root / 'user/User/settings.json'
         settings.parent.mkdir(parents=True)
         settings.write_text(json.dumps({'telemetry.telemetryLevel': 'off', 'update.mode': 'none',
@@ -119,6 +145,7 @@ def run(args, report):
                    '--skip-welcome', '--skip-release-notes', '--disable-workspace-trust',
                    '--extensionDevelopmentPath=' + str(extension),
                    '--extensionTestsPath=' + str(ROOT / 'editors/vscode/acceptance.cjs'), str(workspace)]
+        env['NITRIDE_ACCEPTANCE_LAUNCH_EPOCH_MS'] = str(time.time_ns() // 1_000_000)
         log, returncode = run_host(command, env)
         if result.exists():
             report.update(json.loads(result.read_text()))

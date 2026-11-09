@@ -1,0 +1,113 @@
+{
+  "complete": true,
+  "metric": "VS Code extension-host API observations, not painted-frame or visual acceptance",
+  "vsix_sha256": "b60153410cab4eea1e67c1616edfdbd1529e7d79b848ec67d075d73179f3aaad",
+  "code": "/Applications/Visual Studio Code.app/Contents/MacOS/Code",
+  "workspace": "portable-only",
+  "release": {
+    "version": "0.4.0",
+    "platform": "darwin-arm64",
+    "target": "aarch64-apple-darwin",
+    "commit": "6c9066759540f358e6fc000ccf56e9c823e90c7c",
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1",
+    "source_dirty": false,
+    "wasmtime": false,
+    "variants": {
+      "baseline": {
+        "rustflags": [
+          "-Copt-level=3",
+          "-Ccodegen-units=1",
+          "-Clto=fat",
+          "-Ctarget-cpu=apple-m1"
+        ],
+        "pgo": true,
+        "bolt": false,
+        "profile_sha256": "a200c66b2acb624dabf0dc4fe2ca2b8c3296a61b1c1d343aa562096a28f668af"
+      }
+    }
+  },
+  "bundled_server_sha256": "1e065ae81195333031d1d372370f1d8d96920b08af0fc04b57520f588dc7f8b3",
+  "harness_sha256": {
+    "python": "8578c366778def7d387ab4f51e06188a67de382f92d9a8074652d12942bfde66",
+    "extension_host": "2c30d655ae1b9d31d54dccc0002bac8345c2ab6b5680fc08b4a9ce4c0484e847"
+  },
+  "samples": [
+    {
+      "case": "edit-to-current-diagnostic",
+      "ms": 47.73595799999998
+    },
+    {
+      "case": "edit-to-current-diagnostic",
+      "ms": 34.32054100000005
+    },
+    {
+      "case": "edit-to-current-diagnostic",
+      "ms": 49.40658300000007
+    },
+    {
+      "case": "edit-to-current-diagnostic",
+      "ms": 45.61158399999999
+    },
+    {
+      "case": "edit-to-current-diagnostic",
+      "ms": 66.22862499999997
+    },
+    {
+      "case": "editor-type-to-current-diagnostic",
+      "ms": 55.014958999999976
+    },
+    {
+      "case": "cross-document-checkpoint",
+      "ms": 666.952667
+    },
+    {
+      "case": "grammar-change-to-dependent-diagnostic",
+      "ms": 41.70795900000007
+    },
+    {
+      "case": "grammar-restore-to-source-features",
+      "ms": 171.4983749999999
+    }
+  ],
+  "checks": [
+    "isolated packaged extension activated with bundled server",
+    "initial feature provider sees prepared source",
+    "editor type command updates diagnostics and malformed source recovers",
+    "neighbor edits do not postpone diagnostics",
+    "rapid obsolete edits settle to valid latest symbols and diagnostics",
+    "unsaved grammar change reloads dependent source and restores"
+  ],
+  "already_active": true,
+  "activation_wait_ms": 0.00620800000001509,
+  "vscode_version": "1.145.2",
+  "last_symbols": [
+    {
+      "name": "restored",
+      "kind": "Variable",
+      "location": {
+        "uri": {
+          "$mid": 1,
+          "fsPath": "/var/folders/vx/sr5h142j4b51c8_zc2g53syr0000gn/T/nre-fuwxjfn7/workspace/one.portable",
+          "external": "file:///var/folders/vx/sr5h142j4b51c8_zc2g53syr0000gn/T/nre-fuwxjfn7/workspace/one.portable",
+          "path": "/var/folders/vx/sr5h142j4b51c8_zc2g53syr0000gn/T/nre-fuwxjfn7/workspace/one.portable",
+          "scheme": "file"
+        },
+        "range": [
+          {
+            "line": 0,
+            "character": 0
+          },
+          {
+            "line": 0,
+            "character": 26
+          }
+        ]
+      },
+      "containerName": ""
+    }
+  ],
+  "source_open_to_features_ms": 110.68829199999999,
+  "host_launch_to_source_features_ms": 1508,
+  "host_exit": 0,
+  "log": "\u001b[90m[main 2026-11-09T15:58:43.212Z]\u001b[0m [node-compile-cache] main: packaged cache enabled (status: enabled, configured: /Applications/Visual Studio Code.app/Contents/Resources/app/node-compile-cache/main, active: /Applications/Visual Studio Code.app/Contents/Resources/app/node-compile-cache/main/v24.22.1-arm64-60e4fe36)\n\u001b[90m[main 2026-11-09T15:58:43.228Z]\u001b[0m StorageMainService: creating application shared storage\n\u001b[90m[main 2026-11-09T15:58:43.305Z]\u001b[0m [shared storage] Creating shared storage database at ':memory:' (wasCreated: true)\n\u001b[90m[main 2026-11-09T15:58:43.306Z]\u001b[0m [shared storage] Initializing fallback application storage (path: in-memory)\n\u001b[90m[main 2026-11-09T15:58:43.347Z]\u001b[0m [shared storage] Fallback application storage initialized with 3 items\nVia 'product.json#extensionEnabledApiProposals' extension 'ms-vscode.remote-repositories' wants API proposal 'timeline' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.\nVia 'product.json#extensionEnabledApiProposals' extension 'github.vscode-pull-request-github' wants API proposal 'agentsWindowActivation' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.\nVia 'product.json#extensionEnabledApiProposals' extension 'github.remotehub' wants API proposal 'timeline' but that proposal DOES NOT EXIST. Likely, the proposal has been finalized (check 'vscode.d.ts') or was abandoned.\n\u001b[90m[main 2026-11-09T15:58:43.809Z]\u001b[0m update#disable - updates are disabled by user preference\n\u001b[90m[main 2026-11-09T15:58:43.809Z]\u001b[0m update#setState disabled\n[RemoteAgentHost] Reconciling: desired=[], current=[]\n[AgentHost:renderer] Acquiring MessagePort to agent host...\n\u001b[90m[main 2026-11-09T15:58:43.821Z]\u001b[0m AgentHostProcessManager: agent host started\n[ChatModelSelection] event=no-model-at-toolbar-build surface=\"workbench\" sessionKey=undefined conversationKey=undefined modelTarget=undefined storageKey=\"chat.currentLanguageModel.panel\" widgetViewKind=\"view\"\n[AgentHost:renderer] MessagePort acquired, creating client...\nStarted local extension host with pid 52400.\n\u001b[91m[main 2026-11-09T15:58:44.034Z]\u001b[0m [AgentHost:stderr] (node:52392) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.\n(Use `Code Helper --trace-deprecation ...` to show where the warning was created)\n\nStarted initializing default profile extensions in extensions installation folder. file:///var/folders/vx/sr5h142j4b51c8_zc2g53syr0000gn/T/nre-fuwxjfn7/extensions\n[RemoteAgentHostProtocol] Sending initialize: address=local clientId=83e9a2d6-cb75-403a-be1d-eb8cfc1ec6c5 requestId=1\n[RemoteAgentHostProtocol] Initialized: address=local clientId=83e9a2d6-cb75-403a-be1d-eb8cfc1ec6c5 durationMs=208\n[AgentHost:renderer] Protocol connection established; clientId=83e9a2d6-cb75-403a-be1d-eb8cfc1ec6c5\n[AccountPolicyGate] apply: state=inactive, reason=undefined, isRestricted=false\nCompleted initializing default profile extensions in extensions installation folder. file:///var/folders/vx/sr5h142j4b51c8_zc2g53syr0000gn/T/nre-fuwxjfn7/extensions\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\nLoading development extension at /var/folders/vx/sr5h142j4b51c8_zc2g53syr0000gn/T/nre-fuwxjfn7/unpacked/extension\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[ChatModelSelection] event=no-model-at-toolbar-build surface=\"workbench\" sessionKey=\"local\" conversationKey=\"vscode-chat-session://local/MDNiNzM1NGYtYjhmNi00ZmNiLThjY2ItYzBkZjE5YjFiMDE3\" modelTarget=undefined storageKey=\"chat.currentLanguageModel.panel\" widgetViewKind=\"view\"\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[RemoteAgentHost] Reconciling: desired=[], current=[]\n[ChatModelSelection] event=no-model-at-toolbar-build surface=\"workbench\" sessionKey=\"local\" conversationKey=\"vscode-chat-session://local/MDNiNzM1NGYtYjhmNi00ZmNiLThjY2ItYzBkZjE5YjFiMDE3\" modelTarget=undefined storageKey=\"chat.currentLanguageModel.panel\" widgetViewKind=\"view\"\n[ChatModelSelection] event=no-model-at-toolbar-build surface=\"workbench\" sessionKey=\"local\" conversationKey=\"vscode-chat-session://local/MDNiNzM1NGYtYjhmNi00ZmNiLThjY2ItYzBkZjE5YjFiMDE3\" modelTarget=undefined storageKey=\"chat.currentLanguageModel.panel\" widgetViewKind=\"view\"\nSettings Sync: Account status changed from uninitialized to unavailable\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[AgentHost] No signed-in session resolved for resource: https://api.github.com\n[AgentHost] No signed-in session resolved for resource: https://api.github.com/repos\n[ChatModelSelection] event=no-model-at-toolbar-build surface=\"workbench\" sessionKey=\"local\" conversationKey=\"vscode-chat-session://local/MDNiNzM1NGYtYjhmNi00ZmNiLThjY2ItYzBkZjE5YjFiMDE3\" modelTarget=undefined storageKey=\"chat.currentLanguageModel.panel\" widgetViewKind=\"view\"\nUnknown channel: agentHostClientByokLm\nUnknown channel: agentHostClientProxy\nUnknown channel: agentHostClientProxy\n\u001b[90m[main 2026-11-09T15:58:45.796Z]\u001b[0m Extension host with pid 52400 exited with code: 0, signal: unknown.\n"
+}

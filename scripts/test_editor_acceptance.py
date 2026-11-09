@@ -87,6 +87,26 @@ class AcceptanceTests(unittest.TestCase):
             self.assertEqual(source.read_bytes(), before)
             self.assertTrue((workspace / 'nitride.nproj').is_file())
 
+    def test_large_fixture_requires_repository_languages(self):
+        with tempfile.TemporaryDirectory() as directory:
+            with self.assertRaisesRegex(ValueError, 'repository'):
+                acceptance.fixture(Path(directory), large_document=True)
+
+    def test_large_fixture_is_isolated_valid_shape_and_at_least_four_mib(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = acceptance.fixture(Path(directory), repository_languages=True, large_document=True)
+            source = (workspace / 'large.csharp4').read_text()
+            self.assertGreaterEqual(len(source.encode()), 4 << 20)
+            self.assertIn('class AcceptanceTail', source)
+            self.assertTrue(source.endswith('}\n'))
+            self.assertEqual(source.count('{'), source.count('}'))
+            self.assertTrue((workspace / 'languages/csharp4').is_dir())
+
+    def test_ordinary_fixture_keeps_large_document_opt_in(self):
+        with tempfile.TemporaryDirectory() as directory:
+            workspace = acceptance.fixture(Path(directory))
+            self.assertFalse((workspace / 'large.csharp4').exists())
+
     def test_full_language_fixture_preserves_every_workspace_include(self):
         with tempfile.TemporaryDirectory() as directory:
             workspace = acceptance.fixture(Path(directory), repository_languages=True)

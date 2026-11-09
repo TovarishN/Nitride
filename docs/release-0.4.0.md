@@ -1,0 +1,49 @@
+# Nitride 0.4.0 release candidate
+
+This checkpoint advances Nitride as an independent language engine. The latest
+published release is still 0.3.0; 0.4.0 is being prepared and validated.
+
+## Changes since 0.3.0
+
+- Owned runtime syntax snapshots retain their language safely through edits,
+  concurrent readers and reloads. The LSP accepts ordered UTF-16 ranged edits
+  transactionally and reuses recovering snapshots.
+- Background analysis keeps the message loop available. Independent document
+  quiet periods, bounded deferred requests and generation barriers preserve
+  freshness and diagnostic fairness. Obsolete parsing/recovery can now cancel
+  cooperatively, including spill threads, without publishing partial snapshots.
+- Syntax-only editor projection avoids temporary full-tree export. Arena-record
+  reuse and compiler-layout changes reduce measured analysis costs; retained raw
+  reports also document tradeoffs and remaining cached-analysis overhead.
+- Projects can configure trivia; strict JSON validates against the pinned corpus.
+  Calendar completes duration/planning workflows across Rust, process and component
+  execution. Existing native distributions continue to use process bindings.
+- Native PGO training keeps LSP requests on stable document revisions, repairing
+  the packaging failure during training. Packaging and CI checks are consolidated.
+
+## Candidate validation
+
+The checkpoint uses the real bundled native PGO server inside an extracted VSIX
+with disposable VS Code profiles/workspaces. Acceptance covers routing, initial
+readiness, editor typing, unique current diagnostics, malformed-source recovery,
+neighbor-file fairness, rapid edits and unsaved grammar reload/restore. The
+repository-language run additionally covers a generated 4 MiB C# document's
+initial folds, missing-semicolon recovery, restoration and a uniquely positioned
+leading comment fold after rapid edits. Reports retain package/server/harness/input hashes.
+
+Launch-to-readiness includes VS Code and extension-test runner overhead. API
+observations do not establish painted-frame latency or manual visual acceptance.
+CSharp4 remains syntax-only. Cold preparation, typed whole-document recomputation,
+semantic/host calls and bulk maintenance retain their documented limits. No
+universal cancellation deadline is added. Native release packages omit component
+support; process-only bindings remain available.
+
+This PR prepares version synchronization, release notes and validation evidence.
+A non-publishing three-platform release rehearsal is a separate gate. Tagging the
+final reviewed commit triggers publication through the existing release workflow.
+
+The [local packaged acceptance report](editor-acceptance-0.4.0.md) records passing
+Portable and full-language/4 MiB sessions and extracted native Calendar smoke
+checks. Ordinary diagnostics were observed in roughly 44–48 ms; large-file
+feature checks took 235–465 ms after edits. Full local correctness/quality gates
+passed. See the release PR for hosted checks and non-publishing rehearsal status.
