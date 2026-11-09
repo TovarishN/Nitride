@@ -1,6 +1,6 @@
 # Current project status
 
-Updated November 9, 2026. The published checkpoint is
+Updated November 10, 2026. The published checkpoint is
 [**0.4.0**](https://github.com/TovarishN/Nitride/releases/tag/v0.4.0).
 [Release notes and verification](release-0.4.0.md) cover the three native platforms.
 Engine milestones, background analysis, independent document scheduling and the
@@ -22,7 +22,8 @@ checks passing. [Authoring documentation](authoring.md) and
 The current language-testing feature adds native [`.ntest` suites](language-testing.md),
 phase/diagnostic/value assertions, generated starter tests and VS Code Testing
 using frozen inputs and separate cancellable native workers. The published
-engine release remains 0.4.0.
+engine release remains 0.4.0. [Packaged API acceptance](language-testing-acceptance.md)
+records the tested workflow and its focus/visual limitations.
 
 ## Implemented in merged development
 

@@ -171,19 +171,30 @@ exports.run = async function () {
       report.samples.push({ case: 'edit-to-current-diagnostic', ms: performance.now() - start });
     }
     const editor = await vscode.window.showTextDocument(one);
-    editor.selection = new vscode.Selection(one.positionAt(0), one.positionAt(one.getText().length));
-    const typed = performance.now();
-    await vscode.commands.executeCommand('type', { text: 'missing_typed_editor;\n' });
-    await until(() => has(one, 'missing_typed_editor'), 'editor typing diagnostic');
-    report.samples.push({ case: 'editor-type-to-current-diagnostic', ms: performance.now() - typed });
-    editor.selection = new vscode.Selection(one.positionAt(0), one.positionAt(one.getText().length));
-    await vscode.commands.executeCommand('type', { text: 'let typed : Scalar = 1;\ntyped;\n' });
-    await until(async () => await symbol(one, 'typed') && diagnostics(one).length === 0, 'typed valid source');
+    await vscode.commands.executeCommand('workbench.action.focusWindow');
+    if (!vscode.window.state.focused && process.env.NITRIDE_ACCEPTANCE_ALLOW_UNFOCUSED === '1') {
+      report.unavailable_checks = ['Focused editor type command: disposable window could not become active'];
+      await replace(one, 'let typed : Scalar = 1;\ntyped;\n');
+    } else {
+      await until(() => vscode.window.state.focused, 'disposable editor window is focused');
+      await vscode.commands.executeCommand('editor.closeTestPeek');
+      await vscode.commands.executeCommand('workbench.action.focusActiveEditorGroup');
+      editor.selection = new vscode.Selection(one.positionAt(0), one.positionAt(one.getText().length));
+      const typed = performance.now();
+      await vscode.commands.executeCommand('type', { text: 'missing_typed_editor;\n' });
+      await until(() => one.getText().includes('missing_typed_editor'), 'type command edits the focused source editor');
+      await until(() => has(one, 'missing_typed_editor'), 'editor typing diagnostic');
+      report.samples.push({ case: 'editor-type-to-current-diagnostic', ms: performance.now() - typed });
+      editor.selection = new vscode.Selection(one.positionAt(0), one.positionAt(one.getText().length));
+      await vscode.commands.executeCommand('type', { text: 'let typed : Scalar = 1;\ntyped;\n' });
+      report.checks.push('focused editor type command updates current diagnostics');
+    }
+    await until(async () => await symbol(one, 'typed') && diagnostics(one).length === 0, 'valid source after editor input');
     await replace(one, 'let broken : Scalar = ;\n');
     await until(() => diagnostics(one).length > 0, 'malformed typed source diagnostic');
     await replace(one, 'let recovered : Scalar = 1;\nrecovered;\n');
     await until(async () => await symbol(one, 'recovered') && diagnostics(one).length === 0, 'typed source recovers');
-    report.checks.push('editor type command updates diagnostics and malformed source recovers');
+    report.checks.push('malformed source produces diagnostics and recovers');
     await replace(one, 'missing_independent;\n');
     const start = performance.now();
     // Keep B changing beyond A's debounce period, then inspect A before stopping.

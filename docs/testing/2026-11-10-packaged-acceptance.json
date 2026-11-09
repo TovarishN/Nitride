@@ -1,0 +1,76 @@
+{
+  "complete": true,
+  "metric": "VS Code extension-host API observations, not painted-frame or visual acceptance",
+  "vsix_sha256": "e4014b745102ba29180875b630724048e7c89a93bafe1188bbf9deb145c4d2e8",
+  "release": {
+    "version": "0.4.0",
+    "platform": "darwin-arm64",
+    "target": "aarch64-apple-darwin",
+    "commit": "9d182ae31bd984c394bbfdd39c0d674853d170a0",
+    "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)\nbinary: rustc\ncommit-hash: 58cf8f9c35b355199727627d07ae34a4e2846d67\ncommit-date: 2026-10-13\nhost: aarch64-apple-darwin\nrelease: 1.99.1\nLLVM version: 23.1.1",
+    "source_dirty": false,
+    "wasmtime": false,
+    "variants": {
+      "baseline": {
+        "rustflags": [
+          "-Copt-level=3",
+          "-Ccodegen-units=1",
+          "-Clto=fat",
+          "-Ctarget-cpu=apple-m1"
+        ],
+        "pgo": false,
+        "bolt": false,
+        "profile_sha256": null
+      }
+    },
+    "libraries": [
+      {
+        "name": "Nitride.Lexical",
+        "version": "1.0.0",
+        "exports": [
+          "AsciiIdentifierStart",
+          "AsciiIdentifierContinue",
+          "AsciiIdentifier",
+          "Digit",
+          "HexDigit",
+          "UnsignedInteger",
+          "UnsignedDecimal",
+          "HexInteger",
+          "JsonString"
+        ],
+        "sources": [
+          {
+            "name": "Lexical.ngr",
+            "uri": "nitride-lib:/Nitride.Lexical/1.0.0/Lexical.ngr",
+            "sha256": "a81b15e29fcb7f358af4de1cd862f0d2f30dbc82542b629e673cc55981f0e250"
+          }
+        ]
+      }
+    ]
+  },
+  "bundled_server_sha256": "7f1eeb26ad7eb19c6ff54cb6963d6f36c95de18ce8ae8549f6c01ecdbf09780d",
+  "harness_sha256": {
+    "python": "17b7b07280679135f9d29ab0cf84d863188e99950ab2ea41b91568eaf67f3110",
+    "extension_host": "4030a5975127cd005f2fc8899e6952d030c5def864f58c2331f3ff17a3090212"
+  },
+  "allow_unfocused": true,
+  "checks": [
+    "isolated packaged extension activated with bundled server",
+    "new typed language executes42; pinned library opens through read-only content provider",
+    "structured missing-file diagnostic resolves via create-only quick fix without duplicating start",
+    "explicit unpinned lexical reference resolves through versioned exact-pin quick fix",
+    "Testing view discovers native suites, selects cases and reports values/diagnostics",
+    "Testing snapshots use unsaved fixture/grammar without saving and recover suite syntax",
+    "Testing cancellation retains completed results and rejects late success",
+    "initial feature provider sees prepared source",
+    "malformed source produces diagnostics and recovers",
+    "neighbor edits do not postpone diagnostics",
+    "rapid obsolete edits settle to valid latest symbols and diagnostics",
+    "unsaved grammar change reloads dependent source and restores"
+  ],
+  "unavailable_checks": [
+    "Focused editor type command: disposable window could not become active"
+  ],
+  "vscode_version": "1.145.2",
+  "host_exit": 0
+}

@@ -117,5 +117,14 @@ class AcceptanceTests(unittest.TestCase):
                 self.assertEqual(len(list((workspace / include).glob('*.nproj'))), 1)
 
 
+class FocusScopeTests(unittest.TestCase):
+    def test_unfocused_typing_opt_out_is_explicit_not_inherited(self):
+        env = {'NITRIDE_ACCEPTANCE_ALLOW_UNFOCUSED': '1'}
+        acceptance.configure_focus(env, False)
+        self.assertNotIn('NITRIDE_ACCEPTANCE_ALLOW_UNFOCUSED', env)
+        acceptance.configure_focus(env, True)
+        self.assertEqual(env['NITRIDE_ACCEPTANCE_ALLOW_UNFOCUSED'], '1')
+
+
 if __name__ == '__main__':
     unittest.main()
