@@ -621,6 +621,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "nitride-testing"
+version = "0.4.0"
+dependencies = [
+ "nitride-codegen",
+ "nitride-core",
+ "nitride-prepare",
+ "serde_json",
+]
+
+[[package]]
 name = "nitride-wasm"
 version = "0.4.0"
 dependencies = [

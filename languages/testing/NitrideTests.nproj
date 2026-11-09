@@ -1,0 +1,5 @@
+language NitrideTests {
+  library Nitride.Lexical version 1.0.0;
+  grammar Testing.ngr;
+  start NitrideTests.Suite;
+}
