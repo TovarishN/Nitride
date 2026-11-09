@@ -82,6 +82,18 @@ exports.run = async function () {
     await until(() => !vscode.languages.getDiagnostics(authoredProject.uri).some(d => d.code === 'NPROJ0001'), 'created grammar clears missing-file diagnostic');
     await authoredProject.save();
     report.checks.push('structured missing-file diagnostic resolves via create-only quick fix without duplicating start');
+    await replace(authoredProject, authoredProject.getText().replace('  library Nitride.Lexical version 1.0.0;\n', ''));
+    await until(() => vscode.languages.getDiagnostics(authoredGrammar.uri).some(d => d.message.includes('Nitride.Lexical.AsciiIdentifier')), 'explicit unpinned lexical diagnostic');
+    let pin;
+    await until(async () => {
+      const actions = await vscode.commands.executeCommand('vscode.executeCodeActionProvider', authoredGrammar.uri, new vscode.Range(lexicalPosition, lexicalPosition), 'quickfix', 100);
+      pin = actions?.find(a => a.title === 'Pin bundled Nitride.Lexical@1.0.0' && a.edit);
+      return !!pin;
+    }, 'resolved exact library pin fix');
+    assert.equal(await vscode.workspace.applyEdit(pin.edit), true);
+    await until(() => vscode.languages.getDiagnostics(authoredGrammar.uri).length === 0, 'library pin restores grammar diagnostics');
+    await authoredProject.save();
+    report.checks.push('explicit unpinned lexical reference resolves through versioned exact-pin quick fix');
     const opening = performance.now();
     let one = await vscode.workspace.openTextDocument(path.join(root, 'one.portable'));
     let two = await vscode.workspace.openTextDocument(path.join(root, 'two.portable'));

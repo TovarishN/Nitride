@@ -85,7 +85,9 @@ it still receive hover metadata but no unusable library definition URI.
 Project quick fixes can create a missing **referenced** grammar/catalog, or add
 the exact pin for an explicit `Nitride.Lexical.Token` reference. A grammar
 scaffold adds a declared missing start rule only when unambiguous and absent
-from the other readable inputs; otherwise it creates an empty valid module.
+from the other readable inputs and its module can be created without conflict.
+That scaffold uses an admitted `"TODO"` placeholder; otherwise it creates an
+empty module with a nonconflicting name.
 An empty catalog fixes the missing file, without inventing semantic contracts.
 
 Project actions require documentChanges and edit-resolving code action support;

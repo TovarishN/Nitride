@@ -8,7 +8,7 @@ use crate::{
 };
 use nitride_prepare::{
     Source,
-    authoring::{ProjectIssueKind, missing_file_scaffold, project_issues, workspace_target},
+    authoring::{ProjectIssueKind, missing_file_scaffold_in, project_issues, workspace_target},
 };
 use serde_json::{Value, json};
 use std::{
@@ -133,6 +133,23 @@ impl Context<'_> {
                 .filter(|i| i.kind == ProjectIssueKind::MissingGrammar)
                 .count();
             let language = nitride_prepare::read_language(&source, &|_| true).ok();
+            let inputs = nitride_prepare::project_references(&source)
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|r| matches!(r.kind, "grammar" | "catalog"))
+                .filter_map(|r| r.target)
+                .collect::<Vec<_>>();
+            let index = crate::grammar_index::build(
+                &inputs,
+                &|p| self.open(p).map(|(_, d)| d.text.clone()),
+                &crate::grammar_index::default_uri,
+            );
+            let occupied = index
+                .definitions()
+                .iter()
+                .filter(|d| matches!(d.item.kind, "module" | "catalog"))
+                .map(|d| d.module.clone())
+                .collect::<Vec<_>>();
             for issue in issues {
                 let Some(target) =
                     reference_target(issue.target.as_ref().expect("missing file"), self.roots)
@@ -148,17 +165,13 @@ impl Context<'_> {
                         missing_count == 1 && issue.kind == ProjectIssueKind::MissingGrammar
                     })
                     .and_then(|l| {
-                        let index = crate::grammar_index::build(
-                            &l.grammars,
-                            &|p| self.open(p).map(|(_, d)| d.text.clone()),
-                            &crate::grammar_index::default_uri,
-                        );
                         (index.definition(&l.start, "").is_none()
                             && index.unreadable.iter().all(|p| same_file(p, &target))
                             && index.files.iter().all(|f| !f.damaged))
                         .then_some(l.start.as_str())
                     });
-                let Ok(contents) = missing_file_scaffold(&issue.kind, &target, start) else {
+                let Ok(contents) = missing_file_scaffold_in(&issue.kind, &target, start, &occupied)
+                else {
                     continue;
                 };
                 let target_uri = uri::from_path(&target);
@@ -171,35 +184,65 @@ impl Context<'_> {
                 result.push((action, edit));
             }
         }
-        // Only explicit qualified lexical uses and exactly one owning project.
-        let users = self.registry.using_grammar(&path).collect::<Vec<_>>();
-        if users.len() == 1
-            && users[0]
-                .entry
-                .libraries
-                .iter()
-                .all(|r| r.name != "Nitride.Lexical")
-        {
-            let owner = &users[0].manifest;
-            let Some((project, project_version)) = self.source(owner) else {
-                return result;
-            };
-            // VS Code opens this buffer before resolve; no edit is emitted
-            // until the server has a matching, versioned project document.
+        // Reconstruct ownership from current project text, not retained readers.
+        let mut projects = self
+            .registry
+            .manifests()
+            .iter()
+            .map(|m| m.path.clone())
+            .collect::<Vec<_>>();
+        if let Some(parent) = path.parent() {
+            projects.extend(
+                std::fs::read_dir(parent)
+                    .into_iter()
+                    .flatten()
+                    .filter_map(|e| e.ok().map(|e| e.path()))
+                    .filter(|p| p.extension().is_some_and(|e| e == "nproj")),
+            );
+        }
+        let mut unique = Vec::new();
+        for project in projects {
+            if !unique.iter().any(|p: &PathBuf| same_file(p, &project)) {
+                unique.push(project);
+            }
+        }
+        let mut owners = unique
+            .iter()
+            .filter_map(|owner| {
+                let (project, version) = self.source(owner)?;
+                let language = nitride_prepare::read_language(&project, &|_| true).ok()?;
+                language
+                    .grammars
+                    .iter()
+                    .any(|g| same_file(g, &path))
+                    .then_some((owner, project, version, language))
+            })
+            .collect::<Vec<_>>();
+        if owners.len() == 1 {
+            let (owner, project, project_version, language) = owners.remove(0);
             let project_uri = self
                 .open(owner)
                 .map(|(uri, _)| uri.to_owned())
                 .unwrap_or_else(|| crate::grammar_index::default_uri(owner));
-            if workspace_target(&normalized(owner), self.roots).is_err() {
+            if workspace_target(&normalized(owner), self.roots).is_err()
+                || language
+                    .libraries
+                    .iter()
+                    .any(|r| r.name == "Nitride.Lexical")
+            {
                 return result;
             }
-            let Ok(language) = nitride_prepare::read_language(&project, &|_| true) else {
-                return result;
-            };
-            if language
-                .libraries
-                .iter()
-                .any(|r| r.name == "Nitride.Lexical")
+            let index = crate::grammar_index::build(
+                &language.grammars,
+                &|p| self.open(p).map(|(_, d)| d.text.clone()),
+                &crate::grammar_index::default_uri,
+            );
+            if !index.unreadable.is_empty()
+                || index.files.iter().any(|f| f.damaged)
+                || index
+                    .definitions()
+                    .iter()
+                    .any(|d| d.item.kind == "module" && d.module == "Nitride.Lexical")
             {
                 return result;
             }
@@ -208,6 +251,7 @@ impl Context<'_> {
                 .into_iter()
                 .find(|r| {
                     r.kind == "rule"
+                        && index.definition(&r.name, &r.module).is_none()
                         && r.name.starts_with("Nitride.Lexical.")
                         && nitride_prepare::stdlib::libraries()[0]
                             .exports

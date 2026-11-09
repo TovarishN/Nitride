@@ -210,20 +210,37 @@ pub fn missing_file_scaffold(
     path: &std::path::Path,
     start: Option<&str>,
 ) -> Result<String, AuthoringError> {
-    let fallback = path
+    missing_file_scaffold_in(kind, path, start, &[])
+}
+/// Contextual recipe: never redeclare a module already present in the project.
+pub fn missing_file_scaffold_in(
+    kind: &ProjectIssueKind,
+    path: &std::path::Path,
+    start: Option<&str>,
+    occupied: &[String],
+) -> Result<String, AuthoringError> {
+    let stem = path
         .file_stem()
         .and_then(|s| s.to_str())
         .filter(|s| identifier(s))
         .unwrap_or("Language");
+    let mut fallback = stem.to_owned();
+    let mut suffix = 1;
+    while occupied.contains(&fallback) {
+        fallback = format!("{stem}_{suffix}");
+        suffix += 1;
+    }
     if *kind == ProjectIssueKind::MissingCatalog {
         return Ok(format!("catalog module {fallback}\n{{\n}}\n"));
     }
     let declared = start
         .and_then(|s| s.rsplit_once('.'))
-        .filter(|(module, rule)| module.split('.').all(identifier) && identifier(rule));
-    let (module, body) = declared.map_or((fallback, String::new()), |(module, rule)| {
-        (module, format!("  syntax {rule} = \"\";\n"))
-    });
+        .filter(|(module, rule)| {
+            module.split('.').all(identifier)
+                && identifier(rule)
+                && !occupied.iter().any(|m| m == module)
+        });
+    let (module,body)=declared.map_or((fallback,String::new()),|(module,rule)|(module.into(),format!("  // Replace this placeholder with your language's syntax.\n  syntax {rule} = \"TODO\";\n")));
     Ok(format!("syntax module {module}\n{{\n{body}}}\n"))
 }
 

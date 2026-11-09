@@ -225,3 +225,112 @@ fn workspace_root_alias_is_allowed_but_child_symlinks_are_not() {
     );
     std::fs::remove_file(alias).unwrap();
 }
+
+#[test]
+fn resolved_local_lexical_module_never_gets_a_conflicting_bundled_pin() {
+    let root = scratch("local-lexical-module");
+    let project = root.join("nitride.nproj");
+    let grammar = root.join("Test.ngr");
+    let manifest = "language Test { grammar Test.ngr; start Test.Program; }";
+    let text = "syntax module Nitride.Lexical { token UnsignedInteger = \"x\"; } syntax module Test { syntax Program = Nitride.Lexical.UnsignedInteger; }";
+    std::fs::write(&project, manifest).unwrap();
+    std::fs::write(&grammar, text).unwrap();
+    nitride_prepare::prepare_project(&project).unwrap();
+    let messages = session(
+        &root,
+        vec![
+            open(&project, manifest),
+            open(&grammar, text),
+            ask(&grammar),
+        ],
+    );
+    assert!(
+        response(&messages, 5)["result"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|a| a["data"]["code"] != "NLIB0004")
+    );
+}
+
+#[test]
+fn retained_registry_owner_cannot_pin_a_former_grammar() {
+    let root = scratch("pin-stale-owner");
+    let project = root.join("nitride.nproj");
+    let grammar = root.join("Test.ngr");
+    let manifest = "language Test { grammar Test.ngr; start Test.Program; }";
+    let changed = manifest.replace("Test.ngr", "Other.ngr");
+    let text = "syntax module Test { syntax Program = Nitride.Lexical.UnsignedInteger; }";
+    std::fs::write(&project, manifest).unwrap();
+    std::fs::write(&grammar, text).unwrap();
+    let messages = session(
+        &root,
+        vec![
+            open(&project, manifest),
+            open(&grammar, text),
+            change(&project, 2, &changed),
+            ask(&grammar),
+        ],
+    );
+    assert!(
+        response(&messages, 5)["result"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|a| a["data"]["code"] != "NLIB0004")
+    );
+}
+fn resolved_missing_file(
+    root: &std::path::Path,
+    project: &std::path::Path,
+    text: &str,
+    name: &str,
+) -> String {
+    let messages = session(root, vec![open(project, text), ask(project)]);
+    let action = response(&messages, 5)["result"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|a| a["title"] == format!("Create {name}"))
+        .unwrap()
+        .clone();
+    let messages = session(
+        root,
+        vec![
+            open(project, text),
+            request(6, "codeAction/resolve", action),
+        ],
+    );
+    response(&messages, 6)["result"]["edit"]["documentChanges"][1]["edits"][0]["newText"]
+        .as_str()
+        .unwrap()
+        .to_owned()
+}
+#[test]
+fn missing_start_scaffold_is_admitted_by_project_preparation() {
+    let root = scratch("missing-start-admitted");
+    let project = root.join("nitride.nproj");
+    let text = "language Test { grammar Missing.ngr; start Test.Program; }";
+    std::fs::write(&project, text).unwrap();
+    let contents = resolved_missing_file(&root, &project, text, "Missing.ngr");
+    std::fs::write(root.join("Missing.ngr"), contents).unwrap();
+    nitride_prepare::prepare_project(&project).unwrap();
+}
+#[test]
+fn missing_start_never_creates_a_duplicate_existing_module() {
+    let root = scratch("missing-start-existing-module");
+    let project = root.join("nitride.nproj");
+    let text = "language Test { grammar Existing.ngr, Test.ngr; start Test.Program; }";
+    std::fs::write(&project, text).unwrap();
+    std::fs::write(
+        root.join("Existing.ngr"),
+        "syntax module Test { syntax Other = \"x\"; }",
+    )
+    .unwrap();
+    let contents = resolved_missing_file(&root, &project, text, "Test.ngr");
+    assert!(!contents.contains("syntax module Test\n"), "{contents}");
+    std::fs::write(root.join("Test.ngr"), contents).unwrap();
+    let error = nitride_prepare::prepare_project(&project).unwrap_err();
+    assert!(!error.message.contains("duplicate module"), "{error}");
+    assert!(error.message.contains("start rule"), "{error}");
+}
