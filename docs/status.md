@@ -1,7 +1,8 @@
 # Current project status
 
-Updated November 9, 2026. The published checkpoint remains **0.3.0**;
-[0.4.0 is prepared as a release candidate](release-0.4.0.md).
+Updated November 9, 2026. The published checkpoint is
+[**0.4.0**](https://github.com/TovarishN/Nitride/releases/tag/v0.4.0).
+[Release notes and verification](release-0.4.0.md) cover the three native platforms.
 Engine milestones, background analysis, independent document scheduling and the
 release-training fix were merged through [PR #43](https://github.com/TovarishN/Nitride/pull/43),
 [PR #44](https://github.com/TovarishN/Nitride/pull/44),
@@ -69,7 +70,7 @@ build. Unscoped fresh analysis also improves 4.2%, with a 5.2% unscoped cached
 regression in the measured round. Final local cancellation trials return in
 0.07–0.64 ms; a direct pre-cancellation comparison shows 5.1% cached / 0.3% fresh
 active-scope overhead. Further work should address cached-analysis cost while
-preserving cancellation responsiveness. This milestone is unreleased.
+preserving cancellation responsiveness. This milestone ships in 0.4.0.
 
 ## Packaged release acceptance
 
@@ -78,8 +79,10 @@ typing, recovery, multi-document fairness, rapid-edit freshness and grammar relo
 in disposable VS Code sessions. Full-language coverage includes a 4 MiB C# source.
 Ordinary diagnostic observations are around 44–48 ms; large-file edit/feature
 checks are 235–465 ms. Native PGO packaging and extracted Calendar process smoke
-checks pass locally. Manual visual and cross-platform GUI acceptance remain
-unverified; the release PR tracks hosted native rehearsal separately.
+checks pass locally. The three-platform PGO rehearsal and release promotion both
+passed; all 13 published files match the verified artifacts. The exact CI-built
+macOS package also passes both desktop sessions and Calendar process checks.
+Manual visual and Windows/Linux GUI acceptance remain unverified.
 
 ## Evidence
 

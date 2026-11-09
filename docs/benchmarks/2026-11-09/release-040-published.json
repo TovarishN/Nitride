@@ -1,0 +1,26 @@
+{
+  "complete": true,
+  "tag": "v0.4.0",
+  "commit": "4dcc669aa5ed0ed5985ce9221bbf09e3fd147898",
+  "release": "https://github.com/TovarishN/Nitride/releases/tag/v0.4.0",
+  "assets_match_rehearsal": true,
+  "assets": {
+    "SHA256SUMS-linux-x64.txt": "fbbb8508cad87708503543963a28f1b60e8efa91c4de3732db2fd2fe8f8ca0ea",
+    "nitride-0.4.0-linux-x64.tar.gz": "510ee3723aac7b4d222e019393ecaeeb0f7f9088daa231adfa47ee34d470ad51",
+    "nitride-0.4.0-darwin-arm64.tar.gz": "42ecb5cb18562002aa20d13f8c67b8103219e85ca8c1d5aaaa1a769e31db200f",
+    "nitride-0.4.0-darwin-arm64.vsix": "44f98492add6468a67796ad8fdd7a86d920d14a1efd7530a26cb10e0dedc16e1",
+    "nitride-0.4.0-darwin-arm64.json": "d808f476f2b5a979e3a9d2be9963e320fa48ebaa2339877d5695fbf1a4ad79f8",
+    "SHA256SUMS-win32-x64.txt": "7dcf5431374dfa64d4c8cc7bbf8d47bb533259202c46baab308a1ab5446eb48c",
+    "nitride-0.4.0-win32-x64.vsix": "dc8558560d0cae22613fae21219d038bf5e3226d3ad5e058de132f12aa0ba71e",
+    "nitride-0.4.0-win32-x64.json": "427f3eecf817195578efb97c14f00dcc0b12d95115b5d87fa36ef8fe6b0c7431",
+    "SHA256SUMS-darwin-arm64.txt": "f28f876629ae56caa1e2bb85f2382bdad0a617fef21a40d7d87eeb33ae2a5621",
+    "nitride-0.4.0-win32-x64.zip": "49ef2bfbb53a704f697a4ea0165d734982437ab24a4892915dbeb5634714186d",
+    "SHA256SUMS.txt": "c371d8adc9d176ee2a1890650a341ff53304cdc22ab7134b253732dfeba5d760",
+    "nitride-0.4.0-linux-x64.vsix": "e8c395e2b56dbd3e09c37352be1a9f8ab397855c6272fdc27dfecccecb9eef2a",
+    "nitride-0.4.0-linux-x64.json": "c4a2121a2c973d7b139d3eacad324067cc87362a6c66a7863b590bef7b50f90e"
+  },
+  "published_at": "2026-11-09T16:51:18Z",
+  "release_workflow": "https://github.com/TovarishN/Nitride/actions/runs/42658857118",
+  "rehearsal": "https://github.com/TovarishN/Nitride/actions/runs/42650947553",
+  "clean_source_provenance_verified": true
+}

@@ -1,7 +1,9 @@
-# Nitride 0.4.0 release candidate
+# Nitride 0.4.0
 
-This checkpoint advances Nitride as an independent language engine. The latest
-published release is still 0.3.0; 0.4.0 is being prepared and validated.
+[Nitride 0.4.0](https://github.com/TovarishN/Nitride/releases/tag/v0.4.0) was
+published November 9, 2026 from verified commit
+`4dcc669aa5ed0ed5985ce9221bbf09e3fd147898`. It advances Nitride as an independent
+language engine.
 
 ## Changes since 0.3.0
 
@@ -21,7 +23,7 @@ published release is still 0.3.0; 0.4.0 is being prepared and validated.
 - Native PGO training keeps LSP requests on stable document revisions, repairing
   the packaging failure during training. Packaging and CI checks are consolidated.
 
-## Candidate validation
+## Release validation
 
 The checkpoint uses the real bundled native PGO server inside an extracted VSIX
 with disposable VS Code profiles/workspaces. Acceptance covers routing, initial
@@ -38,12 +40,21 @@ semantic/host calls and bulk maintenance retain their documented limits. No
 universal cancellation deadline is added. Native release packages omit component
 support; process-only bindings remain available.
 
-This PR prepares version synchronization, release notes and validation evidence.
-A non-publishing three-platform release rehearsal is a separate gate. Tagging the
-final reviewed commit triggers publication through the existing release workflow.
+[PR #51](https://github.com/TovarishN/Nitride/pull/51) merged version synchronization,
+release notes and validation evidence. The [three-platform PGO rehearsal](https://github.com/TovarishN/Nitride/actions/runs/42650947553)
+passed on the exact release commit. The [tag workflow](https://github.com/TovarishN/Nitride/actions/runs/42658857118)
+promoted those verified artifacts without rebuilding them and published the release.
+All three VSIXs, CLI archives, metadata files and per-platform/combined checksums
+were downloaded and verified; all 13 files match the rehearsal bytes exactly.
+The [publication verification record](benchmarks/2026-11-09/release-040-published.json)
+retains their hashes and source identity.
 
 The [local packaged acceptance report](editor-acceptance-0.4.0.md) records passing
 Portable and full-language/4 MiB sessions and extracted native Calendar smoke
 checks. Ordinary diagnostics were observed in roughly 44–48 ms; large-file
 feature checks took 235–465 ms after edits. Full local correctness/quality gates
-passed. See the release PR for hosted checks and non-publishing rehearsal status.
+passed. The exact CI-built macOS artifact was also validated in both desktop
+profiles and through extracted native Calendar execution/conformance before
+promotion. Its diagnostics were observed at about 43–45 ms; large-file edit/feature
+checks took 246–476 ms. The byte-equivalent published package is covered by that
+evidence; no new GUI claim is inferred for Windows or Linux.
