@@ -64,5 +64,8 @@ are separate from ordinary language-server diagnostics.
 `--snapshot-stdin` is the machine interface for overlays:
 `{"version":1,"files":[{"path":"/absolute/path","text":"buffer text"}]}`.
 Other inputs come from disk; bundled library sources retain their canonical text.
+Editor envelopes additionally provide `roots`, which the native reader enforces
+before opening project/dependency inputs. Ordinary CLI runs retain explicit-path
+filesystem reads.
 Input limits are 8 MiB per suite, 16 MiB per source/overlay, 64 MiB per snapshot
 envelope and 32 MiB per suite result report; a suite contains 1–1000 tests.

@@ -13,13 +13,16 @@ adds packaged VS Code extension-host acceptance and checked syntax/typed phase
 measurements, merged in [PR #47](https://github.com/TovarishN/Nitride/pull/47)
 with all hosted checks passing. Visual acceptance and painted-frame latency remain unverified.
 
-## Authoring kit feature branch
+## Language-author workflow
 
-The approved [versioned lexical library and authoring kit](authoring.md) adds
-`Nitride.Lexical@1.0.0`, exact offline project pins, read-only editor navigation,
-typed/syntax project creation and bounded project quick fixes. This is feature
-branch work; the published release remains 0.4.0. [Native packaged editor and regression evidence](authoring-acceptance.md)
-records the development-payload acceptance and review fixes.
+[PR #53](https://github.com/TovarishN/Nitride/pull/53) merged the versioned lexical
+library, standalone starter projects and bounded project fixes, with all platform
+checks passing. [Authoring documentation](authoring.md) and
+[packaged acceptance](authoring-acceptance.md) describe the delivered scope.
+The current language-testing feature adds native [`.ntest` suites](language-testing.md),
+phase/diagnostic/value assertions, generated starter tests and VS Code Testing
+using frozen inputs and separate cancellable native workers. The published
+engine release remains 0.4.0.
 
 ## Implemented in merged development
 

@@ -1,0 +1,38 @@
+{
+  "scopeName": "source.ntest",
+  "patterns": [
+    {
+      "name": "string.quoted.other.ntest",
+      "begin": "<\\[",
+      "end": "\\]>"
+    },
+    {
+      "name": "comment.line.double-slash.ntest",
+      "match": "//.*$"
+    },
+    {
+      "name": "comment.block.ntest",
+      "begin": "/\\*",
+      "end": "\\*/"
+    },
+    {
+      "name": "string.quoted.double.ntest",
+      "begin": "\"",
+      "end": "\"",
+      "patterns": [
+        {
+          "match": "\\\\.",
+          "name": "constant.character.escape.ntest"
+        }
+      ]
+    },
+    {
+      "name": "keyword.control.ntest",
+      "match": "\\b(tests|version|project|test|source|file|expect|parse|compile|run|accept|reject|values|diagnostic|code|span|none)\\b"
+    },
+    {
+      "name": "constant.numeric.ntest",
+      "match": "\\b[0-9]+(?:\\.[0-9]+)?\\b"
+    }
+  ]
+}

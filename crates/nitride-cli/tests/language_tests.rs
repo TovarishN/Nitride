@@ -65,3 +65,33 @@ fn native_test_command_lists_executes_and_streams() {
     assert_eq!(result.status.code(), Some(1));
     std::fs::remove_dir_all(root).unwrap();
 }
+
+#[test]
+fn option_spelling_inside_case_names_is_not_a_global_grant() {
+    let root =
+        std::env::temp_dir().join(format!("nitride-test-option-name-{}", std::process::id()));
+    std::fs::create_dir(&root).unwrap();
+    std::fs::write(
+        root.join("nitride.nproj"),
+        "language Test {grammar Test.ngr;start Test.Start;}",
+    )
+    .unwrap();
+    std::fs::write(
+        root.join("Test.ngr"),
+        "syntax module Test {syntax Start = \"x\";}",
+    )
+    .unwrap();
+    let suite = root.join("tests.ntest");
+    std::fs::write(&suite,"tests version 1 {project \"nitride.nproj\";test \"--grant\" {source \"x\";expect parse accept;}}").unwrap();
+    let result = Command::new(env!("CARGO_BIN_EXE_nitride"))
+        .args(["test", "--case", "--grant"])
+        .arg(suite)
+        .output()
+        .unwrap();
+    assert!(
+        result.status.success(),
+        "{}",
+        String::from_utf8_lossy(&result.stderr)
+    );
+    std::fs::remove_dir_all(root).unwrap();
+}

@@ -158,6 +158,9 @@ impl<'a> Runner<'a> {
                 .push(json!({"path":path,"message":format!("unknown case {name}")}));
             return report;
         }
+        for input in &discovery.dependencies {
+            let _ = self.snapshot.read(input);
+        }
         let loaded = self
             .loaded
             .entry(discovery.project.clone())

@@ -87,11 +87,40 @@ fn diagnostic_matching_and_infrastructure_are_distinct() {
         diagnostic["category"], diagnostic["span"][0], diagnostic["span"][1]
     );
     std::fs::write(&path, expected).unwrap();
+    let snapshot = Snapshot::default();
     let result = Runner::new(&snapshot).run(&path, &[], &mut |_| {});
     assert_eq!(result.exit_code(), 0);
     std::fs::write(target.join("Language.ngr"), "bad grammar").unwrap();
+    let snapshot = Snapshot::default();
     let result = Runner::new(&snapshot).run(&path, &[], &mut |_| {});
     assert_eq!(result.exit_code(), 2);
     assert_eq!(result.results[0]["status"], "errored");
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn disk_inputs_are_immutable_after_first_snapshot_read() {
+    let root = std::env::temp_dir().join(format!("nitride-snapshot-freeze-{}", std::process::id()));
+    std::fs::create_dir(&root).unwrap();
+    let file = root.join("source");
+    std::fs::write(&file, "old").unwrap();
+    let snapshot = Snapshot::default();
+    assert_eq!(snapshot.read(&file).unwrap(), "old");
+    std::fs::write(&file, "new").unwrap();
+    assert_eq!(snapshot.read(&file).unwrap(), "old");
+    std::fs::remove_dir_all(root).unwrap();
+}
+
+#[test]
+fn editor_snapshot_roots_are_enforced_before_reading_project_inputs() {
+    let root =
+        std::env::temp_dir().join(format!("nitride-test-root-policy-{}", std::process::id()));
+    std::fs::create_dir(&root).unwrap();
+    let outside = root.with_extension("outside");
+    std::fs::write(&outside, "private input").unwrap();
+    let snapshot = Snapshot::from_json(&json!({"version":1,"files":[],"roots":[root]})).unwrap();
+    let error = snapshot.read(&outside).unwrap_err();
+    assert!(error.to_string().contains("outside"));
+    std::fs::remove_file(outside).unwrap();
     std::fs::remove_dir_all(root).unwrap();
 }
