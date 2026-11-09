@@ -73,10 +73,10 @@ Interfaces: ProjectIssue {code,kind,span,target,project}; ProjectActionPlan refe
 
 ### Task6: End-to-end authoring evidence and integration
 Files: docs authoring guide/status; extend disposable editor acceptance/tooling tests as needed, release training/library metadata gates and checked raw reports.
-- [ ] Exercise a generated typed language end-to-end: creation, stdlib navigation/read-only source, sample execution42, authoring error, quick-fix creation and restored diagnostics. Syntax preset prepares/parses too.
-- [ ] Run full workspace/native/strict Clippy/format/bootstrap/extension/tooling checks appropriate to all modified owners. Build native package and validate authoring with actual bundled CLI/server (no component dependency).
-- [ ] Fresh whole-branch review; one regression-backed fix pass for material findings. Keep no-library regression evidence and explicit unsupported-client limitations.
-- [ ] Commit completed plan/evidence, push and open reviewable feature PR(s) with the three staged commits/increments. Do not tag/publish; keep isolated checkout clean.
+- [x] Exercise a generated typed language end-to-end: creation, stdlib navigation/read-only source, sample execution42, authoring error, quick-fix creation and restored diagnostics. Syntax preset prepares/parses too.
+- [x] Run full workspace/native/strict Clippy/format/bootstrap/extension/tooling checks appropriate to all modified owners. Build native package and validate authoring with actual bundled CLI/server (no component dependency).
+- [x] Fresh whole-branch review; one regression-backed fix pass for material findings. Keep no-library regression evidence and explicit unsupported-client limitations.
+- [x] Commit completed plan/evidence, push and open reviewable feature PR(s) with the three staged commits/increments. Do not tag/publish; keep isolated checkout clean.
 
 ## Self-review
 Spec sections1–3 map to Tasks1/2; section4 to3; section5 to4; section6 to5; acceptance/release evidence to6. Native templates and metadata stay explicit. Internal type names may evolve to existing owning types without changing contracts; record rulings in the task ledger. Execute inline under the user's approved scope and established workflow; no additional implementation permission checkpoint is needed.
