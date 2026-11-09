@@ -208,7 +208,7 @@ members with a warning. Package and install for your host, for example:
 
 ```sh
 scripts/package-vscode.sh darwin-arm64
-code --install-extension dist/nitride-0.3.0-darwin-arm64.vsix
+code --install-extension dist/nitride-0.4.0-darwin-arm64.vsix
 ```
 
 Other packaging targets are `linux-x64` and `win32-x64`. That build trains the
@@ -220,7 +220,7 @@ as a release:
 
 ```sh
 scripts/package-vscode.sh --no-pgo darwin-arm64
-code --install-extension dist/no-pgo/nitride-0.3.0-darwin-arm64.vsix
+code --install-extension dist/no-pgo/nitride-0.4.0-darwin-arm64.vsix
 ```
 
 A file can also choose its language with a Nitrogen signature such as
