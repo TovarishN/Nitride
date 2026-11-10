@@ -473,6 +473,18 @@ lists its bindings and their last conformance result.
      (rustdoc JSON, .NET reflection, OpenAPI). Components are the one format
      whose types Nitride already maps.
 
+## Interface-example limits
+
+Catalog example expressions have a maximum nesting depth of 128. The native
+frontend reports excessive nesting at its source span. Core conformance inspects
+both the value and expected expressions before host calls; the default expression
+work budget is `Limits::default().work`, shared across both sides of one example.
+`host::conformance_with_limits` allows a smaller depth or custom work budget;
+depth remains capped at 128. Limited cases fail conformance, while bounded cases
+requiring ungranted effects remain skipped. Evaluation uses an explicit work
+stack and preserves left-to-right call order. See the [panic audit](panic-audit.md)
+for the regression coverage and remaining boundaries.
+
 ## Open questions
 
 - Whether an interface may span modules, or `using` an interface from another

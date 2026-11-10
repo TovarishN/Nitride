@@ -207,6 +207,21 @@ impl Decoder<'_> {
         })
     }
     fn example_expr(&self, id: u32, errors: &mut Vec<PrepareError>) -> ExampleExpr {
+        self.example_expr_at(id, 0, errors)
+    }
+    fn example_expr_at(&self, id: u32, depth: u32, errors: &mut Vec<PrepareError>) -> ExampleExpr {
+        if depth > host::MAX_EXAMPLE_DEPTH {
+            errors.push(self.source.error(
+                self.span(id),
+                format!(
+                    "interface example nesting exceeds {} levels",
+                    host::MAX_EXAMPLE_DEPTH
+                ),
+            ));
+            // Parsing aborts on collected errors before lowering. A shallow
+            // placeholder also keeps error cleanup independent of input depth.
+            return ExampleExpr::Number(0.0);
+        }
         let id = self.choice(
             id,
             &[
@@ -222,7 +237,7 @@ impl Decoder<'_> {
                 args: self
                     .fields(id, "Args")
                     .into_iter()
-                    .map(|a| self.example_expr(a, errors))
+                    .map(|a| self.example_expr_at(a, depth + 1, errors))
                     .collect(),
             },
             "ExampleNumber" => {

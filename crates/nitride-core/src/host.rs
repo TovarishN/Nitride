@@ -337,49 +337,73 @@ fn evaluate(
         message,
         failure: None,
     };
-    let (operation, args) = match expr {
-        ExampleExpr::Number(n) => return Ok(Datum::Number(*n)),
-        ExampleExpr::Boolean(b) => return Ok(Datum::Boolean(*b)),
-        ExampleExpr::Text(text) => return Ok(Datum::Text((*text).into())),
-        ExampleExpr::Call { operation, args } => (*operation, *args),
-    };
-    let index = language
-        .operations
-        .iter()
-        .position(|s| s.id == operation)
-        .ok_or_else(|| plain(format!("unknown operation '{operation}'")))?;
-    let binding = bindings
-        .iter()
-        .find(|b| b.signature.id == operation)
-        .ok_or_else(|| plain(format!("no binding for '{operation}'")))?;
-    let declared = language.handlers.get(index).filter(|h| h.contains('@'));
-    match (&binding.handler, declared) {
-        (HostHandler::Contract { contract, .. }, Some(declared)) if contract != declared => {
-            return Err(plain(format!(
-                "binding for '{operation}' implements contract {contract}, the catalog declares {declared}"
-            )));
-        }
-        _ => {}
+    enum Step<'e, 'g, 'b, 'h> {
+        Read(&'e ExampleExpr<'g>),
+        Call(&'b HostBinding<'h>, usize, Option<&'g str>),
     }
-    let signature = &language.operations[index];
-    let result = match args {
-        // Source spelling, as a grammar's `text Field` passes it.
-        [ExampleExpr::Text(text)] if signature.inputs == [TEXT] => {
-            binding.call(&[], Some(text), &mut Vec::new())
+    let mut pending = vec![Step::Read(expr)];
+    let mut values = Vec::new();
+    let mut numbers = Vec::new();
+    while let Some(step) = pending.pop() {
+        match step {
+            Step::Read(expr) => match expr {
+                ExampleExpr::Number(n) => values.push(Datum::Number(*n)),
+                ExampleExpr::Boolean(b) => values.push(Datum::Boolean(*b)),
+                ExampleExpr::Text(text) => values.push(Datum::Text((*text).into())),
+                ExampleExpr::Call { operation, args } => {
+                    let index = language
+                        .operations
+                        .iter()
+                        .position(|signature| signature.id == *operation)
+                        .ok_or_else(|| plain(format!("unknown operation '{operation}'")))?;
+                    let binding = bindings
+                        .iter()
+                        .find(|binding| binding.signature.id == *operation)
+                        .ok_or_else(|| plain(format!("no binding for '{operation}'")))?;
+                    let declared = language
+                        .handlers
+                        .get(index)
+                        .filter(|handler| handler.contains('@'));
+                    if let (HostHandler::Contract { contract, .. }, Some(declared)) =
+                        (&binding.handler, declared)
+                        && contract != declared
+                    {
+                        return Err(plain(format!(
+                            "binding for '{operation}' implements contract {contract}, the catalog declares {declared}"
+                        )));
+                    }
+                    match *args {
+                        [ExampleExpr::Text(text)]
+                            if language.operations[index].inputs == [TEXT] =>
+                        {
+                            pending.push(Step::Call(binding, 0, Some(text)));
+                        }
+                        _ => {
+                            pending.push(Step::Call(binding, args.len(), None));
+                            // LIFO traversal preserves the catalog's left-to-right
+                            // argument evaluation and host-effect order.
+                            pending.extend(args.iter().rev().map(Step::Read));
+                        }
+                    }
+                }
+            },
+            Step::Call(binding, count, text) => {
+                let start = values
+                    .len()
+                    .checked_sub(count)
+                    .ok_or_else(|| plain("invalid example evaluation stack".into()))?;
+                let value = binding.call(&values[start..], text, &mut numbers)?;
+                if !value.number().is_none_or(f64::is_finite) {
+                    return Err(plain("nonfinite result".into()));
+                }
+                values.truncate(start);
+                values.push(value);
+            }
         }
-        _ => {
-            let inputs = args
-                .iter()
-                .map(|a| evaluate(language, bindings, a))
-                .collect::<Result<Vec<_>, _>>()?;
-            binding.call(&inputs, None, &mut Vec::new())
-        }
-    }?;
-    if result.number().is_none_or(f64::is_finite) {
-        Ok(result)
-    } else {
-        Err(plain("nonfinite result".into()))
     }
+    values
+        .pop()
+        .ok_or_else(|| plain("empty example evaluation".into()))
 }
 
 /// Replaces each binding whose operation needs an effect not in `granted`
@@ -408,16 +432,42 @@ pub fn grant<'g>(
         .collect()
 }
 
-/// Whether an example calls an operation whose binding is denied.
-fn denied(bindings: &[HostBinding<'_>], expr: &ExampleExpr<'_>) -> bool {
-    match expr {
-        ExampleExpr::Call { operation, args } => {
-            bindings.iter().any(|b| {
-                b.signature.id == *operation && matches!(b.handler, HostHandler::Denied(_))
-            }) || args.iter().any(|a| denied(bindings, a))
+/// Hard ceiling for interface-example expression nesting. Catalog preparation
+/// and conformance use the same ceiling so subsequent catalog lowering has
+/// bounded stack use, even when a caller raises `Limits::depth`.
+pub const MAX_EXAMPLE_DEPTH: u32 = 128;
+
+/// Inspect without recursion or host effects. Keep one iterator per nesting
+/// level, rather than scheduling an entire wide argument list at once.
+fn inspect_example(
+    bindings: &[HostBinding<'_>],
+    expr: &ExampleExpr<'_>,
+    limits: Limits,
+    work: &mut u64,
+) -> Result<bool, String> {
+    let mut pending = vec![(std::slice::from_ref(expr).iter(), 0_u32)];
+    let mut denied = false;
+    while let Some((siblings, depth)) = pending.last_mut() {
+        let Some(expr) = siblings.next() else {
+            pending.pop();
+            continue;
+        };
+        let depth = *depth;
+        if depth > limits.depth.min(MAX_EXAMPLE_DEPTH) || *work >= limits.work {
+            return Err("interface example depth/work limit exceeded".into());
         }
-        _ => false,
+        *work += 1;
+        if let ExampleExpr::Call { operation, args } = expr {
+            denied |= bindings.iter().any(|binding| {
+                binding.signature.id == *operation
+                    && matches!(binding.handler, HostHandler::Denied(_))
+            });
+            if !args.is_empty() {
+                pending.push((args.iter(), depth + 1));
+            }
+        }
     }
+    Ok(denied)
 }
 
 /// The outcome of running an interface's examples.
@@ -447,6 +497,20 @@ pub fn conformance<'e>(
     bindings: &[HostBinding<'_>],
     examples: &'e [Example<'e>],
 ) -> Conformance<'e> {
+    conformance_with_limits(language, bindings, examples, Limits::default())
+}
+
+/// As [`conformance`], with a per-example expression work budget and nesting
+/// limit. Both value and expected expressions are inspected before any host
+/// call. Nesting is capped at [`MAX_EXAMPLE_DEPTH`] even if `limits.depth` is
+/// larger. Limited examples are failures, never expected interface failures.
+/// Host implementations themselves remain responsible for their own limits.
+pub fn conformance_with_limits<'e>(
+    language: &Language<'_>,
+    bindings: &[HostBinding<'_>],
+    examples: &'e [Example<'e>],
+    limits: Limits,
+) -> Conformance<'e> {
     let mut failed = Vec::new();
     let mut skipped = Vec::new();
     for example in examples {
@@ -454,9 +518,24 @@ pub fn conformance<'e>(
             Expected::Equals(expected) => Some(expected),
             Expected::Fails(_) => None,
         };
-        if denied(bindings, &example.value) || expected.is_some_and(|e| denied(bindings, e)) {
-            skipped.push(example.source);
-            continue;
+        let mut work = 0;
+        let inspected =
+            inspect_example(bindings, &example.value, limits, &mut work).and_then(|denied| {
+                expected.map_or(Ok(denied), |expected| {
+                    inspect_example(bindings, expected, limits, &mut work)
+                        .map(|other| denied || other)
+                })
+            });
+        match inspected {
+            Err(error) => {
+                failed.push((example.source, error));
+                continue;
+            }
+            Ok(true) => {
+                skipped.push(example.source);
+                continue;
+            }
+            Ok(false) => {}
         }
         let value = evaluate(language, bindings, &example.value);
         let why = match (&example.expected, value) {
