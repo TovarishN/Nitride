@@ -3,6 +3,38 @@
 //! codegen, the fixture host and the editor all read these tables.
 use crate::*;
 
+/// A catalog identifier as a component/protocol name, without WIT's keyword
+/// escape marker: `ParseDate` becomes `parse-date`, and `date_2` becomes `date2`.
+/// Empty underscore-separated words are discarded; numeric words join the
+/// preceding word, as used by WIT code generation.
+pub fn binding_name(name: &str) -> String {
+    let mut snake = String::new();
+    for (index, c) in name.chars().enumerate() {
+        if c.is_ascii_uppercase() {
+            if index > 0 {
+                snake.push('_');
+            }
+            snake.push(c.to_ascii_lowercase());
+        } else {
+            snake.push(c);
+        }
+    }
+    let words: Vec<String> =
+        snake
+            .split('_')
+            .filter(|word| !word.is_empty())
+            .fold(Vec::new(), |mut words, word| {
+                match words.last_mut() {
+                    Some(last) if word.starts_with(|c: char| c.is_ascii_digit()) => {
+                        last.push_str(word)
+                    }
+                    _ => words.push(word.to_owned()),
+                }
+                words
+            });
+    words.join("-")
+}
+
 /// How an operation handler takes its inputs.
 #[derive(Debug, Clone, Copy)]
 pub enum Run {

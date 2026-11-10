@@ -473,6 +473,16 @@ lists its bindings and their last conformance result.
      (rustdoc JSON, .NET reflection, OpenAPI). Components are the one format
      whose types Nitride already maps.
 
+## Host adapter validation
+
+Process replies must be JSON-RPC 2.0 envelopes with one result or error and the
+matching request ID. Malformed replies and outgoing value/record-shape mismatches
+are host failures. Component loading checks parameter and successful result
+shapes, including record names/order and failure-result wrappers, in addition to
+value counts. Generated WIT and both adapters share catalog-name normalization.
+See [direct crate coverage](testing/host-bindings.md) for tests, behavior changes
+and remaining synchronous transport limits.
+
 ## Interface-example limits
 
 Catalog example expressions have a maximum nesting depth of 128. The native

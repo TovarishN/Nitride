@@ -18,6 +18,7 @@ Start with [current status](status.md) for what is implemented and verified, or
 
 - [Architecture](architecture.md): crate responsibilities, preparation, parsing, semantics and editor analysis.
 - [LSP scheduling](lsp-scheduling.md): background work, freshness barriers and cancellation.
+- [Host-binding crate tests](testing/host-bindings.md): direct process/component boundaries and contract validation.
 - [Panic audit](panic-audit.md): input boundaries, bounded interface examples and retained invariants.
 - [Incremental fuzzing](../fuzz/README.md): CI corpus replay, sanitizer campaigns and limits.
 - [Parser optimization](optimizing-generated-parsers.md): generated parser strategy and measurement constraints.

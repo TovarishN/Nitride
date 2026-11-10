@@ -12,6 +12,7 @@
 //! representations: numbers, integers, booleans, strings, records as objects
 //! keyed by field name, lists as arrays. A declared failure is an error whose
 //! `data.failure` is the failure's WIT name.
+use nitride_core::host::binding_name as kebab;
 use nitride_core::{Datum, Failure, HostBinding, Inputs, Language};
 use serde_json::{Value, json};
 use std::io::{BufRead, BufReader, Write};
@@ -19,53 +20,49 @@ use std::path::Path;
 use std::process::{Child, ChildStdin, ChildStdout, Command, Stdio};
 use std::sync::{Arc, Mutex};
 
-/// `InvalidDate` → `invalid-date`, as WIT and the protocol name it.
-fn kebab(name: &str) -> String {
-    let mut out = String::new();
-    for (i, c) in name.chars().enumerate() {
-        if c.is_ascii_uppercase() {
-            if i > 0 {
-                out.push('-');
-            }
-            out.push(c.to_ascii_lowercase());
-        } else {
-            out.push(c);
-        }
-    }
-    out
-}
-
 /// A value of catalog type `ty` as protocol JSON.
-fn to_json(catalog: &Value, ty: &str, datum: &Datum) -> Value {
+fn to_json(catalog: &Value, ty: &str, datum: &Datum) -> Result<Value, String> {
     let representation = &catalog["representations"][ty];
-    match datum {
-        Datum::Number(n) => json!(n),
-        Datum::Integer(i) => json!(i),
-        Datum::Boolean(b) => json!(b),
-        Datum::Text(t) => json!(t),
+    let wrong = || format!("value does not match catalog type {ty}");
+    Ok(match datum {
+        Datum::Number(n)
+            if ty != "Core.Text"
+                && (representation.is_null() || representation == "f64")
+                && n.is_finite() =>
+        {
+            json!(n)
+        }
+        Datum::Integer(i) if representation == "i64" => json!(i),
+        Datum::Boolean(b) if representation == "bool" => json!(b),
+        Datum::Text(t) if ty == "Core.Text" || representation == "text" => json!(t),
         Datum::List(items) => {
-            let element = representation["list"].as_str().unwrap_or_default();
+            let element = representation["list"].as_str().ok_or_else(wrong)?;
             Value::Array(
                 items
                     .iter()
                     .map(|item| to_json(catalog, element, item))
-                    .collect(),
+                    .collect::<Result<_, _>>()?,
             )
         }
-        Datum::Record(values) => Value::Object(
-            representation["record"]
-                .as_array()
-                .into_iter()
-                .flatten()
-                .zip(values.iter())
-                .map(|(field, value)| {
-                    let name = field[0].as_str().unwrap_or_default().to_owned();
-                    let ty = field[1].as_str().unwrap_or_default();
-                    (name, to_json(catalog, ty, value))
-                })
-                .collect(),
-        ),
-    }
+        Datum::Record(values) => {
+            let fields = representation["record"].as_array().ok_or_else(wrong)?;
+            if fields.len() != values.len() {
+                return Err(wrong());
+            }
+            Value::Object(
+                fields
+                    .iter()
+                    .zip(values.iter())
+                    .map(|(field, value)| {
+                        let name = field.get(0).and_then(Value::as_str).ok_or_else(wrong)?;
+                        let ty = field.get(1).and_then(Value::as_str).ok_or_else(wrong)?;
+                        Ok((name.to_owned(), to_json(catalog, ty, value)?))
+                    })
+                    .collect::<Result<_, String>>()?,
+            )
+        }
+        _ => return Err(wrong()),
+    })
 }
 
 /// Protocol JSON as a value of catalog type `ty`.
@@ -140,6 +137,19 @@ impl Server {
         }
         let response: Value =
             serde_json::from_str(&line).map_err(|e| format!("not a JSON-RPC response: {e}"))?;
+        if !response.is_object()
+            || response["jsonrpc"] != "2.0"
+            || response.get("result").is_some() == response.get("error").is_some()
+        {
+            return Err("invalid JSON-RPC response envelope".into());
+        }
+        if let Some(error) = response.get("error")
+            && (!error.is_object()
+                || (error["code"].as_i64().is_none() && error["code"].as_u64().is_none())
+                || error["message"].as_str().is_none())
+        {
+            return Err("invalid JSON-RPC error object".into());
+        }
         if response["id"] != id {
             return Err(format!("response {} answers request {id}", response["id"]));
         }
@@ -231,12 +241,14 @@ pub fn bindings<'g>(
                 message: message.into(),
             };
             let params = match given {
-                Inputs::Text(text) => vec![json!(text)],
-                Inputs::Values(values) => values
+                Inputs::Text(text) if inputs == ["Core.Text"] => vec![json!(text)],
+                Inputs::Values(values) if values.len() == inputs.len() => values
                     .iter()
                     .zip(&inputs)
                     .map(|(value, ty)| to_json(&catalog, ty, value))
-                    .collect(),
+                    .collect::<Result<_, _>>()
+                    .map_err(host)?,
+                _ => return Err(host("inputs do not match the signature".into())),
             };
             let response = server
                 .lock()
