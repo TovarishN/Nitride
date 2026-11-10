@@ -86,14 +86,16 @@ all three sizes, and ahead of Roslyn cold at 256 KiB and 4 MiB. At 16 MiB,
 Roslyn remains 1.6× faster cold. Roslyn's warm full parses are 3.5× faster than
 PGO Nitride at 4 MiB and 2.9× at 16 MiB. Native CPU targeting adds no consistent gain.
 
-**The SIMD feature currently uses scalar batching on Apple Silicon.** Its
-explicit vector classifier uses AVX2 on x86-64; no ARM NEON classifier is
-implemented. On this M4 Pro, batching makes the 1 MiB string case 2.66× faster,
+**The October 30 assessment predates ARM NEON.** At that checkpoint the SIMD
+feature used scalar batching on Apple Silicon and AVX2 on x86-64. On this M4 Pro,
+batching made the 1 MiB string case 2.66× faster,
 while mixed-code results show only small gains and regressions. Combining
 batching with PGO adds no consistent mixed-code benefit. The separate
 [Windows AVX2 experiment](docs/benchmarks/scanners/ascii-scanner-runs.md) measured 3.45× over
 default on that long-string workload, including a 1.21× gain over scalar batching.
-Those results do not establish a general parser speedup or a NEON speedup.
+Those historical results do not establish a general parser speedup or a NEON speedup.
+The local [November 10 NEON follow-up](docs/benchmarks/scanners/neon-2026-11-10.md)
+adds ARM classification under the same opt-in feature and records separate measurements.
 
 Recovery still has a substantial gap on dense errors: at 256 KiB, PGO Nitride
 is 3.1× Roslyn cold and 6.7× Roslyn warm. At 4 MiB with one error or junk, PGO

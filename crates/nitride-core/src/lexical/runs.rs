@@ -4,7 +4,10 @@
 pub struct AsciiRun {
     mask: [u64; 2],
     #[cfg_attr(
-        not(all(feature = "simd-ascii-runs", target_arch = "x86_64")),
+        not(all(
+            feature = "simd-ascii-runs",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        )),
         allow(dead_code)
     )]
     low: [u8; 16],
@@ -48,7 +51,19 @@ impl AsciiRun {
                 0
             };
         }
-        #[cfg(not(all(feature = "simd-ascii-runs", target_arch = "x86_64")))]
+        #[cfg(all(feature = "simd-ascii-runs", target_arch = "aarch64"))]
+        {
+            count = if bytes.len() >= 16 && std::arch::is_aarch64_feature_detected!("neon") {
+                // SAFETY: feature detection above and bounded slice loads inside.
+                unsafe { self.neon(bytes) }
+            } else {
+                0
+            };
+        }
+        #[cfg(not(all(
+            feature = "simd-ascii-runs",
+            any(target_arch = "x86_64", target_arch = "aarch64")
+        )))]
         {
             count = 0;
         }
@@ -57,6 +72,38 @@ impl AsciiRun {
                 .iter()
                 .take_while(|b| self.contains(**b))
                 .count()
+    }
+    #[cfg(all(feature = "simd-ascii-runs", target_arch = "aarch64"))]
+    #[target_feature(enable = "neon")]
+    unsafe fn neon(&self, bytes: &[u8]) -> usize {
+        use std::arch::aarch64::*;
+        // The low nibble selects a high-nibble membership mask. High nibbles
+        // 8..15 select zero, so non-ASCII bytes stop the run before decoding.
+        // SAFETY: both arrays have 16 initialized bytes; unaligned loads are valid.
+        let low = unsafe { vld1q_u8(self.low.as_ptr()) };
+        let high =
+            unsafe { vld1q_u8([1, 2, 4, 8, 16, 32, 64, 128, 0, 0, 0, 0, 0, 0, 0, 0].as_ptr()) };
+        // SAFETY: the lane index array has 16 initialized bytes.
+        let lanes =
+            unsafe { vld1q_u8([0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].as_ptr()) };
+        let nibble = vdupq_n_u8(15);
+        let zero = vdupq_n_u8(0);
+        let mut at = 0;
+        while bytes.len() - at >= 16 {
+            // SAFETY: the loop ensures all 16 loaded bytes are within the slice.
+            let input = unsafe { vld1q_u8(bytes.as_ptr().add(at)) };
+            let lo = vqtbl1q_u8(low, vandq_u8(input, nibble));
+            let hi = vqtbl1q_u8(high, vshrq_n_u8::<4>(input));
+            let rejected = vceqq_u8(vandq_u8(lo, hi), zero);
+            // Accepted lanes become 255; rejected lanes retain their index.
+            // A minimum of 255 means the entire vector was accepted.
+            let first = vminvq_u8(vorrq_u8(lanes, vmvnq_u8(rejected)));
+            if first != 255 {
+                return at + usize::from(first);
+            }
+            at += 16;
+        }
+        at
     }
     #[cfg(all(feature = "simd-ascii-runs", target_arch = "x86_64"))]
     #[target_feature(enable = "avx2")]
@@ -94,6 +141,76 @@ impl AsciiRun {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(all(feature = "simd-ascii-runs", target_arch = "aarch64"))]
+    #[test]
+    fn neon_vector_prefix_matches_membership_for_every_byte_and_mask() {
+        if !std::arch::is_aarch64_feature_detected!("neon") {
+            return;
+        }
+        let mut masks = vec![
+            [0, 0],
+            [u64::MAX; 2],
+            [0x0123456789abcdef, 0xfedcba9876543210],
+        ];
+        for bit in 0..128 {
+            let mut mask = [0; 2];
+            mask[bit / 64] = 1 << (bit % 64);
+            masks.push(mask);
+        }
+        for mask in masks {
+            let plan = AsciiRun::new(mask, 1, 0);
+            for byte in 0..=255u8 {
+                let allowed = byte < 128 && mask[byte as usize / 64] & (1 << (byte % 64)) != 0;
+                for length in [0, 1, 15, 16, 17, 31, 32, 33, 47, 48, 65] {
+                    for offset in [0, 1, 15, 31] {
+                        let bytes = vec![byte; offset + length];
+                        let expected = if allowed { length / 16 * 16 } else { 0 };
+                        // SAFETY: NEON availability was checked above.
+                        let actual = unsafe { plan.neon(&bytes[offset..]) };
+                        assert_eq!(
+                            actual, expected,
+                            "{mask:?} byte {byte} offset {offset} len {length}"
+                        );
+                        assert_eq!(
+                            plan.scan(&bytes[offset..]),
+                            if allowed { length } else { 0 }
+                        );
+                    }
+                }
+            }
+        }
+    }
+
+    #[cfg(all(feature = "simd-ascii-runs", target_arch = "aarch64"))]
+    #[test]
+    fn neon_vector_prefix_stops_at_first_rejected_lane() {
+        if !std::arch::is_aarch64_feature_detected!("neon") {
+            return;
+        }
+        // Alternating accepted bytes use different low/high nibbles.
+        let plan = AsciiRun::new([0, (1 << (b'a' - 64)) | (1 << (b'z' - 64))], 1, 0);
+        for rejected in (0..=255u8).filter(|b| !matches!(b, b'a' | b'z')) {
+            for length in [16, 17, 31, 32, 33, 47, 48, 65] {
+                for offset in [0, 1, 7, 15] {
+                    for at in 0..length {
+                        let mut bytes: Vec<_> = (0..offset + length)
+                            .map(|i| if i % 2 == 0 { b'a' } else { b'z' })
+                            .collect();
+                        bytes[offset + at] = rejected;
+                        // SAFETY: NEON availability was checked above.
+                        let actual = unsafe { plan.neon(&bytes[offset..]) };
+                        assert_eq!(
+                            actual,
+                            at.min(length / 16 * 16),
+                            "byte {rejected} at {at} offset {offset} len {length}"
+                        );
+                        assert_eq!(plan.scan(&bytes[offset..]), at);
+                    }
+                }
+            }
+        }
+    }
+
     #[test]
     fn classifier_matches_all_bytes_masks_boundaries_and_alignments() {
         let masks = [

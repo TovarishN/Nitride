@@ -81,16 +81,17 @@ as their runner and write Markdown beside the JSON report.
 The optional `nitride-core/ascii-runs` feature enables scalar batching of proven
 repeated one-byte ASCII traces in generated lexical scanners. The optional
 `nitride-core/simd-ascii-runs` Cargo feature includes scalar batching and adds
-runtime AVX2 detection on x86-64; unsupported CPUs and other
-architectures keep scalar scanning. It does not require a native CPU build or
+runtime AVX2 detection on x86-64 and NEON detection on aarch64; unsupported
+CPUs and other architectures keep scalar scanning. It does not require a native CPU build or
 change interpreted/incremental parsing into generated parsing.
 
 ## Apple Silicon reassessment
 
 The [October 30 assessment](../../docs/benchmarks/compiler/compiler-assessment-2026-10-30.md)
 compares fresh M4 Pro PGO/ASCII-batching runs with Nitrogen and Roslyn. The
-explicit SIMD classifier is AVX2-only: on ARM64 the feature measures scalar
-batching. A NEON classifier is a proposed follow-up, with no measured speedup.
+assessment predates the NEON implementation: its ARM64 SIMD-feature results
+measure scalar batching. The [November 10 NEON follow-up](../../docs/benchmarks/scanners/neon-2026-11-10.md)
+records separate matched default/scalar/NEON builds and reproduction commands.
 
 Use a new output directory when changing source, compiler or training. The
 runner accepts output/report paths so the Windows evidence stays intact:
@@ -106,7 +107,8 @@ NITRIDE_AUDIT_ASCII=1 node scripts/compiler-audit/run.mjs
 Use tools compatible with rustc's LLVM profile format; this run used rustc
 LLVM 23.1.3 and Homebrew `llvm-profdata` 23.1.4. `NITRIDE_AUDIT_ASCII=1` adds
 feature-enabled and feature-enabled PGO builds, a separate feature-enabled
-training profile, and the 1 MiB string case. It does not add NEON code.
+training profile, and the 1 MiB string case. Current aarch64 builds use NEON
+when enabled; retained October 30 results still describe their original code.
 `NITRIDE_AUDIT_REUSE_PROFILE=1` reuses the existing base training profile only;
 use it solely when the source, toolchain and training inputs are unchanged.
 

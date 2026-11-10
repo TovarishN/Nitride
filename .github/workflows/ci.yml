@@ -101,3 +101,8 @@ jobs:
           binary = Path('target/debug/nitride' + ('.exe' if os.name == 'nt' else '')).resolve()
           lsp(binary, os.environ.copy())
           PY
+      - name: Verify optional ARM SIMD scanners
+        if: runner.os == 'macOS'
+        run: |
+          cargo +stable test --locked -p nitride-core --features simd-ascii-runs
+          cargo +stable test --locked -p nitride-cli --test native_lexers --test generated_syntax --features nitride-core/simd-ascii-runs
