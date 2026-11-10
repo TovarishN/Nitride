@@ -1,0 +1,22 @@
+[package]
+name = "nitride-fuzz"
+version = "0.0.0"
+publish = false
+edition = "2024"
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+nitride-core = { path = "../crates/nitride-core" }
+nitride-cli = { path = "../crates/nitride-cli", default-features = false }
+
+[[bin]]
+name = "incremental_edits"
+path = "fuzz_targets/incremental_edits.rs"
+test = false
+doc = false
+bench = false

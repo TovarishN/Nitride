@@ -1,0 +1,199 @@
+{
+  "schema": 1,
+  "source_commit": "80d64a7962d44cfd3c3e29781c01152b3267725b",
+  "documents": {
+    "docs/status.md": "docs/project/status.md",
+    "docs/architecture.md": "docs/project/architecture.md",
+    "docs/authoring.md": "docs/guides/authoring.md",
+    "docs/catalog-language.md": "docs/guides/catalog-language.md",
+    "docs/embedding.md": "docs/guides/embedding.md",
+    "docs/host-binding.md": "docs/guides/host-binding.md",
+    "docs/language-testing.md": "docs/guides/language-testing.md",
+    "docs/scoped-parse-context.md": "docs/guides/scoped-parse-context.md",
+    "docs/structural-patterns.md": "docs/guides/structural-patterns.md",
+    "docs/trivia.md": "docs/guides/trivia.md",
+    "docs/lsp-scheduling.md": "docs/editor/lsp-scheduling.md",
+    "docs/authoring-acceptance.md": "docs/testing/authoring-acceptance.md",
+    "docs/language-testing-acceptance.md": "docs/testing/language-testing-acceptance.md",
+    "docs/panic-audit.md": "docs/testing/panic-audit.md",
+    "docs/design.md": "docs/archive/initial/design.md",
+    "docs/plan.md": "docs/archive/initial/plan.md",
+    "docs/progress.md": "docs/archive/initial/progress.md",
+    "docs/evidence.md": "docs/archive/initial/evidence.md",
+    "docs/ci-evidence.md": "docs/archive/initial/ci-evidence.md",
+    "docs/footprint.json": "docs/archive/initial/footprint.json",
+    "docs/grammar-provenance.json": "docs/archive/initial/grammar-provenance.json",
+    "docs/calls-memory.json": "docs/archive/initial/calls-memory.json",
+    "docs/functions-memory.json": "docs/archive/initial/functions-memory.json",
+    "docs/inference-memory.json": "docs/archive/initial/inference-memory.json",
+    "docs/namespace-memory.json": "docs/archive/initial/namespace-memory.json",
+    "docs/phase-memory.json": "docs/archive/initial/phase-memory.json",
+    "docs/ascii-scanner-runs-plan.md": "docs/archive/experiments/ascii-scanner-runs-plan.md",
+    "docs/shared-subtrees-main-integration.json": "docs/archive/experiments/shared-subtrees-main-integration.json",
+    "docs/shared-subtrees-main-integration.md": "docs/archive/experiments/shared-subtrees-main-integration.md",
+    "docs/ascii-scanner-runs-prototype-pinned.json": "docs/benchmarks/scanners/ascii-scanner-runs-prototype-pinned.json",
+    "docs/ascii-scanner-runs-unpinned.json": "docs/benchmarks/scanners/ascii-scanner-runs-unpinned.json",
+    "docs/ascii-scanner-runs.json": "docs/benchmarks/scanners/ascii-scanner-runs.json",
+    "docs/ascii-scanner-runs.md": "docs/benchmarks/scanners/ascii-scanner-runs.md",
+    "docs/compiler-assessment-2026-10-30.md": "docs/benchmarks/compiler/compiler-assessment-2026-10-30.md",
+    "docs/compiler-comparison-macos.json": "docs/benchmarks/compiler/compiler-comparison-macos.json",
+    "docs/compiler-optimization-assembly-native.json": "docs/benchmarks/compiler/compiler-optimization-assembly-native.json",
+    "docs/compiler-optimization-assembly-portable.json": "docs/benchmarks/compiler/compiler-optimization-assembly-portable.json",
+    "docs/compiler-optimization-audit.json": "docs/benchmarks/compiler/compiler-optimization-audit.json",
+    "docs/compiler-optimization-audit.md": "docs/benchmarks/compiler/compiler-optimization-audit.md",
+    "docs/compiler-optimization-macos.json": "docs/benchmarks/compiler/compiler-optimization-macos.json",
+    "docs/nitrogen-full-parse-comparison.json": "docs/benchmarks/compiler/nitrogen-full-parse-comparison.json",
+    "docs/nitrogen-full-parse-comparison.md": "docs/benchmarks/compiler/nitrogen-full-parse-comparison.md",
+    "docs/json-comparison-baseline.json": "docs/benchmarks/json/json-comparison-baseline.json",
+    "docs/json-comparison.json": "docs/benchmarks/json/json-comparison.json",
+    "docs/json-comparison.md": "docs/benchmarks/json/json-comparison.md",
+    "docs/benchmark-2026-11-07.md": "docs/benchmarks/reports/benchmark-2026-11-07.md",
+    "docs/benchmark-2026-11-08-arena-reader.md": "docs/benchmarks/reports/benchmark-2026-11-08-arena-reader.md",
+    "docs/benchmark-2026-11-08-materialization.md": "docs/benchmarks/reports/benchmark-2026-11-08-materialization.md",
+    "docs/benchmark-2026-11-09-active-polling.md": "docs/benchmarks/reports/benchmark-2026-11-09-active-polling.md",
+    "docs/benchmark-2026-11-09-cancellation.md": "docs/benchmarks/reports/benchmark-2026-11-09-cancellation.md",
+    "docs/benchmark-2026-11-09-editor-projection.md": "docs/benchmarks/reports/benchmark-2026-11-09-editor-projection.md",
+    "docs/benchmark-2026-11-09-editor-responsiveness.md": "docs/benchmarks/reports/benchmark-2026-11-09-editor-responsiveness.md",
+    "docs/benchmark-2026-11-09-polling.md": "docs/benchmarks/reports/benchmark-2026-11-09-polling.md",
+    "docs/benchmark-2026-11-09-projection-walk.md": "docs/benchmarks/reports/benchmark-2026-11-09-projection-walk.md",
+    "docs/releases.md": "docs/releases/README.md",
+    "docs/release-0.4.0.md": "docs/releases/0.4.0.md",
+    "docs/editor-acceptance-0.4.0.md": "docs/releases/0.4.0-editor-acceptance.md",
+    "docs/optimizing-generated-parsers.md": "docs/benchmarks/optimizing-generated-parsers.md"
+  },
+  "files": [
+    {
+      "original": "docs/ascii-scanner-runs-prototype-pinned.json",
+      "archived": "docs/benchmarks/scanners/ascii-scanner-runs-prototype-pinned.json",
+      "original_sha256": "67941bcf317adab7373115c0a4db3a9c528c8a95de926ccaecb72f0bf7b3b9bd",
+      "sha256": "67941bcf317adab7373115c0a4db3a9c528c8a95de926ccaecb72f0bf7b3b9bd",
+      "bytes": 62339
+    },
+    {
+      "original": "docs/ascii-scanner-runs-unpinned.json",
+      "archived": "docs/benchmarks/scanners/ascii-scanner-runs-unpinned.json",
+      "original_sha256": "01b8f5c2a0aaa97bc93f715ab79cb91c1b9dfc2c3dcd5f323a40a25e1e10ddfe",
+      "sha256": "01b8f5c2a0aaa97bc93f715ab79cb91c1b9dfc2c3dcd5f323a40a25e1e10ddfe",
+      "bytes": 62298
+    },
+    {
+      "original": "docs/ascii-scanner-runs.json",
+      "archived": "docs/benchmarks/scanners/ascii-scanner-runs.json",
+      "original_sha256": "3bea060b135e7d03a74762f4e5c0a47f6b41320a21ce1ede9479949c31a98f9f",
+      "sha256": "3bea060b135e7d03a74762f4e5c0a47f6b41320a21ce1ede9479949c31a98f9f",
+      "bytes": 84881
+    },
+    {
+      "original": "docs/calls-memory.json",
+      "archived": "docs/archive/initial/calls-memory.json",
+      "original_sha256": "445ca0f9be79585e47379d6072e806efad3e4aa25f2488435d1555502473c86b",
+      "sha256": "445ca0f9be79585e47379d6072e806efad3e4aa25f2488435d1555502473c86b",
+      "bytes": 10196
+    },
+    {
+      "original": "docs/compiler-comparison-macos.json",
+      "archived": "docs/benchmarks/compiler/compiler-comparison-macos.json",
+      "original_sha256": "a8c19b5b5795110e66a462be23f0611a59184e6e754f8c1d43154cc92a711fc7",
+      "sha256": "a8c19b5b5795110e66a462be23f0611a59184e6e754f8c1d43154cc92a711fc7",
+      "bytes": 46942
+    },
+    {
+      "original": "docs/compiler-optimization-assembly-native.json",
+      "archived": "docs/benchmarks/compiler/compiler-optimization-assembly-native.json",
+      "original_sha256": "157bae427d550248dd991e115c7838436e80d42222ce1cc84144a586f7f7ac4a",
+      "sha256": "157bae427d550248dd991e115c7838436e80d42222ce1cc84144a586f7f7ac4a",
+      "bytes": 32412
+    },
+    {
+      "original": "docs/compiler-optimization-assembly-portable.json",
+      "archived": "docs/benchmarks/compiler/compiler-optimization-assembly-portable.json",
+      "original_sha256": "119fa798a81e7db999de15c26437e679dffdf1733bc047b552b0c6c90923496d",
+      "sha256": "119fa798a81e7db999de15c26437e679dffdf1733bc047b552b0c6c90923496d",
+      "bytes": 32266
+    },
+    {
+      "original": "docs/compiler-optimization-audit.json",
+      "archived": "docs/benchmarks/compiler/compiler-optimization-audit.json",
+      "original_sha256": "bcdbc6a026632102ef18fc670c14967782550a2653b047fecb221ee099b67a28",
+      "sha256": "bcdbc6a026632102ef18fc670c14967782550a2653b047fecb221ee099b67a28",
+      "bytes": 77153
+    },
+    {
+      "original": "docs/compiler-optimization-macos.json",
+      "archived": "docs/benchmarks/compiler/compiler-optimization-macos.json",
+      "original_sha256": "1f4c4cb36685a3b7625273f0896344793e89a311ffd094edc6e480c895cf3c7c",
+      "sha256": "1f4c4cb36685a3b7625273f0896344793e89a311ffd094edc6e480c895cf3c7c",
+      "bytes": 124592
+    },
+    {
+      "original": "docs/footprint.json",
+      "archived": "docs/archive/initial/footprint.json",
+      "original_sha256": "e085fa6e19687ea519f752faee179eba020df8b1f946a2eb45c4f22c4f038556",
+      "sha256": "e085fa6e19687ea519f752faee179eba020df8b1f946a2eb45c4f22c4f038556",
+      "bytes": 3228
+    },
+    {
+      "original": "docs/functions-memory.json",
+      "archived": "docs/archive/initial/functions-memory.json",
+      "original_sha256": "4b10595084dd55698d3718afd5186659c6a1c338fc1e6cdbc4665a224c8400bc",
+      "sha256": "4b10595084dd55698d3718afd5186659c6a1c338fc1e6cdbc4665a224c8400bc",
+      "bytes": 10133
+    },
+    {
+      "original": "docs/grammar-provenance.json",
+      "archived": "docs/archive/initial/grammar-provenance.json",
+      "original_sha256": "a6eea0706a9adbd4526c04db8dbcd0a871191f87c0378ad6ddac1dd0c0a91546",
+      "sha256": "a6eea0706a9adbd4526c04db8dbcd0a871191f87c0378ad6ddac1dd0c0a91546",
+      "bytes": 925
+    },
+    {
+      "original": "docs/inference-memory.json",
+      "archived": "docs/archive/initial/inference-memory.json",
+      "original_sha256": "2f90ce9fe318072ca9deb6650255c22590b391a6a3ea39ddcfc7f3493c96596e",
+      "sha256": "2f90ce9fe318072ca9deb6650255c22590b391a6a3ea39ddcfc7f3493c96596e",
+      "bytes": 10136
+    },
+    {
+      "original": "docs/json-comparison-baseline.json",
+      "archived": "docs/benchmarks/json/json-comparison-baseline.json",
+      "original_sha256": "624d7b45fffffaccd4e3d10869533405edb0909a85cbe4933c774de83dff088f",
+      "sha256": "624d7b45fffffaccd4e3d10869533405edb0909a85cbe4933c774de83dff088f",
+      "bytes": 34760
+    },
+    {
+      "original": "docs/json-comparison.json",
+      "archived": "docs/benchmarks/json/json-comparison.json",
+      "original_sha256": "5ae78d2af50e847d8827146b010a62bce99895e8f58ea4530b3f62a61faa37c8",
+      "sha256": "5ae78d2af50e847d8827146b010a62bce99895e8f58ea4530b3f62a61faa37c8",
+      "bytes": 45968
+    },
+    {
+      "original": "docs/namespace-memory.json",
+      "archived": "docs/archive/initial/namespace-memory.json",
+      "original_sha256": "a021c237b77e77d8c94bfb67dde02e790e146ec2f63f171cebc696f77a8f87f6",
+      "sha256": "a021c237b77e77d8c94bfb67dde02e790e146ec2f63f171cebc696f77a8f87f6",
+      "bytes": 10133
+    },
+    {
+      "original": "docs/nitrogen-full-parse-comparison.json",
+      "archived": "docs/benchmarks/compiler/nitrogen-full-parse-comparison.json",
+      "original_sha256": "495f23449cf07e62957bfa0af9520cc2e138c143393d7912a3c33504f213fd8e",
+      "sha256": "495f23449cf07e62957bfa0af9520cc2e138c143393d7912a3c33504f213fd8e",
+      "bytes": 84079
+    },
+    {
+      "original": "docs/phase-memory.json",
+      "archived": "docs/archive/initial/phase-memory.json",
+      "original_sha256": "17e7d6e8c53ae010b8f8f4744b2dbfeb0f7d80b9fc365743e46d88366ba8bbf4",
+      "sha256": "17e7d6e8c53ae010b8f8f4744b2dbfeb0f7d80b9fc365743e46d88366ba8bbf4",
+      "bytes": 35068
+    },
+    {
+      "original": "docs/shared-subtrees-main-integration.json",
+      "archived": "docs/archive/experiments/shared-subtrees-main-integration.json",
+      "original_sha256": "fffe1fa5ac9132183a50b78057c1ca5d7ceb9f8e31803864b7d5879ca4654559",
+      "sha256": "fffe1fa5ac9132183a50b78057c1ca5d7ceb9f8e31803864b7d5879ca4654559",
+      "bytes": 4505
+    }
+  ]
+}

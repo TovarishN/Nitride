@@ -2,6 +2,7 @@
 import argparse
 from dataclasses import asdict
 import json
+from report_paths import write_report
 import random
 from recovery_corpus import ROOT, SEED, Edit, map_span, token_spans
 from recovery_compare import Runner, native_items, coverage_complete
@@ -112,7 +113,7 @@ def main():
     try:
         if args.freeze: freeze(path,native,roslyn)
         report = measure(json.loads(path.read_text()),native)
-        (ROOT/"docs/stage14-recovery-adversarial.json").write_text(json.dumps(report,indent=2)+"\n")
+        write_report("stage14-recovery-adversarial.json", report)
         print(json.dumps({"cases":len(report["cases"]),"failures":report["failures"]},indent=2))
         return bool(report["failures"])
     finally:

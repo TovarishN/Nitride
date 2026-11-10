@@ -1,5 +1,6 @@
 """Record requested engine allocations for paired independent namespaces."""
 import json
+from report_paths import write_report
 import pathlib
 import platform
 import subprocess
@@ -7,7 +8,7 @@ import tempfile
 from test_reference import ROOT
 
 
-def main():
+def main(report_name="namespace-memory.json"):
     rows=[]
     with tempfile.TemporaryDirectory() as folder:
         path=pathlib.Path(folder)/"source.namespaces"
@@ -24,7 +25,7 @@ def main():
     data={"host":platform.platform(),"native_executable_bytes":(ROOT/"target/release/nitride").stat().st_size,
           "profiler_executable_bytes":(ROOT/"target/release/nitride-profile").stat().st_size,"measurements":rows,
           "metric":"Requested System allocation bytes; independent phase baselines; no JSON in measured regions; excludes caller source/static data/allocator overhead/RSS"}
-    (ROOT/"docs/namespace-memory.json").write_text(json.dumps(data,indent=2)+"\n")
+    write_report(report_name, data)
     print("Recorded namespace workloads with 10, 100, and 1000 declaration pairs")
 
 

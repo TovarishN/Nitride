@@ -1,0 +1,15 @@
+[package]
+name = "nitride"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+rust-version.workspace = true
+
+[features]
+default = []
+build = ["dep:nitride-prepare", "dep:nitride-codegen"]
+
+[dependencies]
+nitride-core = { path = "../nitride-core" }
+nitride-prepare = { path = "../nitride-prepare", optional = true }
+nitride-codegen = { path = "../nitride-codegen", optional = true }

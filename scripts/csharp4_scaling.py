@@ -1,5 +1,6 @@
 """Measure CSharp4 parse scaling: native Nitride vs Nitrogen's generated parser on the same files."""
 import json
+from report_paths import write_report
 import pathlib
 import platform
 import subprocess
@@ -47,7 +48,7 @@ def main():
             print(json.dumps(rows[-1]))
     report = {"host": platform.platform(), "machine": platform.machine(), "measurements": rows,
               "metric": "Best of 3 parse-phase wall times; native allocations/peak are requested System bytes; native tree bytes are the retained tree including its UTF-8 source copy; Nitrogen allocated bytes are GC.GetAllocatedBytesForCurrentThread over a warm parse (Release build), which omits pooled rentals; Nitrogen retained size is the tree's arrays at their (pooled or exact) length plus its UTF-16 text, cross-checked by managed heap growth while the tree is alive"}
-    (ROOT / "docs/stage13-scaling.json").write_text(json.dumps(report, indent=2) + "\n")
+    write_report("stage13-scaling.json", report)
 
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 """Compare frozen damage against each parser's own original tree; never rewrite inputs implicitly."""
 import argparse
+from report_paths import report_path
 from collections import defaultdict
 from dataclasses import asdict
 import hashlib
@@ -157,7 +158,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--freeze",action="store_true")
     parser.add_argument("--manifest",type=pathlib.Path,default=ROOT/"fixtures/recovery/manifest.json")
-    parser.add_argument("--report",type=pathlib.Path,default=ROOT/"docs/stage14-recovery-quality.json")
+    parser.add_argument("--report",type=pathlib.Path,default=report_path("stage14-recovery-quality.json"))
     args = parser.parse_args()
     native = Runner([str(ROOT/"target/release/nitride"),"--recover-batch"])
     roslyn = Runner(["dotnet",str(ROOT/"tools/Nitride.RecoveryReference/bin/Debug/net10.0/Nitride.RecoveryReference.dll")])
@@ -165,6 +166,7 @@ def main():
         if args.freeze:
             freeze(args.manifest,native,roslyn)
         report = measure(json.loads(args.manifest.read_text()),native,roslyn)
+        args.report.parent.mkdir(parents=True, exist_ok=True)
         args.report.write_text(json.dumps(report,indent=2)+"\n")
         print(json.dumps({"variants":report["variants"],"failures":report["failures"]},indent=2))
         return bool(report["failures"])

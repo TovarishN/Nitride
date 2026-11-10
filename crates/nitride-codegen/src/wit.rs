@@ -1,6 +1,6 @@
 //! WIT for a catalog's interfaces: per interface, a package whose world
 //! exports it, so a WebAssembly component in any language can implement it.
-use crate::interfaces::{Shape, closure, parameters, shape, snake, tail};
+use crate::interfaces::{Shape, closure, parameters, shape, tail};
 use crate::{array, strings, text};
 use serde_json::Value;
 use std::fmt::Write;
@@ -54,20 +54,7 @@ const KEYWORDS: &[&str] = &[
 /// `ParseDate` → `parse-date`; `date_2` → `date2`. Each word starts with a
 /// letter, as WIT requires.
 pub fn kebab(name: &str) -> String {
-    let words: Vec<String> =
-        snake(name)
-            .split('_')
-            .filter(|w| !w.is_empty())
-            .fold(Vec::new(), |mut words, w| {
-                match words.last_mut() {
-                    Some(last) if w.starts_with(|c: char| c.is_ascii_digit()) => {
-                        last.push_str(w);
-                    }
-                    _ => words.push(w.to_string()),
-                }
-                words
-            });
-    let kebab = words.join("-");
+    let kebab = nitride_core::host::binding_name(name);
     if KEYWORDS.contains(&kebab.as_str()) {
         format!("%{kebab}")
     } else {

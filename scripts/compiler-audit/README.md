@@ -23,7 +23,7 @@ It measures five fresh processes for every case/build, rotating and reversing
 build order after one unrecorded run. Timings exclude source reading, tree
 export, fingerprinting, process startup and destruction. All emitted samples,
 input and executable hashes, compiler identity and CPU are saved in
-`docs/compiler-optimization-audit.json`. Build logs, generated inputs, profiles
+`target/reports/compiler-optimization-audit.json`. Build logs, generated inputs, profiles
 and binaries stay under ignored `target/compiler-audit/`.
 
 Every run fingerprints the full materialized tree, labeled edges, diagnostics
@@ -74,8 +74,9 @@ node scripts/compiler-audit/summarize-scanner-runs.mjs
 The Python launcher pins only itself and its child benchmark processes to CPU 0.
 Run after compilation/tests finish. The baseline executable must still match
 the original audit's recorded hash. `NITRIDE_SCANNER_REPORT` overrides the
-output path, which otherwise is `docs/ascii-scanner-runs.json`. Preserve each
-completed report before rerunning.
+output path, which otherwise is `target/reports/ascii-scanner-runs.json`. Preserve each
+completed report before rerunning. Both summarizers use the same report override
+as their runner and write Markdown beside the JSON report.
 
 The optional `nitride-core/ascii-runs` feature enables scalar batching of proven
 repeated one-byte ASCII traces in generated lexical scanners. The optional
@@ -86,7 +87,7 @@ change interpreted/incremental parsing into generated parsing.
 
 ## Apple Silicon reassessment
 
-The [October 30 assessment](../../docs/compiler-assessment-2026-10-30.md)
+The [October 30 assessment](../../docs/benchmarks/compiler/compiler-assessment-2026-10-30.md)
 compares fresh M4 Pro PGO/ASCII-batching runs with Nitrogen and Roslyn. The
 explicit SIMD classifier is AVX2-only: on ARM64 the feature measures scalar
 batching. A NEON classifier is a proposed follow-up, with no measured speedup.
@@ -96,7 +97,7 @@ runner accepts output/report paths so the Windows evidence stays intact:
 
 ```sh
 NITRIDE_AUDIT_OUT=target/compiler-audit-macos \
-NITRIDE_AUDIT_REPORT=docs/compiler-optimization-macos.json \
+NITRIDE_AUDIT_REPORT=target/reports/compiler-optimization-macos.json \
 NITRIDE_LLVM_BIN=/opt/homebrew/opt/llvm/bin \
 NITRIDE_AUDIT_ASCII=1 node scripts/compiler-audit/run.mjs
 ```
@@ -123,12 +124,14 @@ dotnet build -c Release docs/stage30-harness/rcmp \
 dotnet build -c Release scripts/compiler-audit/ncmp-binaries.csproj \
   -p:UseArtifactsOutput=true -p:ArtifactsPath="$PWD/target/reassessment/dotnet" \
   -p:UseSharedCompilation=false -p:NuGetAudit=false
-python3 scripts/compiler-audit/compare-dotnet.py
+python3 scripts/compiler-audit/compare-dotnet.py target/reports/compiler-optimization-macos.json
 ```
 
 Run the comparison after the native audit and all builds finish. It verifies
 source hashes, measures five fresh .NET first parses and one warm process
-(two warmups/five timed parses), and writes `docs/compiler-comparison-macos.json`.
+(two warmups/five timed parses), and writes `target/reports/compiler-comparison-macos.json`.
+With no input argument, the comparison reads the frozen macOS audit under
+`docs/benchmarks/compiler/`; pass the generated path as above for a fresh audit.
 Nitrogen language construction and process launch remain outside timing.
 Damaged Nitrogen parses stop early and must not be ranked against whole-file
 recovery. This run does not update memory or incremental-edit measurements.

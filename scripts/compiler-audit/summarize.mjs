@@ -1,7 +1,9 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-const reportPath = 'docs/compiler-optimization-audit.json';
+const reportPath = process.env.NITRIDE_AUDIT_REPORT || 'target/reports/compiler-optimization-audit.json';
+const markdownPath = reportPath.replace(/\.json$/i, '') + '.md';
+const relativeLink = file => path.relative(path.dirname(markdownPath), file).split(path.sep).join('/');
 const report = JSON.parse(fs.readFileSync(reportPath));
 const sha = p => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 for (const [name, variant] of Object.entries(report.variants)) {
@@ -40,7 +42,7 @@ ${table}
 
 ## Equivalence and method
 
-${runs} timed executions, plus one untimed process per case/build. Tree/diagnostic fingerprint mismatches: **${report.mismatches.length}**. Fingerprints cover node rules/spans/order, labeled edges, diagnostics and recovery records. All four builds use the same generated grammar, limits and ordinary allocator. Parse time includes parser setup and syntax construction, but excludes input I/O, export, fingerprinting, process launch and destruction. Logical work/native-call/fallback counters and every raw sample are retained in [the JSON report](compiler-optimization-audit.json).
+${runs} timed executions, plus one untimed process per case/build. Tree/diagnostic fingerprint mismatches: **${report.mismatches.length}**. Fingerprints cover node rules/spans/order, labeled edges, diagnostics and recovery records. All four builds use the same generated grammar, limits and ordinary allocator. Parse time includes parser setup and syntax construction, but excludes input I/O, export, fingerprinting, process launch and destruction. Logical work/native-call/fallback counters and every raw sample are retained in [the JSON report](${path.basename(reportPath)}).
 
 Build order rotates and reverses between rounds. CPU affinity is not pinned on this hybrid-core host. Five samples and one host support the sizeable PGO result; percent-level native differences should not be treated as reliable wins. The 80-byte Unicode case is a correctness check, not a useful SIMD throughput benchmark. Long-trivia input has a large comment and string, but very little syntax.
 
@@ -50,7 +52,7 @@ PGO trains on separate 64 KiB valid/one-error/junk/dense files from the same gen
 
 Both portable and native assembly contain 59 generated lexical functions with unwind frames. Neither set uses YMM registers or the inspected packed comparison instructions. Portable lexical code uses 446 XMM-register instruction sites, including 432 vector moves. Native lexical code has the same counts. This supports the source-level finding that generated character recognition remains scalar.
 
-The native build does use YMM registers elsewhere: 10,720 static instruction sites overall, including 6,098 in functions associated with generated syntax. This demonstrates AVX register use, largely for support work; it does not demonstrate vectorized token recognition. Inspection counts static instruction sites, not CPU samples; inlined operations belong to their enclosing functions. It checks selected packed comparison mnemonics and does not prove the absence of every possible SIMD algorithm. See [portable assembly summary](compiler-optimization-assembly-portable.json) and [native summary](compiler-optimization-assembly-native.json).
+The native build does use YMM registers elsewhere: 10,720 static instruction sites overall, including 6,098 in functions associated with generated syntax. This demonstrates AVX register use, largely for support work; it does not demonstrate vectorized token recognition. Inspection counts static instruction sites, not CPU samples; inlined operations belong to their enclosing functions. It checks selected packed comparison mnemonics and does not prove the absence of every possible SIMD algorithm. See [portable assembly summary](${relativeLink('docs/benchmarks/compiler/compiler-optimization-assembly-portable.json')}) and [native summary](${relativeLink('docs/benchmarks/compiler/compiler-optimization-assembly-native.json')}).
 
 The runtime already delegates comment-delimiter searches to standard string search. Generated lexical repetition still performs stateful per-character work, observation, depth and budget tracking. Enabling AVX2 does not transform that design into a bulk scanner. Explicit SIMD would require a new bulk-scanning path that preserves UTF-8 boundaries, observations, partial failures and resource-limit behavior.
 
@@ -58,8 +60,8 @@ The runtime already delegates comment-delimiter searches to standard string sear
 
 Keep the portable release defaults. PGO is a demonstrated next deployment optimization, subject to production training and incremental-workload validation. CPU targeting alone does not justify a portability change here. No handwritten SIMD scanner is added from these measurements: they establish scalar recognition and a PGO opportunity, but do not measure an end-to-end gain from a SIMD replacement. Further SIMD work needs scanner-specific profiling and a compared prototype.
 
-The only repository additions are the audit harness, inspection scripts and evidence. No production parser, generator or release defaults are changed. Reproduction instructions: [compiler-audit README](../scripts/compiler-audit/README.md).
+The only repository additions are the audit harness, inspection scripts and evidence. No production parser, generator or release defaults are changed. Reproduction instructions: [compiler-audit README](${relativeLink('scripts/compiler-audit/README.md')}).
 `;
-fs.writeFileSync('docs/compiler-optimization-audit.md', md);
+fs.writeFileSync(markdownPath, md);
 console.log(JSON.stringify({ cases: report.cases.length, timed_executions: runs, mismatches: report.mismatches.length, pgo_reduction_percent: [Math.min(...reductions), Math.max(...reductions)] }));
 if (report.cases.length !== 10 || report.mismatches.length) process.exitCode = 1;

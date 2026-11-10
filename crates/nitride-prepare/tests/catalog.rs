@@ -623,3 +623,15 @@ fn record_and_list_errors_carry_the_catalog_span() {
         assert_eq!(at_text, at, "{to}");
     }
 }
+
+#[test]
+fn deeply_nested_interface_examples_report_source_errors() {
+    std::thread::Builder::new().stack_size(16 * 1024 * 1024).spawn(|| {
+        let nested = format!("{}1{}", "Identity(".repeat(256), ")".repeat(256));
+        let text = format!("catalog module Deep {{ interface Test version 1 {{ operation Identity(Scalar) : Scalar; example {nested} == 1; }} }}");
+        let source = Source {path: "Deep.ncatalog".into(), text: text.clone()};
+        let error = catalogs(&[source]).unwrap_err();
+        assert!(error.message.contains("example nesting"));
+        assert!(error.span[0] < error.span[1] && error.span[1] <= text.len());
+    }).unwrap().join().unwrap();
+}

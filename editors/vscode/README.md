@@ -27,7 +27,7 @@ language Calls
 ```
 
 Paths are relative to the `.nproj`. A language with a `catalog` (`.ncatalog`
-files, see `docs/catalog-language.md`) is checked in typed mode; without one it
+files, see `docs/guides/catalog-language.md`) is checked in typed mode; without one it
 is syntax-only, and Nitrogen's C# semantic members in its grammar are skipped
 with a warning. `.nproj` files get diagnostics, outline and go to definition
 (files, included folders and the start rule).
@@ -72,7 +72,7 @@ In-flight parsing is not interrupted. Each document has its own quiet period;
 edits to one file do not postpone another. A feature request expedites only its
 target, while workspace-symbol requests and shutdown expedite all pending work.
 Shared language changes still reload the registry; unrelated traffic does not
-postpone due work. File-watch reloads also run when no document is pending. See [LSP scheduling](https://github.com/TovarishN/Nitride/blob/main/docs/lsp-scheduling.md)
+postpone due work. File-watch reloads also run when no document is pending. See [LSP scheduling](https://github.com/TovarishN/Nitride/blob/main/docs/editor/lsp-scheduling.md)
 for ordering and remaining synchronous-analysis limits.
 
 ## Settings

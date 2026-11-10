@@ -1,5 +1,6 @@
 """Compare identical observation workloads. Run release builds before this script."""
 import json
+from report_paths import write_report
 import os
 import pathlib
 import platform
@@ -57,7 +58,7 @@ def main():
             report["measurements"][name] = {"source_bytes": len(source.encode()), "native": measure([NATIVE, path], env=env), "dotnet_reference": measure([dotnet, REFERENCE, "oracle", path, catalog])}
         path = pathlib.Path(tmp) / "small.portable"
         report["native_warm_pipeline"] = json.loads(subprocess.check_output([NATIVE, "--bench", path, "1000"], text=True))
-    (ROOT / "docs/footprint.json").write_text(json.dumps(report, indent=2) + "\n")
+    write_report("footprint.json", report)
     print(json.dumps(report, indent=2))
 
 

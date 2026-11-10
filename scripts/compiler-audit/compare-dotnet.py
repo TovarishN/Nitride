@@ -15,8 +15,8 @@ import sys
 
 ROOT = Path(__file__).resolve().parents[2]
 os.chdir(ROOT)
-audit_path = Path(sys.argv[1] if len(sys.argv) > 1 else 'docs/compiler-optimization-macos.json')
-output = Path(sys.argv[2] if len(sys.argv) > 2 else 'docs/compiler-comparison-macos.json')
+audit_path = Path(sys.argv[1] if len(sys.argv) > 1 else 'docs/benchmarks/compiler/compiler-optimization-macos.json')
+output = Path(sys.argv[2] if len(sys.argv) > 2 else 'target/reports/compiler-comparison-macos.json')
 audit = json.loads(audit_path.read_text())
 artifacts = ROOT / 'target/reassessment/dotnet/bin'
 tools = {'roslyn': artifacts / 'rcmp/release/rcmp.dll',
@@ -74,4 +74,5 @@ for case in audit['cases']:
                                'cold_s': statistics.median(s['seconds'] for s in samples[name]),
                                'warm_s': warm['seconds'], 'cold': samples[name], 'warm': warm})
         print(name, report['rows'][-1]['cold_s'], warm['seconds'], flush=True)
+    output.parent.mkdir(parents=True, exist_ok=True)
     output.write_text(json.dumps(report, indent=2) + '\n')

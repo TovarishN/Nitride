@@ -318,10 +318,15 @@ fn recovery_profiler_counts_metadata_and_never_executes() {
     );
     let output: serde_json::Value = serde_json::from_slice(&result.stdout).unwrap();
     assert!(output["recovery"]["work"].as_u64().unwrap() > 0);
-    assert!(
-        output["parse"]["retained_bytes"].as_u64().unwrap()
-            >= output["syntax_capacity_bytes"].as_u64().unwrap()
-    );
+    if cfg!(feature = "uninstrumented-profiler") {
+        assert!(output["parse"]["retained_bytes"].is_null());
+        assert!(output["syntax_capacity_bytes"].as_u64().unwrap() > 0);
+    } else {
+        assert!(
+            output["parse"]["retained_bytes"].as_u64().unwrap()
+                >= output["syntax_capacity_bytes"].as_u64().unwrap()
+        );
+    }
     assert_eq!(output["execution"], serde_json::Value::Null);
 }
 

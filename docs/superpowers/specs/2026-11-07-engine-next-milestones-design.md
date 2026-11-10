@@ -7,7 +7,7 @@ assessment: current measurements, incremental LSP parsing, configurable trivia,
 a substantial DSL workflow, and smaller snapshot storage, plus documentation
 cleanup. This document makes the proposed behavior and completion gates explicit.
 Approved by the user ("appoved"); implementation is complete in the companion
-plan. See [final measurements and verification](../../benchmark-2026-11-07.md)
+plan. See [final measurements and verification](../../benchmarks/reports/benchmark-2026-11-07.md)
 for the November 8 results and remaining boundaries.
 
 Product direction clarified November 8: Nitride should advance independently.

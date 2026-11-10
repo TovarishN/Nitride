@@ -1,0 +1,1672 @@
+{
+  "schema": 1,
+  "source_commit": "55854fcf560880a6272e143ec9bf7c7a948696b0",
+  "files": [
+    {
+      "original": "docs/stage10-calls-memory.json",
+      "archived": "docs/archive/stages/stage10-calls-memory.json",
+      "original_sha256": "b7afaa0232d829bdfd5de46de72f039b21a9028ea731abc957142e7c70b03029",
+      "sha256": "b7afaa0232d829bdfd5de46de72f039b21a9028ea731abc957142e7c70b03029",
+      "bytes": 10203
+    },
+    {
+      "original": "docs/stage10-dates-memory.json",
+      "archived": "docs/archive/stages/stage10-dates-memory.json",
+      "original_sha256": "e501eb50742b436a94f6649e64bb409a5e87216f78cbecb197c504c59261d0d7",
+      "sha256": "e501eb50742b436a94f6649e64bb409a5e87216f78cbecb197c504c59261d0d7",
+      "bytes": 10297
+    },
+    {
+      "original": "docs/stage10-evidence.md",
+      "archived": "docs/archive/stages/stage10-evidence.md",
+      "original_sha256": "866ba7443fa9f9eef3ee9ce53fc1d7fcf7d6e6bec61831047e2cb422ed2c9f32",
+      "sha256": "866ba7443fa9f9eef3ee9ce53fc1d7fcf7d6e6bec61831047e2cb422ed2c9f32",
+      "bytes": 6082
+    },
+    {
+      "original": "docs/stage10-functions-memory.json",
+      "archived": "docs/archive/stages/stage10-functions-memory.json",
+      "original_sha256": "d14f0b46be549bae9946643294355aaae4da7efb9c789c6a459a65eec144afd0",
+      "sha256": "d14f0b46be549bae9946643294355aaae4da7efb9c789c6a459a65eec144afd0",
+      "bytes": 10140
+    },
+    {
+      "original": "docs/stage10-inference-memory.json",
+      "archived": "docs/archive/stages/stage10-inference-memory.json",
+      "original_sha256": "2ea753d1a32ffb0d0f368b9d6eb0b3a3ae6119da0a8cea177fa02e9ec7c341b3",
+      "sha256": "2ea753d1a32ffb0d0f368b9d6eb0b3a3ae6119da0a8cea177fa02e9ec7c341b3",
+      "bytes": 10143
+    },
+    {
+      "original": "docs/stage10-namespace-memory.json",
+      "archived": "docs/archive/stages/stage10-namespace-memory.json",
+      "original_sha256": "f3ca3dbbe3954255f2a7dcbaacfa98cdca89d4370f797b02c2b9709bdf296cd4",
+      "sha256": "f3ca3dbbe3954255f2a7dcbaacfa98cdca89d4370f797b02c2b9709bdf296cd4",
+      "bytes": 10143
+    },
+    {
+      "original": "docs/stage10-plan.md",
+      "archived": "docs/archive/stages/stage10-plan.md",
+      "original_sha256": "32be13df9e8fd230b5883c5e6d47c12a9b8739df8c36e415edbb4621e85a594c",
+      "sha256": "32be13df9e8fd230b5883c5e6d47c12a9b8739df8c36e415edbb4621e85a594c",
+      "bytes": 3656
+    },
+    {
+      "original": "docs/stage11-calls-memory.json",
+      "archived": "docs/archive/stages/stage11-calls-memory.json",
+      "original_sha256": "a41279e36ed89e1e675b2f3d179e82f4001efef03e30f3e565e5713576503af8",
+      "sha256": "a41279e36ed89e1e675b2f3d179e82f4001efef03e30f3e565e5713576503af8",
+      "bytes": 10203
+    },
+    {
+      "original": "docs/stage11-dates-memory.json",
+      "archived": "docs/archive/stages/stage11-dates-memory.json",
+      "original_sha256": "07356deb64d70a1b097e8aea53f1548c1ced0451947cb96459ea3d19eb5fe598",
+      "sha256": "07356deb64d70a1b097e8aea53f1548c1ced0451947cb96459ea3d19eb5fe598",
+      "bytes": 10296
+    },
+    {
+      "original": "docs/stage11-evidence.md",
+      "archived": "docs/archive/stages/stage11-evidence.md",
+      "original_sha256": "6630dc97bdae2f0960e3c1f72acf13378293f63f62f536ec441d2f691fb35ddd",
+      "sha256": "d8802baca5cc10ed44ce2d09386e26bbfbad585b3436fe803fc67e593eb95bb3",
+      "bytes": 7206
+    },
+    {
+      "original": "docs/stage11-functions-memory.json",
+      "archived": "docs/archive/stages/stage11-functions-memory.json",
+      "original_sha256": "16f8594cc8d7601e0c1ceba2916bd0af015d53aedeab884305aaa94fadcfb9d9",
+      "sha256": "16f8594cc8d7601e0c1ceba2916bd0af015d53aedeab884305aaa94fadcfb9d9",
+      "bytes": 10140
+    },
+    {
+      "original": "docs/stage11-inference-memory.json",
+      "archived": "docs/archive/stages/stage11-inference-memory.json",
+      "original_sha256": "0555e65a7ae515d5e3290e81d481ebc9c5cf3244b4e330c2130138b47ccf5e6b",
+      "sha256": "0555e65a7ae515d5e3290e81d481ebc9c5cf3244b4e330c2130138b47ccf5e6b",
+      "bytes": 10140
+    },
+    {
+      "original": "docs/stage11-namespace-memory.json",
+      "archived": "docs/archive/stages/stage11-namespace-memory.json",
+      "original_sha256": "2005ac1291149f17888dcde413eca9ee483d40b189dda32a710ae65f5e65bdee",
+      "sha256": "2005ac1291149f17888dcde413eca9ee483d40b189dda32a710ae65f5e65bdee",
+      "bytes": 10141
+    },
+    {
+      "original": "docs/stage11-plan.md",
+      "archived": "docs/archive/stages/stage11-plan.md",
+      "original_sha256": "51ad66328ed0594f252b76399e8559ecf774b25031cb04d549170b16b84e6c08",
+      "sha256": "51ad66328ed0594f252b76399e8559ecf774b25031cb04d549170b16b84e6c08",
+      "bytes": 4289
+    },
+    {
+      "original": "docs/stage11-rewrites-memory.json",
+      "archived": "docs/archive/stages/stage11-rewrites-memory.json",
+      "original_sha256": "2eb6578c103bbac5d97a78923fcef25f6b1f692ef4d3a75d947a56c1f03b14b8",
+      "sha256": "2eb6578c103bbac5d97a78923fcef25f6b1f692ef4d3a75d947a56c1f03b14b8",
+      "bytes": 10394
+    },
+    {
+      "original": "docs/stage12-calls-memory.json",
+      "archived": "docs/archive/stages/stage12-calls-memory.json",
+      "original_sha256": "884366413e3131105c04effa639a9da0d60cf782756cc2cd1a22a134e8eb7ebb",
+      "sha256": "884366413e3131105c04effa639a9da0d60cf782756cc2cd1a22a134e8eb7ebb",
+      "bytes": 10207
+    },
+    {
+      "original": "docs/stage12-dates-memory.json",
+      "archived": "docs/archive/stages/stage12-dates-memory.json",
+      "original_sha256": "502dfd8cffb11ab764a638fcc8ad83d5f2bb7db2549698ba2b4eead840a5b791",
+      "sha256": "502dfd8cffb11ab764a638fcc8ad83d5f2bb7db2549698ba2b4eead840a5b791",
+      "bytes": 10285
+    },
+    {
+      "original": "docs/stage12-evidence.md",
+      "archived": "docs/archive/stages/stage12-evidence.md",
+      "original_sha256": "64810cf95e9969fe0265f89d6d010f87977b86872ea88912d4dc31b6013cab5a",
+      "sha256": "f6578b828111a4051547ab20bcfdb0fcd40ff277080e62cd83f8dd32aa7f4b6c",
+      "bytes": 8292
+    },
+    {
+      "original": "docs/stage12-functions-memory.json",
+      "archived": "docs/archive/stages/stage12-functions-memory.json",
+      "original_sha256": "4bc05fe63469353105ae6ace0438645f52a90573f63161b1a8600c8ff1c4e8a3",
+      "sha256": "4bc05fe63469353105ae6ace0438645f52a90573f63161b1a8600c8ff1c4e8a3",
+      "bytes": 10141
+    },
+    {
+      "original": "docs/stage12-inference-memory.json",
+      "archived": "docs/archive/stages/stage12-inference-memory.json",
+      "original_sha256": "ffba9acf79e4bb1987cf03a564180e0c28c1d3c80d1eb180eabb55d0571403e9",
+      "sha256": "ffba9acf79e4bb1987cf03a564180e0c28c1d3c80d1eb180eabb55d0571403e9",
+      "bytes": 10141
+    },
+    {
+      "original": "docs/stage12-inventory.md",
+      "archived": "docs/archive/stages/stage12-inventory.md",
+      "original_sha256": "fa530302efdc8157a965084b4abfb1c282d7232679e62cc6a0308ff012b9ba7a",
+      "sha256": "fa530302efdc8157a965084b4abfb1c282d7232679e62cc6a0308ff012b9ba7a",
+      "bytes": 2093
+    },
+    {
+      "original": "docs/stage12-namespace-memory.json",
+      "archived": "docs/archive/stages/stage12-namespace-memory.json",
+      "original_sha256": "862c03b445601236c1aa5ced36dae96847edec16136f86b85b3330fc76aa7d8f",
+      "sha256": "862c03b445601236c1aa5ced36dae96847edec16136f86b85b3330fc76aa7d8f",
+      "bytes": 10144
+    },
+    {
+      "original": "docs/stage12-rewrites-memory.json",
+      "archived": "docs/archive/stages/stage12-rewrites-memory.json",
+      "original_sha256": "159358cb4882c956fb37d43e9b6338a39ecb3d369e72b7dcb503ecadf125f3f7",
+      "sha256": "159358cb4882c956fb37d43e9b6338a39ecb3d369e72b7dcb503ecadf125f3f7",
+      "bytes": 10384
+    },
+    {
+      "original": "docs/stage12-scaling.json",
+      "archived": "docs/archive/stages/stage12-scaling.json",
+      "original_sha256": "edd33d23f4ef2c169480948c9ad5aeb385fe6cf510c4925f1c8e9ff9ad1fcc4f",
+      "sha256": "edd33d23f4ef2c169480948c9ad5aeb385fe6cf510c4925f1c8e9ff9ad1fcc4f",
+      "bytes": 1462
+    },
+    {
+      "original": "docs/stage13-calls-memory.json",
+      "archived": "docs/archive/stages/stage13-calls-memory.json",
+      "original_sha256": "7fc38408951ce4dc9fa07f5dd7239a15a616d38fbf7a72510e3f0885ef6b4da4",
+      "sha256": "7fc38408951ce4dc9fa07f5dd7239a15a616d38fbf7a72510e3f0885ef6b4da4",
+      "bytes": 10181
+    },
+    {
+      "original": "docs/stage13-dates-memory.json",
+      "archived": "docs/archive/stages/stage13-dates-memory.json",
+      "original_sha256": "0d78cc46016e402478f2a80dc5200de18f1c1232f3907f75c34c049530e079af",
+      "sha256": "0d78cc46016e402478f2a80dc5200de18f1c1232f3907f75c34c049530e079af",
+      "bytes": 10259
+    },
+    {
+      "original": "docs/stage13-evidence.md",
+      "archived": "docs/archive/stages/stage13-evidence.md",
+      "original_sha256": "3cd6c6e1304c72fe7794336a5ac301ccc11792a76c3b7fdca041cd7cba52c337",
+      "sha256": "3cd6c6e1304c72fe7794336a5ac301ccc11792a76c3b7fdca041cd7cba52c337",
+      "bytes": 3993
+    },
+    {
+      "original": "docs/stage13-functions-memory.json",
+      "archived": "docs/archive/stages/stage13-functions-memory.json",
+      "original_sha256": "a4bc2bcbcb749e6136d23a13e4d4c040220b38591a8488477772e7587322f3ca",
+      "sha256": "a4bc2bcbcb749e6136d23a13e4d4c040220b38591a8488477772e7587322f3ca",
+      "bytes": 10108
+    },
+    {
+      "original": "docs/stage13-inference-memory.json",
+      "archived": "docs/archive/stages/stage13-inference-memory.json",
+      "original_sha256": "20a2aac9e29df937ab602f097e7fbc99971b7cc41249929a80cc70ceb2e5e6e7",
+      "sha256": "20a2aac9e29df937ab602f097e7fbc99971b7cc41249929a80cc70ceb2e5e6e7",
+      "bytes": 10118
+    },
+    {
+      "original": "docs/stage13-namespace-memory.json",
+      "archived": "docs/archive/stages/stage13-namespace-memory.json",
+      "original_sha256": "81c4980c75abef6e5bc2064d498731664add511885c4c60867e063d7ea46619f",
+      "sha256": "81c4980c75abef6e5bc2064d498731664add511885c4c60867e063d7ea46619f",
+      "bytes": 10109
+    },
+    {
+      "original": "docs/stage13-rewrites-memory.json",
+      "archived": "docs/archive/stages/stage13-rewrites-memory.json",
+      "original_sha256": "f95de075265ac59363e1a797e0fa5f3dd25e1806e1d1eabbb2a4a14e30fe445b",
+      "sha256": "f95de075265ac59363e1a797e0fa5f3dd25e1806e1d1eabbb2a4a14e30fe445b",
+      "bytes": 10369
+    },
+    {
+      "original": "docs/stage13-scaling.json",
+      "archived": "docs/archive/stages/stage13-scaling.json",
+      "original_sha256": "550c60d3757dd9ea630e3fc6a8d02ae379b77e5b591e600901a909d1ee594e92",
+      "sha256": "550c60d3757dd9ea630e3fc6a8d02ae379b77e5b591e600901a909d1ee594e92",
+      "bytes": 2484
+    },
+    {
+      "original": "docs/stage14-calls-memory.json",
+      "archived": "docs/archive/stages/stage14-calls-memory.json",
+      "original_sha256": "07c824fa4bed885a6fb143f39ed7d754243fcb1a0c849544905f7bd441e363fd",
+      "sha256": "07c824fa4bed885a6fb143f39ed7d754243fcb1a0c849544905f7bd441e363fd",
+      "bytes": 10181
+    },
+    {
+      "original": "docs/stage14-dates-memory.json",
+      "archived": "docs/archive/stages/stage14-dates-memory.json",
+      "original_sha256": "cec41a9bb40369cd18dfd71a68c109cfca1bb19df07b61be0c6765c7db0867fe",
+      "sha256": "cec41a9bb40369cd18dfd71a68c109cfca1bb19df07b61be0c6765c7db0867fe",
+      "bytes": 10262
+    },
+    {
+      "original": "docs/stage14-evidence.md",
+      "archived": "docs/archive/stages/stage14-evidence.md",
+      "original_sha256": "e107420f9ab421344f9b98b31d02a779c9c2a7dfc664843578381558f6aafc9d",
+      "sha256": "040beab1312c610cf68a0713cf97716af797ba116fc6e53e296e13bb0e9535f4",
+      "bytes": 10737
+    },
+    {
+      "original": "docs/stage14-functions-memory.json",
+      "archived": "docs/archive/stages/stage14-functions-memory.json",
+      "original_sha256": "54a6aad44423d93f9aa01c0d4a0a7afd82024cb3189102314c394a1d5cc61fb9",
+      "sha256": "54a6aad44423d93f9aa01c0d4a0a7afd82024cb3189102314c394a1d5cc61fb9",
+      "bytes": 10109
+    },
+    {
+      "original": "docs/stage14-inference-memory.json",
+      "archived": "docs/archive/stages/stage14-inference-memory.json",
+      "original_sha256": "382abdef319ac12f968c3a32c1b78cd197ad562f6645ec0475607a2c2a6a7063",
+      "sha256": "382abdef319ac12f968c3a32c1b78cd197ad562f6645ec0475607a2c2a6a7063",
+      "bytes": 10118
+    },
+    {
+      "original": "docs/stage14-namespace-memory.json",
+      "archived": "docs/archive/stages/stage14-namespace-memory.json",
+      "original_sha256": "a2d6b91c0d6e8fdfd1eef73f806a503d1f72e262a4830892067e949bdea323a7",
+      "sha256": "a2d6b91c0d6e8fdfd1eef73f806a503d1f72e262a4830892067e949bdea323a7",
+      "bytes": 10110
+    },
+    {
+      "original": "docs/stage14-native-deployment.json",
+      "archived": "docs/archive/stages/stage14-native-deployment.json",
+      "original_sha256": "69bb25475059b7fd9caf8765b0dea81b2090f325a98f61dcb773ab4997f34f9d",
+      "sha256": "69bb25475059b7fd9caf8765b0dea81b2090f325a98f61dcb773ab4997f34f9d",
+      "bytes": 249
+    },
+    {
+      "original": "docs/stage14-phase-memory.json",
+      "archived": "docs/archive/stages/stage14-phase-memory.json",
+      "original_sha256": "306b52c339fcf98b195db89cfdcb064b647390e1ad1d8c95b489f2907d56d426",
+      "sha256": "306b52c339fcf98b195db89cfdcb064b647390e1ad1d8c95b489f2907d56d426",
+      "bytes": 35082
+    },
+    {
+      "original": "docs/stage14-progress.md",
+      "archived": "docs/archive/stages/stage14-progress.md",
+      "original_sha256": "f41c41eb7c35c0a93a2723e2c9ffaed847ffe8631aced37eefa927fff97770b3",
+      "sha256": "f41c41eb7c35c0a93a2723e2c9ffaed847ffe8631aced37eefa927fff97770b3",
+      "bytes": 8766
+    },
+    {
+      "original": "docs/stage14-recovery-adversarial.json",
+      "archived": "docs/archive/stages/stage14-recovery-adversarial.json",
+      "original_sha256": "916264f2b78864cdb61cdabcc928ef133f0805668047547af3f8d5c50446e4b2",
+      "sha256": "916264f2b78864cdb61cdabcc928ef133f0805668047547af3f8d5c50446e4b2",
+      "bytes": 448448
+    },
+    {
+      "original": "docs/stage14-recovery-quality.json",
+      "archived": "docs/archive/stages/stage14-recovery-quality.json",
+      "original_sha256": "780485a74c8c1e3872af3f1dffb7d2c349e164da8be6c6abb088fcee94220e06",
+      "sha256": "780485a74c8c1e3872af3f1dffb7d2c349e164da8be6c6abb088fcee94220e06",
+      "bytes": 3650512
+    },
+    {
+      "original": "docs/stage14-recovery-scaling.json",
+      "archived": "docs/archive/stages/stage14-recovery-scaling.json",
+      "original_sha256": "5a6d4f92fffb112d61b8afd5cce9ec8d224b9421d2c09ba26ee9aeff76cbbbd1",
+      "sha256": "5a6d4f92fffb112d61b8afd5cce9ec8d224b9421d2c09ba26ee9aeff76cbbbd1",
+      "bytes": 9180
+    },
+    {
+      "original": "docs/stage14-rewrites-memory.json",
+      "archived": "docs/archive/stages/stage14-rewrites-memory.json",
+      "original_sha256": "bd61ec07a0891d28390b09c49c7906e226cd07351dc7d995fd420e37cfcef5b1",
+      "sha256": "bd61ec07a0891d28390b09c49c7906e226cd07351dc7d995fd420e37cfcef5b1",
+      "bytes": 10370
+    },
+    {
+      "original": "docs/stage15-admission.json",
+      "archived": "docs/archive/stages/stage15-admission.json",
+      "original_sha256": "40bb394afafea9ae1eb6a64dbf8446b2f46684c72f76cefc13a9531c25955073",
+      "sha256": "40bb394afafea9ae1eb6a64dbf8446b2f46684c72f76cefc13a9531c25955073",
+      "bytes": 1073
+    },
+    {
+      "original": "docs/stage15-adversarial-shared.json",
+      "archived": "docs/archive/stages/stage15-adversarial-shared.json",
+      "original_sha256": "35bc2b3b54557d3e809c64528a3fcd3c71229b5fc2abea536280dd56c8c71b18",
+      "sha256": "35bc2b3b54557d3e809c64528a3fcd3c71229b5fc2abea536280dd56c8c71b18",
+      "bytes": 306719
+    },
+    {
+      "original": "docs/stage15-baseline.json",
+      "archived": "docs/archive/stages/stage15-baseline.json",
+      "original_sha256": "20c6eef91fd7b7ad17fcbbc5646b2c79f692f759cfa5010c5688866510bbb411",
+      "sha256": "20c6eef91fd7b7ad17fcbbc5646b2c79f692f759cfa5010c5688866510bbb411",
+      "bytes": 70964
+    },
+    {
+      "original": "docs/stage15-calls-memory.json",
+      "archived": "docs/archive/stages/stage15-calls-memory.json",
+      "original_sha256": "9e6a3076b9cd690b57f1f4986ce706161a9cfa6cb78219747f93cfe634a5c3f8",
+      "sha256": "9e6a3076b9cd690b57f1f4986ce706161a9cfa6cb78219747f93cfe634a5c3f8",
+      "bytes": 13202
+    },
+    {
+      "original": "docs/stage15-dates-memory.json",
+      "archived": "docs/archive/stages/stage15-dates-memory.json",
+      "original_sha256": "6f636d57beab5d916cac39b08356bd582a1a06a3af8a3365d5d2235ef28add4f",
+      "sha256": "6f636d57beab5d916cac39b08356bd582a1a06a3af8a3365d5d2235ef28add4f",
+      "bytes": 13280
+    },
+    {
+      "original": "docs/stage15-differential.json",
+      "archived": "docs/archive/stages/stage15-differential.json",
+      "original_sha256": "6e1e3c406158cbb6596aa95dd0a4e72ec5e67322583328bf9a1d6c16d1691f14",
+      "sha256": "6e1e3c406158cbb6596aa95dd0a4e72ec5e67322583328bf9a1d6c16d1691f14",
+      "bytes": 1042384
+    },
+    {
+      "original": "docs/stage15-evidence.md",
+      "archived": "docs/archive/stages/stage15-evidence.md",
+      "original_sha256": "5745a5cea0a2a5b01b63d2decc0f1090099c32986f69ecc7ad28add7f70f16ae",
+      "sha256": "5745a5cea0a2a5b01b63d2decc0f1090099c32986f69ecc7ad28add7f70f16ae",
+      "bytes": 13429
+    },
+    {
+      "original": "docs/stage15-first-edit.json",
+      "archived": "docs/archive/stages/stage15-first-edit.json",
+      "original_sha256": "f06a930f5579594d5afa4cc32f104beaccf35a6a8084bde5644df8a29cce257e",
+      "sha256": "f06a930f5579594d5afa4cc32f104beaccf35a6a8084bde5644df8a29cce257e",
+      "bytes": 4217
+    },
+    {
+      "original": "docs/stage15-functions-memory.json",
+      "archived": "docs/archive/stages/stage15-functions-memory.json",
+      "original_sha256": "ec48a499dccec2f0eab33072c169a9de27161347d057781f5e99abed6a684c30",
+      "sha256": "ec48a499dccec2f0eab33072c169a9de27161347d057781f5e99abed6a684c30",
+      "bytes": 13124
+    },
+    {
+      "original": "docs/stage15-inference-memory.json",
+      "archived": "docs/archive/stages/stage15-inference-memory.json",
+      "original_sha256": "50aff96cead0824176331b4de1d446a9321dde8e8bb94b5f65e92b5fd4b91d89",
+      "sha256": "50aff96cead0824176331b4de1d446a9321dde8e8bb94b5f65e92b5fd4b91d89",
+      "bytes": 13137
+    },
+    {
+      "original": "docs/stage15-latency-uninstrumented.json",
+      "archived": "docs/archive/stages/stage15-latency-uninstrumented.json",
+      "original_sha256": "c6b4ce3f88c745d2ac1415511d66b0c89698e4d3e0c1461145526f8613187932",
+      "sha256": "c6b4ce3f88c745d2ac1415511d66b0c89698e4d3e0c1461145526f8613187932",
+      "bytes": 11959242
+    },
+    {
+      "original": "docs/stage15-lifetime.json",
+      "archived": "docs/archive/stages/stage15-lifetime.json",
+      "original_sha256": "13d8c368886f4fe81ce7653b2bde172926bd50174872f24ca12b4f6122a441ed",
+      "sha256": "13d8c368886f4fe81ce7653b2bde172926bd50174872f24ca12b4f6122a441ed",
+      "bytes": 863
+    },
+    {
+      "original": "docs/stage15-namespace-memory.json",
+      "archived": "docs/archive/stages/stage15-namespace-memory.json",
+      "original_sha256": "cba88fa484bd7198ecf62d063bfb92d39336ec28bfdd6cd4bdc5af614c2e7515",
+      "sha256": "cba88fa484bd7198ecf62d063bfb92d39336ec28bfdd6cd4bdc5af614c2e7515",
+      "bytes": 13124
+    },
+    {
+      "original": "docs/stage15-native-deployment.json",
+      "archived": "docs/archive/stages/stage15-native-deployment.json",
+      "original_sha256": "229466f1094d2742112da20b4ca4c9f18ff701d8b140b88f3c0b3209d33cbf64",
+      "sha256": "229466f1094d2742112da20b4ca4c9f18ff701d8b140b88f3c0b3209d33cbf64",
+      "bytes": 503
+    },
+    {
+      "original": "docs/stage15-phase-memory.json",
+      "archived": "docs/archive/stages/stage15-phase-memory.json",
+      "original_sha256": "579be630049ccb3d59c0e4d046876e73d9ff8ff5d843ca7508a6b62d79a3ec53",
+      "sha256": "579be630049ccb3d59c0e4d046876e73d9ff8ff5d843ca7508a6b62d79a3ec53",
+      "bytes": 46239
+    },
+    {
+      "original": "docs/stage15-progress.md",
+      "archived": "docs/archive/stages/stage15-progress.md",
+      "original_sha256": "02519769284844ee5baa23845792cc4ac8fcc563ca4ddfc5cb8f9e1e807b1acf",
+      "sha256": "02519769284844ee5baa23845792cc4ac8fcc563ca4ddfc5cb8f9e1e807b1acf",
+      "bytes": 35319
+    },
+    {
+      "original": "docs/stage15-recovery-adversarial.json",
+      "archived": "docs/archive/stages/stage15-recovery-adversarial.json",
+      "original_sha256": "916264f2b78864cdb61cdabcc928ef133f0805668047547af3f8d5c50446e4b2",
+      "sha256": "916264f2b78864cdb61cdabcc928ef133f0805668047547af3f8d5c50446e4b2",
+      "bytes": 448448
+    },
+    {
+      "original": "docs/stage15-recovery-quality.json",
+      "archived": "docs/archive/stages/stage15-recovery-quality.json",
+      "original_sha256": "5307007f2dac7200f11e95a2df203fc9e4bf5052428c662a71f990dd86e0332d",
+      "sha256": "5307007f2dac7200f11e95a2df203fc9e4bf5052428c662a71f990dd86e0332d",
+      "bytes": 3650484
+    },
+    {
+      "original": "docs/stage15-reference.json",
+      "archived": "docs/archive/stages/stage15-reference.json",
+      "original_sha256": "d4e3f6aa8dace91e5228c6b4e9f9d201203d18b7eb318eafbc6c1e3abc8e47b7",
+      "sha256": "d4e3f6aa8dace91e5228c6b4e9f9d201203d18b7eb318eafbc6c1e3abc8e47b7",
+      "bytes": 1541
+    },
+    {
+      "original": "docs/stage15-review-package.md",
+      "archived": "docs/archive/stages/stage15-review-package.md",
+      "original_sha256": "b7844cee7d68b82db7b43d3f60216e00c40d01c4067c47c7bfbbad941e22adc6",
+      "sha256": "b7844cee7d68b82db7b43d3f60216e00c40d01c4067c47c7bfbbad941e22adc6",
+      "bytes": 4399
+    },
+    {
+      "original": "docs/stage15-rewrites-memory.json",
+      "archived": "docs/archive/stages/stage15-rewrites-memory.json",
+      "original_sha256": "098ddd9d49ebe6b4f00b70ce4c4b9a8242248e04da7f31e990e0354e251ccd8e",
+      "sha256": "098ddd9d49ebe6b4f00b70ce4c4b9a8242248e04da7f31e990e0354e251ccd8e",
+      "bytes": 13403
+    },
+    {
+      "original": "docs/stage15-scaling.json",
+      "archived": "docs/archive/stages/stage15-scaling.json",
+      "original_sha256": "9c726ed1ac4ad68ef265c9be88de987bef858cd191dd544042962a3ebccda70d",
+      "sha256": "9c726ed1ac4ad68ef265c9be88de987bef858cd191dd544042962a3ebccda70d",
+      "bytes": 12032844
+    },
+    {
+      "original": "docs/stage16-admission.json",
+      "archived": "docs/archive/stages/stage16-admission.json",
+      "original_sha256": "0a4c4c84a99d9d5fe25cac13414996b83837153c5670ec5093673d5532aae256",
+      "sha256": "0a4c4c84a99d9d5fe25cac13414996b83837153c5670ec5093673d5532aae256",
+      "bytes": 600
+    },
+    {
+      "original": "docs/stage16-adversarial.json",
+      "archived": "docs/archive/stages/stage16-adversarial.json",
+      "original_sha256": "7e5e1bd1d49c1a9405fa81dacf4093dcc3b40b541f5d3c7e9fbb4a9413fbc711",
+      "sha256": "7e5e1bd1d49c1a9405fa81dacf4093dcc3b40b541f5d3c7e9fbb4a9413fbc711",
+      "bytes": 306719
+    },
+    {
+      "original": "docs/stage16-differential.json",
+      "archived": "docs/archive/stages/stage16-differential.json",
+      "original_sha256": "faa56d633a827142379abb2020ef343e764dfcbdfa91e2ebcaa1be17b9441da2",
+      "sha256": "faa56d633a827142379abb2020ef343e764dfcbdfa91e2ebcaa1be17b9441da2",
+      "bytes": 1042384
+    },
+    {
+      "original": "docs/stage16-evidence.md",
+      "archived": "docs/archive/stages/stage16-evidence.md",
+      "original_sha256": "f7cb73a0a13de641d46ff32e404ed45b5c4ea7e648663d1e715db60a051df9b2",
+      "sha256": "f7cb73a0a13de641d46ff32e404ed45b5c4ea7e648663d1e715db60a051df9b2",
+      "bytes": 5914
+    },
+    {
+      "original": "docs/stage16-first-edit.json",
+      "archived": "docs/archive/stages/stage16-first-edit.json",
+      "original_sha256": "d8e9235b6a93f9ae48dc5343e74be7180d637eded12ad73116186e8fa2130b95",
+      "sha256": "d8e9235b6a93f9ae48dc5343e74be7180d637eded12ad73116186e8fa2130b95",
+      "bytes": 3855
+    },
+    {
+      "original": "docs/stage16-full-parse.json",
+      "archived": "docs/archive/stages/stage16-full-parse.json",
+      "original_sha256": "b33b8952983e08ac09a8881062b5cb1aca5ad375516bee35ee961768f65b78ad",
+      "sha256": "b33b8952983e08ac09a8881062b5cb1aca5ad375516bee35ee961768f65b78ad",
+      "bytes": 44620
+    },
+    {
+      "original": "docs/stage16-lifetime.json",
+      "archived": "docs/archive/stages/stage16-lifetime.json",
+      "original_sha256": "9ea3cc3b32853c18c6932205b6f131c9292c5c982985555f6ef7366b55c10e08",
+      "sha256": "9ea3cc3b32853c18c6932205b6f131c9292c5c982985555f6ef7366b55c10e08",
+      "bytes": 687
+    },
+    {
+      "original": "docs/stage17-admission.json",
+      "archived": "docs/archive/stages/stage17-admission.json",
+      "original_sha256": "a4bfb95af7a8b8080fca540caa9f75d5b67cc0522d564b62d0e32fb4a374a998",
+      "sha256": "a4bfb95af7a8b8080fca540caa9f75d5b67cc0522d564b62d0e32fb4a374a998",
+      "bytes": 535
+    },
+    {
+      "original": "docs/stage17-adversarial.json",
+      "archived": "docs/archive/stages/stage17-adversarial.json",
+      "original_sha256": "6d4ed3f3b88bccd5901b6af2620c60bb72c1db7d65cf445a70a4ba3684dba047",
+      "sha256": "6d4ed3f3b88bccd5901b6af2620c60bb72c1db7d65cf445a70a4ba3684dba047",
+      "bytes": 306719
+    },
+    {
+      "original": "docs/stage17-differential.json",
+      "archived": "docs/archive/stages/stage17-differential.json",
+      "original_sha256": "0bde8fc8ad999b4bb8c9fa6d926274ef153f121d02943ca607bdf2cef0bcf94a",
+      "sha256": "0bde8fc8ad999b4bb8c9fa6d926274ef153f121d02943ca607bdf2cef0bcf94a",
+      "bytes": 1042384
+    },
+    {
+      "original": "docs/stage17-evidence.md",
+      "archived": "docs/archive/stages/stage17-evidence.md",
+      "original_sha256": "bda8ed4acb583fff251f206018a27c098af0fccbafe544aadf824bc231adf35b",
+      "sha256": "bda8ed4acb583fff251f206018a27c098af0fccbafe544aadf824bc231adf35b",
+      "bytes": 3400
+    },
+    {
+      "original": "docs/stage17-first-edit.json",
+      "archived": "docs/archive/stages/stage17-first-edit.json",
+      "original_sha256": "735b5d7a8d1711ec78c43082cfc0ae20f4a61cbcb10b62508b542419fe59f874",
+      "sha256": "735b5d7a8d1711ec78c43082cfc0ae20f4a61cbcb10b62508b542419fe59f874",
+      "bytes": 3979
+    },
+    {
+      "original": "docs/stage17-full-parse.json",
+      "archived": "docs/archive/stages/stage17-full-parse.json",
+      "original_sha256": "3c966b4ec72ab278185e05a3282cb664c476d58745d6aeaba1905075d08a751a",
+      "sha256": "3c966b4ec72ab278185e05a3282cb664c476d58745d6aeaba1905075d08a751a",
+      "bytes": 25091
+    },
+    {
+      "original": "docs/stage17-lifetime.json",
+      "archived": "docs/archive/stages/stage17-lifetime.json",
+      "original_sha256": "4e4029d4d4ca9cb8158eefd58f7101da4210a2f45b38e21da8b885d3c6b77dda",
+      "sha256": "4e4029d4d4ca9cb8158eefd58f7101da4210a2f45b38e21da8b885d3c6b77dda",
+      "bytes": 687
+    },
+    {
+      "original": "docs/stage17-paired-exploration.json",
+      "archived": "docs/archive/stages/stage17-paired-exploration.json",
+      "original_sha256": "105a54f1204c00db2326cf0d9a3ed853443e28b5d044da65bd0f3a543ec6cdad",
+      "sha256": "105a54f1204c00db2326cf0d9a3ed853443e28b5d044da65bd0f3a543ec6cdad",
+      "bytes": 27933
+    },
+    {
+      "original": "docs/stage18-admission.json",
+      "archived": "docs/archive/stages/stage18-admission.json",
+      "original_sha256": "bee72255e4ff091f5464317b08a064e8671335d2d568488a26e2b50d115e3315",
+      "sha256": "bee72255e4ff091f5464317b08a064e8671335d2d568488a26e2b50d115e3315",
+      "bytes": 735
+    },
+    {
+      "original": "docs/stage18-adversarial.json",
+      "archived": "docs/archive/stages/stage18-adversarial.json",
+      "original_sha256": "b47faa40601458df951782507e358dab0220981a7562238f4c4aa1863a44e614",
+      "sha256": "b47faa40601458df951782507e358dab0220981a7562238f4c4aa1863a44e614",
+      "bytes": 306746
+    },
+    {
+      "original": "docs/stage18-differential.json",
+      "archived": "docs/archive/stages/stage18-differential.json",
+      "original_sha256": "057e5c034dfa08a323c8107964aa1f0ae2e0594e4302b0d7ca09c87266d7256d",
+      "sha256": "057e5c034dfa08a323c8107964aa1f0ae2e0594e4302b0d7ca09c87266d7256d",
+      "bytes": 1042411
+    },
+    {
+      "original": "docs/stage18-evidence.md",
+      "archived": "docs/archive/stages/stage18-evidence.md",
+      "original_sha256": "4bec230a1271b71cd440a8235bda4dc4042f2271bf56b8a52327000c8e05c8aa",
+      "sha256": "4bec230a1271b71cd440a8235bda4dc4042f2271bf56b8a52327000c8e05c8aa",
+      "bytes": 4950
+    },
+    {
+      "original": "docs/stage18-first-edit.json",
+      "archived": "docs/archive/stages/stage18-first-edit.json",
+      "original_sha256": "b8444d1be1bfb05cc5056227f25bd862c1996d5cc1421312407d37965c34ce20",
+      "sha256": "b8444d1be1bfb05cc5056227f25bd862c1996d5cc1421312407d37965c34ce20",
+      "bytes": 4148
+    },
+    {
+      "original": "docs/stage18-full-parse.json",
+      "archived": "docs/archive/stages/stage18-full-parse.json",
+      "original_sha256": "35bd7e8ca46175803397c1b5904609ca584df7a205a6193f0f8ee5a56b4bc4ec",
+      "sha256": "35bd7e8ca46175803397c1b5904609ca584df7a205a6193f0f8ee5a56b4bc4ec",
+      "bytes": 26521
+    },
+    {
+      "original": "docs/stage18-lifetime.json",
+      "archived": "docs/archive/stages/stage18-lifetime.json",
+      "original_sha256": "94b48659341efff78fd13beeda289829fa06add5f16909cd4e5bcb9e41f9f7f5",
+      "sha256": "94b48659341efff78fd13beeda289829fa06add5f16909cd4e5bcb9e41f9f7f5",
+      "bytes": 894
+    },
+    {
+      "original": "docs/stage18-paired.json",
+      "archived": "docs/archive/stages/stage18-paired.json",
+      "original_sha256": "ab4e627ebf8f4f29c6aaadc8bd34b5c29908b4aa585ae02ae5148db0c3b02052",
+      "sha256": "ab4e627ebf8f4f29c6aaadc8bd34b5c29908b4aa585ae02ae5148db0c3b02052",
+      "bytes": 45309
+    },
+    {
+      "original": "docs/stage19-admission.json",
+      "archived": "docs/archive/stages/stage19-admission.json",
+      "original_sha256": "e430765cf107db36367487a64baece605a98fa64112fb7898e12ab5f4fb3fe58",
+      "sha256": "e430765cf107db36367487a64baece605a98fa64112fb7898e12ab5f4fb3fe58",
+      "bytes": 800
+    },
+    {
+      "original": "docs/stage19-adversarial.json",
+      "archived": "docs/archive/stages/stage19-adversarial.json",
+      "original_sha256": "4f116baba48ec5acbf9ca4cc9453778387849a2da3e06156678caf06015b5ffc",
+      "sha256": "4f116baba48ec5acbf9ca4cc9453778387849a2da3e06156678caf06015b5ffc",
+      "bytes": 306773
+    },
+    {
+      "original": "docs/stage19-cpu-sample.json",
+      "archived": "docs/archive/stages/stage19-cpu-sample.json",
+      "original_sha256": "c4876c296984db893bcd77ca787b17578fc46194c1677422243d389f20eb0784",
+      "sha256": "c4876c296984db893bcd77ca787b17578fc46194c1677422243d389f20eb0784",
+      "bytes": 6768
+    },
+    {
+      "original": "docs/stage19-differential.json",
+      "archived": "docs/archive/stages/stage19-differential.json",
+      "original_sha256": "4edce8085d21f8be3e5f10baedf16fbbc926fe7c46b7a5296b7416de3108e88c",
+      "sha256": "4edce8085d21f8be3e5f10baedf16fbbc926fe7c46b7a5296b7416de3108e88c",
+      "bytes": 1042438
+    },
+    {
+      "original": "docs/stage19-evidence.md",
+      "archived": "docs/archive/stages/stage19-evidence.md",
+      "original_sha256": "219f20350385a54d8ee4fdde8f9e48b779dc6192ade3788417df3dc479ad6530",
+      "sha256": "219f20350385a54d8ee4fdde8f9e48b779dc6192ade3788417df3dc479ad6530",
+      "bytes": 6247
+    },
+    {
+      "original": "docs/stage19-first-edit.json",
+      "archived": "docs/archive/stages/stage19-first-edit.json",
+      "original_sha256": "485e3ff2762db1e01daade92b3fa76f83b8a880603a5cbc7f01ad9f75b540ada",
+      "sha256": "485e3ff2762db1e01daade92b3fa76f83b8a880603a5cbc7f01ad9f75b540ada",
+      "bytes": 4381
+    },
+    {
+      "original": "docs/stage19-full-parse.json",
+      "archived": "docs/archive/stages/stage19-full-parse.json",
+      "original_sha256": "da8a357761db69d90f6e2287f570e8808b3e8f217bff1158485abcc937a6bb45",
+      "sha256": "da8a357761db69d90f6e2287f570e8808b3e8f217bff1158485abcc937a6bb45",
+      "bytes": 28467
+    },
+    {
+      "original": "docs/stage19-lifetime.json",
+      "archived": "docs/archive/stages/stage19-lifetime.json",
+      "original_sha256": "fbafe9f6e6048b921623098ecd97e7b679ce70a9ec6664a338b3e61e19ff4f1b",
+      "sha256": "fbafe9f6e6048b921623098ecd97e7b679ce70a9ec6664a338b3e61e19ff4f1b",
+      "bytes": 901
+    },
+    {
+      "original": "docs/stage19-paired.json",
+      "archived": "docs/archive/stages/stage19-paired.json",
+      "original_sha256": "3616446f9aa4f74fec741d507db53af1d9ac70b65fb494a487c404be5626068c",
+      "sha256": "3616446f9aa4f74fec741d507db53af1d9ac70b65fb494a487c404be5626068c",
+      "bytes": 48145
+    },
+    {
+      "original": "docs/stage19-structural-exploration.json",
+      "archived": "docs/archive/stages/stage19-structural-exploration.json",
+      "original_sha256": "00746bf902b18b858aee5c218c02bd23a3151ddd3886eebbe093226337ac92c5",
+      "sha256": "00746bf902b18b858aee5c218c02bd23a3151ddd3886eebbe093226337ac92c5",
+      "bytes": 44984
+    },
+    {
+      "original": "docs/stage19-trivia-exploration.json",
+      "archived": "docs/archive/stages/stage19-trivia-exploration.json",
+      "original_sha256": "7984890865b5be3a4cfd796239b3e2351ad308b125d9125e91fdd85dd1840645",
+      "sha256": "7984890865b5be3a4cfd796239b3e2351ad308b125d9125e91fdd85dd1840645",
+      "bytes": 60652
+    },
+    {
+      "original": "docs/stage2-evidence.md",
+      "archived": "docs/archive/stages/stage2-evidence.md",
+      "original_sha256": "83644b065f326be53055cd21ba442bec668c4ab64886ffc1cdcdec4fbb577978",
+      "sha256": "8fd5837f95a61a5ed04efea910204bb8ff51cb35f235f5de941641635187c087",
+      "bytes": 4238
+    },
+    {
+      "original": "docs/stage2-phase-memory.json",
+      "archived": "docs/archive/stages/stage2-phase-memory.json",
+      "original_sha256": "9a7d984b7a769d99eabb8abe20d32de3eccc38bb620755b140b15686efedeb3d",
+      "sha256": "9a7d984b7a769d99eabb8abe20d32de3eccc38bb620755b140b15686efedeb3d",
+      "bytes": 35166
+    },
+    {
+      "original": "docs/stage2-plan.md",
+      "archived": "docs/archive/stages/stage2-plan.md",
+      "original_sha256": "768469ac1ef078ea91a796bd9f5c0468f79b1989bf10fc00d58ac65ed7ede64b",
+      "sha256": "768469ac1ef078ea91a796bd9f5c0468f79b1989bf10fc00d58ac65ed7ede64b",
+      "bytes": 4853
+    },
+    {
+      "original": "docs/stage20-evidence.md",
+      "archived": "docs/archive/stages/stage20-evidence.md",
+      "original_sha256": "21ef2397c7adc5f0d52080c324890a2bcd088d51d1e3166e8296afe226aafc09",
+      "sha256": "21ef2397c7adc5f0d52080c324890a2bcd088d51d1e3166e8296afe226aafc09",
+      "bytes": 3718
+    },
+    {
+      "original": "docs/stage20-trivia-cache-experiment.json",
+      "archived": "docs/archive/stages/stage20-trivia-cache-experiment.json",
+      "original_sha256": "6ce362c9f2dd02a3b9a72943d0591aa688c38f65ed86f08ec6ea763cfc64ef6d",
+      "sha256": "6ce362c9f2dd02a3b9a72943d0591aa688c38f65ed86f08ec6ea763cfc64ef6d",
+      "bytes": 263803
+    },
+    {
+      "original": "docs/stage21-admission.json",
+      "archived": "docs/archive/stages/stage21-admission.json",
+      "original_sha256": "5c3cb23f63c66157457cbcd54cfa3c0f61801da267ede3e2102e7787d4e5ff7d",
+      "sha256": "5c3cb23f63c66157457cbcd54cfa3c0f61801da267ede3e2102e7787d4e5ff7d",
+      "bytes": 4734
+    },
+    {
+      "original": "docs/stage21-adversarial.json",
+      "archived": "docs/archive/stages/stage21-adversarial.json",
+      "original_sha256": "f174c2ad7a8c2c2d914cdf0e3b21996a6bb29c6ed46620cc37ab2f321b0c0ba9",
+      "sha256": "f174c2ad7a8c2c2d914cdf0e3b21996a6bb29c6ed46620cc37ab2f321b0c0ba9",
+      "bytes": 306773
+    },
+    {
+      "original": "docs/stage21-differential.json",
+      "archived": "docs/archive/stages/stage21-differential.json",
+      "original_sha256": "ed6c6d96b6370f94c22a5f027c7fc27431cb1c5ef319f83dffdf7012aef12d1d",
+      "sha256": "ed6c6d96b6370f94c22a5f027c7fc27431cb1c5ef319f83dffdf7012aef12d1d",
+      "bytes": 1042438
+    },
+    {
+      "original": "docs/stage21-evidence.md",
+      "archived": "docs/archive/stages/stage21-evidence.md",
+      "original_sha256": "145e6e10760edc34744b561fe951c651b3886996721d4797912ed70db1257099",
+      "sha256": "145e6e10760edc34744b561fe951c651b3886996721d4797912ed70db1257099",
+      "bytes": 2739
+    },
+    {
+      "original": "docs/stage21-first-edit.json",
+      "archived": "docs/archive/stages/stage21-first-edit.json",
+      "original_sha256": "56b6d8775ef5c36eaaa8ba60bbe989fa8a0fe3eaf851c20560cac68565019e52",
+      "sha256": "56b6d8775ef5c36eaaa8ba60bbe989fa8a0fe3eaf851c20560cac68565019e52",
+      "bytes": 4381
+    },
+    {
+      "original": "docs/stage21-lifetime.json",
+      "archived": "docs/archive/stages/stage21-lifetime.json",
+      "original_sha256": "8a6ba4dcd21efe137a410c980909c2fd08ec2872db399088ae428d01d716d0d9",
+      "sha256": "8a6ba4dcd21efe137a410c980909c2fd08ec2872db399088ae428d01d716d0d9",
+      "bytes": 678
+    },
+    {
+      "original": "docs/stage21-paired.json",
+      "archived": "docs/archive/stages/stage21-paired.json",
+      "original_sha256": "9488c488a5274bb689ee9116704821cacfe86aa198aeba33b18d3c5e1f6d4e50",
+      "sha256": "9488c488a5274bb689ee9116704821cacfe86aa198aeba33b18d3c5e1f6d4e50",
+      "bytes": 94278
+    },
+    {
+      "original": "docs/stage22-admission.json",
+      "archived": "docs/archive/stages/stage22-admission.json",
+      "original_sha256": "d94f79a0fda8ec9b50bc554024d98b9effc669fa1aeedeb2159a5985f39cb9f1",
+      "sha256": "d94f79a0fda8ec9b50bc554024d98b9effc669fa1aeedeb2159a5985f39cb9f1",
+      "bytes": 5087
+    },
+    {
+      "original": "docs/stage22-adversarial.json",
+      "archived": "docs/archive/stages/stage22-adversarial.json",
+      "original_sha256": "d3a1cd5a4c32184a080984f50560dcd65498a1a3d6cea2847921b6710549d704",
+      "sha256": "d3a1cd5a4c32184a080984f50560dcd65498a1a3d6cea2847921b6710549d704",
+      "bytes": 306773
+    },
+    {
+      "original": "docs/stage22-differential.json",
+      "archived": "docs/archive/stages/stage22-differential.json",
+      "original_sha256": "80b9881e977baba6aa8d7533a7b976bbb309688cd188d1dffbec2a87053a9155",
+      "sha256": "80b9881e977baba6aa8d7533a7b976bbb309688cd188d1dffbec2a87053a9155",
+      "bytes": 1042438
+    },
+    {
+      "original": "docs/stage22-edit-control.json",
+      "archived": "docs/archive/stages/stage22-edit-control.json",
+      "original_sha256": "0cf75aea140caec6ec3776b27c9ed891f621e4ce1c0e6440aff2877d273e8563",
+      "sha256": "0cf75aea140caec6ec3776b27c9ed891f621e4ce1c0e6440aff2877d273e8563",
+      "bytes": 101113
+    },
+    {
+      "original": "docs/stage22-evidence.md",
+      "archived": "docs/archive/stages/stage22-evidence.md",
+      "original_sha256": "922ce800fb4c7bc9694a1538efd769e0a69e9e40b9eccc0095b33c91db666c5d",
+      "sha256": "922ce800fb4c7bc9694a1538efd769e0a69e9e40b9eccc0095b33c91db666c5d",
+      "bytes": 3878
+    },
+    {
+      "original": "docs/stage22-first-edit.json",
+      "archived": "docs/archive/stages/stage22-first-edit.json",
+      "original_sha256": "68ad45db1851978b88c3ea4ab86dc01bc428e0afbc5d83f944ef1385aa9be42e",
+      "sha256": "68ad45db1851978b88c3ea4ab86dc01bc428e0afbc5d83f944ef1385aa9be42e",
+      "bytes": 4381
+    },
+    {
+      "original": "docs/stage22-lifetime.json",
+      "archived": "docs/archive/stages/stage22-lifetime.json",
+      "original_sha256": "0a90c6d856f60864fbcfecc524125c932ae9d40370ca0d4eaf24a1fa0bd5e29b",
+      "sha256": "0a90c6d856f60864fbcfecc524125c932ae9d40370ca0d4eaf24a1fa0bd5e29b",
+      "bytes": 624
+    },
+    {
+      "original": "docs/stage22-paired.json",
+      "archived": "docs/archive/stages/stage22-paired.json",
+      "original_sha256": "23489c8233adb948007a2e91ce1bf6db35704a01d7f41a3034775cdc168c7e24",
+      "sha256": "23489c8233adb948007a2e91ce1bf6db35704a01d7f41a3034775cdc168c7e24",
+      "bytes": 94290
+    },
+    {
+      "original": "docs/stage23-evidence.md",
+      "archived": "docs/archive/stages/stage23-evidence.md",
+      "original_sha256": "77b579fc1362bc3a09ea57f993fa7418d7037c8b87c665e4717a38f10f675d00",
+      "sha256": "77b579fc1362bc3a09ea57f993fa7418d7037c8b87c665e4717a38f10f675d00",
+      "bytes": 3219
+    },
+    {
+      "original": "docs/stage23-label-cache-experiment.json",
+      "archived": "docs/archive/stages/stage23-label-cache-experiment.json",
+      "original_sha256": "faec3a20d379e8c0158e926af3ca783eda3c65afa5122138b4f5b7328eb71e59",
+      "sha256": "faec3a20d379e8c0158e926af3ca783eda3c65afa5122138b4f5b7328eb71e59",
+      "bytes": 52383
+    },
+    {
+      "original": "docs/stage24-admission.json",
+      "archived": "docs/archive/stages/stage24-admission.json",
+      "original_sha256": "6172ddecb3bc2da08aa5d59ac01d477e7fcae4c2c2e4737c76ff7132ea9c5c2e",
+      "sha256": "6172ddecb3bc2da08aa5d59ac01d477e7fcae4c2c2e4737c76ff7132ea9c5c2e",
+      "bytes": 5429
+    },
+    {
+      "original": "docs/stage24-adversarial.json",
+      "archived": "docs/archive/stages/stage24-adversarial.json",
+      "original_sha256": "729f6e2f2e7aa63d5d4bcd7dc60d7e5fa3cf2947edf832d13beb43a57300863a",
+      "sha256": "729f6e2f2e7aa63d5d4bcd7dc60d7e5fa3cf2947edf832d13beb43a57300863a",
+      "bytes": 306773
+    },
+    {
+      "original": "docs/stage24-differential.json",
+      "archived": "docs/archive/stages/stage24-differential.json",
+      "original_sha256": "fa1f871c7ecccf78ab6b3ef5535f4c2aae9bfa627c5037f6c18a084d82156dd0",
+      "sha256": "fa1f871c7ecccf78ab6b3ef5535f4c2aae9bfa627c5037f6c18a084d82156dd0",
+      "bytes": 1042438
+    },
+    {
+      "original": "docs/stage24-evidence.md",
+      "archived": "docs/archive/stages/stage24-evidence.md",
+      "original_sha256": "be623302f447b759a5b952a8982c366f73f98fba3917e70ac6ca7eceff69ebc3",
+      "sha256": "2a808f049680e1336245286ebf9a9e5630b13311fee6065d9124b611ddb0ade9",
+      "bytes": 4370
+    },
+    {
+      "original": "docs/stage24-first-edit.json",
+      "archived": "docs/archive/stages/stage24-first-edit.json",
+      "original_sha256": "3cf5ead6216ff0d38a7d0cd8017380cf3a87518586f48c3078ab2f5f81242ad6",
+      "sha256": "3cf5ead6216ff0d38a7d0cd8017380cf3a87518586f48c3078ab2f5f81242ad6",
+      "bytes": 4381
+    },
+    {
+      "original": "docs/stage24-lifetime.json",
+      "archived": "docs/archive/stages/stage24-lifetime.json",
+      "original_sha256": "dbd4c5b8121bfd62280d4614c826dc424031bad66af5ae950501bb816a72fffa",
+      "sha256": "dbd4c5b8121bfd62280d4614c826dc424031bad66af5ae950501bb816a72fffa",
+      "bytes": 681
+    },
+    {
+      "original": "docs/stage24-paired.json",
+      "archived": "docs/archive/stages/stage24-paired.json",
+      "original_sha256": "b61ddc312c182582e5fad6824b4c9b80d5f4062b8439430595abe99fa9130802",
+      "sha256": "b61ddc312c182582e5fad6824b4c9b80d5f4062b8439430595abe99fa9130802",
+      "bytes": 94743
+    },
+    {
+      "original": "docs/stage25-admission.json",
+      "archived": "docs/archive/stages/stage25-admission.json",
+      "original_sha256": "925d797d3a834192fd700eefa0f5f149e7ed6261832d27d454a4c0a865a068dc",
+      "sha256": "925d797d3a834192fd700eefa0f5f149e7ed6261832d27d454a4c0a865a068dc",
+      "bytes": 2109
+    },
+    {
+      "original": "docs/stage25-evidence.md",
+      "archived": "docs/archive/stages/stage25-evidence.md",
+      "original_sha256": "a78ba8309d82608cd36d27232744f67fcc6de7d3e08c344cbed4735ec31b78e9",
+      "sha256": "a78ba8309d82608cd36d27232744f67fcc6de7d3e08c344cbed4735ec31b78e9",
+      "bytes": 5863
+    },
+    {
+      "original": "docs/stage25-paired.json",
+      "archived": "docs/archive/stages/stage25-paired.json",
+      "original_sha256": "9b52eb6b5f1b3fc11573ea4aec343cc93c8ef3302d60b3193efa9af687d3c2f3",
+      "sha256": "9b52eb6b5f1b3fc11573ea4aec343cc93c8ef3302d60b3193efa9af687d3c2f3",
+      "bytes": 110150
+    },
+    {
+      "original": "docs/stage25-roslyn-baseline.json",
+      "archived": "docs/archive/stages/stage25-roslyn-baseline.json",
+      "original_sha256": "7e25251da7496bfbcda12887e9ec988ea59b9845086651be913b615c512db2cf",
+      "sha256": "7e25251da7496bfbcda12887e9ec988ea59b9845086651be913b615c512db2cf",
+      "bytes": 35268
+    },
+    {
+      "original": "docs/stage25-speculation-profile.json",
+      "archived": "docs/archive/stages/stage25-speculation-profile.json",
+      "original_sha256": "ba900b6e9493e6f1e14eb7d5f97130218a30a00075634e7d551433ae14b4b530",
+      "sha256": "ba900b6e9493e6f1e14eb7d5f97130218a30a00075634e7d551433ae14b4b530",
+      "bytes": 54156
+    },
+    {
+      "original": "docs/stage26-adversarial.json",
+      "archived": "docs/archive/stages/stage26-adversarial.json",
+      "original_sha256": "503a6e821ca87f165d3baeeec5cd76296317900b19cff8426d701b9ed1cd36b4",
+      "sha256": "503a6e821ca87f165d3baeeec5cd76296317900b19cff8426d701b9ed1cd36b4",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage26-differential.json",
+      "archived": "docs/archive/stages/stage26-differential.json",
+      "original_sha256": "1c96ee1ad749dc476537a529b45aed58f394a2bea48de55d4acb9e01defcbea3",
+      "sha256": "1c96ee1ad749dc476537a529b45aed58f394a2bea48de55d4acb9e01defcbea3",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage26-evidence.md",
+      "archived": "docs/archive/stages/stage26-evidence.md",
+      "original_sha256": "f256811a85a9b4255ce6595788903b3702a1f2afbabee6babee5862e53b1312f",
+      "sha256": "f256811a85a9b4255ce6595788903b3702a1f2afbabee6babee5862e53b1312f",
+      "bytes": 4055
+    },
+    {
+      "original": "docs/stage26-paired.json",
+      "archived": "docs/archive/stages/stage26-paired.json",
+      "original_sha256": "ba0a1e393c75bc85c8e00cf0b554f3c95d97e114c21e2526b11cdfe1f3e2c6dc",
+      "sha256": "ba0a1e393c75bc85c8e00cf0b554f3c95d97e114c21e2526b11cdfe1f3e2c6dc",
+      "bytes": 4883
+    },
+    {
+      "original": "docs/stage27-adversarial.json",
+      "archived": "docs/archive/stages/stage27-adversarial.json",
+      "original_sha256": "9518b1eb029e38eb32b7bf6d5b9374f65d54e8ef4f2f7512b745b98004c85e31",
+      "sha256": "9518b1eb029e38eb32b7bf6d5b9374f65d54e8ef4f2f7512b745b98004c85e31",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage27-differential.json",
+      "archived": "docs/archive/stages/stage27-differential.json",
+      "original_sha256": "bf22baf1d35a01d27cb7e1493dffa22156d9675d78fae7aba08dd357f56ce6f0",
+      "sha256": "bf22baf1d35a01d27cb7e1493dffa22156d9675d78fae7aba08dd357f56ce6f0",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage27-evidence.md",
+      "archived": "docs/archive/stages/stage27-evidence.md",
+      "original_sha256": "145bade37266c11bd63667bfbbab966775e04b400be1223a4ac036354b8de34d",
+      "sha256": "145bade37266c11bd63667bfbbab966775e04b400be1223a4ac036354b8de34d",
+      "bytes": 2368
+    },
+    {
+      "original": "docs/stage27-paired.json",
+      "archived": "docs/archive/stages/stage27-paired.json",
+      "original_sha256": "2160302d68c1ba38fc33eb1154338f3bdc81ae242aa97c898eeb01ff0417362b",
+      "sha256": "2160302d68c1ba38fc33eb1154338f3bdc81ae242aa97c898eeb01ff0417362b",
+      "bytes": 2954
+    },
+    {
+      "original": "docs/stage28-adversarial.json",
+      "archived": "docs/archive/stages/stage28-adversarial.json",
+      "original_sha256": "203dffd9bd16d018fd427ffd7b92f970a47f01dc1c3eb11482dfab202b534da5",
+      "sha256": "203dffd9bd16d018fd427ffd7b92f970a47f01dc1c3eb11482dfab202b534da5",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage28-differential.json",
+      "archived": "docs/archive/stages/stage28-differential.json",
+      "original_sha256": "466d7af643eb8660ec750c44f8ce1c1d0c7126943e346cfb3c205bde246d7d11",
+      "sha256": "466d7af643eb8660ec750c44f8ce1c1d0c7126943e346cfb3c205bde246d7d11",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage28-evidence.md",
+      "archived": "docs/archive/stages/stage28-evidence.md",
+      "original_sha256": "0e28262b8b0d1e8b4f65040af73770ea265212bc82b502a99742754cba1426d0",
+      "sha256": "0e28262b8b0d1e8b4f65040af73770ea265212bc82b502a99742754cba1426d0",
+      "bytes": 3647
+    },
+    {
+      "original": "docs/stage28-paired.json",
+      "archived": "docs/archive/stages/stage28-paired.json",
+      "original_sha256": "aaceaaa9525db16b1186c5135df6c7cf01ed899a50516318806396d46c1f3523",
+      "sha256": "aaceaaa9525db16b1186c5135df6c7cf01ed899a50516318806396d46c1f3523",
+      "bytes": 4849
+    },
+    {
+      "original": "docs/stage29-adversarial.json",
+      "archived": "docs/archive/stages/stage29-adversarial.json",
+      "original_sha256": "fa5f20318aed273bb0ba536a8efd3564dc60cad1fa78a27c5cfec8520a7aa4aa",
+      "sha256": "fa5f20318aed273bb0ba536a8efd3564dc60cad1fa78a27c5cfec8520a7aa4aa",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage29-differential.json",
+      "archived": "docs/archive/stages/stage29-differential.json",
+      "original_sha256": "ac530a1567b76763b255418722861f7fbfd512700774aed128f2616046ad6d9f",
+      "sha256": "ac530a1567b76763b255418722861f7fbfd512700774aed128f2616046ad6d9f",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage29-evidence.md",
+      "archived": "docs/archive/stages/stage29-evidence.md",
+      "original_sha256": "02fb352b4325029e9e4322a1b3e571a508133301e387334701a4a723480f3cb9",
+      "sha256": "02fb352b4325029e9e4322a1b3e571a508133301e387334701a4a723480f3cb9",
+      "bytes": 5221
+    },
+    {
+      "original": "docs/stage29-paired.json",
+      "archived": "docs/archive/stages/stage29-paired.json",
+      "original_sha256": "25ffe3594c7a34f61c3c3750d9f60c6d6d762fe657456ae976c45ffefbbad177",
+      "sha256": "25ffe3594c7a34f61c3c3750d9f60c6d6d762fe657456ae976c45ffefbbad177",
+      "bytes": 1884940
+    },
+    {
+      "original": "docs/stage3-evidence.md",
+      "archived": "docs/archive/stages/stage3-evidence.md",
+      "original_sha256": "570d3d8ae2692bffd21c1cefb51bae71f9e67c82463d1b19cbaa6b880851a64f",
+      "sha256": "570d3d8ae2692bffd21c1cefb51bae71f9e67c82463d1b19cbaa6b880851a64f",
+      "bytes": 3512
+    },
+    {
+      "original": "docs/stage3-phase-memory.json",
+      "archived": "docs/archive/stages/stage3-phase-memory.json",
+      "original_sha256": "f5bc61bb2b604fb584e7d8cc65ab2903ef7d1962e62704511562812e4f995f27",
+      "sha256": "f5bc61bb2b604fb584e7d8cc65ab2903ef7d1962e62704511562812e4f995f27",
+      "bytes": 35071
+    },
+    {
+      "original": "docs/stage3-plan.md",
+      "archived": "docs/archive/stages/stage3-plan.md",
+      "original_sha256": "c4aaed930e193eebd0e0740340cf6e9942c2e114e8003c4cfbaff987d60960f9",
+      "sha256": "c4aaed930e193eebd0e0740340cf6e9942c2e114e8003c4cfbaff987d60960f9",
+      "bytes": 1565
+    },
+    {
+      "original": "docs/stage30-comparison.json",
+      "archived": "docs/archive/stages/stage30-comparison.json",
+      "original_sha256": "be1878855f5b65ee1a665dd248a729bc810555919a624c50b26fccf613aaad87",
+      "sha256": "be1878855f5b65ee1a665dd248a729bc810555919a624c50b26fccf613aaad87",
+      "bytes": 43517
+    },
+    {
+      "original": "docs/stage30-comparison.md",
+      "archived": "docs/archive/stages/stage30-comparison.md",
+      "original_sha256": "b5f42d26529471c41d87a4ce9f8d37d6ec84efdc94c5a5489a58730966bd25b7",
+      "sha256": "319a302597260a773acfe647abac153ccf9cc61babea77b25312d5186f71f62a",
+      "bytes": 6269
+    },
+    {
+      "original": "docs/stage31-adversarial.json",
+      "archived": "docs/archive/stages/stage31-adversarial.json",
+      "original_sha256": "623a9e1d292b4a69dd498e3d697f90c710b0a7b28852b8d4382c0b18c8cb5414",
+      "sha256": "623a9e1d292b4a69dd498e3d697f90c710b0a7b28852b8d4382c0b18c8cb5414",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage31-differential.json",
+      "archived": "docs/archive/stages/stage31-differential.json",
+      "original_sha256": "dcdde9a50321182f39c270fc0cb9f037287a2f95e54ef40d482ae200d8992cd5",
+      "sha256": "dcdde9a50321182f39c270fc0cb9f037287a2f95e54ef40d482ae200d8992cd5",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage31-evidence.md",
+      "archived": "docs/archive/stages/stage31-evidence.md",
+      "original_sha256": "a5e333d5cd0c7e6df6f79587ad2e8bd73c390025998ed7f8c859147a5f5ec9f2",
+      "sha256": "a5e333d5cd0c7e6df6f79587ad2e8bd73c390025998ed7f8c859147a5f5ec9f2",
+      "bytes": 4136
+    },
+    {
+      "original": "docs/stage31-paired.json",
+      "archived": "docs/archive/stages/stage31-paired.json",
+      "original_sha256": "e870c4486f46480bb4a18dbf1e9c6f35a0794db5bba399a092ad8262372331dc",
+      "sha256": "e870c4486f46480bb4a18dbf1e9c6f35a0794db5bba399a092ad8262372331dc",
+      "bytes": 1885150
+    },
+    {
+      "original": "docs/stage32-adversarial.json",
+      "archived": "docs/archive/stages/stage32-adversarial.json",
+      "original_sha256": "40a80eb74e5023597e8668b3fd80f931b877149fefa47ecd2f16a8ede764cbad",
+      "sha256": "40a80eb74e5023597e8668b3fd80f931b877149fefa47ecd2f16a8ede764cbad",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage32-differential.json",
+      "archived": "docs/archive/stages/stage32-differential.json",
+      "original_sha256": "78ababeeb6c1dd4dfd7c229e0269e31fce5a2f77987be9e1ad35406860534976",
+      "sha256": "78ababeeb6c1dd4dfd7c229e0269e31fce5a2f77987be9e1ad35406860534976",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage32-evidence.md",
+      "archived": "docs/archive/stages/stage32-evidence.md",
+      "original_sha256": "5c90bb59a8f60a8e32642cb0838380e977402ec08de8699143287f32e56109c7",
+      "sha256": "5c90bb59a8f60a8e32642cb0838380e977402ec08de8699143287f32e56109c7",
+      "bytes": 3500
+    },
+    {
+      "original": "docs/stage32-paired.json",
+      "archived": "docs/archive/stages/stage32-paired.json",
+      "original_sha256": "0953b014d41f27924bf977fbacdf6a1ccbad166fac69edc9fe2ce632424542b3",
+      "sha256": "0953b014d41f27924bf977fbacdf6a1ccbad166fac69edc9fe2ce632424542b3",
+      "bytes": 1885130
+    },
+    {
+      "original": "docs/stage33-adversarial.json",
+      "archived": "docs/archive/stages/stage33-adversarial.json",
+      "original_sha256": "5a53694298c16eb2fd495ece3f703068626abc6a2644984b65bbc1cda7afb5fb",
+      "sha256": "5a53694298c16eb2fd495ece3f703068626abc6a2644984b65bbc1cda7afb5fb",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage33-differential.json",
+      "archived": "docs/archive/stages/stage33-differential.json",
+      "original_sha256": "8a89929f1a9925859dba25876865eab712d197390443c8e2a57fd0707a283a68",
+      "sha256": "8a89929f1a9925859dba25876865eab712d197390443c8e2a57fd0707a283a68",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage33-evidence.md",
+      "archived": "docs/archive/stages/stage33-evidence.md",
+      "original_sha256": "06f7941f9f8dbd517e8ada63c7db91a239bd2f7b279dd1404832b84529509e3b",
+      "sha256": "06f7941f9f8dbd517e8ada63c7db91a239bd2f7b279dd1404832b84529509e3b",
+      "bytes": 4206
+    },
+    {
+      "original": "docs/stage33-paired.json",
+      "archived": "docs/archive/stages/stage33-paired.json",
+      "original_sha256": "08d5cf0d78ec8cda173ef055e4cf3b5e23ec6a630730e71badeff47a8ad93aa2",
+      "sha256": "08d5cf0d78ec8cda173ef055e4cf3b5e23ec6a630730e71badeff47a8ad93aa2",
+      "bytes": 1885102
+    },
+    {
+      "original": "docs/stage34-adversarial.json",
+      "archived": "docs/archive/stages/stage34-adversarial.json",
+      "original_sha256": "7b4da8241e245705acabc97061a4666af78170563bc7dc3964bf018d9edb9757",
+      "sha256": "7b4da8241e245705acabc97061a4666af78170563bc7dc3964bf018d9edb9757",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage34-differential.json",
+      "archived": "docs/archive/stages/stage34-differential.json",
+      "original_sha256": "3bfbdcbd18f19b1e6fb1187bae32dde5a33c9b061e0761cc7e891f341fed4a0e",
+      "sha256": "3bfbdcbd18f19b1e6fb1187bae32dde5a33c9b061e0761cc7e891f341fed4a0e",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage34-evidence.md",
+      "archived": "docs/archive/stages/stage34-evidence.md",
+      "original_sha256": "840badf0a67ad840de011bf469b5d64c297d679c8facca39f856fd9cb0429c58",
+      "sha256": "cf4860fc935addab6f56f8091f7735ea33842ef00b9ff2e45697f24591c839c8",
+      "bytes": 5880
+    },
+    {
+      "original": "docs/stage34-incremental.json",
+      "archived": "docs/archive/stages/stage34-incremental.json",
+      "original_sha256": "2136445cb15115a33f384a6b7d512b93a924ad2a2f5ed4117652dd00288d107c",
+      "sha256": "2136445cb15115a33f384a6b7d512b93a924ad2a2f5ed4117652dd00288d107c",
+      "bytes": 2687
+    },
+    {
+      "original": "docs/stage34-paired.json",
+      "archived": "docs/archive/stages/stage34-paired.json",
+      "original_sha256": "1ca2b52c6438e248974f61ba0e5856115cc9a15a45b9b2a48315b2f519f5b475",
+      "sha256": "1ca2b52c6438e248974f61ba0e5856115cc9a15a45b9b2a48315b2f519f5b475",
+      "bytes": 2825068
+    },
+    {
+      "original": "docs/stage35-adversarial.json",
+      "archived": "docs/archive/stages/stage35-adversarial.json",
+      "original_sha256": "8d524d802e32841f3714a309f398453765c25b158ea9c22f011fc1134b585a2a",
+      "sha256": "8d524d802e32841f3714a309f398453765c25b158ea9c22f011fc1134b585a2a",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage35-differential.json",
+      "archived": "docs/archive/stages/stage35-differential.json",
+      "original_sha256": "1796b1fc35a4af8937b99e62dd2b5b56efde34cebd8ba443c521a1c17eb7896d",
+      "sha256": "1796b1fc35a4af8937b99e62dd2b5b56efde34cebd8ba443c521a1c17eb7896d",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage35-evidence.md",
+      "archived": "docs/archive/stages/stage35-evidence.md",
+      "original_sha256": "8df08a26a44917f043c64fa3a7a9d213f3c3bdc6470445ffd648a2d9eb3c6bc2",
+      "sha256": "8df08a26a44917f043c64fa3a7a9d213f3c3bdc6470445ffd648a2d9eb3c6bc2",
+      "bytes": 4223
+    },
+    {
+      "original": "docs/stage35-paired.json",
+      "archived": "docs/archive/stages/stage35-paired.json",
+      "original_sha256": "207aeda47027d13eddc850d02fdc05522ad4ec648d5585ebabbacac9e60f20c6",
+      "sha256": "207aeda47027d13eddc850d02fdc05522ad4ec648d5585ebabbacac9e60f20c6",
+      "bytes": 2825407
+    },
+    {
+      "original": "docs/stage36-adversarial.json",
+      "archived": "docs/archive/stages/stage36-adversarial.json",
+      "original_sha256": "3eeff43fbd82c161521f343bf4caee8bea8a5ecb389d40ead6cd333dea023f9e",
+      "sha256": "3eeff43fbd82c161521f343bf4caee8bea8a5ecb389d40ead6cd333dea023f9e",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage36-differential.json",
+      "archived": "docs/archive/stages/stage36-differential.json",
+      "original_sha256": "e0b601d579fb63e90a13f2ceecfdf344dbe42e5e6a48ef1f50555254255ec33c",
+      "sha256": "e0b601d579fb63e90a13f2ceecfdf344dbe42e5e6a48ef1f50555254255ec33c",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage36-evidence.md",
+      "archived": "docs/archive/stages/stage36-evidence.md",
+      "original_sha256": "ea96f225672b01e4dd402478d8b7134b47e38d634f312c3ea8f831f50b71c4c9",
+      "sha256": "ea96f225672b01e4dd402478d8b7134b47e38d634f312c3ea8f831f50b71c4c9",
+      "bytes": 3725
+    },
+    {
+      "original": "docs/stage36-paired.json",
+      "archived": "docs/archive/stages/stage36-paired.json",
+      "original_sha256": "987093512a2be24d4caaf0e18e7d74f1c85406965111651a41d49ae05499914f",
+      "sha256": "987093512a2be24d4caaf0e18e7d74f1c85406965111651a41d49ae05499914f",
+      "bytes": 2825078
+    },
+    {
+      "original": "docs/stage37-adversarial.json",
+      "archived": "docs/archive/stages/stage37-adversarial.json",
+      "original_sha256": "fd2dd2bf84f41d226b39d1c67069a2dd248687b783d64268035cf9ab90c59b9f",
+      "sha256": "fd2dd2bf84f41d226b39d1c67069a2dd248687b783d64268035cf9ab90c59b9f",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage37-differential.json",
+      "archived": "docs/archive/stages/stage37-differential.json",
+      "original_sha256": "affc0059c05582af49a5ce4dbd9aad543735576ff607ba0ecf16dbe84207cad9",
+      "sha256": "affc0059c05582af49a5ce4dbd9aad543735576ff607ba0ecf16dbe84207cad9",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage37-evidence.md",
+      "archived": "docs/archive/stages/stage37-evidence.md",
+      "original_sha256": "9ff68466af3c9e88df3e2c4d100c0f74ce9f4ea2d3beb9be2f7fde43696831d1",
+      "sha256": "9ff68466af3c9e88df3e2c4d100c0f74ce9f4ea2d3beb9be2f7fde43696831d1",
+      "bytes": 3616
+    },
+    {
+      "original": "docs/stage37-paired.json",
+      "archived": "docs/archive/stages/stage37-paired.json",
+      "original_sha256": "913729c65f0828504266be176c078c0fadbdc7d6355f75014ae40810c2207c9b",
+      "sha256": "913729c65f0828504266be176c078c0fadbdc7d6355f75014ae40810c2207c9b",
+      "bytes": 2825535
+    },
+    {
+      "original": "docs/stage38-adversarial.json",
+      "archived": "docs/archive/stages/stage38-adversarial.json",
+      "original_sha256": "27f1d5a6dd565302a5476ab82ad77a0619503feebf4cc684958d20d2d7258cab",
+      "sha256": "27f1d5a6dd565302a5476ab82ad77a0619503feebf4cc684958d20d2d7258cab",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage38-differential.json",
+      "archived": "docs/archive/stages/stage38-differential.json",
+      "original_sha256": "21c97098efa04d9c75a72b84a3610fe3e65b13ec930d41d3da9393a52cc88bc4",
+      "sha256": "21c97098efa04d9c75a72b84a3610fe3e65b13ec930d41d3da9393a52cc88bc4",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage38-evidence.md",
+      "archived": "docs/archive/stages/stage38-evidence.md",
+      "original_sha256": "29fa4128664212fc8a2d9d0c31c9c6d35cd0ac7ecfdd52495a59675e719afd6e",
+      "sha256": "29fa4128664212fc8a2d9d0c31c9c6d35cd0ac7ecfdd52495a59675e719afd6e",
+      "bytes": 3291
+    },
+    {
+      "original": "docs/stage38-paired.json",
+      "archived": "docs/archive/stages/stage38-paired.json",
+      "original_sha256": "713e55925b5020f9fc14e1ebbf703a801d5c1bb6fc3e70789d748e65545cb908",
+      "sha256": "713e55925b5020f9fc14e1ebbf703a801d5c1bb6fc3e70789d748e65545cb908",
+      "bytes": 2825388
+    },
+    {
+      "original": "docs/stage39-adversarial.json",
+      "archived": "docs/archive/stages/stage39-adversarial.json",
+      "original_sha256": "414a65743d2af464a97e93fbd79f9b8d0418329c6f177dc7a45a66ceb75d87f2",
+      "sha256": "414a65743d2af464a97e93fbd79f9b8d0418329c6f177dc7a45a66ceb75d87f2",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage39-differential.json",
+      "archived": "docs/archive/stages/stage39-differential.json",
+      "original_sha256": "5f75ee8468f2025fa61f1a37e0bf1ba3783d3ff90fcab2480f8f82ae4234d9a7",
+      "sha256": "5f75ee8468f2025fa61f1a37e0bf1ba3783d3ff90fcab2480f8f82ae4234d9a7",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage39-evidence.md",
+      "archived": "docs/archive/stages/stage39-evidence.md",
+      "original_sha256": "755795727c86444fba8cc4d9b8e58793bfc0668446f4057df3ca67e93157ba4d",
+      "sha256": "755795727c86444fba8cc4d9b8e58793bfc0668446f4057df3ca67e93157ba4d",
+      "bytes": 4025
+    },
+    {
+      "original": "docs/stage39-paired.json",
+      "archived": "docs/archive/stages/stage39-paired.json",
+      "original_sha256": "02b1bc7a4ead832e7460742bc77d56fc152669d1850431aea607fe4bb106a414",
+      "sha256": "02b1bc7a4ead832e7460742bc77d56fc152669d1850431aea607fe4bb106a414",
+      "bytes": 2825384
+    },
+    {
+      "original": "docs/stage4-evidence.md",
+      "archived": "docs/archive/stages/stage4-evidence.md",
+      "original_sha256": "80015c64d4aab867e49e219abadee2a4dac6a87acca0a58fc98b28201b144f3b",
+      "sha256": "80015c64d4aab867e49e219abadee2a4dac6a87acca0a58fc98b28201b144f3b",
+      "bytes": 5323
+    },
+    {
+      "original": "docs/stage4-plan.md",
+      "archived": "docs/archive/stages/stage4-plan.md",
+      "original_sha256": "fa58dfe6b44528e86656ff500668ba677c6b280eb9f8f2b70d278ce9fd7d7366",
+      "sha256": "fa58dfe6b44528e86656ff500668ba677c6b280eb9f8f2b70d278ce9fd7d7366",
+      "bytes": 3966
+    },
+    {
+      "original": "docs/stage40-adversarial.json",
+      "archived": "docs/archive/stages/stage40-adversarial.json",
+      "original_sha256": "79ba63af11d19ff7c3a66186a05e9ca8e2158e80f754cf6ea60cdf0df31f48fd",
+      "sha256": "79ba63af11d19ff7c3a66186a05e9ca8e2158e80f754cf6ea60cdf0df31f48fd",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage40-differential.json",
+      "archived": "docs/archive/stages/stage40-differential.json",
+      "original_sha256": "19dc5c39471e830468588d56b254b0039b3385838204c2ee9500911bf9bcc424",
+      "sha256": "19dc5c39471e830468588d56b254b0039b3385838204c2ee9500911bf9bcc424",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage40-evidence.md",
+      "archived": "docs/archive/stages/stage40-evidence.md",
+      "original_sha256": "af3a02616cc05f47206c0e4f907e702521e1e47a1f1a85d5833b6ce6e3c85033",
+      "sha256": "af3a02616cc05f47206c0e4f907e702521e1e47a1f1a85d5833b6ce6e3c85033",
+      "bytes": 3896
+    },
+    {
+      "original": "docs/stage40-paired.json",
+      "archived": "docs/archive/stages/stage40-paired.json",
+      "original_sha256": "dd44a133371d80a03584c68d3453278bc51edb27a6e0ebedcda4b4ac4793c221",
+      "sha256": "dd44a133371d80a03584c68d3453278bc51edb27a6e0ebedcda4b4ac4793c221",
+      "bytes": 2825383
+    },
+    {
+      "original": "docs/stage41-adversarial.json",
+      "archived": "docs/archive/stages/stage41-adversarial.json",
+      "original_sha256": "f88408f4700a5532d5c6e3be1f043eca0f8394c46bf98292e3531dcda7a32756",
+      "sha256": "f88408f4700a5532d5c6e3be1f043eca0f8394c46bf98292e3531dcda7a32756",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage41-differential.json",
+      "archived": "docs/archive/stages/stage41-differential.json",
+      "original_sha256": "929dbd75c13fe05b19d6e4e6f6493faee2b2bcdb5e8e2bb26ca1ee98986ad459",
+      "sha256": "929dbd75c13fe05b19d6e4e6f6493faee2b2bcdb5e8e2bb26ca1ee98986ad459",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage41-evidence.md",
+      "archived": "docs/archive/stages/stage41-evidence.md",
+      "original_sha256": "127b3a813f4e7bad31a64d75bce5f106d7309519af14a32bf79bded29af8a2dd",
+      "sha256": "127b3a813f4e7bad31a64d75bce5f106d7309519af14a32bf79bded29af8a2dd",
+      "bytes": 3519
+    },
+    {
+      "original": "docs/stage41-paired.json",
+      "archived": "docs/archive/stages/stage41-paired.json",
+      "original_sha256": "b882d2acfbda0cd7ed9ae0b9aaf1577a75648d01cdcbb9b6ae5a46131f2f91db",
+      "sha256": "b882d2acfbda0cd7ed9ae0b9aaf1577a75648d01cdcbb9b6ae5a46131f2f91db",
+      "bytes": 2825354
+    },
+    {
+      "original": "docs/stage42-adversarial.json",
+      "archived": "docs/archive/stages/stage42-adversarial.json",
+      "original_sha256": "473852c337068957aba9fd01ec7eefbe016cac33a54570eb47c9b67f28eb60f0",
+      "sha256": "473852c337068957aba9fd01ec7eefbe016cac33a54570eb47c9b67f28eb60f0",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage42-differential.json",
+      "archived": "docs/archive/stages/stage42-differential.json",
+      "original_sha256": "8985b36a00bce79450673d79da973f7f9a80c761b9e24719fb1cc79e65a87df0",
+      "sha256": "8985b36a00bce79450673d79da973f7f9a80c761b9e24719fb1cc79e65a87df0",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage42-evidence.md",
+      "archived": "docs/archive/stages/stage42-evidence.md",
+      "original_sha256": "f6803ac95ba462b3e445aff7a9477cbeff4f4a8d0d3903b9058dd384445d7dbd",
+      "sha256": "f6803ac95ba462b3e445aff7a9477cbeff4f4a8d0d3903b9058dd384445d7dbd",
+      "bytes": 3643
+    },
+    {
+      "original": "docs/stage42-paired.json",
+      "archived": "docs/archive/stages/stage42-paired.json",
+      "original_sha256": "bf6f0a9f6aaba974dbe245984b596017a4a6da748e2dbb180f2ecb8f0a616df2",
+      "sha256": "bf6f0a9f6aaba974dbe245984b596017a4a6da748e2dbb180f2ecb8f0a616df2",
+      "bytes": 2825366
+    },
+    {
+      "original": "docs/stage43-adversarial.json",
+      "archived": "docs/archive/stages/stage43-adversarial.json",
+      "original_sha256": "4d73671406dfbd2e358a5ea5a3d9d74b5c1ee7a8d3310693b48d72064b7dd11b",
+      "sha256": "4d73671406dfbd2e358a5ea5a3d9d74b5c1ee7a8d3310693b48d72064b7dd11b",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage43-differential.json",
+      "archived": "docs/archive/stages/stage43-differential.json",
+      "original_sha256": "4762e51b9392c6b4a0994175906408988450bf13062390da8156988a372fdb7a",
+      "sha256": "4762e51b9392c6b4a0994175906408988450bf13062390da8156988a372fdb7a",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage43-evidence.md",
+      "archived": "docs/archive/stages/stage43-evidence.md",
+      "original_sha256": "38c25cadc99957ddcf53f8a725c7dbd59e7d9f670b1d15491f8d69d07cc25191",
+      "sha256": "38c25cadc99957ddcf53f8a725c7dbd59e7d9f670b1d15491f8d69d07cc25191",
+      "bytes": 3054
+    },
+    {
+      "original": "docs/stage43-paired.json",
+      "archived": "docs/archive/stages/stage43-paired.json",
+      "original_sha256": "c0ed26bd0e67cc42670d499b84cdf1d95868b4fb806375e32f4a85b5e2b66455",
+      "sha256": "c0ed26bd0e67cc42670d499b84cdf1d95868b4fb806375e32f4a85b5e2b66455",
+      "bytes": 2825607
+    },
+    {
+      "original": "docs/stage44-adversarial.json",
+      "archived": "docs/archive/stages/stage44-adversarial.json",
+      "original_sha256": "aa3b9459c11d3791ec2c950320a593896a415c1c0eff3b601528383322b0f4f5",
+      "sha256": "aa3b9459c11d3791ec2c950320a593896a415c1c0eff3b601528383322b0f4f5",
+      "bytes": 346639
+    },
+    {
+      "original": "docs/stage44-differential.json",
+      "archived": "docs/archive/stages/stage44-differential.json",
+      "original_sha256": "8930281d60ed077b0fcd5dd37ce4d7c75cef1f6a8df183042aa335ce4ffa8904",
+      "sha256": "8930281d60ed077b0fcd5dd37ce4d7c75cef1f6a8df183042aa335ce4ffa8904",
+      "bytes": 1176792
+    },
+    {
+      "original": "docs/stage44-evidence.md",
+      "archived": "docs/archive/stages/stage44-evidence.md",
+      "original_sha256": "a8001880e0b98d66c13ceeda029944cd59d855149b2f6f261032ba9d4871ad59",
+      "sha256": "a8001880e0b98d66c13ceeda029944cd59d855149b2f6f261032ba9d4871ad59",
+      "bytes": 3445
+    },
+    {
+      "original": "docs/stage44-paired.json",
+      "archived": "docs/archive/stages/stage44-paired.json",
+      "original_sha256": "1b6cbf99dcdd3d498dd65f6ed06145ed6a7da5a4e3531165b09704c30e3486ac",
+      "sha256": "1b6cbf99dcdd3d498dd65f6ed06145ed6a7da5a4e3531165b09704c30e3486ac",
+      "bytes": 6365
+    },
+    {
+      "original": "docs/stage45-comparison.json",
+      "archived": "docs/archive/stages/stage45-comparison.json",
+      "original_sha256": "cf8cf6b99d82bde07aa6cfd9c0e3d2c2b19b2664b99eb55ae953a0ff36e46427",
+      "sha256": "cf8cf6b99d82bde07aa6cfd9c0e3d2c2b19b2664b99eb55ae953a0ff36e46427",
+      "bytes": 43526
+    },
+    {
+      "original": "docs/stage45-comparison.md",
+      "archived": "docs/archive/stages/stage45-comparison.md",
+      "original_sha256": "37de515d28f2c99633c068d4dc2a056d58cf1034e67d5866301acc7cddb0bcf0",
+      "sha256": "c52408590b8ff2da42890d47289a1b1d3dfdf0eb7d8fc87292c77e7e52cc5fbf",
+      "bytes": 7974
+    },
+    {
+      "original": "docs/stage45-incremental.json",
+      "archived": "docs/archive/stages/stage45-incremental.json",
+      "original_sha256": "9461daa9554a5c32d74e11944941782d3714b4452cde9eaf3092a915f68ed1e9",
+      "sha256": "9461daa9554a5c32d74e11944941782d3714b4452cde9eaf3092a915f68ed1e9",
+      "bytes": 2689
+    },
+    {
+      "original": "docs/stage5-evidence.md",
+      "archived": "docs/archive/stages/stage5-evidence.md",
+      "original_sha256": "67011a4d5c77c25fe55f5c89ad13c946a7dad7853971b78d345482617915ea2e",
+      "sha256": "54963dd3b95af5d5002c17eb90a1ae5ee14c621a50b1db079238db8670b7e9e2",
+      "bytes": 5543
+    },
+    {
+      "original": "docs/stage5-namespace-memory.json",
+      "archived": "docs/archive/stages/stage5-namespace-memory.json",
+      "original_sha256": "55630d4b595a2dbd880ab06bc3ef26559fed085bd0151a341d0023eb8fe263c8",
+      "sha256": "55630d4b595a2dbd880ab06bc3ef26559fed085bd0151a341d0023eb8fe263c8",
+      "bytes": 10133
+    },
+    {
+      "original": "docs/stage5-plan.md",
+      "archived": "docs/archive/stages/stage5-plan.md",
+      "original_sha256": "f06bf36ebe4d967219cde3a1017b497d7d889315c045d052fe2d95c66e7931c8",
+      "sha256": "f06bf36ebe4d967219cde3a1017b497d7d889315c045d052fe2d95c66e7931c8",
+      "bytes": 2961
+    },
+    {
+      "original": "docs/stage6-evidence.md",
+      "archived": "docs/archive/stages/stage6-evidence.md",
+      "original_sha256": "4737b924b7e5cd2765d5b99560611df8f5aae297c5fb591865770498d3529939",
+      "sha256": "ab02ab83c8fb1bb1e91c7d3d1649eb08478a8e95481b2e8cae34f147e6e98df3",
+      "bytes": 5418
+    },
+    {
+      "original": "docs/stage6-plan.md",
+      "archived": "docs/archive/stages/stage6-plan.md",
+      "original_sha256": "cf36e2449dca2136c6baa1e5ac97de0096e6138b88507c1b44937ab8a98e6c44",
+      "sha256": "cf36e2449dca2136c6baa1e5ac97de0096e6138b88507c1b44937ab8a98e6c44",
+      "bytes": 3953
+    },
+    {
+      "original": "docs/stage7-evidence.md",
+      "archived": "docs/archive/stages/stage7-evidence.md",
+      "original_sha256": "d9b12813329caae519762f31aec4c9d78b2296756c2d0a6157554e1f79175ec6",
+      "sha256": "75e1a379becd9bfb9704a8371d5f201f566c1f343adfb70d0e2c918d6a0d855f",
+      "bytes": 6093
+    },
+    {
+      "original": "docs/stage7-inference-memory.json",
+      "archived": "docs/archive/stages/stage7-inference-memory.json",
+      "original_sha256": "85719f3c84bfc09ef2c0c59c355adf9afa02a04d978a1e4508d95beeaa1c24cb",
+      "sha256": "85719f3c84bfc09ef2c0c59c355adf9afa02a04d978a1e4508d95beeaa1c24cb",
+      "bytes": 10143
+    },
+    {
+      "original": "docs/stage7-namespace-memory.json",
+      "archived": "docs/archive/stages/stage7-namespace-memory.json",
+      "original_sha256": "0085fa2e59ea8ece1159f002c4520c4a875a3ec1f51a6a97e1bad1a1a8dcc514",
+      "sha256": "0085fa2e59ea8ece1159f002c4520c4a875a3ec1f51a6a97e1bad1a1a8dcc514",
+      "bytes": 10140
+    },
+    {
+      "original": "docs/stage7-plan.md",
+      "archived": "docs/archive/stages/stage7-plan.md",
+      "original_sha256": "0477362e4da0ad54af4e972759cd346909736c3af1d76102a143cf34152e8d04",
+      "sha256": "0477362e4da0ad54af4e972759cd346909736c3af1d76102a143cf34152e8d04",
+      "bytes": 3937
+    },
+    {
+      "original": "docs/stage8-calls-memory.json",
+      "archived": "docs/archive/stages/stage8-calls-memory.json",
+      "original_sha256": "b02ea3a14fda821246d4655d51398f148ad4e48678955f029419d8a7b05810e4",
+      "sha256": "b02ea3a14fda821246d4655d51398f148ad4e48678955f029419d8a7b05810e4",
+      "bytes": 10203
+    },
+    {
+      "original": "docs/stage8-evidence.md",
+      "archived": "docs/archive/stages/stage8-evidence.md",
+      "original_sha256": "0b2547a349e10cdc412529b68fc6351cad3b5040375633ea9ddfb80944f51534",
+      "sha256": "f8402d72337dd7611d8a6b15d96f9ba39871092383aa3a0c2bf61e69d2010f33",
+      "bytes": 8169
+    },
+    {
+      "original": "docs/stage8-inference-memory.json",
+      "archived": "docs/archive/stages/stage8-inference-memory.json",
+      "original_sha256": "8926ce23e0642be3a1c93a958c50fef183ece71907aa81a395fa3725d8b9e118",
+      "sha256": "8926ce23e0642be3a1c93a958c50fef183ece71907aa81a395fa3725d8b9e118",
+      "bytes": 10143
+    },
+    {
+      "original": "docs/stage8-namespace-memory.json",
+      "archived": "docs/archive/stages/stage8-namespace-memory.json",
+      "original_sha256": "b288cd0b99b47efb234544eead745f7314742beb1ec765b1000f985478d31c4b",
+      "sha256": "b288cd0b99b47efb234544eead745f7314742beb1ec765b1000f985478d31c4b",
+      "bytes": 10140
+    },
+    {
+      "original": "docs/stage8-plan.md",
+      "archived": "docs/archive/stages/stage8-plan.md",
+      "original_sha256": "bc1c158cb9f8d97dd63364b579a785f48a3e948966bb8e011820aafbf8e63139",
+      "sha256": "bc1c158cb9f8d97dd63364b579a785f48a3e948966bb8e011820aafbf8e63139",
+      "bytes": 4561
+    },
+    {
+      "original": "docs/stage9-calls-memory.json",
+      "archived": "docs/archive/stages/stage9-calls-memory.json",
+      "original_sha256": "adf578af37f2b3d761e4800c18663ba37ebb18495161481b4a1e4ad6947c4fbe",
+      "sha256": "adf578af37f2b3d761e4800c18663ba37ebb18495161481b4a1e4ad6947c4fbe",
+      "bytes": 10196
+    },
+    {
+      "original": "docs/stage9-evidence.md",
+      "archived": "docs/archive/stages/stage9-evidence.md",
+      "original_sha256": "74a047d260fa6164e5f3bcc6a33395e76caa8d0cf09000505faf694217c38576",
+      "sha256": "74a047d260fa6164e5f3bcc6a33395e76caa8d0cf09000505faf694217c38576",
+      "bytes": 6247
+    },
+    {
+      "original": "docs/stage9-functions-memory.json",
+      "archived": "docs/archive/stages/stage9-functions-memory.json",
+      "original_sha256": "dfb2d272f3af8621c6e91c4896847d5b02121544b56215b5196dd5e09812429e",
+      "sha256": "dfb2d272f3af8621c6e91c4896847d5b02121544b56215b5196dd5e09812429e",
+      "bytes": 10133
+    },
+    {
+      "original": "docs/stage9-inference-memory.json",
+      "archived": "docs/archive/stages/stage9-inference-memory.json",
+      "original_sha256": "a63ac7eefe67caafa31a8ce99b95442d6d44ec8527f26cb804fe9bf8ea22287b",
+      "sha256": "a63ac7eefe67caafa31a8ce99b95442d6d44ec8527f26cb804fe9bf8ea22287b",
+      "bytes": 10136
+    },
+    {
+      "original": "docs/stage9-namespace-memory.json",
+      "archived": "docs/archive/stages/stage9-namespace-memory.json",
+      "original_sha256": "4995668111e0f66a174ee66d2121676ce99eec2e3514086dfe147c3531f7e293",
+      "sha256": "4995668111e0f66a174ee66d2121676ce99eec2e3514086dfe147c3531f7e293",
+      "bytes": 10133
+    },
+    {
+      "original": "docs/stage9-plan.md",
+      "archived": "docs/archive/stages/stage9-plan.md",
+      "original_sha256": "cced66d3873058670aca9e85bb74138560a840f29e8b62febe4def1ea2f80260",
+      "sha256": "cced66d3873058670aca9e85bb74138560a840f29e8b62febe4def1ea2f80260",
+      "bytes": 5277
+    }
+  ]
+}
