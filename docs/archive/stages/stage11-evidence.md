@@ -2,7 +2,7 @@
 
 Stage eleven admits DateCalc's rewrite forms: inline `rewrites <[ ... ]>`,
 `syntax function` quote helpers and ordered `match` arms. The fixture
-[`Rewrites.ngr`](../languages/rewrites/Rewrites.ngr) composes over Dates and
+[`Rewrites.ngr`](../../../languages/rewrites/Rewrites.ngr) composes over Dates and
 adds `fortnights`, `swapped`, `~n` (today plus n days), `twice(x)`, `pad(x)` and
 `wrap(x)`. Native builds use no .NET component.
 

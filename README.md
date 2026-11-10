@@ -69,7 +69,7 @@ XML admission is also syntax-only and omits XML semantic checks.
 The [updated assessment](docs/compiler-assessment-2026-10-30.md) measures Nitride
 `fa9b5c6` on an **Apple M4 Pro**, including PGO, native CPU targeting and optional
 ASCII batching, against fresh Nitrogen 0.19.0 and Roslyn 5.0.0 runs on .NET 10.
-The [October 28 comparison](docs/stage45-comparison.md) remains the historical
+The [October 28 comparison](docs/archive/stages/stage45-comparison.md) remains the historical
 checkpoint for memory and incremental edits.
 
 Full parses of generated valid C# 4 source, seconds (lower is better):
@@ -187,7 +187,7 @@ Unsupported constructs and incompatible catalogs fail preparation.
   snapshots remain readable. Export and semantic recomputation have separate
   costs; incremental syntax does not imply incremental binding.
 - A native grammar frontend bootstrapped from a checked-in Rust seed, with a
-  [regeneration fixed-point check](docs/stage9-evidence.md).
+  [regeneration fixed-point check](docs/archive/stages/stage9-evidence.md).
 
 Full Nitrogen compatibility and reproducing the complete DateCalc language are
 not project goals. Arbitrary C# helpers, full quotation APIs, and list splices are
@@ -262,15 +262,15 @@ agreement with Nitrogen is not a product acceptance requirement.
 | Evidence | Scope |
 |---|---|
 | [Design](docs/design.md) | Original rationale and architecture, including historical plans |
-| [CSharp4 admission](docs/stage12-evidence.md) | Grammar provenance and reference-tree parity |
-| [Recovery](docs/stage14-evidence.md) | Quality checks and recovery limits |
-| [Shared snapshots](docs/stage15-evidence.md) | Storage sharing, edits, and admission costs |
-| [Three-way comparison](docs/stage30-comparison.md) | Full-parse timing and memory methodology, 2026-10-27 |
-| [Refreshed comparison](docs/stage45-comparison.md) | Full-parse and edit timing, memory, change since stage30 |
+| [CSharp4 admission](docs/archive/stages/stage12-evidence.md) | Grammar provenance and reference-tree parity |
+| [Recovery](docs/archive/stages/stage14-evidence.md) | Quality checks and recovery limits |
+| [Shared snapshots](docs/archive/stages/stage15-evidence.md) | Storage sharing, edits, and admission costs |
+| [Three-way comparison](docs/archive/stages/stage30-comparison.md) | Full-parse timing and memory methodology, 2026-10-27 |
+| [Refreshed comparison](docs/archive/stages/stage45-comparison.md) | Full-parse and edit timing, memory, change since stage30 |
 | [PGO and SIMD reassessment](docs/compiler-assessment-2026-10-30.md) | Apple M4 Pro compiler configurations, fresh .NET comparison, ARM SIMD boundary |
 | [JSON comparison](docs/json-comparison.md) | Generated JSON parser against System.Text.Json, throughput work, warm-up on other files |
-| [Incremental checkpoint](docs/stage34-evidence.md) | Edit measurements and Roslyn baseline |
-| [Latest recorded parser checkpoint](docs/stage44-evidence.md) | Paired timings, recovery filtering, validation |
+| [Incremental checkpoint](docs/archive/stages/stage34-evidence.md) | Edit measurements and Roslyn baseline |
+| [Latest recorded parser checkpoint](docs/archive/stages/stage44-evidence.md) | Paired timings, recovery filtering, validation |
 
 ## Credits
 

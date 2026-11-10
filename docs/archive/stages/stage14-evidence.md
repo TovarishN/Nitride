@@ -45,7 +45,7 @@ recovery; this adds no C# binding/type checking or unsupported XML checks.
 
 [`stage14-recovery-quality.json`](stage14-recovery-quality.json) records 757
 accepted baselines and 4,334 concrete single-edit variants across all 12 fixture
-profiles. The source manifest is [`fixtures/recovery/manifest.json`](../fixtures/recovery/manifest.json).
+profiles. The source manifest is [`fixtures/recovery/manifest.json`](../../../fixtures/recovery/manifest.json).
 135 deliberately invalid generated programs and 208 inapplicable operations are
 recorded explicitly. The legacy portable unterminated-comment baseline remains
 in the report: strict parsing permits it, while recovery reports its damage.

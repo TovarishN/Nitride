@@ -71,7 +71,7 @@ names and sample execution returns `[6,-5,0,-7]`. The host still has .NET elsewh
 
 The three-platform workflow now includes the call sample and native preparation.
 See the feature branch's GitHub checks for its hosted validation status; earlier
-cross-platform evidence is in [ci-evidence.md](ci-evidence.md).
+cross-platform evidence is in [ci-evidence.md](../../ci-evidence.md).
 
 ## Footprint
 
@@ -90,7 +90,7 @@ metrics:
 | Bind/check/HIR | 745,472 B | 1,269,856 B | 6,110 |
 | Execution | 139,264 B | 255,536 B | 5,043 |
 
-Raw data: [calls-memory.json](calls-memory.json). These are requested System bytes
+Raw data: [calls-memory.json](../../calls-memory.json). These are requested System bytes
 with independent phase baselines, excluding caller input, static data, allocator
 overhead and RSS; owned source is counted. JSON is formatted after snapshots.
 Peaks cannot be added. No process-memory or throughput improvement is inferred.

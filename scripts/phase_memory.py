@@ -1,5 +1,6 @@
 """Measure engine-owned phase allocations without observation JSON in the region."""
 import json
+from report_paths import write_report
 import pathlib
 import platform
 import subprocess
@@ -7,7 +8,7 @@ import tempfile
 from reference import ROOT
 
 
-def main():
+def main(report_name="phase-memory.json"):
     profiler = ROOT / "target/release/nitride-profile"
     measurements = []
     with tempfile.TemporaryDirectory() as tmp:
@@ -37,7 +38,7 @@ def main():
             "JSON is formatted only after all phase snapshots. XML has parsing admission only.",
             "Profiler atomic accounting affects timings; these are not uninstrumented throughput benchmarks.",
             "Single-threaded fixture handlers; no concurrent allocator activity is expected."]}
-    (ROOT / "docs/phase-memory.json").write_text(json.dumps(report,indent=2)+"\n")
+    write_report(report_name, report)
     for row in measurements:
         run=row["runs"][0]
         print(row["language"],row["items"],"source",run["source_bytes"],"parse retained",run["parse"]["retained_bytes"],"parse peak",run["parse"]["peak_bytes"],"HIR",run["hir"] and run["hir"]["retained_bytes"])

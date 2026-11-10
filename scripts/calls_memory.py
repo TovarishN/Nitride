@@ -1,5 +1,6 @@
 """Measure builtin binding, exact call lowering and execution."""
 import json
+from report_paths import write_report
 import pathlib
 import platform
 import subprocess
@@ -7,7 +8,7 @@ import tempfile
 from test_reference import ROOT
 
 
-def main():
+def main(report_name="calls-memory.json"):
     measurements=[]
     with tempfile.TemporaryDirectory() as folder:
         path=pathlib.Path(folder)/"input.calls"
@@ -22,7 +23,7 @@ def main():
     report=dict(host=platform.platform(),native_executable_bytes=(ROOT/'target/release/nitride').stat().st_size,
                 profiler_executable_bytes=(ROOT/'target/release/nitride-profile').stat().st_size,measurements=measurements,
                 metric='Requested System bytes; separate phase baselines; excludes JSON, caller input, static tables, allocator overhead and RSS')
-    (ROOT/'docs/calls-memory.json').write_text(json.dumps(report,indent=2)+'\n')
+    write_report(report_name, report)
     print('Recorded 10/100/1000 calls declaration-pair workloads')
 
 

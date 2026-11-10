@@ -255,7 +255,7 @@ def main():
     mode.add_argument("--differential", action="store_true")
     parser.add_argument("--manifest", type=pathlib.Path, default=ROOT/"fixtures/recovery/manifest.json")
     parser.add_argument("--limit", type=int, default=4334)
-    parser.add_argument("--baseline-report", type=pathlib.Path, default=ROOT/"docs/stage15-baseline.json")
+    parser.add_argument("--baseline-report", type=pathlib.Path, default=ROOT/"docs/archive/stages/stage15-baseline.json")
     parser.add_argument("--edits", type=int, default=100)
     parser.add_argument("--warmups", type=int, default=10)
     parser.add_argument("--locations", nargs="+", choices=["early","middle","late","alternating"], default=["early","middle","late","alternating"])

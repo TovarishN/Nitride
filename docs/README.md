@@ -43,14 +43,15 @@ are separate claims; see [current status](status.md) for remaining limits.
 ## Historical records
 
 The initial [design](design.md), [plan](plan.md) and [progress ledger](progress.md)
-record the original milestone. `stage2-*` through `stage45-*`, the earlier memory
-reports and comparison JSON files are historical implementation and measurement
-evidence, not the current roadmap. Stage reports name their associated inputs,
-samples and limits; [stage 45](stage45-comparison.md) is the final numbered
-comparison checkpoint. [The harness](stage30-harness/) remains reproducible code.
+record the original milestone. The [stage archive](archive/stages/README.md) holds
+stage 2–45 plans, ledgers and measurement artifacts, grouped behind a navigation
+index instead of filling the top level of this directory. The [stage 45 comparison](archive/stages/stage45-comparison.md)
+is the final numbered comparison checkpoint. The [harness](stage30-harness/)
+remains reproducible code at its existing location.
 
-Historical files remain at their original paths because reports, scripts and
-external links refer to them. This index separates them from current guides
-without deleting evidence or changing recorded measurements. Moving large
-artifacts to release storage, or rewriting repository history to reduce clone
-size, requires a separate migration that preserves those references.
+All 180 raw JSON reports were moved byte-for-byte. Markdown changed only to
+rebase links; recorded results, command lines and provenance remain historical.
+The [path/hash manifest](archive/stages/manifest.json) and CI integrity check
+preserve that distinction. New benchmark output defaults to ignored
+`target/reports/`. No evidence or Git history was deleted, and clone size is
+not reduced; see the archive guide for legacy-link migration and reproduction limits.

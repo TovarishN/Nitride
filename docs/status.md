@@ -31,7 +31,7 @@ The two reported macOS cancellations after PRs #52 and #53 were hosted-runner
 acquisition failures before checkout, confirmed by GitHub annotations. The later
 `f240c666` main checkpoint passed all jobs, including macOS. [Retained evidence](testing/macos-runner-capacity.md)
 records timings, annotations and the distinction from subsequent local branch work.
-The workflow remains unchanged.
+No runner, timeout or concurrency settings were changed for that finding.
 
 ## Unreleased Rust embedding
 

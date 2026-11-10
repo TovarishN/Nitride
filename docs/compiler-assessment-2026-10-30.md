@@ -1,6 +1,6 @@
 # C# parser assessment after PGO and ASCII batching
 
-This assessment supplements the historical [October 28 three-way comparison](stage45-comparison.md)
+This assessment supplements the historical [October 28 three-way comparison](archive/stages/stage45-comparison.md)
 with fresh Apple M4 Pro measurements of Nitride `fa9b5c6` and the existing .NET
 comparison harnesses. It also incorporates the separate [Windows compiler audit](compiler-optimization-audit.md)
 and [AVX2 scanner experiment](ascii-scanner-runs.md). Platform results remain separate.

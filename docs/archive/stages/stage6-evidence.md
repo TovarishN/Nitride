@@ -73,7 +73,7 @@ Three runs agree on requested-byte metrics and allocation counts:
 | Bind/check/HIR | 802,816 B | 1,313,944 B | 8,093 |
 | Execution | 81,920 B | 266,416 B | 4,045 |
 
-Raw data: [inference-memory.json](inference-memory.json). These are requested
+Raw data: [inference-memory.json](../../inference-memory.json). These are requested
 System allocation bytes with independent phase baselines, not RSS. Caller input,
 static tables and allocator overhead are excluded; owned parser source is counted.
 JSON serialization occurs after snapshots. Peaks cannot be summed as a process
@@ -82,8 +82,8 @@ peak. No throughput or process-memory improvement is claimed from this new workl
 For the unchanged namespace workload, HIR peak falls from 839,960 B to 692,504 B
 with compact declaration identities; retained bytes and allocation counts remain
 unchanged. Compare [stage5-namespace-memory.json](stage5-namespace-memory.json)
-with [namespace-memory.json](namespace-memory.json). Standard workload results
-are in [phase-memory.json](phase-memory.json).
+with [namespace-memory.json](../../namespace-memory.json). Standard workload results
+are in [phase-memory.json](../../phase-memory.json).
 
 Full DateCalc, general C# helper translation, callable functions, nested scopes,
 recovery, incremental editing and native editor integration remain deferred.

@@ -73,7 +73,7 @@ macOS arm64, Rust 1.99.1, release profile:
 The core still has no third-party dependencies. The existing portable/Power/XML
 benchmarks have unchanged allocation counts, retained bytes and peaks. The old
 parser baseline is preserved in [stage3-phase-memory.json](stage3-phase-memory.json);
-current general results are in [phase-memory.json](phase-memory.json).
+current general results are in [phase-memory.json](../../phase-memory.json).
 
 The new benchmark uses 1,000 pairs: **2,000 declarations, 2,000 references and
 4,000 statements**, with 71,342 source bytes. Three runs agree on requested-byte

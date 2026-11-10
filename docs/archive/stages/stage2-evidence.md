@@ -14,7 +14,7 @@ comparison still use the sibling Nitrogen checkout and .NET.
   extension-target references. Portable.Power adds typed, right-associative
   exponentiation with real Nitrogen binding/type/HIR comparisons.
 - Base/Uses and XML grammars are copied unchanged from Nitrogen; original paths
-  and SHA-256 hashes are in [grammar-provenance.json](grammar-provenance.json).
+  and SHA-256 hashes are in [grammar-provenance.json](../../grammar-provenance.json).
 - XML and Base/Uses are explicitly syntax-only. Tree comparisons retain named
   rules, UTF-8 spans and parent relationships, omitting pure aliases on both sides.
   XML C# closing-tag checks and pattern warnings are listed as omitted semantics.

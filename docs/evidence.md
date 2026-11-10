@@ -1,6 +1,6 @@
 # Historical stage-one native deployment evidence
 
-These measurements describe the first milestone. See [stage-two evidence](stage2-evidence.md)
+These measurements describe the first milestone. See [stage-two evidence](archive/stages/stage2-evidence.md)
 for the current binary and isolated engine allocations.
 
 Measured on macOS-27.0.1-arm64-arm-64bit with rustc 1.99.1 (58cf8f9c3 2026-10-13) (Homebrew).

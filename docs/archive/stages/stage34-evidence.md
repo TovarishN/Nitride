@@ -4,7 +4,7 @@ This round added the incremental comparison with Roslyn that the earlier compari
 
 ## Incremental parsing against Roslyn
 
-A new harness, [`stage30-harness/rinc`](stage30-harness/rinc/Program.cs), applies the same edit scripts as `nitride-profile --edits`. Each edit applies one text change, then calls `WithChangedText` and `GetRoot`. Roslyn 5.0.0 targets C# 4, runs on .NET 10, and does one untimed pass over the script to warm the JIT before three timed passes. Nitride runs two processes. The scripts are 60 single-character edits at the given position.
+A new harness, [`stage30-harness/rinc`](../../stage30-harness/rinc/Program.cs), applies the same edit scripts as `nitride-profile --edits`. Each edit applies one text change, then calls `WithChangedText` and `GetRoot`. Roslyn 5.0.0 targets C# 4, runs on .NET 10, and does one untimed pass over the script to warm the JIT before three timed passes. Nitride runs two processes. The scripts are 60 single-character edits at the given position.
 
 On valid files, Nitride's incremental reparse was already 2.5–6× faster than Roslyn's. On a file that already contained one syntax error, Nitride was 1.5–1.9× slower, and its edit cost grew with file size.
 

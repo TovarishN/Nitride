@@ -113,7 +113,7 @@ Limits:
 
 ## Reproduce
 
-The harnesses are those in [stage30-harness](stage30-harness), with `rinc` and `incremental.py` for edits. They contain this host's absolute paths; edit those before running.
+The harnesses are those in [stage30-harness](../../stage30-harness), with `rinc` and `incremental.py` for edits. They contain this host's absolute paths; edit those before running.
 
 ```sh
 (cd docs/stage30-harness/nbench && cargo build --release)

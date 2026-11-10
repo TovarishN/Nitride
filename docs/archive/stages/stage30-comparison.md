@@ -79,7 +79,7 @@ Limits:
 
 ## Reproduce
 
-The harness sources are in [stage30-harness](stage30-harness):
+The harness sources are in [stage30-harness](../../stage30-harness):
 - `nbench`: a Cargo crate against this repository.
 - `rcmp`: Roslyn.
 - `ncmp`: Nitrogen; it references `tools/Nitride.Reference`.

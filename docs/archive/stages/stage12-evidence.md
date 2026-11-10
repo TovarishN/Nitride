@@ -1,10 +1,10 @@
 # CSharp4 on Nitride (Milestone A)
 
 Milestone A of the
-[C# recovery and incremental design](superpowers/specs/2026-10-24-csharp-recovery-incremental-design.md):
+[C# recovery and incremental design](../../superpowers/specs/2026-10-24-csharp-recovery-incremental-design.md):
 Nitride prepares CSNitrogen's CSharp4 grammar and parses valid,
 preprocessing-free C# into syntax trees identical to Nitrogen's. Plan:
-[2026-10-24-csharp4-admission.md](superpowers/plans/2026-10-24-csharp4-admission.md).
+[2026-10-24-csharp4-admission.md](../../superpowers/plans/2026-10-24-csharp4-admission.md).
 
 ## Vendored grammar
 

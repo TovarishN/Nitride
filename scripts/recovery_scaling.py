@@ -2,6 +2,7 @@
 import argparse
 import hashlib
 import json
+from report_paths import write_report
 import pathlib
 import platform
 import subprocess
@@ -52,7 +53,7 @@ def main():
             if a and b > 2*a:
                 failures.append(f"{pattern}: work/byte more than doubles at {row['source_bytes']} bytes")
     report = {"profiler_sha256":hashlib.sha256((ROOT/"target/release/nitride-profile").read_bytes()).hexdigest(),"counter_scope":"recovery VM transitions and strict probes; initial failed strict parse and retry attempts excluded; elapsed includes the entire recovery API","allocator_scope":"requested System bytes; excludes thread stacks, allocator overhead, OS mappings, JSON serialization and caller input","host":platform.platform(),"machine":platform.machine(),"runs_per_case":1,"failures":failures,"measurements":rows}
-    (ROOT/"docs/stage14-recovery-scaling.json").write_text(json.dumps(report,indent=2)+"\n")
+    write_report("stage14-recovery-scaling.json", report)
     return bool(failures)
 
 

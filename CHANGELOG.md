@@ -26,6 +26,9 @@ their linked reports.
 - Direct process/component crate tests, strict JSON-RPC envelopes and outgoing
   value shapes, component type checks and shared WIT-name normalization.
   [Host-binding coverage](docs/testing/host-bindings.md).
+- Archived stage 2–45 evidence with byte-preserved raw reports, a path/hash
+  manifest, repaired repository links and separate generated-report defaults.
+  [Archive guide](docs/archive/stages/README.md).
 - Investigated the reported macOS CI cancellations: GitHub runner-acquisition
   failures, followed by a passing `main` checkpoint. [CI evidence](docs/testing/macos-runner-capacity.md).
 

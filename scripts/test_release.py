@@ -5,6 +5,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import tomllib
 import unittest
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -55,7 +56,9 @@ class VersionTests(unittest.TestCase):
             destination.parent.mkdir(parents=True, exist_ok=True)
             if (ROOT / name).exists():
                 shutil.copy2(ROOT / name, destination)
-        for manifest in (ROOT / 'crates').glob('*/Cargo.toml'):
+        members = tomllib.loads((ROOT / 'Cargo.toml').read_text())['workspace']['members']
+        for member in members:
+            manifest = ROOT / member / 'Cargo.toml'
             destination = self.root / manifest.relative_to(ROOT)
             destination.parent.mkdir(parents=True, exist_ok=True)
             shutil.copy2(manifest, destination)
@@ -73,6 +76,9 @@ class VersionTests(unittest.TestCase):
         locked = tomllib.loads((self.root / 'Cargo.lock').read_text())
         self.assertEqual({p['version'] for p in locked['package']
                           if p['name'].startswith('nitride-')}, {'1.2.3'})
+        by_name = {p['name']: p['version'] for p in locked['package'] if 'source' not in p}
+        self.assertEqual(by_name['nitride'], '1.2.3')
+        self.assertEqual(by_name['nitride-embedded-calculator'], '1.2.3')
         lock = json.loads((self.root / 'editors/vscode/package-lock.json').read_text())
         self.assertEqual(lock['version'], '1.2.3')
         self.assertEqual(lock['packages']['']['version'], '1.2.3')
