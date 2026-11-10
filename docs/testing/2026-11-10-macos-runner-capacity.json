@@ -1,0 +1,105 @@
+{
+  "checked_on": "2026-11-10",
+  "source": "GitHub Actions and Checks REST APIs via gh; repository and workflow unchanged",
+  "runs": [
+    {
+      "run_id": 42661353000,
+      "run_url": "https://github.com/TovarishN/Nitride/actions/runs/42661353000",
+      "head_sha": "be203f9a9ef3048c54d6ca2ed6f166549477e4f0",
+      "run_conclusion": "failure",
+      "job_id": 129313449818,
+      "job_url": "https://github.com/TovarishN/Nitride/actions/runs/42661353000/job/129313449818",
+      "job_name": "native (macos-15)",
+      "job_conclusion": "cancelled",
+      "started_at": "2026-11-09T17:06:28Z",
+      "completed_at": "2026-11-09T17:21:29Z",
+      "step_count": 0,
+      "runner_id": 0,
+      "runner_name": "",
+      "labels": [
+        "macos-15"
+      ],
+      "annotations": [
+        {
+          "level": "failure",
+          "message": "The job was not acquired by Runner of type hosted even after multiple attempts"
+        },
+        {
+          "level": "notice",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+        },
+        {
+          "level": "notice",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+        },
+        {
+          "level": "notice",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+        }
+      ]
+    },
+    {
+      "run_id": 42684156493,
+      "run_url": "https://github.com/TovarishN/Nitride/actions/runs/42684156493",
+      "head_sha": "9f591977c40ec3409f96017db6be8404858c116c",
+      "run_conclusion": "failure",
+      "job_id": 129386353301,
+      "job_url": "https://github.com/TovarishN/Nitride/actions/runs/42684156493/job/129386353301",
+      "job_name": "native (macos-15)",
+      "job_conclusion": "cancelled",
+      "started_at": "2026-11-09T19:31:31Z",
+      "completed_at": "2026-11-09T19:46:32Z",
+      "step_count": 0,
+      "runner_id": 0,
+      "runner_name": "",
+      "labels": [
+        "macos-15"
+      ],
+      "annotations": [
+        {
+          "level": "failure",
+          "message": "The job was not acquired by Runner of type hosted even after multiple attempts"
+        },
+        {
+          "level": "notice",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+        },
+        {
+          "level": "notice",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+        },
+        {
+          "level": "notice",
+          "message": "Due to capacity constraints, jobs targeting macOS arm64 runners may experience longer queue times."
+        }
+      ]
+    },
+    {
+      "run_id": 42819194698,
+      "run_url": "https://github.com/TovarishN/Nitride/actions/runs/42819194698",
+      "head_sha": "f240c666bc9f3cae49aa83cbc6d2a7b8b7f39bac",
+      "run_conclusion": "success",
+      "job_id": 129840021771,
+      "job_url": "https://github.com/TovarishN/Nitride/actions/runs/42819194698/job/129840021771",
+      "job_name": "native (macos-15)",
+      "job_conclusion": "success",
+      "started_at": "2026-11-10T12:50:39Z",
+      "completed_at": "2026-11-10T12:56:54Z",
+      "step_count": 12,
+      "verification_steps": [
+        {
+          "name": "Run cargo +stable test --workspace --locked",
+          "conclusion": "success"
+        },
+        {
+          "name": "Test native-only CLI, process bindings and LSP startup",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify release LSP training against the native binary",
+          "conclusion": "success"
+        }
+      ]
+    }
+  ]
+}

@@ -38,3 +38,11 @@ platform and uncommitted-status statements; this report supersedes that status.
 The independent repository is now private on GitHub at
 [TovarishN/Nitride](https://github.com/TovarishN/Nitride), with `main` as its default
 branch. Nitrogen product files remain untouched.
+
+## Later macOS runner-capacity investigation
+
+The [November 10 investigation](testing/macos-runner-capacity.md) resolves the two
+reported fifteen-minute macOS cancellations after PRs #52/#53. GitHub's annotations
+identify hosted-runner acquisition failures, with no assigned runner or executed
+steps. The later PR #54 `main` checkpoint passed. This does not extend hosted
+acceptance to subsequent local feature-branch commits.

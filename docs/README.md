@@ -31,6 +31,8 @@ Evidence applies to the revision, platform and workload named in each report.
 Passing automated checks, packaged editor checks and manual visual acceptance
 are separate claims; see [current status](status.md) for remaining limits.
 
+- [Changelog](../CHANGELOG.md): published releases and unreleased work.
+- [macOS CI investigation](testing/macos-runner-capacity.md): hosted-runner capacity failures and the later passing checkpoint.
 - [0.4.0 release](release-0.4.0.md) and [packaged editor acceptance](editor-acceptance-0.4.0.md).
 - [Authoring acceptance](authoring-acceptance.md) and [language-testing acceptance](language-testing-acceptance.md).
 - [Editor responsiveness](benchmark-2026-11-09-editor-responsiveness.md), [projection](benchmark-2026-11-09-editor-projection.md) and [projection walks](benchmark-2026-11-09-projection-walk.md).

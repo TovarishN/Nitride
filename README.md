@@ -3,6 +3,7 @@
 See [current project status](docs/status.md) for unreleased development milestones and verification.
 The [documentation index](docs/README.md) groups guides and evidence;
 [architecture](docs/architecture.md) explains the crate map and data flow.
+The [changelog](CHANGELOG.md) separates published releases from ongoing work.
 
 Nitride is an independent Rust language engine, building on ideas from
 [Nitrogen](https://github.com/TovarishN/Nitrogen). It prepares `.ngr` grammars,

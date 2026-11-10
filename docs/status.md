@@ -25,6 +25,14 @@ using frozen inputs and separate cancellable native workers. The published
 engine release remains 0.4.0. [Packaged API acceptance](language-testing-acceptance.md)
 records the tested workflow and its focus/visual limitations.
 
+## Hosted macOS CI investigation
+
+The two reported macOS cancellations after PRs #52 and #53 were hosted-runner
+acquisition failures before checkout, confirmed by GitHub annotations. The later
+`f240c666` main checkpoint passed all jobs, including macOS. [Retained evidence](testing/macos-runner-capacity.md)
+records timings, annotations and the distinction from subsequent local branch work.
+The workflow remains unchanged.
+
 ## Unreleased Rust embedding
 
 The development tree adds a [`nitride` facade](embedding.md), optional Cargo
