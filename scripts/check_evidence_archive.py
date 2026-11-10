@@ -1,4 +1,5 @@
-"""Verify frozen stage artifacts without running their historical workloads."""
+"""Verify frozen documentation artifacts without running their historical workloads."""
+import argparse
 import hashlib
 import json
 from pathlib import Path
@@ -7,11 +8,12 @@ ROOT = Path(__file__).resolve().parents[1]
 ARCHIVE = Path("docs/archive/stages")
 
 
-def check_archive(root=ROOT):
+def check_archive(root=ROOT, *, manifest=ARCHIVE / "manifest.json"):
     root = Path(root)
-    directory = (root / ARCHIVE).resolve()
+    directory = (root / "docs").resolve()
+    manifest_path = root / manifest
     try:
-        manifest = json.loads((directory / "manifest.json").read_text(encoding="utf-8"))
+        manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
     except (OSError, ValueError) as error:
         return [f"cannot read evidence manifest: {error}"]
     if not isinstance(manifest, dict) or manifest.get("schema") != 1 or not isinstance(manifest.get("files"), list) or not manifest["files"]:
@@ -36,14 +38,17 @@ def check_archive(root=ROOT):
 
 
 def main():
-    errors = check_archive()
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--manifest", type=Path, default=ARCHIVE / "manifest.json")
+    args = parser.parse_args()
+    errors = check_archive(manifest=args.manifest)
     if errors:
         for error in errors:
             print(error)
         return 1
-    manifest = json.loads((ROOT / ARCHIVE / "manifest.json").read_text(encoding="utf-8"))
+    manifest = json.loads((ROOT / args.manifest).read_text(encoding="utf-8"))
     raw = sum(Path(entry["archived"]).suffix == ".json" for entry in manifest["files"])
-    print(f"Verified {len(manifest['files'])} archived files; {raw} raw JSON reports are byte-identical.")
+    print(f"Verified {len(manifest['files'])} evidence files; {raw} raw JSON reports are byte-identical.")
     return 0
 
 

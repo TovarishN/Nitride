@@ -713,8 +713,8 @@
       "original": "docs/stage2-evidence.md",
       "archived": "docs/archive/stages/stage2-evidence.md",
       "original_sha256": "83644b065f326be53055cd21ba442bec668c4ab64886ffc1cdcdec4fbb577978",
-      "sha256": "ae214b09169d3a3520c709fce961fed326050a288054f1a9e77d5e6dc15d4e28",
-      "bytes": 4233
+      "sha256": "8fd5837f95a61a5ed04efea910204bb8ff51cb35f235f5de941641635187c087",
+      "bytes": 4238
     },
     {
       "original": "docs/stage2-phase-memory.json",
@@ -888,8 +888,8 @@
       "original": "docs/stage24-evidence.md",
       "archived": "docs/archive/stages/stage24-evidence.md",
       "original_sha256": "be623302f447b759a5b952a8982c366f73f98fba3917e70ac6ca7eceff69ebc3",
-      "sha256": "9cd855fa60220b97a9347a916b5fce88176751db9324786ceccd321a64fd4ab2",
-      "bytes": 4350
+      "sha256": "2a808f049680e1336245286ebf9a9e5630b13311fee6065d9124b611ddb0ade9",
+      "bytes": 4370
     },
     {
       "original": "docs/stage24-first-edit.json",
@@ -1532,8 +1532,8 @@
       "original": "docs/stage5-evidence.md",
       "archived": "docs/archive/stages/stage5-evidence.md",
       "original_sha256": "67011a4d5c77c25fe55f5c89ad13c946a7dad7853971b78d345482617915ea2e",
-      "sha256": "deff16726904e1fee3b8ce382eebbaad5c35b7b8771b83d70337d656abd93d8c",
-      "bytes": 5538
+      "sha256": "54963dd3b95af5d5002c17eb90a1ae5ee14c621a50b1db079238db8670b7e9e2",
+      "bytes": 5543
     },
     {
       "original": "docs/stage5-namespace-memory.json",
@@ -1553,8 +1553,8 @@
       "original": "docs/stage6-evidence.md",
       "archived": "docs/archive/stages/stage6-evidence.md",
       "original_sha256": "4737b924b7e5cd2765d5b99560611df8f5aae297c5fb591865770498d3529939",
-      "sha256": "4f68cab383222f86ef564c13a69b29780239ea8e197724638c03e88a2fcff228",
-      "bytes": 5403
+      "sha256": "ab02ab83c8fb1bb1e91c7d3d1649eb08478a8e95481b2e8cae34f147e6e98df3",
+      "bytes": 5418
     },
     {
       "original": "docs/stage6-plan.md",
@@ -1567,8 +1567,8 @@
       "original": "docs/stage7-evidence.md",
       "archived": "docs/archive/stages/stage7-evidence.md",
       "original_sha256": "d9b12813329caae519762f31aec4c9d78b2296756c2d0a6157554e1f79175ec6",
-      "sha256": "3b9b464667310443a36a93d482b650025066719c9e487a77183c1dc2e462fc5d",
-      "bytes": 6083
+      "sha256": "75e1a379becd9bfb9704a8371d5f201f566c1f343adfb70d0e2c918d6a0d855f",
+      "bytes": 6093
     },
     {
       "original": "docs/stage7-inference-memory.json",
@@ -1602,8 +1602,8 @@
       "original": "docs/stage8-evidence.md",
       "archived": "docs/archive/stages/stage8-evidence.md",
       "original_sha256": "0b2547a349e10cdc412529b68fc6351cad3b5040375633ea9ddfb80944f51534",
-      "sha256": "18a0af86cf51dd8c9563b3e607e479f58ef0122e56ed4d05147c52764a186ce0",
-      "bytes": 8164
+      "sha256": "f8402d72337dd7611d8a6b15d96f9ba39871092383aa3a0c2bf61e69d2010f33",
+      "bytes": 8169
     },
     {
       "original": "docs/stage8-inference-memory.json",

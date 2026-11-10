@@ -28,6 +28,7 @@ jobs:
       - run: rustup toolchain install stable --profile minimal
       - run: python3 scripts/version.py check
       - run: python3 scripts/check_evidence_archive.py
+      - run: python3 scripts/check_evidence_archive.py --manifest docs/archive/layout-manifest.json
       - working-directory: editors/vscode
         run: |
           npm ci

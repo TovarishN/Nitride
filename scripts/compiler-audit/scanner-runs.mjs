@@ -4,8 +4,8 @@ import path from 'node:path';
 import crypto from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 const sha = p => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
-const reportPath = process.env.NITRIDE_SCANNER_REPORT || 'docs/ascii-scanner-runs.json';
-const baseline = JSON.parse(fs.readFileSync('docs/compiler-optimization-audit.json'));
+const reportPath = process.env.NITRIDE_SCANNER_REPORT || 'target/reports/ascii-scanner-runs.json';
+const baseline = JSON.parse(fs.readFileSync('docs/benchmarks/compiler/compiler-optimization-audit.json'));
 const variants = {
   baseline: 'target/compiler-audit/portable/x86_64-pc-windows-msvc/release/nitride-compiler-audit.exe',
   default: 'target/scanner-default/x86_64-pc-windows-msvc/release/nitride-compiler-audit.exe',
@@ -49,6 +49,7 @@ for (const c of cases) {
   }
   row.median_ns=Object.fromEntries(names.map(n=>[n,row.samples[n].map(s=>s.elapsed_ns).sort((a,b)=>a-b)[2]]));
   report.cases.push(row);
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath,JSON.stringify(report,null,2)+'\n');
   console.log(JSON.stringify({case:c.id,medians:row.median_ns,mismatches:report.mismatches.length}));
 }

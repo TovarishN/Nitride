@@ -1,4 +1,4 @@
-// Scoped parse context (docs/scoped-parse-context.md): headers set a flag
+// Scoped parse context (docs/guides/scoped-parse-context.md): headers set a flag
 // that selects which alternative identical words parse as.
 syntax module Context
 {

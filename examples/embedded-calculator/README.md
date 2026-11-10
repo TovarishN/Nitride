@@ -22,5 +22,5 @@ To copy it outside this workspace, replace the workspace-inherited package
 metadata in `Cargo.toml` with explicit values (version `0.1.0`, edition `2024`,
 license `MIT`, rust-version `1.85`), and change both `nitride` dependency paths to
 `/path/to/Nitride/crates/nitride`. Keep `build.rs`, `src/` and `language/` together.
-The [embedding guide](../../docs/embedding.md) explains the full recipe and
+The [embedding guide](../../docs/guides/embedding.md) explains the full recipe and
 compatibility contract.

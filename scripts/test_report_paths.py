@@ -61,6 +61,20 @@ class ArchiveHashes(unittest.TestCase):
             (path.parent / "manifest.json").write_text(json.dumps(manifest))
             self.assertTrue(check_archive(root))
 
+    def test_checker_accepts_an_explicit_nonstage_evidence_manifest(self):
+        with tempfile.TemporaryDirectory() as folder:
+            root = Path(folder)
+            path, manifest = self.fixture(root)
+            destination = root / "docs/benchmarks/compiler/compiler-optimization-audit.json"
+            destination.parent.mkdir(parents=True)
+            path.rename(destination)
+            manifest["files"][0]["archived"] = destination.relative_to(root).as_posix()
+            index = root / "docs/archive/layout-manifest.json"
+            index.write_text(json.dumps(manifest))
+            self.assertEqual(check_archive(root, manifest=Path("docs/archive/layout-manifest.json")), [])
+            destination.write_bytes(b"changed")
+            self.assertTrue(check_archive(root, manifest=Path("docs/archive/layout-manifest.json")))
+
 
 if __name__ == "__main__":
     unittest.main()

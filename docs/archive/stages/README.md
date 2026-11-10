@@ -2,7 +2,7 @@
 
 This archive contains the original stage 2–45 reports, plans and ledgers. They
 record their own revisions, workloads and acceptance limits; they do not describe
-the current feature set. Start with [current status](../../status.md) or the
+the current feature set. Start with [current status](../../project/status.md) or the
 [documentation index](../../README.md) for active guidance.
 
 ## Preservation and path migration
@@ -26,8 +26,10 @@ with `git show SOURCE_COMMIT:ORIGINAL_PATH` using the manifest. No duplicate
 redirect files remain at the old paths, and no evidence was deleted or moved to
 an external service.
 
-This reduces tracked top-level `docs/` files from 297 to 59. It does **not** reduce
-repository, clone or evidence size: raw files remain in-tree. The
+The stage migration reduced tracked top-level `docs/` files from 297 to 59.
+The subsequent [topic layout](../README.md) leaves only the documentation index
+at the root. These moves do **not** reduce repository, clone or evidence size:
+raw files remain in-tree. The
 [comparison harness](../../stage30-harness/) stays at its original path because
 source and project files depend on that layout.
 

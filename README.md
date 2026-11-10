@@ -1,8 +1,8 @@
 # Nitride
 
-See [current project status](docs/status.md) for unreleased development milestones and verification.
+See [current project status](docs/project/status.md) for unreleased development milestones and verification.
 The [documentation index](docs/README.md) groups guides and evidence;
-[architecture](docs/architecture.md) explains the crate map and data flow.
+[architecture](docs/project/architecture.md) explains the crate map and data flow.
 The [changelog](CHANGELOG.md) separates published releases from ongoing work.
 
 Nitride is an independent Rust language engine, building on ideas from
@@ -66,7 +66,7 @@ XML admission is also syntax-only and omits XML semantic checks.
 
 ### Parsing assessment, 2026-10-30
 
-The [updated assessment](docs/compiler-assessment-2026-10-30.md) measures Nitride
+The [updated assessment](docs/benchmarks/compiler/compiler-assessment-2026-10-30.md) measures Nitride
 `fa9b5c6` on an **Apple M4 Pro**, including PGO, native CPU targeting and optional
 ASCII batching, against fresh Nitrogen 0.19.0 and Roslyn 5.0.0 runs on .NET 10.
 The [October 28 comparison](docs/archive/stages/stage45-comparison.md) remains the historical
@@ -91,7 +91,7 @@ explicit vector classifier uses AVX2 on x86-64; no ARM NEON classifier is
 implemented. On this M4 Pro, batching makes the 1 MiB string case 2.66× faster,
 while mixed-code results show only small gains and regressions. Combining
 batching with PGO adds no consistent mixed-code benefit. The separate
-[Windows AVX2 experiment](docs/ascii-scanner-runs.md) measured 3.45× over
+[Windows AVX2 experiment](docs/benchmarks/scanners/ascii-scanner-runs.md) measured 3.45× over
 default on that long-string workload, including a 1.21× gain over scalar batching.
 Those results do not establish a general parser speedup or a NEON speedup.
 
@@ -117,12 +117,12 @@ peak memory than Roslyn on large files. Neither edits nor memory were remeasured
 with PGO/batching; these parse-time gains must not be applied to them.
 
 This assessment changes no ordinary Cargo release settings or ASCII feature
-defaults. The [native release pipeline](docs/releases.md) separately applies
+defaults. The [native release pipeline](docs/releases/README.md) separately applies
 PGO/LTO and Apple M1 CPU tuning on macOS; its binaries and training workload
 were not measured here. These gains belong to the standalone parser harness;
 deployment should measure the actual executable. The assessment
-links [native samples](docs/compiler-optimization-macos.json),
-[.NET samples](docs/compiler-comparison-macos.json), correctness fingerprints,
+links [native samples](docs/benchmarks/compiler/compiler-optimization-macos.json),
+[.NET samples](docs/benchmarks/compiler/compiler-comparison-macos.json), correctness fingerprints,
 assembly identities, training limits and [reproduction commands](scripts/compiler-audit/README.md).
 
 ## Try it
@@ -141,7 +141,7 @@ cargo run --locked -p nitride-embedded-calculator
 
 On Windows use `target/release/nitride.exe`. The CLI emits JSON observations;
 the standalone embedding example owns its language, uses the `nitride` facade,
-and prints `42`. See the [embedding guide](docs/embedding.md) for Cargo setup,
+and prints `42`. See the [embedding guide](docs/guides/embedding.md) for Cargo setup,
 host bindings and the source compatibility contract.
 Native builds require neither .NET nor checked-in `language.json` exports.
 
@@ -171,7 +171,7 @@ Unsupported constructs and incompatible catalogs fail preparation.
 
 ## Features and boundaries
 
-- Per-project [trivia policies](docs/trivia.md), including strict JSON whitespace and comment handling.
+- Per-project [trivia policies](docs/guides/trivia.md), including strict JSON whitespace and comment handling.
 - Grammar modules and extensions, tokens, sequences, choices, repetition,
   lookahead, character classes, and Pratt-style expressions.
 - Admitted typed profiles for separate symbol namespaces, inferred declarations,
@@ -179,10 +179,10 @@ Unsupported constructs and incompatible catalogs fail preparation.
   dates, and quote rewrites. See the examples under [languages](languages).
 - Scoped parse context: `context` flags, `with(Flag = v)` scopes and
   `context(Flag)` tests, specialized into per-environment rule instances; see
-  [scoped parse context](docs/scoped-parse-context.md).
+  [scoped parse context](docs/guides/scoped-parse-context.md).
 - Rule checks and structural `match` diagnostics with Nitrogen's named patterns,
   descendant search and `inside`/`parent` context; see
-  [structural checks and named patterns](docs/structural-patterns.md).
+  [structural checks and named patterns](docs/guides/structural-patterns.md).
 - Immutable syntax snapshots with shared subtrees and bounded recovery. Older
   snapshots remain readable. Export and semantic recomputation have separate
   costs; incremental syntax does not imply incremental binding.
@@ -196,7 +196,7 @@ Nitrogen's numeric literal representation differs, so broad floating-point parit
 is not claimed. Embedded targets and `no_std` are not current requirements.
 
 A parser generated into your own crate takes that crate's build settings.
-[Optimizing a generated parser](docs/optimizing-generated-parsers.md) covers
+[Optimizing a generated parser](docs/benchmarks/optimizing-generated-parsers.md) covers
 the recommended profile and a PGO build script for it.
 
 ## Editor support
@@ -261,14 +261,14 @@ agreement with Nitrogen is not a product acceptance requirement.
 
 | Evidence | Scope |
 |---|---|
-| [Design](docs/design.md) | Original rationale and architecture, including historical plans |
+| [Design](docs/archive/initial/design.md) | Original rationale and architecture, including historical plans |
 | [CSharp4 admission](docs/archive/stages/stage12-evidence.md) | Grammar provenance and reference-tree parity |
 | [Recovery](docs/archive/stages/stage14-evidence.md) | Quality checks and recovery limits |
 | [Shared snapshots](docs/archive/stages/stage15-evidence.md) | Storage sharing, edits, and admission costs |
 | [Three-way comparison](docs/archive/stages/stage30-comparison.md) | Full-parse timing and memory methodology, 2026-10-27 |
 | [Refreshed comparison](docs/archive/stages/stage45-comparison.md) | Full-parse and edit timing, memory, change since stage30 |
-| [PGO and SIMD reassessment](docs/compiler-assessment-2026-10-30.md) | Apple M4 Pro compiler configurations, fresh .NET comparison, ARM SIMD boundary |
-| [JSON comparison](docs/json-comparison.md) | Generated JSON parser against System.Text.Json, throughput work, warm-up on other files |
+| [PGO and SIMD reassessment](docs/benchmarks/compiler/compiler-assessment-2026-10-30.md) | Apple M4 Pro compiler configurations, fresh .NET comparison, ARM SIMD boundary |
+| [JSON comparison](docs/benchmarks/json/json-comparison.md) | Generated JSON parser against System.Text.Json, throughput work, warm-up on other files |
 | [Incremental checkpoint](docs/archive/stages/stage34-evidence.md) | Edit measurements and Roslyn baseline |
 | [Latest recorded parser checkpoint](docs/archive/stages/stage44-evidence.md) | Paired timings, recovery filtering, validation |
 
@@ -282,8 +282,8 @@ third-party notices when redistributing those sources.
 
 ## Native releases
 
-See [release versioning and build instructions](docs/releases.md) for the
+See [release versioning and build instructions](docs/releases/README.md) for the
 three native VS Code packages and CLI archives, PGO/LTO/AVX2/BOLT settings,
 CPU compatibility, and the native release configuration without Wasmtime.
 
-Language authors can start with the [versioned lexical library, project templates and editor fixes](docs/authoring.md).
+Language authors can start with the [versioned lexical library, project templates and editor fixes](docs/guides/authoring.md).

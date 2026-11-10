@@ -10,25 +10,28 @@ their linked reports.
 ### Merged after 0.4.0
 
 - Versioned lexical libraries, standalone language starters and bounded authoring
-  fixes. [PR #53](https://github.com/TovarishN/Nitride/pull/53), [authoring guide](docs/authoring.md).
+  fixes. [PR #53](https://github.com/TovarishN/Nitride/pull/53), [authoring guide](docs/guides/authoring.md).
 - Native `.ntest` suites with phase/diagnostic/value assertions, generated starter
   tests and VS Code Testing backed by cancellable native workers.
-  [PR #54](https://github.com/TovarishN/Nitride/pull/54), [testing guide](docs/language-testing.md).
+  [PR #54](https://github.com/TovarishN/Nitride/pull/54), [testing guide](docs/guides/language-testing.md).
 
 ### Current feature branch — not merged or released
 
 - Standalone `nitride` Rust facade, optional Cargo build helper, owned calculator
-  example and documented source compatibility contract. [Embedding guide](docs/embedding.md).
+  example and documented source compatibility contract. [Embedding guide](docs/guides/embedding.md).
 - Shared-parser module split, documentation index/architecture guide and a bounded
-  incremental fuzz target with replayable seeds. [Architecture](docs/architecture.md), [fuzzing](fuzz/README.md).
+  incremental fuzz target with replayable seeds. [Architecture](docs/project/architecture.md), [fuzzing](fuzz/README.md).
 - Bounded catalog examples and iterative conformance evaluation, with depth/work
-  checks before host effects. [Panic audit](docs/panic-audit.md).
+  checks before host effects. [Panic audit](docs/testing/panic-audit.md).
 - Direct process/component crate tests, strict JSON-RPC envelopes and outgoing
   value shapes, component type checks and shared WIT-name normalization.
   [Host-binding coverage](docs/testing/host-bindings.md).
 - Archived stage 2–45 evidence with byte-preserved raw reports, a path/hash
   manifest, repaired repository links and separate generated-report defaults.
   [Archive guide](docs/archive/stages/README.md).
+- Organized the remaining root documentation into topic directories, preserving
+  raw report bytes and routing fresh compiler reports to generated output.
+  [Documentation index](docs/README.md), [migration map](docs/archive/layout-manifest.json).
 - Investigated the reported macOS CI cancellations: GitHub runner-acquisition
   failures, followed by a passing `main` checkpoint. [CI evidence](docs/testing/macos-runner-capacity.md).
 
@@ -42,7 +45,7 @@ their linked reports.
 - Stable-revision LSP PGO training and verified native packaging for Linux x64,
   Windows x64 and macOS arm64. Distributed binaries omit the component runtime.
 
-[Release verification and limitations](docs/release-0.4.0.md) ·
+[Release verification and limitations](docs/releases/0.4.0.md) ·
 [Changes since 0.3.0](https://github.com/TovarishN/Nitride/compare/v0.3.0...v0.4.0).
 
 ## [0.3.0](https://github.com/TovarishN/Nitride/releases/tag/v0.3.0) — 2026-11-07

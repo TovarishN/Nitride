@@ -118,7 +118,7 @@
 
 Design reviewed independently; no important unanswered planning questions found.
 Approved by the user ("appoved"). All seven tasks are complete. Final evidence and limitations are recorded in
-[the measurement report](../../benchmark-2026-11-07.md). No fresh external .NET
+[the measurement report](../../benchmarks/reports/benchmark-2026-11-07.md). No fresh external .NET
 ranking, manual VS Code acceptance, or hosted cross-platform run is claimed.
 Milestones are intentionally
 separate commits so measurements and behavior can be reviewed or reverted alone.

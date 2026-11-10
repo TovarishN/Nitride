@@ -117,7 +117,7 @@ and parameters), 3,000 references, 50,669 source bytes, 24,001 syntax nodes and
 | Bind/check/expand/HIR | 618,496 B | 2,236,277 B | 53,120 |
 | Execution | 73,728 B | 113,760 B | 3,022 |
 
-Raw results: [functions-memory.json](../../functions-memory.json). These count requested
+Raw results: [functions-memory.json](../initial/functions-memory.json). These count requested
 System allocation bytes, exclude caller input/static data/allocator overhead/RSS,
 and use independent phase baselines. Owned parser source and retained HIR origins
 are included; JSON serialization occurs after snapshots. Phase peaks cannot be

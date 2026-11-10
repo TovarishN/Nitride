@@ -2,7 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
 const sha = data => crypto.createHash('sha256').update(data).digest('hex');
-const reportFile = 'docs/ascii-scanner-runs.json';
+const reportFile = process.env.NITRIDE_SCANNER_REPORT || 'target/reports/ascii-scanner-runs.json';
+const markdownPath = reportFile.replace(/\.json$/i, '') + '.md';
+const relativeLink = file => path.relative(path.dirname(markdownPath), file).split(path.sep).join('/');
 const r = JSON.parse(fs.readFileSync(reportFile));
 const wanted = { default:[], scalar:['ascii-runs'], simd:['ascii-runs','simd-ascii-runs'] };
 function sections(bytes) {
@@ -59,7 +61,7 @@ Milliseconds, median of five fresh-process parses per cell; one untimed warmup p
 |---|---:|---:|---:|---:|
 ${rows}
 
-${count} timed executions plus ${r.cases.length*Object.keys(r.variants).length} warmups; **${r.mismatches.length} tree/diagnostic fingerprint mismatches**. Final binary hashes, PE section hashes, feature fingerprints, source hashes and every sample are in [the final report](ascii-scanner-runs.json). [Unpinned](ascii-scanner-runs-unpinned.json) and [pinned](ascii-scanner-runs-prototype-pinned.json) preliminary trials used the prototype before the final feature gate and are retained as exploratory evidence; their binary paths have since been reused. The final report is authoritative.
+${count} timed executions plus ${r.cases.length*Object.keys(r.variants).length} warmups; **${r.mismatches.length} tree/diagnostic fingerprint mismatches**. Final binary hashes, PE section hashes, feature fingerprints, source hashes and every sample are in [the final report](${path.basename(reportFile)}). [Unpinned](${relativeLink('docs/benchmarks/scanners/ascii-scanner-runs-unpinned.json')}) and [pinned](${relativeLink('docs/benchmarks/scanners/ascii-scanner-runs-prototype-pinned.json')}) preliminary trials used the prototype before the final feature gate and are retained as exploratory evidence; their binary paths have since been reused. The final report is authoritative.
 
 ## Validation and limits
 
@@ -67,8 +69,8 @@ Classifier tests cover all 256 byte values, masks, unaligned inputs, vector leng
 
 The workspace run's remaining failure is the pre-existing \`existing_exports_match_native_frontend\` comparison against an ignored XML export. Its old \`omitted_semantics\` metadata lists \`Xml.Paired\`; the pre-change executable also emits an empty list. The ignored export is preserved. Remaining prepare/process/WASM tests pass with that comparison excluded. A temporary test-only Python PATH entry and workspace-local temp directory avoid this machine's Windows Store Python alias and sandbox temp-file permissions; no machine settings are changed.
 
-This is one host and a bounded workload set. The tiny Unicode case measures mostly parser setup, not vector throughput. There is no updated peak-memory, Roslyn, PGO-combination, ARM SIMD or long-running edit/retention measurement. Use the opt-in features only after checking the consuming workload. Reproduction commands are in [the harness README](../scripts/compiler-audit/README.md).
+This is one host and a bounded workload set. The tiny Unicode case measures mostly parser setup, not vector throughput. There is no updated peak-memory, Roslyn, PGO-combination, ARM SIMD or long-running edit/retention measurement. Use the opt-in features only after checking the consuming workload. Reproduction commands are in [the harness README](${relativeLink('scripts/compiler-audit/README.md')}).
 `;
-fs.writeFileSync('docs/ascii-scanner-runs.md',md);
+fs.writeFileSync(markdownPath,md);
 console.log(JSON.stringify({timed:count,mismatches:r.mismatches.length,default_text_matches_baseline:sameText,long_string_speedup:string.median_ns.default/string.median_ns.simd}));
 if(r.cases.length!==11||count!==220||r.mismatches.length)process.exitCode=1;

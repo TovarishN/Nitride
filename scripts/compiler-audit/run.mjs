@@ -7,7 +7,7 @@ import crypto from 'node:crypto';
 
 const root = process.cwd();
 const out = path.resolve(process.env.NITRIDE_AUDIT_OUT || 'target/compiler-audit');
-const reportPath = process.env.NITRIDE_AUDIT_REPORT || 'docs/compiler-optimization-audit.json';
+const reportPath = process.env.NITRIDE_AUDIT_REPORT || 'target/reports/compiler-optimization-audit.json';
 fs.mkdirSync(out, { recursive: true });
 const sha = p => crypto.createHash('sha256').update(fs.readFileSync(p)).digest('hex');
 function command(exe, args, env = {}, log) {
@@ -137,6 +137,7 @@ for (const c of cases) {
   }
   row.median_ns = Object.fromEntries(names.map(name => [name, row.samples[name].map(r => r.elapsed_ns).sort((a,b) => a-b)[2]]));
   report.cases.push(row);
+  fs.mkdirSync(path.dirname(reportPath), { recursive: true });
   fs.writeFileSync(reportPath, JSON.stringify(report, null, 2) + '\n');
   console.log(JSON.stringify({ case: c.id, medians: row.median_ns, mismatches: report.mismatches.length }));
 }

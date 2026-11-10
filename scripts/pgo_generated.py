@@ -43,7 +43,7 @@ def plan(crate, bin_name, warn_missing=False):
     """The two builds. The instrumented one also instruments build scripts and
     keeps their profiles: a build script that runs the parser generator parses
     the grammar with the same runtime, and that profile made the JSON bench
-    1.5-3.7% faster than training alone (docs/optimizing-generated-parsers.md).
+    1.5-3.7% faster than training alone (docs/benchmarks/optimizing-generated-parsers.md).
     Without --target the profile flags also reach the build script's own copy
     of the runtime, so warn_missing lists thousands of functions that only the
     generator has; it is off unless asked for."""
