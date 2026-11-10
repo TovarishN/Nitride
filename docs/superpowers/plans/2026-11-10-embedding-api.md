@@ -2,7 +2,7 @@
 
 **Goal:** A Rust application can own a typed `.ngr` language and parse, check and execute it without importing the CLI or preparing grammars at runtime.
 
-**Scope:** User approved proceeding with the embedding API and previously delegated implementation choices. Continue on the existing feature branch, preserving all prior cleanup/fuzzing and unrelated files. Leave changes reviewable and uncommitted.
+**Scope:** User approved proceeding with the embedding API and previously delegated implementation choices. Continue on the existing feature branch, preserving all prior cleanup/fuzzing and unrelated files. Initially leave changes reviewable and uncommitted; subsequent user instructions authorized committing.
 
 **Design:** Add the `nitride` facade, depending on core only by default. Re-export core contracts so existing generated Rust can use a single facade dependency (document the root `extern crate nitride as nitride_core` alias). `Engine<'g>` borrows language tables, owns limits and strict parse options, and provides `parse`, `compile`, `run`, and `run_with_values`. `Error` retains phase, all diagnostics and the invoked-operation trace (including a failing call). Run preflights the entire program before host effects; executor revalidation remains intact. Core APIs and grammar admission stay unchanged.
 
@@ -40,5 +40,5 @@ workspace 817 passed / 0 failed / 3 ignored. All-feature all-target clippy, defa
 facade rustdoc with warnings denied, formatting, version consistency, and all four
 bootstrap fixed points pass. External consumer acceptance passes 8 tests and confirms
 catalog/grammar rebuild tracking. Default runtime dependency graph is core-only.
-Independent review has no remaining actionable findings. Changes remain uncommitted;
+Independent review has no remaining actionable findings. Completed in commit `29ea6ca`;
 no publication or hosted cross-platform acceptance is claimed.

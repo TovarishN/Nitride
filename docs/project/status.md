@@ -19,7 +19,7 @@ with all hosted checks passing. Visual acceptance and painted-frame latency rema
 library, standalone starter projects and bounded project fixes, with all platform
 checks passing. [Authoring documentation](../guides/authoring.md) and
 [packaged acceptance](../testing/authoring-acceptance.md) describe the delivered scope.
-The current language-testing feature adds native [`.ntest` suites](../guides/language-testing.md),
+[PR #54](https://github.com/TovarishN/Nitride/pull/54) merged native [`.ntest` suites](../guides/language-testing.md),
 phase/diagnostic/value assertions, generated starter tests and VS Code Testing
 using frozen inputs and separate cancellable native workers. The published
 engine release remains 0.4.0. [Packaged API acceptance](../testing/language-testing-acceptance.md)
@@ -45,6 +45,29 @@ and whole-program preflight precedes host effects. The guide documents the
 The facade is not part of the published 0.4.0 checkpoint and has not been
 published to crates.io. Local macOS checks and an external copied-consumer
 acceptance exercise the recipe; hosted cross-platform validation remains pending.
+
+## Local robustness and maintenance checkpoint
+
+The [improvement tracker](improvement-tracker.md) records the original eight
+suggestions, their implementation commits, retained verification and remaining
+scope. This work is committed locally on `codex/parser-structure-and-docs` and
+has not been merged or released.
+
+The shared parser is split into responsibility-based modules. A differential
+[incremental fuzz target](../../fuzz/README.md) checks edits against full parsing
+and retained readers; ordinary CI replays its sixteen seeds. A bounded local
+ASan campaign passed, with longer campaigns and other platforms still open.
+The [panic audit](../testing/panic-audit.md) fixed unbounded interface-example
+traversals, and [direct host-crate tests](../testing/host-bindings.md) exposed and
+fixed protocol, value-shape, component-type and binding-name failures. This is
+focused hardening; internal invariant panics and other audit scope remain.
+
+Documentation now has a [topic index](../README.md), architecture guide,
+changelog and [historical archive](../archive/README.md). Raw reports retain their
+original bytes and CI checks their manifests. Fresh benchmark output defaults
+to target/reports/. Evidence remains in the repository, so clone size is
+unchanged. The tracker distinguishes historical test results from later
+documentation-only validation.
 
 ## Implemented in merged development
 

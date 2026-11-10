@@ -4,6 +4,9 @@ Start with [current status](project/status.md) for what is implemented and verif
 [architecture](project/architecture.md) for the crate map and data flow. The
 [root README](../README.md) contains quick-start commands and dated comparisons.
 
+The [improvement tracker](project/improvement-tracker.md) records the review
+suggestions, completed local commits and remaining priorities.
+
 ## Directory map
 
 | Directory | Contents |
@@ -65,9 +68,11 @@ index instead of filling the top level of this directory. The [stage 45 comparis
 is the final numbered comparison checkpoint. The [harness](stage30-harness/)
 remains reproducible code at its existing location.
 
-All 180 raw JSON reports were moved byte-for-byte. Markdown changed only to
-rebase links; recorded results, command lines and provenance remain historical.
-The [path/hash manifest](archive/stages/manifest.json) and CI integrity check
+The stage move preserved 180 raw JSON reports byte-for-byte; the topic layout
+preserved another 19. Frozen stage Markdown changed only to rebase links; recorded
+results, command lines and provenance remain historical. The
+[stage manifest](archive/stages/manifest.json),
+[topic-layout manifest](archive/layout-manifest.json) and CI integrity checks
 preserve that distinction. New benchmark output defaults to ignored
 `target/reports/`. No evidence or Git history was deleted, and clone size is
 not reduced; see the archive guide for legacy-link migration and reproduction limits.

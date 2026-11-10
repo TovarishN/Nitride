@@ -25,4 +25,4 @@ and all 4 WIT-generation tests pass unchanged. Full workspace: 847 passed /
 denied, documentation links, version consistency and all four bootstrap fixed points
 pass. Missing-record/protocol/type/panic regressions and naming regressions were
 observed failing before their fixes. Independent re-review has no actionable issues.
-This slice is committed separately; no push or hosted acceptance is claimed.
+This slice is committed as `04c9b4e`; no push or hosted acceptance is claimed.

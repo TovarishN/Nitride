@@ -35,4 +35,6 @@ Final verification: workspace 816 passed / 0 failed / 3 ignored; optional SIMD c
 and standalone fuzz clippy clean; formatting and bootstrap fixed points pass.
 Final ASan campaign: 4,738 inputs in 61 seconds, no failure. Reviewer identified a
 failed-edit oracle using shared cold parsing; corrected to independent flat parsing
-and re-reviewed with no remaining actionable findings. Work remains uncommitted.
+and re-reviewed with no remaining actionable findings. Completed in commit `29ea6ca`. Subsequent archive/topic-layout commits
+`80d64a7` and `53fdf7b` supersede the initial choice to preserve documentation
+paths; their migration manifests retain legacy-path lookup and original hashes.

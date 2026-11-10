@@ -17,6 +17,9 @@ their linked reports.
 
 ### Current feature branch — not merged or released
 
+The [improvement tracker](docs/project/improvement-tracker.md) maps this work to
+the original review suggestions and records remaining scope.
+
 - Standalone `nitride` Rust facade, optional Cargo build helper, owned calculator
   example and documented source compatibility contract. [Embedding guide](docs/guides/embedding.md).
 - Shared-parser module split, documentation index/architecture guide and a bounded

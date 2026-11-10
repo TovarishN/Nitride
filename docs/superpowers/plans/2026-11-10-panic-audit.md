@@ -16,5 +16,5 @@ example tests and 19 catalog tests pass, including source-span rejection, limits
 host effects, text inputs, evaluation order, per-case budgets, and a 64 KiB stack.
 Full workspace: 832 passed / 0 failed / 3 ignored. All-feature clippy,
 formatting, documentation link checks and all bootstrap fixed points pass. Independent
-read-only review found no actionable issues. Follow-up is committed separately from
-29ea6ca; unrelated local files are preserved.
+read-only review found no actionable issues. Follow-up is committed as `81f098f`, separately from
+`29ea6ca`; unrelated local files are preserved.
