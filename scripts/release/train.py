@@ -91,6 +91,9 @@ def train(binary, env):
     with tempfile.TemporaryDirectory(prefix='nitride-authoring-') as directory:
         target = Path(directory) / 'Calculator'
         invoke(binary, ['new', 'language', 'Calculator', '--directory', str(target), '--extension', '.calc'], env)
+        tests = json.loads(invoke(binary, ['test', str(target / 'tests.ntest'), '--json'], env))
+        if tests.get('exit_code') != 0 or tests['counts']['passed'] < 3:
+            raise RuntimeError('generated native test suite did not pass')
         result = json.loads(invoke(binary, ['run', str(target / 'nitride.nproj'), str(target / 'sample.calc')], env))
         if result.get('ok') is not True or result.get('values') != [42]:
             raise RuntimeError(f'typed starter did not evaluate to42: {result}')

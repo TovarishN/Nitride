@@ -134,11 +134,35 @@ pub fn plan_language(options: &TemplateOptions) -> Result<ProjectPlan, Authoring
         .into(),
         "sample",
     );
+    let tests = if typed {
+        r#"tests version 1 {
+  project "nitride.nproj";
+  test "sample evaluates" { file "sampleEXT"; expect run values [42]; }
+  test "incomplete binding" { source "let = ;"; expect parse reject; }
+  test "unresolved reference" {
+    source "show missing;";
+    expect compile reject { diagnostic "binding" code none span [5, 12]; }
+  }
+}
+"#
+    } else {
+        r#"tests version 1 {
+  project "nitride.nproj";
+  test "sample parses" { file "sampleEXT"; expect parse accept; }
+  test "incomplete assignment" { source "answer = ;"; expect parse reject; }
+}
+"#
+    };
+    add(
+        "tests.ntest".into(),
+        tests.replace("sampleEXT", &format!("sample{extension}")),
+        "tests",
+    );
     let command = if typed { "run" } else { "parse" };
     add(
         "README.md".into(),
         format!(
-            "# {name}\n\nRun `nitride {command} nitride.nproj sample{extension}`.\n\nThe project pins the offline bundled `Nitride.Lexical@1.0.0` library.\nKeep keyword exclusions and trivia policy in your language.\nUse Go to Definition on a qualified library token to inspect its read-only source.\n\nPrepare standalone tables with `nitride prepare nitride.nproj --output language.json`.\n"
+            "# {name}\n\nRun `nitride {command} nitride.nproj sample{extension}`.\n\nThe project pins the offline bundled `Nitride.Lexical@1.0.0` library.\nRun `nitride test` (or `nitride test --json` for CI). In VS Code use the Testing view.\n\nKeep keyword exclusions and trivia policy in your language.\nUse Go to Definition on a qualified library token to inspect its read-only source.\n\nPrepare standalone tables with `nitride prepare nitride.nproj --output language.json`.\n"
         ),
         "readme",
     );

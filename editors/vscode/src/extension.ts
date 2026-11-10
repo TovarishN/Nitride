@@ -4,6 +4,7 @@ import { commands, ExtensionContext, languages, Range, TextDocument, Uri, window
 import { DocumentSelector, LanguageClient, LanguageClientOptions } from 'vscode-languageclient/node';
 import { manifestExtensions } from './manifest';
 import { serverCommand } from './server';
+import { activateTesting } from './testing';
 import { claimedMode, routedLanguage, signatureMode } from './signatures';
 
 let client: LanguageClient | undefined;
@@ -29,7 +30,7 @@ function workspaceExtensions(): string[] {
   )))];
 }
 
-export async function activate(context: ExtensionContext): Promise<void> {
+export async function activate(context: ExtensionContext) {
   const server = serverCommand({
     serverPath: workspace.getConfiguration('nitride').get<string>('server.path') ?? '',
     extensionPath: context.extensionPath,
@@ -127,6 +128,8 @@ export async function activate(context: ExtensionContext): Promise<void> {
     workspace.onDidChangeTextDocument(event => route(event.document)),
   );
   workspace.textDocuments.forEach(route);
+  const testing = activateTesting(context, server.command);
+  return { testing };
 }
 
 export function deactivate(): Thenable<void> | undefined {

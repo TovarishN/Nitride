@@ -79,6 +79,12 @@ def run_host(command, env, timeout=180):
                 process.communicate(timeout=5)
 
 
+def configure_focus(env, allow_unfocused):
+    env.pop('NITRIDE_ACCEPTANCE_ALLOW_UNFOCUSED', None)
+    if allow_unfocused:
+        env['NITRIDE_ACCEPTANCE_ALLOW_UNFOCUSED'] = '1'
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--code', type=Path, required=True, help='VS Code application executable')
@@ -88,6 +94,8 @@ def main():
                         help='load all repository languages instead of only Portable')
     parser.add_argument('--large-document', action='store_true',
                         help='also exercise a 4 MiB C# document; requires --repository-languages')
+    parser.add_argument('--allow-unfocused', action='store_true',
+                        help='record focused editor typing as unavailable when the host cannot activate the window')
     parser.add_argument('--trace', action='store_true', help='enable language-client protocol logging')
     args = parser.parse_args()
     report = {'complete': False,
@@ -127,6 +135,8 @@ def run(args, report):
         result = root / 'result.json'
         env = os.environ.copy()
         env.pop('ELECTRON_RUN_AS_NODE', None)
+        configure_focus(env, args.allow_unfocused)
+        report['allow_unfocused'] = args.allow_unfocused
         env['NITRIDE_ACCEPTANCE_RESULT'] = str(result)
         env['NITRIDE_ACCEPTANCE_EXTENSION'] = str(extension)
         env['NITRIDE_ACCEPTANCE_GRAMMAR'] = str(workspace / (

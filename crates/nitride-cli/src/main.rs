@@ -1,5 +1,6 @@
 use nitride_core::*;
 mod new_language;
+mod test_command;
 
 fn main() -> std::process::ExitCode {
     match run() {
@@ -18,6 +19,11 @@ fn main() -> std::process::ExitCode {
 }
 
 fn run() -> Result<bool, Box<dyn std::error::Error>> {
+    // Test selectors are literal case names, including option-like spellings.
+    let test_args: Vec<String> = std::env::args().skip(1).collect();
+    if test_args.first().is_some_and(|arg| arg == "test") {
+        return test_command::run(&test_args[1..]);
+    }
     // `--grant <effect>`, wherever it appears, grants a catalog effect (such
     // as `Calendar.Clock`) to run, conform and --calendar; none is granted
     // otherwise.
@@ -30,6 +36,12 @@ fn run() -> Result<bool, Box<dyn std::error::Error>> {
         } else {
             args.push(arg);
         }
+    }
+    if args.first().is_some_and(|a| a == "test") {
+        if !granted.is_empty() {
+            return Err("test runs do not accept grants".into());
+        }
+        return test_command::run(&args[1..]);
     }
     if args.first().is_some_and(|a| a == "new") {
         new_language::run(&args)?;

@@ -1,0 +1,29 @@
+// Tooling frontend; not an ordinary workspace-program association.
+syntax module NitrideTests {
+  token String = Nitride.Lexical.JsonString;
+  token Integer = Nitride.Lexical.UnsignedInteger;
+  token Identifier = Nitride.Lexical.AsciiIdentifier;
+  token Digit = Nitride.Lexical.Digit;
+  token Number = "-"? ("0" / ['1'..'9'] Digit*) ("." Digit+)? (['e' 'E'] ['+' '-']? Digit+)?;
+  token Raw = "<[" (!"]>" .)* "]>";
+  syntax Suite = "tests" "version" Version:Integer "{" Members:Member* "}";
+  syntax Member = Project / Test;
+  syntax Project = "project" Path:String ";";
+  syntax Test = "test" Name:String "{" Members:TestMember* "}";
+  syntax TestMember = Source / File / Expectation;
+  syntax Source = "source" Body:(Raw / String) ";";
+  syntax File = "file" Path:String ";";
+  syntax Expectation = "expect" Phase:Identifier Body:(Accept / RunValues / Reject);
+  syntax Accept = "accept" ";";
+  syntax RunValues = "values" Value:Array ";";
+  syntax Reject = "reject" (";" / "{" Diagnostics:Diagnostic+ "}");
+  syntax Diagnostic = "diagnostic" Category:String Clauses:Clause* ";";
+  syntax Clause = Code / Span;
+  syntax Code = "code" Value:(String / "none");
+  syntax Span = "span" "[" Start:Integer "," End:Integer "]";
+  syntax Value = NumberValue / StringValue / BooleanValue / Array;
+  syntax NumberValue = Value:Number;
+  syntax StringValue = Value:String;
+  syntax BooleanValue = Value:("true" / "false");
+  syntax Array = "[" Items:(Value; ",")* "]";
+}
