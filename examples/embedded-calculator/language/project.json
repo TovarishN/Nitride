@@ -1,0 +1,6 @@
+{
+  "mode": "typed",
+  "start": "Calculator.Program",
+  "grammars": ["Calculator.ngr"],
+  "catalogs": ["Calculator.ncatalog"]
+}

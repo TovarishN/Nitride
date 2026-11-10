@@ -25,6 +25,19 @@ using frozen inputs and separate cancellable native workers. The published
 engine release remains 0.4.0. [Packaged API acceptance](language-testing-acceptance.md)
 records the tested workflow and its focus/visual limitations.
 
+## Unreleased Rust embedding
+
+The development tree adds a [`nitride` facade](embedding.md), optional Cargo
+build-script support, and a [standalone calculator](../examples/embedded-calculator/)
+that owns its grammar and catalog. Default runtime dependencies are limited to
+`nitride-core`; preparation and code generation stay in build dependencies.
+Parse/check/preflight/execute errors retain diagnostics and invocation traces,
+and whole-program preflight precedes host effects. The guide documents the
+`0.x` source compatibility contract and generated-code version boundaries.
+The facade is not part of the published 0.4.0 checkpoint and has not been
+published to crates.io. Local macOS checks and an external copied-consumer
+acceptance exercise the recipe; hosted cross-platform validation remains pending.
+
 ## Implemented in merged development
 
 - Owned runtime syntax snapshots retain language tables safely through edits,

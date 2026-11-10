@@ -1,5 +1,9 @@
 # Nitride First Milestone Implementation Plan
 
+This is the historical initial-milestone plan. For current scope and verification,
+see [project status](status.md); use the [documentation index](README.md) for
+current guides and dated evidence.
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [x]`) syntax for tracking.
 
 **Goal:** Deliver a standalone Rust language engine and example that runs without .NET, with a shared Nitrogen reference corpus and measured native footprint.

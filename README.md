@@ -1,6 +1,8 @@
 # Nitride
 
 See [current project status](docs/status.md) for unreleased development milestones and verification.
+The [documentation index](docs/README.md) groups guides and evidence;
+[architecture](docs/architecture.md) explains the crate map and data flow.
 
 Nitride is an independent Rust language engine, building on ideas from
 [Nitrogen](https://github.com/TovarishN/Nitrogen). It prepares `.ngr` grammars,
@@ -133,11 +135,13 @@ cargo build --release --locked
 ./target/release/nitride --parse-xml languages/xml/sample.xml
 ./target/release/nitride --parse-csharp4 languages/csharp4/corpus/Mono2008/gtest-linq-01.cs
 ./target/release/nitride parse languages/xml/Xml.nproj languages/xml/sample.xml
-cargo run --locked -p nitride-cli --example embed
+cargo run --locked -p nitride-embedded-calculator
 ```
 
 On Windows use `target/release/nitride.exe`. The CLI emits JSON observations;
-the embedding example calls the Rust library directly and prints `42`.
+the standalone embedding example owns its language, uses the `nitride` facade,
+and prints `42`. See the [embedding guide](docs/embedding.md) for Cargo setup,
+host bindings and the source compatibility contract.
 Native builds require neither .NET nor checked-in `language.json` exports.
 
 The portable language includes nominal types and sequential declarations:
