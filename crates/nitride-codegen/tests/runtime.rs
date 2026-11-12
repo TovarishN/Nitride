@@ -254,3 +254,15 @@ fn named_patterns_round_trip() {
     assert!(!context.parent_only);
     assert_eq!(context.pattern, " <service ..$_>..$_</service> ");
 }
+
+/// Every Pratt point is memoized, including points whose candidates begin
+/// differently: alternatives that share a prefix of such points (C#'s
+/// modifiers and type references) re-parse it from the memo.
+#[test]
+fn every_pratt_point_is_memoized() {
+    let manifest = root().join("languages/csharp4/project.json");
+    let prepared = nitride_prepare::prepare_project(&manifest).unwrap();
+    let generated = nitride_codegen::generate(&prepared.data.to_string()).unwrap();
+    assert!(generated.contains("memoize:true"));
+    assert!(!generated.contains("memoize:false"));
+}

@@ -129,8 +129,10 @@ fn shared_operator_is_generated() {
     nitride_codegen::generate(&data.to_string()).unwrap();
 }
 
+/// Every point memoizes, whether or not its candidates begin alike: other
+/// alternatives that share a prefix of the point reparse it from the memo.
 #[test]
-fn only_points_with_shared_first_characters_memoize() {
+fn points_memoize_whether_or_not_first_characters_overlap() {
     let hash = "0".repeat(64);
     let language = |second: serde_json::Value| {
         serde_json::json!({
@@ -150,10 +152,12 @@ fn only_points_with_shared_first_characters_memoize() {
         &language(serde_json::json!({"kind":"sequence","items":[{"kind":"literal","text":"-"},{"kind":"ref","name":"M.E"}]})).to_string(),
     )
     .unwrap();
-    assert!(disjoint.contains("memoize:false"), "{disjoint}");
+    assert!(disjoint.contains("memoize:true"), "{disjoint}");
+    assert!(!disjoint.contains("memoize:false"), "{disjoint}");
     let shared = nitride_codegen::generate(
         &language(serde_json::json!({"kind":"sequence","items":[{"kind":"literal","text":"("},{"kind":"ref","name":"M.Digits"},{"kind":"literal","text":")"},{"kind":"ref","name":"M.E"}]})).to_string(),
     )
     .unwrap();
     assert!(shared.contains("memoize:true"), "{shared}");
+    assert!(!shared.contains("memoize:false"), "{shared}");
 }
