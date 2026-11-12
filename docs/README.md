@@ -61,6 +61,7 @@ are separate claims; see [current status](project/status.md) for remaining limit
 - [Shared-parser per-rule cost](benchmarks/parser/kept-path-2026-11-12.md): boxed child buffers, cold-parse fast paths, first-token rejection and in-place pass-through rules.
 - [Recognition facts for the outer list levels](benchmarks/parser/fact-levels-2026-11-12.md): memory, edit latency and the Pratt memo depth fix.
 - [Fast strict path decision census](benchmarks/parser/decision-census-2026-11-12.md): how many decisions lookahead settles; milestone 0 go/no-go.
+- [Memoizing every Pratt point](benchmarks/parser/pratt-memo-2026-11-12.md): truncated-input recovery, valid parses and wasted work.
 
 ## Historical records
 

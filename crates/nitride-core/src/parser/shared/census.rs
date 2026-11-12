@@ -37,8 +37,11 @@ mod enabled {
         pub attempts: u64,
         /// Attempts that failed.
         pub failed_attempts: u64,
-        /// Failed attempts that recorded a failure past the decision's start.
+        /// Failed attempts in which a match passed the decision's start.
         pub consumed_failures: u64,
+        /// Logical work charged inside failed attempts, including failures
+        /// nested within them.
+        pub failed_work: u64,
         /// Entries where nothing matched.
         pub unmatched: u64,
     }
@@ -52,9 +55,11 @@ mod enabled {
         /// Entries into context-instance rules (`Rule::origin` is set).
         pub context_entries: u64,
         pub repeat_exits: u64,
-        /// Repetition exits whose failed iteration recorded a failure past
-        /// its start.
+        /// Repetition exits whose failed iteration matched past its start.
         pub repeat_consumed_exits: u64,
+        /// Logical work charged inside failed choice and Pratt attempts, each
+        /// counted once: a failure nested in a failed attempt is part of it.
+        pub wasted_work: u64,
     }
 
     #[derive(Clone, Default)]
@@ -67,6 +72,7 @@ mod enabled {
         contexts: u64,
         repeat_exits: u64,
         repeat_consumed: u64,
+        wasted: u64,
     }
     type Session = Arc<Mutex<State>>;
     thread_local! {
@@ -98,6 +104,7 @@ mod enabled {
             context_entries: state.contexts,
             repeat_exits: state.repeat_exits,
             repeat_consumed_exits: state.repeat_consumed,
+            wasted_work: state.wasted,
         }
     }
 
@@ -156,6 +163,7 @@ mod enabled {
         attempts: u64,
         failed: u64,
         consumed: u64,
+        failed_work: u64,
     }
     pub(crate) fn decision(kind: DecisionKind, expr: usize, alternatives: u32) -> Decision {
         let key = with(|state| {
@@ -184,6 +192,7 @@ mod enabled {
                     attempts: 0,
                     failed_attempts: 0,
                     consumed_failures: 0,
+                    failed_work: 0,
                     unmatched: 0,
                 });
             (rule, kind, ordinal)
@@ -193,6 +202,7 @@ mod enabled {
             attempts: 0,
             failed: 0,
             consumed: 0,
+            failed_work: 0,
         }
     }
     impl Decision {
@@ -202,9 +212,10 @@ mod enabled {
         pub(crate) fn attempted(&mut self) {
             self.attempts += 1;
         }
-        pub(crate) fn failed(&mut self, consumed: bool) {
+        pub(crate) fn failed(&mut self, consumed: bool, work: u64) {
             self.failed += 1;
             self.consumed += u64::from(consumed);
+            self.failed_work += work;
         }
         pub(crate) fn finish(self, matched: bool) {
             let Some(key) = self.key else { return };
@@ -216,6 +227,7 @@ mod enabled {
                     stats.attempts += self.attempts;
                     stats.failed_attempts += self.failed;
                     stats.consumed_failures += self.consumed;
+                    stats.failed_work += self.failed_work;
                     stats.unmatched += u64::from(!matched);
                 }
             });
@@ -223,6 +235,15 @@ mod enabled {
     }
     pub(crate) fn predicate() {
         with(|state| state.predicates += 1);
+    }
+    /// The wasted-work total so far.
+    pub(crate) fn wasted_total() -> u64 {
+        with(|state| state.wasted).unwrap_or(0)
+    }
+    /// A failed attempt that started when the total was `before` and spent
+    /// `work`: its work replaces whatever nested failures added meanwhile.
+    pub(crate) fn wasted(before: u64, work: u64) {
+        with(|state| state.wasted = before + work);
     }
     pub(crate) fn context_rule() {
         with(|state| state.contexts += 1);
@@ -242,6 +263,7 @@ pub use enabled::{Census, DecisionStats, census_begin, census_take};
 #[cfg(feature = "census")]
 pub(crate) use enabled::{
     Checkpoint, Decision, RuleGuard, Scope, active, context_rule, decision, predicate, repeat_exit,
+    wasted, wasted_total,
 };
 
 #[cfg(not(feature = "census"))]
@@ -287,12 +309,18 @@ mod disabled {
         #[inline(always)]
         pub(crate) fn attempted(&mut self) {}
         #[inline(always)]
-        pub(crate) fn failed(&mut self, _consumed: bool) {}
+        pub(crate) fn failed(&mut self, _consumed: bool, _work: u64) {}
         #[inline(always)]
         pub(crate) fn finish(self, _matched: bool) {}
     }
     #[inline(always)]
     pub(crate) fn predicate() {}
+    #[inline(always)]
+    pub(crate) fn wasted_total() -> u64 {
+        0
+    }
+    #[inline(always)]
+    pub(crate) fn wasted(_before: u64, _work: u64) {}
     #[inline(always)]
     pub(crate) fn context_rule() {}
     #[inline(always)]
@@ -305,4 +333,5 @@ mod disabled {
 #[cfg(not(feature = "census"))]
 pub(crate) use disabled::{
     Checkpoint, Decision, RuleGuard, Scope, active, context_rule, decision, predicate, repeat_exit,
+    wasted, wasted_total,
 };

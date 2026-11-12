@@ -26,7 +26,7 @@ from csharp4_scaling import generated  # noqa: E402
 from recovery_scaling import damaged  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
-TIMED = ["256k-valid", "4m-valid", "16m-valid", "256k-one", "4m-one", "4m-junk", "256k-dense"]
+TIMED = ["256k-valid", "4m-valid", "16m-valid", "256k-one", "4m-one", "4m-junk", "256k-dense", "256k-truncated"]
 
 
 def inputs(folder):
