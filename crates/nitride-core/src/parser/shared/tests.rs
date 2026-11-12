@@ -1478,3 +1478,84 @@ fn flat_recovery_keeps_owner_scoped_analysis_for_later_edits() {
         broken.dispatch.as_ref().unwrap()
     ));
 }
+/// A memoized Pratt result replays its own depth. Recognized after a deep
+/// sibling and replayed one rule deeper, it must not inherit the sibling's
+/// depth: memoizing the point changes no depth-limit outcome.
+#[test]
+fn memoized_pratt_replays_its_own_depth() {
+    let language = |memoize: bool| -> &'static Language<'static> {
+        let template = prefix_fact_fixture(false);
+        let make = |name, expr, owner| Rule {
+            name,
+            expr,
+            owner,
+            lexical: false,
+            except: &[],
+            precedence: 0,
+            right_associative: false,
+            transparent: false,
+            alias: false,
+            origin: None,
+            action: Action::None,
+        };
+        let rules = vec![
+            // Root = Deep (Point "!" / Wrapped)
+            make(
+                "Root",
+                Expr::Sequence(&[
+                    Expr::Ref(1),
+                    Expr::Choice(&[
+                        Expr::Sequence(&[Expr::Ref(2), Expr::Literal("!")]),
+                        Expr::Ref(4),
+                    ]),
+                ]),
+                None,
+            ),
+            // Deep = "(" Deep ")" / "d"
+            make(
+                "Deep",
+                Expr::Choice(&[
+                    Expr::Sequence(&[Expr::Literal("("), Expr::Ref(1), Expr::Literal(")")]),
+                    Expr::Literal("d"),
+                ]),
+                None,
+            ),
+            make(
+                "Point",
+                Expr::Pratt {
+                    prefixes: &[3],
+                    infixes: &[],
+                    memoize,
+                },
+                None,
+            ),
+            make("Value", Expr::Literal("e"), Some(2)),
+            // Wrapped = Point "?", one rule deeper than the first attempt.
+            make(
+                "Wrapped",
+                Expr::Sequence(&[Expr::Ref(2), Expr::Literal("?")]),
+                None,
+            ),
+        ];
+        Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
+            rules: Box::leak(rules.into_boxed_slice()),
+            ..*template
+        }))
+    };
+    let (memoized, plain) = (language(true), language(false));
+    let source = format!("{}d{}e?", "(".repeat(12), ")".repeat(12));
+    let mut accepted = 0;
+    for frames in 1..=96 {
+        let limits = Limits {
+            parser_frames: frames,
+            ..Limits::default()
+        };
+        let expected = parse_snapshot(plain, &source, limits, strict()).is_ok();
+        let actual = parse_snapshot(memoized, &source, limits, strict()).is_ok();
+        assert_eq!(actual, expected, "frame limit {frames}");
+        accepted += usize::from(expected);
+    }
+    // Both the rejecting and the accepting side of the limit are exercised.
+    assert!(accepted > 0 && accepted < 96);
+}
