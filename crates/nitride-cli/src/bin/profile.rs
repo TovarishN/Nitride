@@ -264,6 +264,7 @@ fn census(
                 "attempts": d.attempts,
                 "failed_attempts": d.failed_attempts,
                 "consumed_failures": d.consumed_failures,
+                "failed_work": d.failed_work,
                 "unmatched": d.unmatched,
             })
         })
@@ -275,6 +276,8 @@ fn census(
             "compiled_syntax": generated,
             "source_bytes": source.len(),
             "diagnostics": snapshot.diagnostic_count(),
+            "work": snapshot.stats().work,
+            "wasted_work": census.wasted_work,
             "decisions": decisions,
             "predicate_evaluations": census.predicate_evaluations,
             "context_entries": census.context_entries,

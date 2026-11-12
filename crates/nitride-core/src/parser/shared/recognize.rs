@@ -1069,12 +1069,16 @@ impl<'a, 'g> Parser<'a, 'g> {
         }
         decision.attempted();
         let start = self.position;
+        let work = self.work;
+        let wasted = census::wasted_total();
         let saved = self.census_reach_begin();
         let result = attempt(self);
         let consumed = self.census_reach_end(saved, start);
         if let Ok(value) = &result {
             if failed(value) {
-                decision.failed(consumed);
+                let spent = self.work.saturating_sub(work);
+                decision.failed(consumed, spent);
+                census::wasted(wasted, spent);
             }
         }
         result

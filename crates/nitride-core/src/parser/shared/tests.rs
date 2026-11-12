@@ -1694,6 +1694,66 @@ mod census {
         let census = counted(consuming_exit(), "a x a y", Limits::default());
         assert_eq!((census.repeat_exits, census.repeat_consumed_exits), (1, 1));
     }
+    /// `Root = Inner "x" / Inner "y"`, `Inner = "a" "b" "c" / "a" "b" "d"`.
+    fn nested_failures() -> &'static Language<'static> {
+        language(vec![
+            rule(
+                "Root",
+                Expr::Choice(&[
+                    Expr::Sequence(&[Expr::Ref(1), Expr::Literal("x")]),
+                    Expr::Sequence(&[Expr::Ref(1), Expr::Literal("y")]),
+                ]),
+            ),
+            rule(
+                "Inner",
+                Expr::Choice(&[
+                    Expr::Sequence(&[Expr::Literal("a"), Expr::Literal("b"), Expr::Literal("c")]),
+                    Expr::Sequence(&[Expr::Literal("a"), Expr::Literal("b"), Expr::Literal("d")]),
+                ]),
+            ),
+        ])
+    }
+    fn work(language: &'static Language<'static>, source: &str) -> u64 {
+        parse_snapshot(language, source, Limits::default(), strict())
+            .unwrap()
+            .stats()
+            .work
+    }
+
+    #[test]
+    fn census_measures_work_in_failed_attempts() {
+        let census = counted(leads_decide(), "a y", Limits::default());
+        assert_eq!(
+            (
+                only(&census, DecisionKind::Choice).failed_work,
+                census.wasted_work
+            ),
+            (0, 0)
+        );
+        let census = counted(shared_leads(), "a b d", Limits::default());
+        let failed = only(&census, DecisionKind::Choice).failed_work;
+        assert!(failed > 0);
+        assert_eq!(census.wasted_work, failed);
+        assert!(census.wasted_work < work(shared_leads(), "a b d"));
+    }
+    #[test]
+    fn census_counts_nested_waste_once() {
+        let census = counted(nested_failures(), "a b d y", Limits::default());
+        let failed = |rule: u16| {
+            census
+                .decisions
+                .iter()
+                .find(|d| d.rule == rule && d.kind == DecisionKind::Choice)
+                .unwrap()
+                .failed_work
+        };
+        let (outer, inner) = (failed(0), failed(1));
+        // The inner failure inside the outer failed attempt is part of it;
+        // the inner failure inside the outer successful attempt adds to it.
+        assert!(census.wasted_work > outer);
+        assert!(census.wasted_work < outer + inner);
+        assert!(census.wasted_work < work(nested_failures(), "a b d y"));
+    }
     #[test]
     fn census_counts_one_attempt_when_leads_decide() {
         for source in ["a y", "b"] {

@@ -81,6 +81,9 @@ def aggregate(reports):
         "consumed_failures_per_kb": consumed / kb,
         "predicates_per_kb": sum(r["predicate_evaluations"] for r in reports) / kb,
         "contexts_per_kb": sum(r["context_entries"] for r in reports) / kb,
+        # Share of the parse's logical work spent in failed attempts.
+        "wasted_work_share": sum(r.get("wasted_work", 0) for r in reports)
+        / max(sum(r.get("work", 0) for r in reports), 1),
         "top": top,
     }
 
@@ -117,7 +120,7 @@ def describe(name, summary):
           f"single {summary['choice_single_share']:.3f}; Pratt {summary['pratt_entries']} "
           f"single {summary['pratt_single_share']:.3f}; consumed failures "
           f"{summary['consumed_failures_per_kb']:.2f}/KB; predicates {summary['predicates_per_kb']:.2f}/KB; "
-          f"contexts {summary['contexts_per_kb']:.2f}/KB")
+          f"contexts {summary['contexts_per_kb']:.2f}/KB; wasted work {summary['wasted_work_share']:.3f}")
 
 
 def main():

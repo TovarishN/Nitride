@@ -23,9 +23,12 @@ def decision(kind, entries, single, attempts=None, consumed=0, name="R", empty=0
     }
 
 
-def report(source_bytes, decisions, predicates=0, repeat_consumed=0, path="target/parser-compare/4m-valid.cs"):
+def report(source_bytes, decisions, predicates=0, repeat_consumed=0, path="target/parser-compare/4m-valid.cs",
+           work=1000, wasted=0):
     return {
         "path": path,
+        "work": work,
+        "wasted_work": wasted,
         "source_bytes": source_bytes,
         "decisions": decisions,
         "predicate_evaluations": predicates,
@@ -69,6 +72,10 @@ class AggregateTest(unittest.TestCase):
         self.assertEqual(sorted(groups), ["corpus", "generated"])
         self.assertEqual(groups["generated"]["source_bytes"], 4000)
         self.assertAlmostEqual(groups["corpus"]["choice_single_share"], 0.5)
+
+    def test_wasted_work_share_is_over_total_work(self):
+        summary = aggregate([report(1000, [], work=1000, wasted=100), report(1000, [], work=3000, wasted=300)])
+        self.assertAlmostEqual(summary["wasted_work_share"], 0.1)
 
     def test_top_ranks_by_extra_attempts(self):
         summary = aggregate([report(1000, [
