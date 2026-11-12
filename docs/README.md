@@ -59,6 +59,7 @@ are separate claims; see [current status](project/status.md) for remaining limit
 - [Storage baseline](benchmarks/reports/benchmark-2026-11-07.md), [materialization](benchmarks/reports/benchmark-2026-11-08-materialization.md) and [arena reader](benchmarks/reports/benchmark-2026-11-08-arena-reader.md).
 - [C# parser assessment](benchmarks/compiler/compiler-assessment-2026-10-30.md) and [strict JSON comparison](benchmarks/json/json-comparison.md).
 - [Shared-parser per-rule cost](benchmarks/parser/kept-path-2026-11-12.md): boxed child buffers, cold-parse fast paths, first-token rejection and in-place pass-through rules.
+- [Recognition facts for the outer list levels](benchmarks/parser/fact-levels-2026-11-12.md): memory, edit latency and the Pratt memo depth fix.
 
 ## Historical records
 

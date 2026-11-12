@@ -177,6 +177,12 @@ fn minimum_sensitive(language: &Language, rule: &Rule) -> bool {
     };
     tail.is_some_and(|expr| direct_operand(language, expr, rule.owner))
 }
+/// How many levels of nested repeated elements record recognition facts.
+/// Facts let edits reuse unchanged elements, seed recovery and memoize
+/// backtracking. Below this many enclosing recorded elements they are not
+/// kept: an edit there reparses its nearest recorded ancestor instead. The
+/// outermost levels must stay recorded, or an edit reparses the whole file.
+pub(crate) const FACT_LEVELS: u32 = 4;
 struct Parser<'a, 'g> {
     optimize_recognition: bool,
     compiled: Option<&'static CompiledParser>,
@@ -216,6 +222,8 @@ struct Parser<'a, 'g> {
     reusable: Index,
     max_depth: u32,
     checkpoint_next: bool,
+    /// Recorded checkpoints enclosing the current recognition.
+    fact_level: u32,
     failure_checkpoint: Option<(u32, Key)>,
     pending_failures: usize,
     facts: facts::FactLog,
@@ -328,6 +336,7 @@ impl<'a, 'g> Parser<'a, 'g> {
             index,
             max_depth: 0,
             checkpoint_next: true,
+            fact_level: 0,
             failure_checkpoint: None,
             pending_failures: 0,
             // An edit records facts only in the reparsed window, so its

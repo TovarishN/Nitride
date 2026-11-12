@@ -48,7 +48,20 @@ impl<'a, 'g> Parser<'a, 'g> {
                 Memo::Scanned { .. } => unreachable!("Pratt keys hold no lexical scans"),
             };
         }
-        let result = self.pratt_uncached(point, prefixes, infixes, minimum, depth)?;
+        // Record this recognition's own observation, depth and failure reach,
+        // as lexical memo entries do, rather than the running maxima of the
+        // enclosing recognition: a replay elsewhere must not inherit them.
+        let saved_observed = self.source.replace_observed(self.position as u64);
+        let saved_depth = std::mem::replace(&mut self.max_depth, depth);
+        let saved_furthest = std::mem::replace(&mut self.furthest, 0);
+        let result = self.pratt_uncached(point, prefixes, infixes, minimum, depth);
+        let observed = self.source.replace_observed(saved_observed);
+        self.source.observe(observed);
+        let local_depth = std::mem::replace(&mut self.max_depth, saved_depth);
+        self.max_depth = self.max_depth.max(local_depth);
+        let furthest = std::mem::replace(&mut self.furthest, saved_furthest);
+        self.furthest = self.furthest.max(furthest);
+        let result = result?;
         let weight = result.map_or(0, |root| self.arena.weight(root.node));
         if weight > 8192 * 64 {
             return Ok(result);
@@ -57,11 +70,10 @@ impl<'a, 'g> Parser<'a, 'g> {
         if self.memo_cost[0] + cost > 2 * 1024 * 1024 || self.memo[0].len() >= self.memo_capacity {
             self.rotate_memo();
         }
-        let observed = self.source.observed();
-        let relative_depth = self.max_depth.saturating_sub(depth);
+        let relative_depth = local_depth.saturating_sub(depth);
         let entry = match result {
             None => Memo::Fail {
-                furthest: self.furthest,
+                furthest,
                 observed,
                 depth: relative_depth,
             },
@@ -69,7 +81,7 @@ impl<'a, 'g> Parser<'a, 'g> {
                 self.arena.retain_cache(root.node);
                 Memo::Hit {
                     end: self.position,
-                    furthest: self.furthest,
+                    furthest,
                     root,
                     observed,
                     depth: relative_depth,
