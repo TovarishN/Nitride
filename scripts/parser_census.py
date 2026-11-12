@@ -22,6 +22,7 @@ from compare_parser_builds import inputs  # noqa: E402
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 # Go/no-go thresholds (the census plan's Global Constraints).
+# A decision counts as decided when at most one alternative or candidate ran.
 G1_CHOICE_SINGLE = 0.90
 G2_PRATT_SINGLE = 0.90
 G3_CONSUMED_PER_KB = 20.0
@@ -51,7 +52,9 @@ def aggregate(reports):
     def share(kinds):
         chosen = [d for d in decisions if d["kind"] in kinds]
         entries = sum(d["entries"] for d in chosen)
-        return entries, (sum(d["single"] for d in chosen) / entries if entries else 1.0)
+        # Decided by lookahead: at most one alternative or candidate ran.
+        decided = sum(d["single"] + d.get("empty", 0) for d in chosen)
+        return entries, (decided / entries if entries else 1.0)
 
     choice_entries, choice_share = share({"choice"})
     pratt_entries, pratt_share = share({"pratt-prefix", "pratt-infix"})

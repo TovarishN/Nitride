@@ -42,6 +42,7 @@ impl<'a, 'g> Parser<'a, 'g> {
                 } => {
                     self.arena.clone_temporary(root.node);
                     self.position = end;
+                    self.census_consumed();
                     self.furthest = self.furthest.max(furthest);
                     Ok(Some(root))
                 }

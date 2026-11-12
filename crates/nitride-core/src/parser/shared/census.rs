@@ -31,6 +31,8 @@ mod enabled {
         pub entries: u64,
         /// Entries that ran exactly one alternative or candidate.
         pub single: u64,
+        /// Entries that ran none: lookahead excluded every alternative.
+        pub empty: u64,
         /// Alternatives or candidates actually run.
         pub attempts: u64,
         /// Attempts that failed.
@@ -158,6 +160,7 @@ mod enabled {
                     alternatives,
                     entries: 0,
                     single: 0,
+                    empty: 0,
                     attempts: 0,
                     failed_attempts: 0,
                     consumed_failures: 0,
@@ -189,6 +192,7 @@ mod enabled {
                 if let Some(stats) = state.stats.get_mut(&key) {
                     stats.entries += 1;
                     stats.single += u64::from(self.attempts == 1);
+                    stats.empty += u64::from(self.attempts == 0);
                     stats.attempts += self.attempts;
                     stats.failed_attempts += self.failed;
                     stats.consumed_failures += self.consumed;

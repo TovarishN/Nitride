@@ -28,8 +28,8 @@ pub struct SyntaxMark {
     mark: Mark,
     len: usize,
     checkpoint: bool,
-    /// The enclosing failure reach, while a census reads the iteration's own.
-    census_furthest: Option<usize>,
+    /// The enclosing census reach, while a census measures the iteration's.
+    census_reach: Option<usize>,
 }
 /// Borrowed access to the current parser and child buffer. This is a concrete
 /// context so generated primitive calls can inline without virtual dispatch.
@@ -96,6 +96,7 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
                 .is_none_or(|c| !(c.is_alphanumeric() || c == '_'));
         if self.parser.source.matches(self.parser.position, text) && boundary {
             self.parser.position = end;
+            self.parser.census_consumed();
             Ok(true)
         } else {
             Ok(false)
@@ -227,8 +228,7 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
             mark: self.parser.mark(),
             len: self.children.len(),
             checkpoint: self.parser.checkpoint_next,
-            census_furthest: super::census::active()
-                .then(|| std::mem::replace(&mut self.parser.furthest, 0)),
+            census_reach: super::census::active().then(|| self.parser.census_reach_begin()),
         };
         if checkpoint {
             self.parser.checkpoint_next = true;
@@ -243,11 +243,9 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
         require_progress: bool,
     ) -> Result<bool, Diagnostic> {
         self.parser.checkpoint_next = mark.checkpoint;
-        let consumed = mark.census_furthest.map(|saved| {
-            let local = std::mem::replace(&mut self.parser.furthest, saved);
-            self.parser.furthest = self.parser.furthest.max(local);
-            local > mark.mark.position
-        });
+        let consumed = mark
+            .census_reach
+            .map(|saved| self.parser.census_reach_end(saved, mark.mark.position));
         if !result? {
             if let Some(consumed) = consumed {
                 super::census::repeat_exit(consumed);

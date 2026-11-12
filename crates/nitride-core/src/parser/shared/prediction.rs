@@ -378,8 +378,10 @@ impl<'a, 'g> Parser<'a, 'g> {
         let furthest = self.furthest;
         let checkpoint = std::mem::replace(&mut self.checkpoint_next, false);
         self.position = at;
+        let reach = self.census_reach_begin();
         // Lexical rules have no reusable or pending facts: enter below `rule`.
         let result = self.rule_inner(id, 0, depth);
+        self.census_reach_discard(reach);
         let end = self.position;
         self.checkpoint_next = checkpoint;
         self.restore(mark);

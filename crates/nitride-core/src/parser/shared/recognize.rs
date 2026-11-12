@@ -451,6 +451,7 @@ impl<'a, 'g> Parser<'a, 'g> {
             self.max_depth = self.max_depth.max(depth.saturating_add(hit.depth));
             self.source.observe(u64::from(at) + hit.observed_offset);
             self.position = at as usize + hit.end_offset as usize;
+            self.census_consumed();
             self.furthest = self
                 .furthest
                 .max(at as usize + hit.furthest_offset as usize);
@@ -611,6 +612,7 @@ impl<'a, 'g> Parser<'a, 'g> {
             return Some(Ok(None));
         };
         self.position = end;
+        self.census_consumed();
         Some(self.lexical_leaf(id, start).map(Some))
     }
     /// The node a lexical match from `start` to the current position yields.
@@ -771,6 +773,7 @@ impl<'a, 'g> Parser<'a, 'g> {
                 } => {
                     self.arena.clone_temporary(root.node);
                     self.position = end;
+                    self.census_consumed();
                     self.furthest = self.furthest.max(furthest);
                     Ok(Some(root))
                 }
@@ -784,6 +787,7 @@ impl<'a, 'g> Parser<'a, 'g> {
                     // hold it in the entry as that miss would have.
                     let start = self.position;
                     self.position = end;
+                    self.census_consumed();
                     self.furthest = self.furthest.max(furthest);
                     let root = self.lexical_leaf(id, start)?;
                     self.arena.retain_cache(root.node);
@@ -816,6 +820,9 @@ impl<'a, 'g> Parser<'a, 'g> {
         let furthest = std::mem::replace(&mut self.furthest, saved_furthest);
         self.furthest = self.furthest.max(furthest);
         let root = result?;
+        if root.is_some() {
+            self.census_consumed();
+        }
         let weight = root.map_or(0, |root| self.arena.weight(root.node));
         if weight > 8192 * 64 {
             return Ok(root);
@@ -994,10 +1001,62 @@ impl<'a, 'g> Parser<'a, 'g> {
         }
         false
     }
-    /// Runs one alternative or candidate of a census `decision`. With a census
-    /// active, the attempt's own failure reach is read locally and merged back,
-    /// so the parser ends exactly as without the census; a failed attempt
-    /// counts as consuming input when it recorded a failure past its start.
+    /// Census only: records that a match reached the current position.
+    /// Within a token only a whole lexical match counts, so partial character
+    /// matches of a token that fails are not consumption.
+    #[inline(always)]
+    pub(super) fn census_consumed(&mut self) {
+        #[cfg(feature = "census")]
+        if self.in_token == 0 {
+            self.census_high = self.census_high.max(self.position);
+        }
+    }
+    /// Census only: starts measuring how far matches reach from here; the
+    /// returned value goes to `census_reach_end`.
+    #[inline(always)]
+    pub(super) fn census_reach_begin(&mut self) -> usize {
+        #[cfg(feature = "census")]
+        {
+            std::mem::replace(&mut self.census_high, self.position)
+        }
+        #[cfg(not(feature = "census"))]
+        {
+            0
+        }
+    }
+    /// Census only: whether any match since `census_reach_begin` passed
+    /// `start`; merges the enclosing reach back.
+    #[inline(always)]
+    pub(super) fn census_reach_end(&mut self, saved: usize, start: usize) -> bool {
+        #[cfg(feature = "census")]
+        {
+            let local = std::mem::replace(&mut self.census_high, saved);
+            self.census_high = self.census_high.max(local);
+            local > start
+        }
+        #[cfg(not(feature = "census"))]
+        {
+            let _ = (saved, start);
+            false
+        }
+    }
+    /// Census only: ends a lookahead begun with `census_reach_begin`, leaving
+    /// the reach as it was before: what lookahead matched is not consumption.
+    #[inline(always)]
+    pub(super) fn census_reach_discard(&mut self, saved: usize) {
+        #[cfg(feature = "census")]
+        {
+            self.census_high = saved;
+        }
+        #[cfg(not(feature = "census"))]
+        {
+            let _ = saved;
+        }
+    }
+    /// Runs one alternative or candidate of a census `decision`. A failed
+    /// attempt counts as consuming input when some match within it passed
+    /// its start; lookahead and trivia do not count. Parser state is
+    /// untouched: the census keeps its own high-water mark.
     #[inline(always)]
     pub(super) fn counted<T>(
         &mut self,
@@ -1010,13 +1069,12 @@ impl<'a, 'g> Parser<'a, 'g> {
         }
         decision.attempted();
         let start = self.position;
-        let saved = std::mem::replace(&mut self.furthest, 0);
+        let saved = self.census_reach_begin();
         let result = attempt(self);
-        let local = std::mem::replace(&mut self.furthest, saved);
-        self.furthest = self.furthest.max(local);
+        let consumed = self.census_reach_end(saved, start);
         if let Ok(value) = &result {
             if failed(value) {
-                decision.failed(local > start);
+                decision.failed(consumed);
             }
         }
         result
@@ -1189,6 +1247,7 @@ impl<'a, 'g> Parser<'a, 'g> {
             Expr::Any => {
                 if let Some(c) = self.source.character(self.position) {
                     self.position += c.len_utf8();
+                    self.census_consumed();
                     true
                 } else {
                     false
@@ -1201,7 +1260,9 @@ impl<'a, 'g> Parser<'a, 'g> {
                 let mark = self.mark();
                 let furthest = self.furthest;
                 let len = out.len();
+                let reach = self.census_reach_begin();
                 let matched = self.expression(inner, lexical, None, 0, depth + 1, out);
+                self.census_reach_discard(reach);
                 self.restore(mark);
                 self.furthest = furthest;
                 out.truncate(len);
@@ -1222,6 +1283,7 @@ impl<'a, 'g> Parser<'a, 'g> {
                         .is_none_or(|c| !(c.is_alphanumeric() || c == '_'));
                 if self.source.matches(self.position, text) && boundary {
                     self.position += text.len();
+                    self.census_consumed();
                     true
                 } else {
                     false
@@ -1233,6 +1295,7 @@ impl<'a, 'g> Parser<'a, 'g> {
                         != matches!(expr, Expr::NotClass(_))
                 }) {
                     self.position += c.len_utf8();
+                    self.census_consumed();
                     true
                 } else {
                     false
@@ -1295,14 +1358,9 @@ impl<'a, 'g> Parser<'a, 'g> {
                         self.checkpoint_next = true;
                     }
                     // Repetitions inside lexical rules are token-level; see `choice`.
-                    let census = (!lexical && census::active())
-                        .then(|| std::mem::replace(&mut self.furthest, 0));
+                    let census = (!lexical && census::active()).then(|| self.census_reach_begin());
                     let matched = self.expression(inner, lexical, None, 0, depth + 1, out);
-                    let consumed = census.map(|saved| {
-                        let local = std::mem::replace(&mut self.furthest, saved);
-                        self.furthest = self.furthest.max(local);
-                        local > mark.position
-                    });
+                    let consumed = census.map(|saved| self.census_reach_end(saved, mark.position));
                     self.checkpoint_next = saved_checkpoint;
                     if !matched? {
                         if let Some(consumed) = consumed {

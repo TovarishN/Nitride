@@ -260,6 +260,7 @@ fn census(
                 "alternatives": d.alternatives,
                 "entries": d.entries,
                 "single": d.single,
+                "empty": d.empty,
                 "attempts": d.attempts,
                 "failed_attempts": d.failed_attempts,
                 "consumed_failures": d.consumed_failures,

@@ -6,6 +6,10 @@ publish = false
 
 [workspace]
 
+[features]
+# Parse with a decision census active, to check it changes no result.
+census = ["nitride-core/census"]
+
 [dependencies]
 nitride-core = { path = "../../crates/nitride-core" }
 serde_json = "1"

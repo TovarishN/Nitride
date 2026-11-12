@@ -1630,6 +1630,70 @@ mod census {
         first
     }
 
+    /// `Root = Item* Tail`, `Item = "a" "x" / "a" "z"`, `Tail = "a" "y"`.
+    fn lookahead_exit() -> &'static Language<'static> {
+        language(vec![
+            rule(
+                "Root",
+                Expr::Sequence(&[
+                    Expr::Repeat {
+                        inner: &Expr::Ref(1),
+                        min: 0,
+                        max: u32::MAX,
+                    },
+                    Expr::Ref(2),
+                ]),
+            ),
+            rule(
+                "Item",
+                Expr::Choice(&[
+                    Expr::Sequence(&[Expr::Literal("a"), Expr::Literal("x")]),
+                    Expr::Sequence(&[Expr::Literal("a"), Expr::Literal("z")]),
+                ]),
+            ),
+            rule(
+                "Tail",
+                Expr::Sequence(&[Expr::Literal("a"), Expr::Literal("y")]),
+            ),
+        ])
+    }
+    /// `Root = Item* Tail`, `Item = "a" "x"`, `Tail = "a" "y"`.
+    fn consuming_exit() -> &'static Language<'static> {
+        language(vec![
+            rule(
+                "Root",
+                Expr::Sequence(&[
+                    Expr::Repeat {
+                        inner: &Expr::Ref(1),
+                        min: 0,
+                        max: u32::MAX,
+                    },
+                    Expr::Ref(2),
+                ]),
+            ),
+            rule(
+                "Item",
+                Expr::Sequence(&[Expr::Literal("a"), Expr::Literal("x")]),
+            ),
+            rule(
+                "Tail",
+                Expr::Sequence(&[Expr::Literal("a"), Expr::Literal("y")]),
+            ),
+        ])
+    }
+
+    #[test]
+    fn census_lookahead_rejection_is_not_consumption() {
+        // The final iteration's choice rejects both alternatives by their
+        // second token: nothing is matched, so the exit consumed nothing.
+        let census = counted(lookahead_exit(), "a x a y", Limits::default());
+        assert_eq!((census.repeat_exits, census.repeat_consumed_exits), (1, 0));
+        let choice = only(&census, DecisionKind::Choice);
+        assert_eq!((choice.entries, choice.empty, choice.unmatched), (2, 1, 1));
+        // Matching "a" before failing at "y" is consumption.
+        let census = counted(consuming_exit(), "a x a y", Limits::default());
+        assert_eq!((census.repeat_exits, census.repeat_consumed_exits), (1, 1));
+    }
     #[test]
     fn census_counts_one_attempt_when_leads_decide() {
         for source in ["a y", "b"] {

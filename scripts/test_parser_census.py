@@ -6,7 +6,7 @@ sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
 from parser_census import aggregate, verdict  # noqa: E402
 
 
-def decision(kind, entries, single, attempts=None, consumed=0, name="R"):
+def decision(kind, entries, single, attempts=None, consumed=0, name="R", empty=0):
     return {
         "kind": kind,
         "rule": 0,
@@ -15,6 +15,7 @@ def decision(kind, entries, single, attempts=None, consumed=0, name="R"):
         "alternatives": 2,
         "entries": entries,
         "single": single,
+        "empty": empty,
         "attempts": entries if attempts is None else attempts,
         "failed_attempts": 0,
         "consumed_failures": consumed,
@@ -46,6 +47,14 @@ class AggregateTest(unittest.TestCase):
         self.assertAlmostEqual(summary["pratt_single_share"], 1.0)
         self.assertAlmostEqual(summary["consumed_failures_per_kb"], 15.0)
         self.assertAlmostEqual(summary["predicates_per_kb"], 2.0)
+
+    def test_shares_count_zero_attempt_entries_as_decided(self):
+        summary = aggregate([report(1000, [
+            decision("choice", 10, 6, empty=3),
+            decision("pratt-infix", 10, 2, attempts=2, empty=8),
+        ])])
+        self.assertAlmostEqual(summary["choice_single_share"], 0.9)
+        self.assertAlmostEqual(summary["pratt_single_share"], 1.0)
 
     def test_top_ranks_by_extra_attempts(self):
         summary = aggregate([report(1000, [
