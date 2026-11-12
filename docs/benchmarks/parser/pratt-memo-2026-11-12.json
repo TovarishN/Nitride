@@ -1,0 +1,2589 @@
+{
+ "baseline": "claude/fast-strict-path-design a80dd4c (main plus the decision census), compiler-audit harness, portable release build",
+ "candidate": "claude/memo-shared-prefixes ae693cd (every Pratt point memoized), same harness and build settings",
+ "rounds": 9,
+ "work_may_differ": true,
+ "parity": [
+  {
+   "case": "corpus/AttributeUsageAttribute.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "5e95daa3e1a6c07b",
+    "5e95daa3e1a6c07b"
+   ],
+   "work": [
+    20580,
+    19602
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/AttributeUsageAttribute.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "5e95daa3e1a6c07b",
+    "5e95daa3e1a6c07b"
+   ],
+   "work": [
+    20580,
+    19602
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/Boolean.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "a4fdce812577d275",
+    "a4fdce812577d275"
+   ],
+   "work": [
+    71150,
+    67617
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/Boolean.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "a4fdce812577d275",
+    "a4fdce812577d275"
+   ],
+   "work": [
+    71150,
+    67617
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/EventArgs.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "a27561b629addc76",
+    "a27561b629addc76"
+   ],
+   "work": [
+    5050,
+    4447
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/EventArgs.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "a27561b629addc76",
+    "a27561b629addc76"
+   ],
+   "work": [
+    5050,
+    4447
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/EventHandler.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "043886f16115d360",
+    "043886f16115d360"
+   ],
+   "work": [
+    1968,
+    1923
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/EventHandler.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "043886f16115d360",
+    "043886f16115d360"
+   ],
+   "work": [
+    1968,
+    1923
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/ICollection.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "be8f3bbfc7724820",
+    "be8f3bbfc7724820"
+   ],
+   "work": [
+    7978,
+    7794
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/ICollection.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "be8f3bbfc7724820",
+    "be8f3bbfc7724820"
+   ],
+   "work": [
+    7978,
+    7794
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/Version.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "0815c383aeab0a6a",
+    "0815c383aeab0a6a"
+   ],
+   "work": [
+    152719,
+    147007
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/Version.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "0815c383aeab0a6a",
+    "0815c383aeab0a6a"
+   ],
+   "work": [
+    152719,
+    147007
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-001.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "72e58ecd3908edd5",
+    "72e58ecd3908edd5"
+   ],
+   "work": [
+    1227,
+    1197
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-001.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "72e58ecd3908edd5",
+    "72e58ecd3908edd5"
+   ],
+   "work": [
+    1227,
+    1197
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-002.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "001dea6a7e38b2b1",
+    "001dea6a7e38b2b1"
+   ],
+   "work": [
+    1736,
+    1621
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-002.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "001dea6a7e38b2b1",
+    "001dea6a7e38b2b1"
+   ],
+   "work": [
+    1736,
+    1621
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-003.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "cfdd99f603c35803",
+    "cfdd99f603c35803"
+   ],
+   "work": [
+    2210,
+    2077
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-003.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "cfdd99f603c35803",
+    "cfdd99f603c35803"
+   ],
+   "work": [
+    2210,
+    2077
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "2b74c0e82012a532",
+    "2b74c0e82012a532"
+   ],
+   "work": [
+    4913,
+    4844
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "2b74c0e82012a532",
+    "2b74c0e82012a532"
+   ],
+   "work": [
+    4913,
+    4844
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "684ac24926a52779",
+    "684ac24926a52779"
+   ],
+   "work": [
+    9408,
+    9265
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "684ac24926a52779",
+    "684ac24926a52779"
+   ],
+   "work": [
+    9408,
+    9265
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "b3b98fd02fe505d0",
+    "b3b98fd02fe505d0"
+   ],
+   "work": [
+    11082,
+    10782
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "b3b98fd02fe505d0",
+    "b3b98fd02fe505d0"
+   ],
+   "work": [
+    11082,
+    10782
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "b328a88a891c7c08",
+    "b328a88a891c7c08"
+   ],
+   "work": [
+    21848,
+    21346
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "b328a88a891c7c08",
+    "b328a88a891c7c08"
+   ],
+   "work": [
+    21848,
+    21346
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "c3500972a82ee647",
+    "c3500972a82ee647"
+   ],
+   "work": [
+    27598,
+    26442
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "c3500972a82ee647",
+    "c3500972a82ee647"
+   ],
+   "work": [
+    27598,
+    26442
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "2edad751076089b3",
+    "2edad751076089b3"
+   ],
+   "work": [
+    27251,
+    27050
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "2edad751076089b3",
+    "2edad751076089b3"
+   ],
+   "work": [
+    27251,
+    27050
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "91a9870a59ccd62f",
+    "91a9870a59ccd62f"
+   ],
+   "work": [
+    38921,
+    37698
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "91a9870a59ccd62f",
+    "91a9870a59ccd62f"
+   ],
+   "work": [
+    38921,
+    37698
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "ec740e8ba9b7de3b",
+    "ec740e8ba9b7de3b"
+   ],
+   "work": [
+    6955,
+    6814
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "ec740e8ba9b7de3b",
+    "ec740e8ba9b7de3b"
+   ],
+   "work": [
+    6955,
+    6814
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "8ea6f61e37983407",
+    "8ea6f61e37983407"
+   ],
+   "work": [
+    6099,
+    5989
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "8ea6f61e37983407",
+    "8ea6f61e37983407"
+   ],
+   "work": [
+    6099,
+    5989
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "19d248a93de9b4c6",
+    "19d248a93de9b4c6"
+   ],
+   "work": [
+    15025,
+    14855
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "19d248a93de9b4c6",
+    "19d248a93de9b4c6"
+   ],
+   "work": [
+    15025,
+    14855
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "ae141d7a98e1771a",
+    "ae141d7a98e1771a"
+   ],
+   "work": [
+    5574,
+    5258
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "ae141d7a98e1771a",
+    "ae141d7a98e1771a"
+   ],
+   "work": [
+    5574,
+    5258
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "2e26402dc2ad68be",
+    "2e26402dc2ad68be"
+   ],
+   "work": [
+    30534,
+    27671
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "2e26402dc2ad68be",
+    "2e26402dc2ad68be"
+   ],
+   "work": [
+    30534,
+    27671
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-implicitarray-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "40923d9656f6bf25",
+    "40923d9656f6bf25"
+   ],
+   "work": [
+    14619,
+    14550
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-implicitarray-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "40923d9656f6bf25",
+    "40923d9656f6bf25"
+   ],
+   "work": [
+    14619,
+    14550
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-implicitarray-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "62b0c716c0a5ff24",
+    "62b0c716c0a5ff24"
+   ],
+   "work": [
+    5812,
+    5688
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-implicitarray-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "62b0c716c0a5ff24",
+    "62b0c716c0a5ff24"
+   ],
+   "work": [
+    5812,
+    5688
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "dc8e1a39c962a1e4",
+    "dc8e1a39c962a1e4"
+   ],
+   "work": [
+    13952,
+    13537
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "dc8e1a39c962a1e4",
+    "dc8e1a39c962a1e4"
+   ],
+   "work": [
+    13952,
+    13537
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "c3aa781367941a04",
+    "c3aa781367941a04"
+   ],
+   "work": [
+    70286,
+    66775
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "c3aa781367941a04",
+    "c3aa781367941a04"
+   ],
+   "work": [
+    70286,
+    66775
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "e121f94892561fc8",
+    "e121f94892561fc8"
+   ],
+   "work": [
+    11268,
+    10958
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "e121f94892561fc8",
+    "e121f94892561fc8"
+   ],
+   "work": [
+    11268,
+    10958
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "7113079262e717cf",
+    "7113079262e717cf"
+   ],
+   "work": [
+    54115,
+    53394
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "7113079262e717cf",
+    "7113079262e717cf"
+   ],
+   "work": [
+    54115,
+    53394
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "75c09ae3c16a986a",
+    "75c09ae3c16a986a"
+   ],
+   "work": [
+    21017,
+    20950
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "75c09ae3c16a986a",
+    "75c09ae3c16a986a"
+   ],
+   "work": [
+    21017,
+    20950
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "314754413f853d6a",
+    "314754413f853d6a"
+   ],
+   "work": [
+    10395,
+    10328
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "314754413f853d6a",
+    "314754413f853d6a"
+   ],
+   "work": [
+    10395,
+    10328
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "64k-valid",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "04a994ab874f8775",
+    "04a994ab874f8775"
+   ],
+   "work": [
+    3025045,
+    2956410
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "64k-dense",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "ae1ea26896824739",
+    "ae1ea26896824739"
+   ],
+   "work": [
+    2466019,
+    2466019
+   ],
+   "diagnostics": [
+    185,
+    185
+   ]
+  },
+  {
+   "case": "64k-truncated",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "b41a5bee0d734ec7",
+    "b41a5bee0d734ec7"
+   ],
+   "work": [
+    10567739,
+    8132098
+   ],
+   "diagnostics": [
+    1,
+    1
+   ]
+  },
+  {
+   "case": "256k-valid",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "cad0a88bd0424fa5",
+    "cad0a88bd0424fa5"
+   ],
+   "work": [
+    11935221,
+    11664762
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "256k-one",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "231e7462b9f37304",
+    "231e7462b9f37304"
+   ],
+   "work": [
+    1658544,
+    1657905
+   ],
+   "diagnostics": [
+    1,
+    1
+   ]
+  },
+  {
+   "case": "256k-junk",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "d2f0807723dd3476",
+    "d2f0807723dd3476"
+   ],
+   "work": [
+    1676277,
+    1676096
+   ],
+   "diagnostics": [
+    4,
+    4
+   ]
+  },
+  {
+   "case": "256k-dense",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "ac557ebc3c66bd00",
+    "ac557ebc3c66bd00"
+   ],
+   "work": [
+    9908773,
+    9908773
+   ],
+   "diagnostics": [
+    729,
+    729
+   ]
+  },
+  {
+   "case": "256k-truncated",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "706e6aa8e4817795",
+    "706e6aa8e4817795"
+   ],
+   "work": [
+    41189771,
+    31769986
+   ],
+   "diagnostics": [
+    1,
+    1
+   ]
+  },
+  {
+   "case": "4m-valid",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "65e37734de06cda8",
+    "65e37734de06cda8"
+   ],
+   "work": [
+    186168479,
+    181964678
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "4m-one",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "202866a808ff278c",
+    "202866a808ff278c"
+   ],
+   "work": [
+    30482396,
+    30482396
+   ],
+   "diagnostics": [
+    1,
+    1
+   ]
+  },
+  {
+   "case": "4m-junk",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "78cf783120ab035b",
+    "78cf783120ab035b"
+   ],
+   "work": [
+    30509415,
+    30509234
+   ],
+   "diagnostics": [
+    4,
+    4
+   ]
+  }
+ ],
+ "timing": [
+  {
+   "case": "256k-valid",
+   "mode": "strict",
+   "baseline_ms": 44.464792,
+   "candidate_ms": 44.146625,
+   "baseline_samples": [
+    44.953875,
+    44.07175,
+    44.60325,
+    44.748125,
+    44.441375,
+    44.464792,
+    44.414916,
+    44.137416,
+    44.8525
+   ],
+   "candidate_samples": [
+    43.950917,
+    43.206542,
+    44.340083,
+    44.146625,
+    43.698875,
+    44.247583,
+    43.649125,
+    44.264375,
+    44.270958
+   ]
+  },
+  {
+   "case": "256k-one",
+   "mode": "recover",
+   "baseline_ms": 57.891292,
+   "candidate_ms": 57.398875,
+   "baseline_samples": [
+    58.039458,
+    57.567208,
+    58.214,
+    58.105417,
+    57.29825,
+    58.1065,
+    57.833458,
+    57.891292,
+    57.790041
+   ],
+   "candidate_samples": [
+    59.417625,
+    57.005333,
+    57.398875,
+    57.542958,
+    56.993291,
+    57.590416,
+    58.497084,
+    56.990625,
+    57.227875
+   ]
+  },
+  {
+   "case": "256k-dense",
+   "mode": "recover",
+   "baseline_ms": 353.46375,
+   "candidate_ms": 342.215333,
+   "baseline_samples": [
+    353.176208,
+    353.46375,
+    352.096125,
+    356.615292,
+    353.770084,
+    351.296708,
+    354.712542,
+    351.884792,
+    371.045625
+   ],
+   "candidate_samples": [
+    341.4645,
+    342.80175,
+    339.970416,
+    360.893125,
+    342.193875,
+    342.215333,
+    343.367334,
+    341.755708,
+    355.562667
+   ]
+  },
+  {
+   "case": "256k-truncated",
+   "mode": "recover",
+   "baseline_ms": 394.671084,
+   "candidate_ms": 324.65075,
+   "baseline_samples": [
+    395.457958,
+    387.725125,
+    394.671084,
+    393.65475,
+    391.854667,
+    396.170958,
+    390.509833,
+    395.696875,
+    396.631917
+   ],
+   "candidate_samples": [
+    322.317333,
+    323.890375,
+    322.676792,
+    326.595125,
+    324.65075,
+    324.7295,
+    325.612083,
+    324.488167,
+    327.604959
+   ]
+  },
+  {
+   "case": "4m-valid",
+   "mode": "strict",
+   "baseline_ms": 682.368084,
+   "candidate_ms": 669.211042,
+   "baseline_samples": [
+    682.368084,
+    674.964333,
+    680.724833,
+    682.859875,
+    682.596209,
+    678.601,
+    680.658584,
+    682.4325,
+    684.944042
+   ],
+   "candidate_samples": [
+    669.211042,
+    658.750292,
+    673.889375,
+    666.974959,
+    667.073917,
+    668.332917,
+    684.100875,
+    669.211416,
+    669.276791
+   ]
+  },
+  {
+   "case": "4m-one",
+   "mode": "recover",
+   "baseline_ms": 863.646792,
+   "candidate_ms": 857.235875,
+   "baseline_samples": [
+    865.042625,
+    859.866791,
+    866.530167,
+    857.87575,
+    862.786167,
+    863.759708,
+    864.760583,
+    859.634166,
+    863.646792
+   ],
+   "candidate_samples": [
+    860.460958,
+    855.042958,
+    854.588375,
+    854.65325,
+    861.269459,
+    861.940292,
+    848.490291,
+    861.060583,
+    857.235875
+   ]
+  },
+  {
+   "case": "4m-junk",
+   "mode": "recover",
+   "baseline_ms": 861.668291,
+   "candidate_ms": 858.870375,
+   "baseline_samples": [
+    860.3495,
+    868.031,
+    861.153,
+    862.016791,
+    865.169125,
+    861.668291,
+    854.783667,
+    873.605958,
+    861.142333
+   ],
+   "candidate_samples": [
+    856.787125,
+    854.403292,
+    862.647541,
+    863.901167,
+    862.679334,
+    855.635375,
+    850.285041,
+    859.269917,
+    858.870375
+   ]
+  },
+  {
+   "case": "16m-valid",
+   "mode": "strict",
+   "baseline_ms": 2710.402166,
+   "candidate_ms": 2652.132708,
+   "baseline_samples": [
+    2710.402166,
+    2726.765417,
+    2679.944292,
+    2683.29675,
+    2703.937333,
+    2739.749167,
+    2724.283083,
+    2699.004167,
+    2722.56975
+   ],
+   "candidate_samples": [
+    2651.6885,
+    2705.661833,
+    2654.358125,
+    2673.361666,
+    2646.603208,
+    2652.132708,
+    2674.446292,
+    2624.5365,
+    2633.627458
+   ]
+  }
+ ],
+ "host": {
+  "machine": "arm64",
+  "system": "macOS-27.2.1",
+  "cpu": "Apple M4 Pro",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)"
+ },
+ "date": "2026-11-12",
+ "census": {
+  "baseline": {
+   "summary": {
+    "source_bytes": 4231314,
+    "choice_entries": 1035277,
+    "choice_single_share": 0.9010284204130875,
+    "choice_exactly_one_share": 0.86802179513309,
+    "pratt_entries": 2958339,
+    "pratt_single_share": 0.9729250096084323,
+    "consumed_failures_per_kb": 78.26906724483221,
+    "predicates_per_kb": 37.84143648994142,
+    "contexts_per_kb": 0.0,
+    "wasted_work_share": 0.17170375840536692,
+    "top": [
+     {
+      "rule_name": "CSharp.Declarations.MemberDeclaration",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 45466,
+      "single": 11364,
+      "attempts": 136360,
+      "consumed_failures": 90894
+     },
+     {
+      "rule_name": "CSharp.Declarations.TypeDeclaration",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 22833,
+      "single": 16,
+      "attempts": 114101,
+      "consumed_failures": 102716
+     },
+     {
+      "rule_name": "CSharp.Expressions.Expression",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 318501,
+      "single": 284323,
+      "attempts": 352774,
+      "consumed_failures": 11573
+     },
+     {
+      "rule_name": "CSharp.Attributes.Parameters",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 22753,
+      "single": 0,
+      "attempts": 45506,
+      "consumed_failures": 11384
+     },
+     {
+      "rule_name": "CSharp.Statements.StandardStatement",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 102337,
+      "single": 79594,
+      "attempts": 125080,
+      "consumed_failures": 22743
+     },
+     {
+      "rule_name": "CSharp.NamesTypes.TypeBase",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 147856,
+      "single": 136468,
+      "attempts": 170631,
+      "consumed_failures": 11422
+     },
+     {
+      "rule_name": "CSharp.Declarations.ClassMember",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 56857,
+      "single": 34019,
+      "attempts": 56931,
+      "consumed_failures": 11456
+     },
+     {
+      "rule_name": "CSharp.Declarations.StandardClassMember",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 45475,
+      "single": 34027,
+      "attempts": 56923,
+      "consumed_failures": 11448
+     },
+     {
+      "rule_name": "CSharp.Queries.Binding",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 11369,
+      "single": 8,
+      "attempts": 22730,
+      "consumed_failures": 11361
+     },
+     {
+      "rule_name": "CSharp.Expressions.Expression",
+      "kind": "pratt-infix",
+      "ordinal": 0,
+      "entries": 432389,
+      "single": 113661,
+      "attempts": 114185,
+      "consumed_failures": 262
+     },
+     {
+      "rule_name": "CSharp.Expressions.CastHead",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 36,
+      "single": 0,
+      "attempts": 207,
+      "consumed_failures": 176
+     },
+     {
+      "rule_name": "CSharp.Lambdas.LambdaSignature",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 11362,
+      "single": 11339,
+      "attempts": 11385,
+      "consumed_failures": 51
+     },
+     {
+      "rule_name": "CSharp.Unsafe.PointerNonArrayType",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 31,
+      "single": 20,
+      "attempts": 42,
+      "consumed_failures": 11
+     },
+     {
+      "rule_name": "CSharp.NullableValues.NullableElement",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 11425,
+      "single": 11415,
+      "attempts": 11435,
+      "consumed_failures": 0
+     },
+     {
+      "rule_name": "CSharp.Expressions.TypeOperatorOperand",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 7,
+      "single": 0,
+      "attempts": 14,
+      "consumed_failures": 7
+     },
+     {
+      "rule_name": "CSharp.Declarations.InterfaceMember",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 5,
+      "single": 1,
+      "attempts": 13,
+      "consumed_failures": 8
+     },
+     {
+      "rule_name": "CSharp.ObjectInitializers.Initializer",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 47,
+      "single": 46,
+      "attempts": 48,
+      "consumed_failures": 1
+     },
+     {
+      "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 34175,
+      "single": 11352,
+      "attempts": 11352,
+      "consumed_failures": 0
+     },
+     {
+      "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+      "kind": "pratt-infix",
+      "ordinal": 0,
+      "entries": 11352,
+      "single": 0,
+      "attempts": 0,
+      "consumed_failures": 0
+     },
+     {
+      "rule_name": "CSharp.NamesTypes.TypeNamePrefix",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 102380,
+      "single": 0,
+      "attempts": 0,
+      "consumed_failures": 0
+     }
+    ]
+   },
+   "groups": {
+    "generated": {
+     "source_bytes": 4194492,
+     "choice_entries": 1031121,
+     "choice_single_share": 0.9010989010989011,
+     "choice_exactly_one_share": 0.8681318681318682,
+     "pratt_entries": 2946066,
+     "pratt_single_share": 0.9730769779088452,
+     "consumed_failures_per_kb": 78.34107205354069,
+     "predicates_per_kb": 37.81959770098501,
+     "contexts_per_kb": 0.0,
+     "wasted_work_share": 0.17118933309329099,
+     "top": [
+      {
+       "rule_name": "CSharp.Declarations.MemberDeclaration",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 45324,
+       "single": 11331,
+       "attempts": 135972,
+       "consumed_failures": 90648
+      },
+      {
+       "rule_name": "CSharp.Declarations.TypeDeclaration",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 22662,
+       "single": 0,
+       "attempts": 113310,
+       "consumed_failures": 101979
+      },
+      {
+       "rule_name": "CSharp.Expressions.Expression",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 317268,
+       "single": 283275,
+       "attempts": 351261,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Statements.StandardStatement",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 101979,
+       "single": 79317,
+       "attempts": 124641,
+       "consumed_failures": 22662
+      },
+      {
+       "rule_name": "CSharp.Attributes.Parameters",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 22662,
+       "single": 0,
+       "attempts": 45324,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeBase",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 147303,
+       "single": 135972,
+       "attempts": 169965,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Declarations.StandardClassMember",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 45324,
+       "single": 33993,
+       "attempts": 56655,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Declarations.ClassMember",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 56655,
+       "single": 33993,
+       "attempts": 56655,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Queries.Binding",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 22662,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 33995,
+       "single": 11331,
+       "attempts": 11331,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNamePrefix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 101981,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.BuiltinType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 79317,
+       "single": 79317,
+       "attempts": 79317,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeBase",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 147303,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeReference",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 271944,
+       "single": 271944,
+       "attempts": 271944,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeReference",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 271944,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.ReturnType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 45324,
+       "single": 45324,
+       "attempts": 45324,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.Literal",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 135972,
+       "single": 135972,
+       "attempts": 135972,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.ArgumentName",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.Argument",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      }
+     ]
+    },
+    "corpus": {
+     "source_bytes": 36822,
+     "choice_entries": 4156,
+     "choice_single_share": 0.8835418671799807,
+     "choice_exactly_one_share": 0.8407122232916265,
+     "pratt_entries": 12273,
+     "pratt_single_share": 0.9364458567587387,
+     "consumed_failures_per_kb": 70.06680788658953,
+     "predicates_per_kb": 40.329151051002114,
+     "contexts_per_kb": 0.0,
+     "wasted_work_share": 0.300895678492266,
+     "top": [
+      {
+       "rule_name": "CSharp.Declarations.TypeDeclaration",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 171,
+       "single": 16,
+       "attempts": 791,
+       "consumed_failures": 737
+      },
+      {
+       "rule_name": "CSharp.Expressions.Expression",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 1811,
+       "single": 351,
+       "attempts": 875,
+       "consumed_failures": 262
+      },
+      {
+       "rule_name": "CSharp.Expressions.Expression",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 1233,
+       "single": 1048,
+       "attempts": 1513,
+       "consumed_failures": 242
+      },
+      {
+       "rule_name": "CSharp.Declarations.MemberDeclaration",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 142,
+       "single": 33,
+       "attempts": 388,
+       "consumed_failures": 246
+      },
+      {
+       "rule_name": "CSharp.Declarations.ClassMember",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 202,
+       "single": 26,
+       "attempts": 276,
+       "consumed_failures": 125
+      },
+      {
+       "rule_name": "CSharp.Declarations.StandardClassMember",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 151,
+       "single": 34,
+       "attempts": 268,
+       "consumed_failures": 117
+      },
+      {
+       "rule_name": "CSharp.Expressions.CastHead",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 36,
+       "single": 0,
+       "attempts": 207,
+       "consumed_failures": 176
+      },
+      {
+       "rule_name": "CSharp.Attributes.Parameters",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 91,
+       "single": 0,
+       "attempts": 182,
+       "consumed_failures": 53
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeBase",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 553,
+       "single": 496,
+       "attempts": 666,
+       "consumed_failures": 91
+      },
+      {
+       "rule_name": "CSharp.Statements.StandardStatement",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 358,
+       "single": 277,
+       "attempts": 439,
+       "consumed_failures": 81
+      },
+      {
+       "rule_name": "CSharp.Queries.Binding",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 38,
+       "single": 8,
+       "attempts": 68,
+       "consumed_failures": 30
+      },
+      {
+       "rule_name": "CSharp.Lambdas.LambdaSignature",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 31,
+       "single": 8,
+       "attempts": 54,
+       "consumed_failures": 51
+      },
+      {
+       "rule_name": "CSharp.Unsafe.PointerNonArrayType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 31,
+       "single": 20,
+       "attempts": 42,
+       "consumed_failures": 11
+      },
+      {
+       "rule_name": "CSharp.NullableValues.NullableElement",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 94,
+       "single": 84,
+       "attempts": 104,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.TypeOperatorOperand",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 7,
+       "single": 0,
+       "attempts": 14,
+       "consumed_failures": 7
+      },
+      {
+       "rule_name": "CSharp.Declarations.InterfaceMember",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 5,
+       "single": 1,
+       "attempts": 13,
+       "consumed_failures": 8
+      },
+      {
+       "rule_name": "CSharp.ObjectInitializers.Initializer",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 47,
+       "single": 46,
+       "attempts": 48,
+       "consumed_failures": 1
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 180,
+       "single": 21,
+       "attempts": 21,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNamePrefix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 399,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.BuiltinType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 252,
+       "single": 252,
+       "attempts": 252,
+       "consumed_failures": 0
+      }
+     ]
+    }
+   }
+  },
+  "candidate": {
+   "summary": {
+    "source_bytes": 4231314,
+    "choice_entries": 966617,
+    "choice_single_share": 0.893998346811612,
+    "choice_exactly_one_share": 0.8586472201502767,
+    "pratt_entries": 2365808,
+    "pratt_single_share": 0.9661439136227454,
+    "consumed_failures_per_kb": 78.26906724483221,
+    "predicates_per_kb": 21.61479861811248,
+    "contexts_per_kb": 0.0,
+    "wasted_work_share": 0.15585503739723935,
+    "top": [
+     {
+      "rule_name": "CSharp.Declarations.MemberDeclaration",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 45466,
+      "single": 11364,
+      "attempts": 136360,
+      "consumed_failures": 90894
+     },
+     {
+      "rule_name": "CSharp.Declarations.TypeDeclaration",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 22833,
+      "single": 16,
+      "attempts": 114101,
+      "consumed_failures": 102716
+     },
+     {
+      "rule_name": "CSharp.Expressions.Expression",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 318501,
+      "single": 284323,
+      "attempts": 352774,
+      "consumed_failures": 11573
+     },
+     {
+      "rule_name": "CSharp.Attributes.Parameters",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 22753,
+      "single": 0,
+      "attempts": 45506,
+      "consumed_failures": 11384
+     },
+     {
+      "rule_name": "CSharp.Statements.StandardStatement",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 102337,
+      "single": 79594,
+      "attempts": 125080,
+      "consumed_failures": 22743
+     },
+     {
+      "rule_name": "CSharp.NamesTypes.TypeBase",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 147856,
+      "single": 136468,
+      "attempts": 170631,
+      "consumed_failures": 11422
+     },
+     {
+      "rule_name": "CSharp.Declarations.ClassMember",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 56857,
+      "single": 34019,
+      "attempts": 56931,
+      "consumed_failures": 11456
+     },
+     {
+      "rule_name": "CSharp.Declarations.StandardClassMember",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 45475,
+      "single": 34027,
+      "attempts": 56923,
+      "consumed_failures": 11448
+     },
+     {
+      "rule_name": "CSharp.Queries.Binding",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 11369,
+      "single": 8,
+      "attempts": 22730,
+      "consumed_failures": 11361
+     },
+     {
+      "rule_name": "CSharp.Expressions.Expression",
+      "kind": "pratt-infix",
+      "ordinal": 0,
+      "entries": 432389,
+      "single": 113661,
+      "attempts": 114185,
+      "consumed_failures": 262
+     },
+     {
+      "rule_name": "CSharp.Expressions.CastHead",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 36,
+      "single": 0,
+      "attempts": 207,
+      "consumed_failures": 176
+     },
+     {
+      "rule_name": "CSharp.Lambdas.LambdaSignature",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 11362,
+      "single": 11339,
+      "attempts": 11385,
+      "consumed_failures": 51
+     },
+     {
+      "rule_name": "CSharp.Unsafe.PointerNonArrayType",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 31,
+      "single": 20,
+      "attempts": 42,
+      "consumed_failures": 11
+     },
+     {
+      "rule_name": "CSharp.NullableValues.NullableElement",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 11425,
+      "single": 11415,
+      "attempts": 11435,
+      "consumed_failures": 0
+     },
+     {
+      "rule_name": "CSharp.Expressions.TypeOperatorOperand",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 7,
+      "single": 0,
+      "attempts": 14,
+      "consumed_failures": 7
+     },
+     {
+      "rule_name": "CSharp.Declarations.InterfaceMember",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 5,
+      "single": 1,
+      "attempts": 13,
+      "consumed_failures": 8
+     },
+     {
+      "rule_name": "CSharp.ObjectInitializers.Initializer",
+      "kind": "choice",
+      "ordinal": 0,
+      "entries": 47,
+      "single": 46,
+      "attempts": 48,
+      "consumed_failures": 1
+     },
+     {
+      "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 34162,
+      "single": 11352,
+      "attempts": 11352,
+      "consumed_failures": 0
+     },
+     {
+      "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+      "kind": "pratt-infix",
+      "ordinal": 0,
+      "entries": 11352,
+      "single": 0,
+      "attempts": 0,
+      "consumed_failures": 0
+     },
+     {
+      "rule_name": "CSharp.NamesTypes.TypeNamePrefix",
+      "kind": "pratt-prefix",
+      "ordinal": 0,
+      "entries": 56913,
+      "single": 0,
+      "attempts": 0,
+      "consumed_failures": 0
+     }
+    ]
+   },
+   "groups": {
+    "generated": {
+     "source_bytes": 4194492,
+     "choice_entries": 963135,
+     "choice_single_share": 0.8941176470588236,
+     "choice_exactly_one_share": 0.8588235294117647,
+     "pratt_entries": 2356854,
+     "pratt_single_share": 0.9663462395209885,
+     "consumed_failures_per_kb": 78.34107205354069,
+     "predicates_per_kb": 21.611198686277145,
+     "contexts_per_kb": 0.0,
+     "wasted_work_share": 0.15535439007983032,
+     "top": [
+      {
+       "rule_name": "CSharp.Declarations.MemberDeclaration",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 45324,
+       "single": 11331,
+       "attempts": 135972,
+       "consumed_failures": 90648
+      },
+      {
+       "rule_name": "CSharp.Declarations.TypeDeclaration",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 22662,
+       "single": 0,
+       "attempts": 113310,
+       "consumed_failures": 101979
+      },
+      {
+       "rule_name": "CSharp.Expressions.Expression",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 317268,
+       "single": 283275,
+       "attempts": 351261,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Statements.StandardStatement",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 101979,
+       "single": 79317,
+       "attempts": 124641,
+       "consumed_failures": 22662
+      },
+      {
+       "rule_name": "CSharp.Attributes.Parameters",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 22662,
+       "single": 0,
+       "attempts": 45324,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeBase",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 147303,
+       "single": 135972,
+       "attempts": 169965,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Declarations.StandardClassMember",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 45324,
+       "single": 33993,
+       "attempts": 56655,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Declarations.ClassMember",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 56655,
+       "single": 33993,
+       "attempts": 56655,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Queries.Binding",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 22662,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 33995,
+       "single": 11331,
+       "attempts": 11331,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNamePrefix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 56657,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.BuiltinType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 79317,
+       "single": 79317,
+       "attempts": 79317,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeBase",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 147303,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeReference",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 147303,
+       "single": 147303,
+       "attempts": 147303,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeReference",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 147303,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.ReturnType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 45324,
+       "single": 45324,
+       "attempts": 45324,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.Literal",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 135972,
+       "single": 135972,
+       "attempts": 135972,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.ArgumentName",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.Argument",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      }
+     ]
+    },
+    "corpus": {
+     "source_bytes": 36822,
+     "choice_entries": 3482,
+     "choice_single_share": 0.8609994256174612,
+     "choice_exactly_one_share": 0.8098793796668581,
+     "pratt_entries": 8954,
+     "pratt_single_share": 0.9128880947062765,
+     "consumed_failures_per_kb": 70.06680788658953,
+     "predicates_per_kb": 22.024876432567485,
+     "contexts_per_kb": 0.0,
+     "wasted_work_share": 0.2831705957070046,
+     "top": [
+      {
+       "rule_name": "CSharp.Declarations.TypeDeclaration",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 171,
+       "single": 16,
+       "attempts": 791,
+       "consumed_failures": 737
+      },
+      {
+       "rule_name": "CSharp.Expressions.Expression",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 1811,
+       "single": 351,
+       "attempts": 875,
+       "consumed_failures": 262
+      },
+      {
+       "rule_name": "CSharp.Expressions.Expression",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 1233,
+       "single": 1048,
+       "attempts": 1513,
+       "consumed_failures": 242
+      },
+      {
+       "rule_name": "CSharp.Declarations.MemberDeclaration",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 142,
+       "single": 33,
+       "attempts": 388,
+       "consumed_failures": 246
+      },
+      {
+       "rule_name": "CSharp.Declarations.ClassMember",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 202,
+       "single": 26,
+       "attempts": 276,
+       "consumed_failures": 125
+      },
+      {
+       "rule_name": "CSharp.Declarations.StandardClassMember",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 151,
+       "single": 34,
+       "attempts": 268,
+       "consumed_failures": 117
+      },
+      {
+       "rule_name": "CSharp.Expressions.CastHead",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 36,
+       "single": 0,
+       "attempts": 207,
+       "consumed_failures": 176
+      },
+      {
+       "rule_name": "CSharp.Attributes.Parameters",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 91,
+       "single": 0,
+       "attempts": 182,
+       "consumed_failures": 53
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeBase",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 553,
+       "single": 496,
+       "attempts": 666,
+       "consumed_failures": 91
+      },
+      {
+       "rule_name": "CSharp.Statements.StandardStatement",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 358,
+       "single": 277,
+       "attempts": 439,
+       "consumed_failures": 81
+      },
+      {
+       "rule_name": "CSharp.Queries.Binding",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 38,
+       "single": 8,
+       "attempts": 68,
+       "consumed_failures": 30
+      },
+      {
+       "rule_name": "CSharp.Lambdas.LambdaSignature",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 31,
+       "single": 8,
+       "attempts": 54,
+       "consumed_failures": 51
+      },
+      {
+       "rule_name": "CSharp.Unsafe.PointerNonArrayType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 31,
+       "single": 20,
+       "attempts": 42,
+       "consumed_failures": 11
+      },
+      {
+       "rule_name": "CSharp.NullableValues.NullableElement",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 94,
+       "single": 84,
+       "attempts": 104,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.TypeOperatorOperand",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 7,
+       "single": 0,
+       "attempts": 14,
+       "consumed_failures": 7
+      },
+      {
+       "rule_name": "CSharp.Declarations.InterfaceMember",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 5,
+       "single": 1,
+       "attempts": 13,
+       "consumed_failures": 8
+      },
+      {
+       "rule_name": "CSharp.ObjectInitializers.Initializer",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 47,
+       "single": 46,
+       "attempts": 48,
+       "consumed_failures": 1
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 167,
+       "single": 21,
+       "attempts": 21,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNamePrefix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 256,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.BuiltinType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 252,
+       "single": 252,
+       "attempts": 252,
+       "consumed_failures": 0
+      }
+     ]
+    }
+   }
+  },
+  "note": "nitride-profile --census over the 4 MiB generated file and 29 Mono files; wasted_work_share is the logical work in failed attempts over total work"
+ }
+}

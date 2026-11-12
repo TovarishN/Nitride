@@ -50,6 +50,10 @@ the original review suggestions and records remaining scope.
   fast strict path milestone-0 result: most C# decisions run at most one
   alternative under today's lookahead, but a few declaration-level decisions waste
   too much, so milestone 1 waits for a design decision. [Census and verdict](docs/benchmarks/parser/decision-census-2026-11-12.md).
+- Every Pratt point is memoized, so declaration alternatives that share modifiers
+  and type references replay them: recovery on truncated C# input is about 17%
+  faster and valid parses 1–3%, with identical trees. The census also measures
+  work wasted in failed attempts. [Results and limits](docs/benchmarks/parser/pratt-memo-2026-11-12.md).
 
 ## [0.4.0](https://github.com/TovarishN/Nitride/releases/tag/v0.4.0) — 2026-11-09
 
