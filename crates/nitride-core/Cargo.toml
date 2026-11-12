@@ -6,6 +6,8 @@ license.workspace = true
 rust-version.workspace = true
 
 [features]
+# Count parser decisions for the fast strict path census; see parser::shared::census.
+census = []
 ascii-runs = []
 # Optional runtime-dispatched AVX2 acceleration of generated ASCII runs.
 simd-ascii-runs = ["ascii-runs"]

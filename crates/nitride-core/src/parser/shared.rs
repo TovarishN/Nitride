@@ -5,6 +5,7 @@ use crate::syntax::{arena::ArenaBuilder, text::Reader};
 use crate::*;
 use std::collections::HashMap;
 
+pub(crate) mod census;
 mod children;
 pub(crate) mod dispatch;
 mod facts;
@@ -190,6 +191,9 @@ struct Parser<'a, 'g> {
     choice_cache: FastMap<usize, Option<std::sync::Arc<dispatch::ChoicePlan>>>,
     choice_cache_bytes: usize,
     tokens: TokenCache,
+    /// Census only: the furthest position an actual match has reached.
+    #[cfg(feature = "census")]
+    census_high: usize,
     language: &'g Language<'g>,
     tables: std::sync::Arc<LanguageTables<'g>>,
     minimum_sensitive: std::sync::Arc<[bool]>,
@@ -294,6 +298,8 @@ impl<'a, 'g> Parser<'a, 'g> {
             choice_cache: Default::default(),
             choice_cache_bytes: 0,
             tokens: TokenCache::for_text(text.len() as usize),
+            #[cfg(feature = "census")]
+            census_high: 0,
             language,
             minimum_sensitive: tables.minimum_sensitive.clone(),
             tables: tables.clone(),

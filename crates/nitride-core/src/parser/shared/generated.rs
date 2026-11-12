@@ -28,6 +28,8 @@ pub struct SyntaxMark {
     mark: Mark,
     len: usize,
     checkpoint: bool,
+    /// The enclosing census reach, while a census measures the iteration's.
+    census_reach: Option<usize>,
 }
 /// Borrowed access to the current parser and child buffer. This is a concrete
 /// context so generated primitive calls can inline without virtual dispatch.
@@ -94,6 +96,7 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
                 .is_none_or(|c| !(c.is_alphanumeric() || c == '_'));
         if self.parser.source.matches(self.parser.position, text) && boundary {
             self.parser.position = end;
+            self.parser.census_consumed();
             Ok(true)
         } else {
             Ok(false)
@@ -144,6 +147,7 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
         // `match_rule` at the rule's call depth.
         let depth = depth + 1;
         parser.tick(depth)?;
+        let _census_rule = super::census::RuleGuard::enter(id);
         let mark = parser.mark();
         parser.trivia()?;
         if parser.entry_rejects(id, rule) {
@@ -224,6 +228,7 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
             mark: self.parser.mark(),
             len: self.children.len(),
             checkpoint: self.parser.checkpoint_next,
+            census_reach: super::census::active().then(|| self.parser.census_reach_begin()),
         };
         if checkpoint {
             self.parser.checkpoint_next = true;
@@ -238,7 +243,13 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
         require_progress: bool,
     ) -> Result<bool, Diagnostic> {
         self.parser.checkpoint_next = mark.checkpoint;
+        let consumed = mark
+            .census_reach
+            .map(|saved| self.parser.census_reach_end(saved, mark.mark.position));
         if !result? {
+            if let Some(consumed) = consumed {
+                super::census::repeat_exit(consumed);
+            }
             self.parser.restore(mark.mark);
             self.children.truncate(mark.len);
             return Ok(false);

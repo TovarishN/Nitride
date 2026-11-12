@@ -41,6 +41,7 @@ pub(crate) fn recover<'a, 'g>(
     edit: Option<&TextEdit>,
     seed: Option<&Seed<'a, 'g>>,
 ) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
+    let census_before = crate::parser::shared::census::Checkpoint::take();
     let result = recover_once(
         language,
         text,
@@ -64,14 +65,19 @@ pub(crate) fn recover<'a, 'g>(
                 - limits.parser_spill_stack_bytes / 8,
             ..limits
         };
+        // The spill thread recovers again from scratch: count it once.
+        census_before.restore();
         let cancellation = crate::cancellation::Context::capture();
+        let census = crate::parser::shared::census::Scope::capture();
         std::thread::scope(|scope| {
             std::thread::Builder::new()
                 .name("nitride-shared-recovery".into())
                 .stack_size(limits.parser_spill_stack_bytes)
                 .spawn_scoped(scope, move || {
-                    cancellation.run(|| {
-                        recover_once(language, text, spill, options, base, index, edit, seed)
+                    census.run(|| {
+                        cancellation.run(|| {
+                            recover_once(language, text, spill, options, base, index, edit, seed)
+                        })
                     })
                 })
                 .map_err(|_| Diagnostic::new("limit", [0, 0], "cannot start a deep-parse thread"))?

@@ -17,6 +17,8 @@ fn main() {
         _ => panic!("expected strict or recover"),
     };
     let source = std::fs::read_to_string(&args[1]).unwrap();
+    #[cfg(feature = "census")]
+    nitride_core::census_begin();
     let start = Instant::now();
     let snapshot = parse_snapshot_generated(&csharp4::PARSER, &source, Limits::default(), mode)
         .expect("parse snapshot");

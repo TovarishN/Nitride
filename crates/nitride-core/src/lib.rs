@@ -4,6 +4,8 @@ pub mod host;
 #[doc(hidden)]
 pub mod lexical;
 pub mod parser;
+#[cfg(feature = "census")]
+pub use parser::shared::census::{Census, DecisionKind, DecisionStats, census_begin, census_take};
 pub mod recovery;
 pub mod semantic;
 pub mod syntax;

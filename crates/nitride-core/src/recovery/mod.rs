@@ -48,6 +48,7 @@ pub(crate) fn recover_after_strict<'g>(
         error
     };
     if error.category == "syntax" && options.max_states > 0 {
+        let census_before = crate::parser::shared::census::Checkpoint::take();
         let result = search::recover(language, source, limits, options);
         if result
             .diagnostics
@@ -61,13 +62,18 @@ pub(crate) fn recover_after_strict<'g>(
                     - limits.parser_spill_stack_bytes / 8,
                 ..limits
             };
+            // The spill thread recovers again from scratch: count it once.
+            census_before.restore();
             let cancellation = crate::cancellation::Context::capture();
+            let census = crate::parser::shared::census::Scope::capture();
             std::thread::scope(|scope| {
                 std::thread::Builder::new()
                     .name("nitride-recovery".into())
                     .stack_size(limits.parser_spill_stack_bytes)
                     .spawn_scoped(scope, || {
-                        cancellation.run(|| search::recover(language, source, spill, options))
+                        census.run(|| {
+                            cancellation.run(|| search::recover(language, source, spill, options))
+                        })
                     })
                     .map(|thread| {
                         thread.join().unwrap_or_else(|_| {

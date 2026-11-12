@@ -106,6 +106,41 @@ impl<'a, 'g> Parser<'a, 'g> {
     where
         F: FnMut(&mut Self, &mut Children, usize) -> Result<bool, Diagnostic>,
     {
+        // Choices inside lexical rules are token-level: compiled scanners make
+        // them in generated parsers, so the census counts syntax choices only.
+        if lexical {
+            return self.choice_inner(expr, parts, lexical, depth, out, attempt);
+        }
+        let mut decision = census::decision(
+            census::DecisionKind::Choice,
+            std::ptr::from_ref(expr) as usize,
+            parts.len() as u32,
+        );
+        if !decision.active() {
+            return self.choice_inner(expr, parts, lexical, depth, out, attempt);
+        }
+        let result = self.choice_inner(expr, parts, lexical, depth, out, |parser, out, index| {
+            parser.counted(
+                &mut decision,
+                |p| attempt(p, out, index),
+                |matched| !*matched,
+            )
+        });
+        decision.finish(matches!(result, Ok(true)));
+        result
+    }
+    fn choice_inner<F>(
+        &mut self,
+        expr: &'g Expr<'g>,
+        parts: &'g [Expr],
+        lexical: bool,
+        depth: u32,
+        out: &mut Children,
+        mut attempt: F,
+    ) -> Result<bool, Diagnostic>
+    where
+        F: FnMut(&mut Self, &mut Children, usize) -> Result<bool, Diagnostic>,
+    {
         if let Some(plan) = self.choice_plan(expr, parts, lexical) {
             return self.choice_with_plan(&plan, parts.len(), lexical, depth, out, &mut attempt);
         }
@@ -343,8 +378,10 @@ impl<'a, 'g> Parser<'a, 'g> {
         let furthest = self.furthest;
         let checkpoint = std::mem::replace(&mut self.checkpoint_next, false);
         self.position = at;
+        let reach = self.census_reach_begin();
         // Lexical rules have no reusable or pending facts: enter below `rule`.
         let result = self.rule_inner(id, 0, depth);
+        self.census_reach_discard(reach);
         let end = self.position;
         self.checkpoint_next = checkpoint;
         self.restore(mark);

@@ -46,6 +46,10 @@ the original review suggestions and records remaining scope.
   frame limit on replay. 11% less retained memory, a 14% lower parse peak and
   faster large-file edits, with identical trees and diagnostics.
   [Results and limits](docs/benchmarks/parser/fact-levels-2026-11-12.md).
+- An opt-in decision census (`census` feature, `nitride-profile --census`) and the
+  fast strict path milestone-0 result: most C# decisions run at most one
+  alternative under today's lookahead, but a few declaration-level decisions waste
+  too much, so milestone 1 waits for a design decision. [Census and verdict](docs/benchmarks/parser/decision-census-2026-11-12.md).
 
 ## [0.4.0](https://github.com/TovarishN/Nitride/releases/tag/v0.4.0) — 2026-11-09
 
