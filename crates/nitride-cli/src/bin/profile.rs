@@ -229,6 +229,71 @@ fn prepare_language(
     let _ = snapshot_parse(language, profile, source, mode, compiled, generated);
 }
 
+/// One strict parse's decision census, as JSON on stdout.
+#[cfg(feature = "census")]
+fn census(
+    language: &'static Language,
+    profile: &str,
+    source: &str,
+    compiled: bool,
+    generated: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mode = SnapshotMode::Strict(ParseOptions::default());
+    prepare_language(language, profile, source, mode, compiled, generated);
+    census_begin();
+    let parsed = snapshot_parse(language, profile, source, mode, compiled, generated);
+    let census = census_take();
+    let snapshot = parsed.map_err(|e| e.message)?;
+    let decisions: Vec<_> = census
+        .decisions
+        .iter()
+        .map(|d| {
+            serde_json::json!({
+                "kind": match d.kind {
+                    DecisionKind::Choice => "choice",
+                    DecisionKind::PrattPrefix => "pratt-prefix",
+                    DecisionKind::PrattInfix => "pratt-infix",
+                },
+                "rule": d.rule,
+                "rule_name": language.rules.get(d.rule as usize).map_or("", |r| r.name),
+                "ordinal": d.ordinal,
+                "alternatives": d.alternatives,
+                "entries": d.entries,
+                "single": d.single,
+                "attempts": d.attempts,
+                "failed_attempts": d.failed_attempts,
+                "consumed_failures": d.consumed_failures,
+                "unmatched": d.unmatched,
+            })
+        })
+        .collect();
+    println!(
+        "{}",
+        serde_json::json!({
+            "language": profile,
+            "compiled_syntax": generated,
+            "source_bytes": source.len(),
+            "diagnostics": snapshot.diagnostic_count(),
+            "decisions": decisions,
+            "predicate_evaluations": census.predicate_evaluations,
+            "context_entries": census.context_entries,
+            "repeat_exits": census.repeat_exits,
+            "repeat_consumed_exits": census.repeat_consumed_exits,
+        })
+    );
+    Ok(())
+}
+#[cfg(not(feature = "census"))]
+fn census(
+    _language: &'static Language,
+    _profile: &str,
+    _source: &str,
+    _compiled: bool,
+    _generated: bool,
+) -> Result<(), Box<dyn std::error::Error>> {
+    Err("nitride-profile was built without the census feature".into())
+}
+
 fn run() -> Result<(), Box<dyn std::error::Error>> {
     // Initialize process-wide thread runtime storage before measuring the engine.
     // On musl, the first spill thread allocates std's stack-overflow thread-info
@@ -246,7 +311,7 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
     }
     let compiled_allowed = matches!(
         args.first().map(String::as_str),
-        Some("--edits" | "--snapshot" | "--snapshot-recover" | "--snapshot-drop")
+        Some("--edits" | "--snapshot" | "--snapshot-recover" | "--snapshot-drop" | "--census")
     );
     if compiled && !compiled_allowed {
         return Err("native generation requires a snapshot command".into());
@@ -363,6 +428,14 @@ fn run() -> Result<(), Box<dyn std::error::Error>> {
                 serde_json::json!({"lifecycle":lifecycle.json(),"edits":1000,"retained_readers":8})
             );
             return Ok(());
+        }
+    }
+    if let [flag, profile, path] = args.as_slice() {
+        if flag == "--census" {
+            let language =
+                nitride_cli::recovery_language(profile).ok_or("unknown census language")?;
+            let source = std::fs::read_to_string(path)?;
+            return census(language, profile, &source, compiled, generated);
         }
     }
     if let [flag, profile, path] = args.as_slice() {

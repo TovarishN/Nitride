@@ -146,6 +146,7 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
         // `match_rule` at the rule's call depth.
         let depth = depth + 1;
         parser.tick(depth)?;
+        let _census_rule = super::census::RuleGuard::enter(id);
         let mark = parser.mark();
         parser.trivia()?;
         if parser.entry_rejects(id, rule) {

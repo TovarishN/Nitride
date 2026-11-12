@@ -41,3 +41,5 @@ components = ["dep:nitride-wasm", "nitride-lsp/components"]
 wasm = ["components"]
 # Measure latency with the ordinary default allocator; allocator metrics are null.
 uninstrumented-profiler = []
+# `nitride-profile --census`: count parser decisions for the fast strict path census.
+census = ["nitride-core/census"]

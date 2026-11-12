@@ -1294,7 +1294,9 @@ impl<'a, 'g> Parser<'a, 'g> {
                     if *max > 1 && !lexical {
                         self.checkpoint_next = true;
                     }
-                    let census = census::active().then(|| std::mem::replace(&mut self.furthest, 0));
+                    // Repetitions inside lexical rules are token-level; see `choice`.
+                    let census = (!lexical && census::active())
+                        .then(|| std::mem::replace(&mut self.furthest, 0));
                     let matched = self.expression(inner, lexical, None, 0, depth + 1, out);
                     let consumed = census.map(|saved| {
                         let local = std::mem::replace(&mut self.furthest, saved);

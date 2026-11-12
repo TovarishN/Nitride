@@ -106,6 +106,11 @@ impl<'a, 'g> Parser<'a, 'g> {
     where
         F: FnMut(&mut Self, &mut Children, usize) -> Result<bool, Diagnostic>,
     {
+        // Choices inside lexical rules are token-level: compiled scanners make
+        // them in generated parsers, so the census counts syntax choices only.
+        if lexical {
+            return self.choice_inner(expr, parts, lexical, depth, out, attempt);
+        }
         let mut decision = census::decision(
             census::DecisionKind::Choice,
             std::ptr::from_ref(expr) as usize,
