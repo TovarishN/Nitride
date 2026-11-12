@@ -41,6 +41,7 @@ pub(crate) fn recover<'a, 'g>(
     edit: Option<&TextEdit>,
     seed: Option<&Seed<'a, 'g>>,
 ) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
+    let census_before = crate::parser::shared::census::Checkpoint::take();
     let result = recover_once(
         language,
         text,
@@ -64,6 +65,8 @@ pub(crate) fn recover<'a, 'g>(
                 - limits.parser_spill_stack_bytes / 8,
             ..limits
         };
+        // The spill thread recovers again from scratch: count it once.
+        census_before.restore();
         let cancellation = crate::cancellation::Context::capture();
         let census = crate::parser::shared::census::Scope::capture();
         std::thread::scope(|scope| {

@@ -5,11 +5,13 @@ how many grammar decisions could a table-driven engine settle from lookahead
 alone? Measured on one Apple M4 Pro with `nitride-profile --census`
 (the `census` feature) and [`scripts/parser_census.py`](../../../scripts/parser_census.py).
 
-**Verdict: no-go under the planned thresholds.** Choices and Pratt phases are
-mostly decided by today's two-token lookahead (G1 and G2 pass), but failed
-attempts that consume input are about four times the planned limit (G3 fails),
-and syntax predicates are frequent. Two declaration-level decisions cause most
-of the waste. Milestone 1 does not start; the findings go back to the design.
+**Verdict: no-go under the planned thresholds.** Failed attempts that consume
+input run at about four times the planned limit (G3 fails clearly), and syntax
+predicates are frequent. Pratt phases pass G2. G1 is marginal: it passes at 90.1%
+only under a definition of "decided" widened after the first run, fails at 86.8%
+under the plan's wording, and fails at 88.4% on the Mono corpus alone. Two
+declaration-level decisions cause most of the waste. Milestone 1 does not start;
+the findings go back to the design.
 
 ## What was counted
 
@@ -18,7 +20,16 @@ ordered choice and each Pratt prefix phase or infix round, the census counts how
 many alternatives or candidates the current engine actually runs after its
 existing first-character routes and two-token leads. The fast engine's tables
 would start from the same lookahead. An entry is **decided** when at most one
-alternative ran. A failed attempt **consumed input** when some match inside it
+alternative ran. The plan's G1 wording said exactly one; after the first run the
+definition was widened to include entries where lookahead excluded every
+alternative, which the spec's "at most one can begin" also describes. Both
+figures are shown below.
+
+For choices, the decided share is an **upper bound** on decisions settled by
+lookahead alone. Ordered choice stops at the first success and checks leads one
+candidate at a time, so an entry where the first viable alternative succeeded
+while later ones were still viable counts as decided. For Pratt phases the share
+is exact, because every viable candidate runs. A failed attempt **consumed input** when some match inside it
 (a literal, character class, whole lexical token, or replayed rule or memo
 result) passed the attempt's start; trivia, lookahead scans and syntax
 predicates do not count. Choices and repetitions inside lexical rules are
@@ -26,7 +37,7 @@ token-level and not counted. A census build with counting active produces
 identical trees, diagnostics and logical work on the 69-run comparison corpus.
 
 Thresholds, fixed by the [plan](../../superpowers/plans/2026-11-12-fast-strict-path-census.md)
-before measuring:
+before measuring (the meaning of "decided" was widened afterwards, as above):
 
 - **G1:** at least 90% of choice decisions decided.
 - **G2:** at least 90% of Pratt phases decided.
@@ -42,13 +53,22 @@ The 4 MiB generated valid input and the 29 Mono corpus files, 4.23 MB in all.
 | Measure | Value | Threshold | |
 |---|---:|---:|---|
 | Choice decisions | 1,035,277 | | |
-| Choices decided | 90.1% | ≥ 90% | G1 passes |
+| Choices with at most one attempt | 90.1% | ≥ 90% | G1 passes (marginal) |
+| Choices with exactly one attempt (plan wording) | 86.8% | ≥ 90% | fails |
 | Pratt phases | 2,958,339 | | |
 | Pratt phases decided | 97.3% | ≥ 90% | G2 passes |
 | Consumed failures per KB | 78.3 | ≤ 20 | **G3 fails** |
 | of which choices / Pratt / repetition exits | 35.0 / 32.5 / 10.8 | | |
 | Syntax predicates per KB | 37.8 | > 5 needs support | **support needed** |
 | Context-instance entries per KB | 0.0 | | |
+
+The generated file is 99.1% of the bytes, so it dominates the totals. The 29
+Mono files alone:
+
+| Source | Bytes | Choices, at most one | Choices, exactly one | Pratt decided | Consumed per KB | Predicates per KB |
+|---|---:|---:|---:|---:|---:|---:|
+| Generated 4 MiB file | 4,194,492 | 90.1% | 86.8% | 97.3% | 78.3 | 37.8 |
+| 29 Mono files | 36,822 | 88.4% | 84.1% | 93.6% | 70.1 | 40.3 |
 
 ### Where the waste is
 
@@ -98,8 +118,9 @@ JSON has no profiler language and is not covered.
 
 ## What this means for the design
 
-- **Most decisions are table-friendly.** Nine in ten choices and almost every
-  Pratt phase are already decided by two tokens of lookahead.
+- **Most decisions are close to table-friendly.** About nine in ten choices run
+  at most one alternative under today's lookahead (an upper bound on
+  lookahead-determined), and almost every Pratt phase is decided.
 - **The waste is concentrated, not spread.** A handful of declaration-level
   decisions with shared prefixes cause most consumed failures. A fast engine
   that only backtracks would repeat today's waste there.

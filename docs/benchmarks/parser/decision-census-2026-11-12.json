@@ -5,6 +5,7 @@
     "source_bytes": 4231314,
     "choice_entries": 1035277,
     "choice_single_share": 0.9010284204130875,
+    "choice_exactly_one_share": 0.86802179513309,
     "pratt_entries": 2958339,
     "pratt_single_share": 0.9729250096084323,
     "consumed_failures_per_kb": 78.26906724483221,
@@ -193,13 +194,402 @@
      }
     ]
    },
-   "files": 30
+   "files": 30,
+   "groups": {
+    "generated": {
+     "source_bytes": 4194492,
+     "choice_entries": 1031121,
+     "choice_single_share": 0.9010989010989011,
+     "choice_exactly_one_share": 0.8681318681318682,
+     "pratt_entries": 2946066,
+     "pratt_single_share": 0.9730769779088452,
+     "consumed_failures_per_kb": 78.34107205354069,
+     "predicates_per_kb": 37.81959770098501,
+     "contexts_per_kb": 0.0,
+     "top": [
+      {
+       "rule_name": "CSharp.Declarations.MemberDeclaration",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 45324,
+       "single": 11331,
+       "attempts": 135972,
+       "consumed_failures": 90648
+      },
+      {
+       "rule_name": "CSharp.Declarations.TypeDeclaration",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 22662,
+       "single": 0,
+       "attempts": 113310,
+       "consumed_failures": 101979
+      },
+      {
+       "rule_name": "CSharp.Expressions.Expression",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 317268,
+       "single": 283275,
+       "attempts": 351261,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Statements.StandardStatement",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 101979,
+       "single": 79317,
+       "attempts": 124641,
+       "consumed_failures": 22662
+      },
+      {
+       "rule_name": "CSharp.Attributes.Parameters",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 22662,
+       "single": 0,
+       "attempts": 45324,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeBase",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 147303,
+       "single": 135972,
+       "attempts": 169965,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Declarations.StandardClassMember",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 45324,
+       "single": 33993,
+       "attempts": 56655,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Declarations.ClassMember",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 56655,
+       "single": 33993,
+       "attempts": 56655,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.Queries.Binding",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 22662,
+       "consumed_failures": 11331
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 33995,
+       "single": 11331,
+       "attempts": 11331,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNamePrefix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 101981,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.BuiltinType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 79317,
+       "single": 79317,
+       "attempts": 79317,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeBase",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 147303,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeReference",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 271944,
+       "single": 271944,
+       "attempts": 271944,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeReference",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 271944,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.ReturnType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 45324,
+       "single": 45324,
+       "attempts": 45324,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.Literal",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 135972,
+       "single": 135972,
+       "attempts": 135972,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.ArgumentName",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.Argument",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 11331,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      }
+     ]
+    },
+    "corpus": {
+     "source_bytes": 36822,
+     "choice_entries": 4156,
+     "choice_single_share": 0.8835418671799807,
+     "choice_exactly_one_share": 0.8407122232916265,
+     "pratt_entries": 12273,
+     "pratt_single_share": 0.9364458567587387,
+     "consumed_failures_per_kb": 70.06680788658953,
+     "predicates_per_kb": 40.329151051002114,
+     "contexts_per_kb": 0.0,
+     "top": [
+      {
+       "rule_name": "CSharp.Declarations.TypeDeclaration",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 171,
+       "single": 16,
+       "attempts": 791,
+       "consumed_failures": 737
+      },
+      {
+       "rule_name": "CSharp.Expressions.Expression",
+       "kind": "pratt-infix",
+       "ordinal": 0,
+       "entries": 1811,
+       "single": 351,
+       "attempts": 875,
+       "consumed_failures": 262
+      },
+      {
+       "rule_name": "CSharp.Expressions.Expression",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 1233,
+       "single": 1048,
+       "attempts": 1513,
+       "consumed_failures": 242
+      },
+      {
+       "rule_name": "CSharp.Declarations.MemberDeclaration",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 142,
+       "single": 33,
+       "attempts": 388,
+       "consumed_failures": 246
+      },
+      {
+       "rule_name": "CSharp.Declarations.ClassMember",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 202,
+       "single": 26,
+       "attempts": 276,
+       "consumed_failures": 125
+      },
+      {
+       "rule_name": "CSharp.Declarations.StandardClassMember",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 151,
+       "single": 34,
+       "attempts": 268,
+       "consumed_failures": 117
+      },
+      {
+       "rule_name": "CSharp.Expressions.CastHead",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 36,
+       "single": 0,
+       "attempts": 207,
+       "consumed_failures": 176
+      },
+      {
+       "rule_name": "CSharp.Attributes.Parameters",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 91,
+       "single": 0,
+       "attempts": 182,
+       "consumed_failures": 53
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeBase",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 553,
+       "single": 496,
+       "attempts": 666,
+       "consumed_failures": 91
+      },
+      {
+       "rule_name": "CSharp.Statements.StandardStatement",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 358,
+       "single": 277,
+       "attempts": 439,
+       "consumed_failures": 81
+      },
+      {
+       "rule_name": "CSharp.Queries.Binding",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 38,
+       "single": 8,
+       "attempts": 68,
+       "consumed_failures": 30
+      },
+      {
+       "rule_name": "CSharp.Lambdas.LambdaSignature",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 31,
+       "single": 8,
+       "attempts": 54,
+       "consumed_failures": 51
+      },
+      {
+       "rule_name": "CSharp.Unsafe.PointerNonArrayType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 31,
+       "single": 20,
+       "attempts": 42,
+       "consumed_failures": 11
+      },
+      {
+       "rule_name": "CSharp.NullableValues.NullableElement",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 94,
+       "single": 84,
+       "attempts": 104,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.Expressions.TypeOperatorOperand",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 7,
+       "single": 0,
+       "attempts": 14,
+       "consumed_failures": 7
+      },
+      {
+       "rule_name": "CSharp.Declarations.InterfaceMember",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 5,
+       "single": 1,
+       "attempts": 13,
+       "consumed_failures": 8
+      },
+      {
+       "rule_name": "CSharp.ObjectInitializers.Initializer",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 47,
+       "single": 46,
+       "attempts": 48,
+       "consumed_failures": 1
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNameSuffix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 180,
+       "single": 21,
+       "attempts": 21,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.TypeNamePrefix",
+       "kind": "pratt-prefix",
+       "ordinal": 0,
+       "entries": 399,
+       "single": 0,
+       "attempts": 0,
+       "consumed_failures": 0
+      },
+      {
+       "rule_name": "CSharp.NamesTypes.BuiltinType",
+       "kind": "choice",
+       "ordinal": 0,
+       "entries": 252,
+       "single": 252,
+       "attempts": 252,
+       "consumed_failures": 0
+      }
+     ]
+    }
+   }
   },
   "portable": {
    "summary": {
     "source_bytes": 58,
     "choice_entries": 4,
     "choice_single_share": 1.0,
+    "choice_exactly_one_share": 1.0,
     "pratt_entries": 12,
     "pratt_single_share": 1.0,
     "consumed_failures_per_kb": 0.0,
@@ -242,6 +632,7 @@
     "source_bytes": 31,
     "choice_entries": 2,
     "choice_single_share": 1.0,
+    "choice_exactly_one_share": 1.0,
     "pratt_entries": 10,
     "pratt_single_share": 1.0,
     "consumed_failures_per_kb": 0.0,
@@ -284,6 +675,7 @@
     "source_bytes": 31,
     "choice_entries": 2,
     "choice_single_share": 1.0,
+    "choice_exactly_one_share": 1.0,
     "pratt_entries": 4,
     "pratt_single_share": 1.0,
     "consumed_failures_per_kb": 0.0,
@@ -326,6 +718,7 @@
     "source_bytes": 854,
     "choice_entries": 58,
     "choice_single_share": 0.7413793103448276,
+    "choice_exactly_one_share": 0.4827586206896552,
     "pratt_entries": 0,
     "pratt_single_share": 1.0,
     "consumed_failures_per_kb": 17.56440281030445,
@@ -359,6 +752,7 @@
     "source_bytes": 85,
     "choice_entries": 6,
     "choice_single_share": 1.0,
+    "choice_exactly_one_share": 1.0,
     "pratt_entries": 12,
     "pratt_single_share": 1.0,
     "consumed_failures_per_kb": 0.0,
@@ -401,6 +795,7 @@
     "source_bytes": 118,
     "choice_entries": 6,
     "choice_single_share": 0.5,
+    "choice_exactly_one_share": 0.5,
     "pratt_entries": 24,
     "pratt_single_share": 1.0,
     "consumed_failures_per_kb": 25.423728813559322,
@@ -443,6 +838,7 @@
     "source_bytes": 74,
     "choice_entries": 5,
     "choice_single_share": 1.0,
+    "choice_exactly_one_share": 1.0,
     "pratt_entries": 14,
     "pratt_single_share": 0.5,
     "consumed_failures_per_kb": 189.1891891891892,
@@ -476,6 +872,7 @@
     "source_bytes": 176,
     "choice_entries": 21,
     "choice_single_share": 1.0,
+    "choice_exactly_one_share": 1.0,
     "pratt_entries": 0,
     "pratt_single_share": 1.0,
     "consumed_failures_per_kb": 0.0,
@@ -509,6 +906,7 @@
     "source_bytes": 141,
     "choice_entries": 7,
     "choice_single_share": 1.0,
+    "choice_exactly_one_share": 1.0,
     "pratt_entries": 36,
     "pratt_single_share": 0.9444444444444444,
     "consumed_failures_per_kb": 0.0,
@@ -551,6 +949,7 @@
     "source_bytes": 149,
     "choice_entries": 7,
     "choice_single_share": 1.0,
+    "choice_exactly_one_share": 1.0,
     "pratt_entries": 40,
     "pratt_single_share": 0.95,
     "consumed_failures_per_kb": 0.0,
@@ -593,6 +992,7 @@
     "source_bytes": 60,
     "choice_entries": 11,
     "choice_single_share": 1.0,
+    "choice_exactly_one_share": 1.0,
     "pratt_entries": 30,
     "pratt_single_share": 1.0,
     "consumed_failures_per_kb": 0.0,
@@ -635,6 +1035,7 @@
     "source_bytes": 92,
     "choice_entries": 13,
     "choice_single_share": 1.0,
+    "choice_exactly_one_share": 1.0,
     "pratt_entries": 0,
     "pratt_single_share": 1.0,
     "consumed_failures_per_kb": 0.0,

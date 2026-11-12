@@ -265,6 +265,7 @@ fn parse_with_spill<'a, 'g>(
     index: Index,
     mut seed: Option<&mut Option<Seed<'a, 'g>>>,
 ) -> Result<BorrowedParseSnapshot<'g>, Diagnostic> {
+    let census_before = super::census::Checkpoint::take();
     let result = parse_source(
         language,
         text.clone(),
@@ -280,6 +281,8 @@ fn parse_with_spill<'a, 'g>(
         .is_err_and(|e| e.message == crate::parser::STACK_EXHAUSTED)
         && limits.parser_spill_stack_bytes > limits.parser_stack_bytes
     {
+        // The spill thread parses again from scratch: count it once.
+        census_before.restore();
         let cancellation = crate::cancellation::Context::capture();
         let census = super::census::Scope::capture();
         std::thread::scope(|scope| {

@@ -3,7 +3,7 @@ import sys
 import unittest
 
 sys.path.insert(0, str(pathlib.Path(__file__).resolve().parent))
-from parser_census import aggregate, verdict  # noqa: E402
+from parser_census import aggregate, split_sources, verdict  # noqa: E402
 
 
 def decision(kind, entries, single, attempts=None, consumed=0, name="R", empty=0):
@@ -23,8 +23,9 @@ def decision(kind, entries, single, attempts=None, consumed=0, name="R", empty=0
     }
 
 
-def report(source_bytes, decisions, predicates=0, repeat_consumed=0):
+def report(source_bytes, decisions, predicates=0, repeat_consumed=0, path="target/parser-compare/4m-valid.cs"):
     return {
+        "path": path,
         "source_bytes": source_bytes,
         "decisions": decisions,
         "predicate_evaluations": predicates,
@@ -55,6 +56,19 @@ class AggregateTest(unittest.TestCase):
         ])])
         self.assertAlmostEqual(summary["choice_single_share"], 0.9)
         self.assertAlmostEqual(summary["pratt_single_share"], 1.0)
+
+    def test_exactly_one_share_excludes_zero_attempt_entries(self):
+        summary = aggregate([report(1000, [decision("choice", 10, 6, empty=3)])])
+        self.assertAlmostEqual(summary["choice_exactly_one_share"], 0.6)
+        self.assertAlmostEqual(summary["choice_single_share"], 0.9)
+
+    def test_split_sources_separates_generated_input_and_corpus(self):
+        generated = report(4000, [decision("choice", 10, 10)])
+        corpus = report(1000, [decision("choice", 10, 5)], path="languages/csharp4/corpus/Mono2004/Boolean.cs")
+        groups = split_sources([generated, corpus])
+        self.assertEqual(sorted(groups), ["corpus", "generated"])
+        self.assertEqual(groups["generated"]["source_bytes"], 4000)
+        self.assertAlmostEqual(groups["corpus"]["choice_single_share"], 0.5)
 
     def test_top_ranks_by_extra_attempts(self):
         summary = aggregate([report(1000, [

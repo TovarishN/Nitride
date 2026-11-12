@@ -1783,6 +1783,36 @@ mod census {
         let census = counted(leads_decide(), "a y", Limits::default());
         assert_eq!(only(&census, DecisionKind::Choice).entries, 1);
     }
+    /// `Root = "(" Root ")" / "d"`: one choice entry per nesting level.
+    fn nested() -> &'static Language<'static> {
+        language(vec![rule(
+            "Root",
+            Expr::Choice(&[
+                Expr::Sequence(&[Expr::Literal("("), Expr::Ref(0), Expr::Literal(")")]),
+                Expr::Literal("d"),
+            ]),
+        )])
+    }
+    #[test]
+    fn census_counts_a_spilled_parse_once() {
+        // A small first stack runs out partway through the nesting, after
+        // some decisions; the whole parse then reruns on a spill thread.
+        let depth = 400;
+        let source = format!("{}d{}", "(".repeat(depth), ")".repeat(depth));
+        let census = counted(
+            nested(),
+            &source,
+            Limits {
+                parser_stack_bytes: 32 * 1024,
+                parser_spill_stack_bytes: 64 << 20,
+                ..Limits::default()
+            },
+        );
+        assert_eq!(
+            only(&census, DecisionKind::Choice).entries,
+            depth as u64 + 1
+        );
+    }
     #[test]
     fn census_counts_on_spill_threads() {
         let spilled = counted(

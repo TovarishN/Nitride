@@ -57,6 +57,9 @@ def aggregate(reports):
         return entries, (decided / entries if entries else 1.0)
 
     choice_entries, choice_share = share({"choice"})
+    choices = [d for d in decisions if d["kind"] == "choice"]
+    # The plan's original wording: exactly one alternative ran.
+    exactly_one = (sum(d["single"] for d in choices) / choice_entries) if choice_entries else 1.0
     pratt_entries, pratt_share = share({"pratt-prefix", "pratt-infix"})
     consumed = sum(d["consumed_failures"] for d in decisions) + sum(
         r["repeat_consumed_exits"] for r in reports)
@@ -72,6 +75,7 @@ def aggregate(reports):
         "source_bytes": source,
         "choice_entries": choice_entries,
         "choice_single_share": choice_share,
+        "choice_exactly_one_share": exactly_one,
         "pratt_entries": pratt_entries,
         "pratt_single_share": pratt_share,
         "consumed_failures_per_kb": consumed / kb,
@@ -79,6 +83,15 @@ def aggregate(reports):
         "contexts_per_kb": sum(r["context_entries"] for r in reports) / kb,
         "top": top,
     }
+
+
+def split_sources(reports):
+    """Summaries of the generated inputs and of the checked-in corpus files."""
+    groups = {}
+    for report in reports:
+        group = "corpus" if "/corpus/" in report.get("path", "") else "generated"
+        groups.setdefault(group, []).append(report)
+    return {group: aggregate(members) for group, members in groups.items()}
 
 
 def verdict(summary):
@@ -128,6 +141,11 @@ def main():
         summary = aggregate(good)
         result["languages"][language] = {"summary": summary, "files": len(good)}
         describe(language, summary)
+        if language == "csharp4":
+            groups = split_sources(good)
+            result["languages"][language]["groups"] = groups
+            for group, group_summary in sorted(groups.items()):
+                describe(f"  {language} {group}", group_summary)
     csharp_summary = result["languages"]["csharp4"]["summary"]
     result["verdict"] = verdict(csharp_summary)
     result["thresholds"] = {"g1_choice_single": G1_CHOICE_SINGLE, "g2_pratt_single": G2_PRATT_SINGLE,

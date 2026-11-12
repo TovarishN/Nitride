@@ -57,7 +57,7 @@ mod enabled {
         pub repeat_consumed_exits: u64,
     }
 
-    #[derive(Default)]
+    #[derive(Clone, Default)]
     struct State {
         rules: Vec<u16>,
         ordinals: HashMap<(u16, usize), u32>,
@@ -98,6 +98,26 @@ mod enabled {
             context_entries: state.contexts,
             repeat_exits: state.repeat_exits,
             repeat_consumed_exits: state.repeat_consumed,
+        }
+    }
+
+    /// The census as it stood before an attempt that may be rerun from
+    /// scratch, such as a parse that exhausts its stack and starts again on a
+    /// spill thread: restoring it drops the aborted attempt's counts.
+    pub(crate) struct Checkpoint(Option<(Session, State)>);
+    impl Checkpoint {
+        pub(crate) fn take() -> Self {
+            Self(SESSION.with(|s| {
+                s.borrow().as_ref().map(|session| {
+                    let state = session.lock().unwrap_or_else(|e| e.into_inner()).clone();
+                    (session.clone(), state)
+                })
+            }))
+        }
+        pub(crate) fn restore(self) {
+            if let Some((session, state)) = self.0 {
+                *session.lock().unwrap_or_else(|e| e.into_inner()) = state;
+            }
         }
     }
 
@@ -221,12 +241,21 @@ mod enabled {
 pub use enabled::{Census, DecisionStats, census_begin, census_take};
 #[cfg(feature = "census")]
 pub(crate) use enabled::{
-    Decision, RuleGuard, Scope, active, context_rule, decision, predicate, repeat_exit,
+    Checkpoint, Decision, RuleGuard, Scope, active, context_rule, decision, predicate, repeat_exit,
 };
 
 #[cfg(not(feature = "census"))]
 mod disabled {
     use super::DecisionKind;
+    pub(crate) struct Checkpoint;
+    impl Checkpoint {
+        #[inline(always)]
+        pub(crate) fn take() -> Self {
+            Self
+        }
+        #[inline(always)]
+        pub(crate) fn restore(self) {}
+    }
     pub(crate) struct Scope;
     impl Scope {
         #[inline(always)]
@@ -275,5 +304,5 @@ mod disabled {
 }
 #[cfg(not(feature = "census"))]
 pub(crate) use disabled::{
-    Decision, RuleGuard, Scope, active, context_rule, decision, predicate, repeat_exit,
+    Checkpoint, Decision, RuleGuard, Scope, active, context_rule, decision, predicate, repeat_exit,
 };
