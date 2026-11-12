@@ -281,14 +281,17 @@ fn parse_with_spill<'a, 'g>(
         && limits.parser_spill_stack_bytes > limits.parser_stack_bytes
     {
         let cancellation = crate::cancellation::Context::capture();
+        let census = super::census::Scope::capture();
         std::thread::scope(|scope| {
             let budget = limits.parser_spill_stack_bytes - limits.parser_spill_stack_bytes / 8;
             std::thread::Builder::new()
                 .name("nitride-shared-parse".into())
                 .stack_size(limits.parser_spill_stack_bytes)
                 .spawn_scoped(scope, move || {
-                    cancellation.run(|| {
-                        parse_source(language, text, limits, options, budget, base, index, seed)
+                    census.run(|| {
+                        cancellation.run(|| {
+                            parse_source(language, text, limits, options, budget, base, index, seed)
+                        })
                     })
                 })
                 .map_err(|_| Diagnostic::new("limit", [0, 0], "cannot start a deep-parse thread"))?

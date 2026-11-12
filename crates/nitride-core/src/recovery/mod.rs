@@ -62,12 +62,15 @@ pub(crate) fn recover_after_strict<'g>(
                 ..limits
             };
             let cancellation = crate::cancellation::Context::capture();
+            let census = crate::parser::shared::census::Scope::capture();
             std::thread::scope(|scope| {
                 std::thread::Builder::new()
                     .name("nitride-recovery".into())
                     .stack_size(limits.parser_spill_stack_bytes)
                     .spawn_scoped(scope, || {
-                        cancellation.run(|| search::recover(language, source, spill, options))
+                        census.run(|| {
+                            cancellation.run(|| search::recover(language, source, spill, options))
+                        })
                     })
                     .map(|thread| {
                         thread.join().unwrap_or_else(|_| {

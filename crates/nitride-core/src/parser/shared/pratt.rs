@@ -114,6 +114,8 @@ impl<'a, 'g> Parser<'a, 'g> {
         let dispatch = std::sync::Arc::clone(&self.dispatch);
         let mut prefix_peek = None;
         let mut prefix_leads = None;
+        let mut decision =
+            census::decision(census::DecisionKind::PrattPrefix, 0, prefixes.len() as u32);
         for id in prefixes.iter().filter(|_| hole.is_none()) {
             self.restore(prefix_mark);
             let rule =
@@ -149,12 +151,18 @@ impl<'a, 'g> Parser<'a, 'g> {
                     continue;
                 }
             }
-            if let Some(node) = self.rule(*id, power, depth + 1)? {
+            let node = self.counted(
+                &mut decision,
+                |p| p.rule(*id, power, depth + 1),
+                Option::is_none,
+            )?;
+            if let Some(node) = node {
                 if self.position > prefix_mark.position {
                     self.consider(prefix_mark, node, rule.precedence, &mut winner);
                 }
             }
         }
+        decision.finish(winner.is_some());
         let left = if let Some(length) = hole {
             let start = self.position;
             self.position += length;
@@ -172,6 +180,8 @@ impl<'a, 'g> Parser<'a, 'g> {
             let mut winner = None;
             let mut infix_peek = None;
             let mut infix_leads = None;
+            let mut decision =
+                census::decision(census::DecisionKind::PrattInfix, 0, infixes.len() as u32);
             for id in infixes {
                 self.restore(infix_mark);
                 let rule = self.language.rules.get(*id as usize).ok_or_else(|| {
@@ -239,28 +249,31 @@ impl<'a, 'g> Parser<'a, 'g> {
                     .compiled
                     .filter(|_| self.optimize_recognition)
                     .and_then(|p| p.tails.get(*id as usize).copied().flatten());
-                let matched = if let Some(tail) = compiled {
-                    self.stats.native_syntax_tails += 1;
-                    tail(
-                        &mut SyntaxContext::new(self, &mut children),
-                        power,
-                        depth + 1,
-                    )?
-                } else {
-                    let mut matched = true;
-                    for (index, part) in parts.iter().enumerate().skip(1) {
-                        let owner = if index + 1 == parts.len() {
-                            rule.owner
-                        } else {
-                            None
-                        };
-                        if !self.expression(part, false, owner, power, depth + 1, &mut children)? {
-                            matched = false;
-                            break;
+                let matched = self.counted(
+                    &mut decision,
+                    |p| {
+                        if let Some(tail) = compiled {
+                            p.stats.native_syntax_tails += 1;
+                            return tail(
+                                &mut SyntaxContext::new(p, &mut children),
+                                power,
+                                depth + 1,
+                            );
                         }
-                    }
-                    matched
-                };
+                        for (index, part) in parts.iter().enumerate().skip(1) {
+                            let owner = if index + 1 == parts.len() {
+                                rule.owner
+                            } else {
+                                None
+                            };
+                            if !p.expression(part, false, owner, power, depth + 1, &mut children)? {
+                                return Ok(false);
+                            }
+                        }
+                        Ok(true)
+                    },
+                    |matched| !*matched,
+                )?;
                 if matched {
                     if self.position == mark.position {
                         return Err(Diagnostic::new(
@@ -275,6 +288,7 @@ impl<'a, 'g> Parser<'a, 'g> {
                 Self::recycle(&mut self.edge_buffers, children);
                 self.restore(mark);
             }
+            decision.finish(winner.is_some());
             if let Some(node) = self.accept_winner(infix_mark, winner)? {
                 self.arena.commit(prefix_mark.trail, node.node);
                 left = node;
@@ -299,6 +313,11 @@ impl<'a, 'g> Parser<'a, 'g> {
         let (at, character) = self.dispatch_peek(true)?;
         let mut peek = Peek::new(at, character);
         let mut attempted = 0;
+        let mut decision = census::decision(
+            census::DecisionKind::PrattPrefix,
+            0,
+            plan.prefixes.len() as u32,
+        );
         for index in plan.prefix_candidates(character) {
             let prefix = &plan.prefixes[index];
             if let Some(lead) = dispatch.lead(prefix.id) {
@@ -311,12 +330,18 @@ impl<'a, 'g> Parser<'a, 'g> {
                 self.restore(prefix_mark);
             }
             attempted += 1;
-            if let Some(node) = self.rule(prefix.id, prefix.power, depth + 1)? {
+            let node = self.counted(
+                &mut decision,
+                |p| p.rule(prefix.id, prefix.power, depth + 1),
+                Option::is_none,
+            )?;
+            if let Some(node) = node {
                 if self.position > prefix_mark.position {
                     self.consider(prefix_mark, node, prefix.precedence, &mut winner);
                 }
             }
         }
+        decision.finish(winner.is_some());
         self.skip_alternatives(plan.prefixes.len() - attempted, at, depth + 1)?;
         let left = self
             .accept_winner(prefix_mark, winner)?
@@ -335,6 +360,11 @@ impl<'a, 'g> Parser<'a, 'g> {
             let mut peek = Peek::new(at, character);
             let (candidates, excluded) = plan.infix_candidates(character, minimum);
             self.skip_alternatives(excluded as usize, at, depth + 1)?;
+            let mut decision = census::decision(
+                census::DecisionKind::PrattInfix,
+                0,
+                plan.infixes.len() as u32,
+            );
             for index in candidates {
                 let infix = &plan.infixes[index];
                 if let Some(lead) = dispatch.tail_lead(infix.id) {
@@ -354,35 +384,38 @@ impl<'a, 'g> Parser<'a, 'g> {
                 let compiled = self
                     .compiled
                     .and_then(|p| p.tails.get(infix.id as usize).copied().flatten());
-                let matched = if let Some(tail) = compiled {
-                    self.stats.native_syntax_tails += 1;
-                    tail(
-                        &mut SyntaxContext::new(self, &mut children),
-                        infix.power,
-                        depth + 1,
-                    )?
-                } else {
-                    let mut matched = true;
-                    for (index, part) in infix.parts.iter().enumerate().skip(1) {
-                        let owner = if index + 1 == infix.parts.len() {
-                            infix.owner
-                        } else {
-                            None
-                        };
-                        if !self.expression(
-                            part,
-                            false,
-                            owner,
-                            infix.power,
-                            depth + 1,
-                            &mut children,
-                        )? {
-                            matched = false;
-                            break;
+                let matched = self.counted(
+                    &mut decision,
+                    |p| {
+                        if let Some(tail) = compiled {
+                            p.stats.native_syntax_tails += 1;
+                            return tail(
+                                &mut SyntaxContext::new(p, &mut children),
+                                infix.power,
+                                depth + 1,
+                            );
                         }
-                    }
-                    matched
-                };
+                        for (index, part) in infix.parts.iter().enumerate().skip(1) {
+                            let owner = if index + 1 == infix.parts.len() {
+                                infix.owner
+                            } else {
+                                None
+                            };
+                            if !p.expression(
+                                part,
+                                false,
+                                owner,
+                                infix.power,
+                                depth + 1,
+                                &mut children,
+                            )? {
+                                return Ok(false);
+                            }
+                        }
+                        Ok(true)
+                    },
+                    |matched| !*matched,
+                )?;
                 if matched {
                     if self.position == mark.position {
                         return Err(Diagnostic::new(
@@ -397,6 +430,7 @@ impl<'a, 'g> Parser<'a, 'g> {
                 Self::recycle(&mut self.edge_buffers, children);
                 self.restore(mark);
             }
+            decision.finish(winner.is_some());
             if let Some(node) = self.accept_winner(infix_mark, winner)? {
                 self.arena.commit(prefix_mark.trail, node.node);
                 left = node;

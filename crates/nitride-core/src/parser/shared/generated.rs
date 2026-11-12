@@ -28,6 +28,8 @@ pub struct SyntaxMark {
     mark: Mark,
     len: usize,
     checkpoint: bool,
+    /// The enclosing failure reach, while a census reads the iteration's own.
+    census_furthest: Option<usize>,
 }
 /// Borrowed access to the current parser and child buffer. This is a concrete
 /// context so generated primitive calls can inline without virtual dispatch.
@@ -224,6 +226,8 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
             mark: self.parser.mark(),
             len: self.children.len(),
             checkpoint: self.parser.checkpoint_next,
+            census_furthest: super::census::active()
+                .then(|| std::mem::replace(&mut self.parser.furthest, 0)),
         };
         if checkpoint {
             self.parser.checkpoint_next = true;
@@ -238,7 +242,15 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
         require_progress: bool,
     ) -> Result<bool, Diagnostic> {
         self.parser.checkpoint_next = mark.checkpoint;
+        let consumed = mark.census_furthest.map(|saved| {
+            let local = std::mem::replace(&mut self.parser.furthest, saved);
+            self.parser.furthest = self.parser.furthest.max(local);
+            local > mark.mark.position
+        });
         if !result? {
+            if let Some(consumed) = consumed {
+                super::census::repeat_exit(consumed);
+            }
             self.parser.restore(mark.mark);
             self.children.truncate(mark.len);
             return Ok(false);

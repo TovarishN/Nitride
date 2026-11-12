@@ -994,6 +994,33 @@ impl<'a, 'g> Parser<'a, 'g> {
         }
         false
     }
+    /// Runs one alternative or candidate of a census `decision`. With a census
+    /// active, the attempt's own failure reach is read locally and merged back,
+    /// so the parser ends exactly as without the census; a failed attempt
+    /// counts as consuming input when it recorded a failure past its start.
+    #[inline(always)]
+    pub(super) fn counted<T>(
+        &mut self,
+        decision: &mut census::Decision,
+        attempt: impl FnOnce(&mut Self) -> Result<T, Diagnostic>,
+        failed: impl FnOnce(&T) -> bool,
+    ) -> Result<T, Diagnostic> {
+        if !decision.active() {
+            return attempt(self);
+        }
+        decision.attempted();
+        let start = self.position;
+        let saved = std::mem::replace(&mut self.furthest, 0);
+        let result = attempt(self);
+        let local = std::mem::replace(&mut self.furthest, saved);
+        self.furthest = self.furthest.max(local);
+        if let Ok(value) = &result {
+            if failed(value) {
+                decision.failed(local > start);
+            }
+        }
+        result
+    }
     pub(super) fn match_rule(
         &mut self,
         id: u16,
@@ -1006,6 +1033,10 @@ impl<'a, 'g> Parser<'a, 'g> {
             .rules
             .get(id as usize)
             .ok_or_else(|| Diagnostic::new("grammar", [0, 0], "invalid rule identity"))?;
+        let _census_rule = census::RuleGuard::enter(id);
+        if rule.origin.is_some() {
+            census::context_rule();
+        }
         let mark = self.mark();
         if !rule.lexical {
             self.trivia()?;
@@ -1164,6 +1195,9 @@ impl<'a, 'g> Parser<'a, 'g> {
                 }
             }
             Expr::Predicate { positive, inner } => {
+                if !lexical {
+                    census::predicate();
+                }
                 let mark = self.mark();
                 let furthest = self.furthest;
                 let len = out.len();
@@ -1260,9 +1294,18 @@ impl<'a, 'g> Parser<'a, 'g> {
                     if *max > 1 && !lexical {
                         self.checkpoint_next = true;
                     }
+                    let census = census::active().then(|| std::mem::replace(&mut self.furthest, 0));
                     let matched = self.expression(inner, lexical, None, 0, depth + 1, out);
+                    let consumed = census.map(|saved| {
+                        let local = std::mem::replace(&mut self.furthest, saved);
+                        self.furthest = self.furthest.max(local);
+                        local > mark.position
+                    });
                     self.checkpoint_next = saved_checkpoint;
                     if !matched? {
+                        if let Some(consumed) = consumed {
+                            census::repeat_exit(consumed);
+                        }
                         self.restore(mark);
                         out.truncate(len);
                         break;

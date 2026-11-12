@@ -1559,3 +1559,185 @@ fn memoized_pratt_replays_its_own_depth() {
     // Both the rejecting and the accepting side of the limit are exercised.
     assert!(accepted > 0 && accepted < 96);
 }
+#[cfg(feature = "census")]
+mod census {
+    use super::*;
+    use crate::{Census, DecisionKind, DecisionStats, census_begin, census_take};
+
+    fn rule(name: &'static str, expr: Expr<'static>) -> Rule<'static> {
+        Rule {
+            name,
+            expr,
+            owner: None,
+            lexical: false,
+            except: &[],
+            precedence: 0,
+            right_associative: false,
+            transparent: false,
+            alias: false,
+            origin: None,
+            action: Action::None,
+        }
+    }
+    fn language(rules: Vec<Rule<'static>>) -> &'static Language<'static> {
+        let template = prefix_fact_fixture(false);
+        Box::leak(Box::new(Language {
+            trivia: crate::TriviaPolicy::Nitrogen,
+            rules: Box::leak(rules.into_boxed_slice()),
+            ..*template
+        }))
+    }
+    /// `Root = "a" "x" / "a" "y" / "b"`: leads decide every input.
+    fn leads_decide() -> &'static Language<'static> {
+        language(vec![rule(
+            "Root",
+            Expr::Choice(&[
+                Expr::Sequence(&[Expr::Literal("a"), Expr::Literal("x")]),
+                Expr::Sequence(&[Expr::Literal("a"), Expr::Literal("y")]),
+                Expr::Literal("b"),
+            ]),
+        )])
+    }
+    /// `Root = "a" "b" "c" / "a" "b" "d"`: both alternatives share their lead.
+    fn shared_leads() -> &'static Language<'static> {
+        language(vec![rule(
+            "Root",
+            Expr::Choice(&[
+                Expr::Sequence(&[Expr::Literal("a"), Expr::Literal("b"), Expr::Literal("c")]),
+                Expr::Sequence(&[Expr::Literal("a"), Expr::Literal("b"), Expr::Literal("d")]),
+            ]),
+        )])
+    }
+    /// `Root = ("a" / "b") ("c" / "d")`.
+    fn two_choices() -> &'static Language<'static> {
+        language(vec![rule(
+            "Root",
+            Expr::Sequence(&[
+                Expr::Choice(&[Expr::Literal("a"), Expr::Literal("b")]),
+                Expr::Choice(&[Expr::Literal("c"), Expr::Literal("d")]),
+            ]),
+        )])
+    }
+    fn counted(language: &'static Language<'static>, source: &str, limits: Limits) -> Census {
+        census_begin();
+        parse_snapshot(language, source, limits, strict()).unwrap();
+        census_take()
+    }
+    fn only(census: &Census, kind: DecisionKind) -> &DecisionStats {
+        let mut found = census.decisions.iter().filter(|d| d.kind == kind);
+        let first = found.next().expect("one decision of this kind");
+        assert!(found.next().is_none(), "exactly one decision of this kind");
+        first
+    }
+
+    #[test]
+    fn census_counts_one_attempt_when_leads_decide() {
+        for source in ["a y", "b"] {
+            let census = counted(leads_decide(), source, Limits::default());
+            let choice = only(&census, DecisionKind::Choice);
+            assert_eq!(
+                (
+                    choice.entries,
+                    choice.single,
+                    choice.attempts,
+                    choice.failed_attempts
+                ),
+                (1, 1, 1, 0),
+                "{source}"
+            );
+        }
+    }
+    #[test]
+    fn census_counts_backtracking_past_shared_leads() {
+        let census = counted(shared_leads(), "a b d", Limits::default());
+        let choice = only(&census, DecisionKind::Choice);
+        assert_eq!(
+            (
+                choice.entries,
+                choice.single,
+                choice.attempts,
+                choice.failed_attempts,
+                choice.consumed_failures
+            ),
+            (1, 0, 2, 1, 1)
+        );
+    }
+    #[test]
+    fn census_counts_pratt_phases() {
+        let census = counted(prefix_fact_fixture(true), "1+2", Limits::default());
+        let prefix = census
+            .decisions
+            .iter()
+            .find(|d| d.kind == DecisionKind::PrattPrefix && d.rule == 0)
+            .expect("prefix phase");
+        let infix = census
+            .decisions
+            .iter()
+            .find(|d| d.kind == DecisionKind::PrattInfix && d.rule == 0)
+            .expect("infix phase");
+        assert!(prefix.attempts >= 1 && infix.attempts >= 1);
+        let keys: Vec<_> = census
+            .decisions
+            .iter()
+            .map(|d| (d.rule, d.kind as u8, d.ordinal))
+            .collect();
+        let mut sorted = keys.clone();
+        sorted.sort();
+        assert_eq!(keys, sorted);
+    }
+    #[test]
+    fn census_keys_choices_by_rule_and_ordinal() {
+        let census = counted(two_choices(), "b d", Limits::default());
+        let ordinals: Vec<_> = census
+            .decisions
+            .iter()
+            .filter(|d| d.kind == DecisionKind::Choice && d.rule == 0)
+            .map(|d| d.ordinal)
+            .collect();
+        assert_eq!(ordinals, [0, 1]);
+    }
+    #[test]
+    fn census_does_not_change_results() {
+        for (language, source) in [
+            (leads_decide(), "a y"),
+            (shared_leads(), "a b d"),
+            (two_choices(), "b d"),
+            (prefix_fact_fixture(true), "1+2"),
+        ] {
+            let plain = parse_snapshot(language, source, Limits::default(), strict()).unwrap();
+            census_begin();
+            let counted = parse_snapshot(language, source, Limits::default(), strict()).unwrap();
+            census_take();
+            assert_eq!(shape(&plain), shape(&counted), "{source}");
+            assert_eq!(plain.diagnostics(), counted.diagnostics(), "{source}");
+            assert_eq!(plain.stats().work, counted.stats().work, "{source}");
+        }
+    }
+    #[test]
+    fn census_take_resets() {
+        counted(leads_decide(), "a y", Limits::default());
+        let census = counted(leads_decide(), "a y", Limits::default());
+        assert_eq!(only(&census, DecisionKind::Choice).entries, 1);
+    }
+    #[test]
+    fn census_counts_on_spill_threads() {
+        let spilled = counted(
+            leads_decide(),
+            "a y",
+            Limits {
+                parser_stack_bytes: 1,
+                parser_spill_stack_bytes: 8 << 20,
+                ..Limits::default()
+            },
+        );
+        let direct = counted(leads_decide(), "a y", Limits::default());
+        let key = |c: &Census| {
+            c.decisions
+                .iter()
+                .map(|d| (d.rule, d.ordinal, d.entries, d.single, d.attempts))
+                .collect::<Vec<_>>()
+        };
+        assert!(!key(&direct).is_empty());
+        assert_eq!(key(&spilled), key(&direct));
+    }
+}

@@ -5,6 +5,7 @@ use crate::syntax::{arena::ArenaBuilder, text::Reader};
 use crate::*;
 use std::collections::HashMap;
 
+pub(crate) mod census;
 mod children;
 pub(crate) mod dispatch;
 mod facts;
