@@ -41,6 +41,11 @@ the original review suggestions and records remaining scope.
   fast paths, first-token rejection at rule entry and pass-through rule bodies run
   in place at generated references. Cold CSharp4 parses run 14–15% faster on valid
   input and 3–12% faster in recovery, with identical trees and diagnostics. [Results and limits](docs/benchmarks/parser/kept-path-2026-11-12.md).
+- Recognition facts for the outer four list levels only, and memoized Pratt
+  results that record their own depth: a valid input could otherwise fail the
+  frame limit on replay. 11% less retained memory, a 14% lower parse peak and
+  faster large-file edits, with identical trees and diagnostics.
+  [Results and limits](docs/benchmarks/parser/fact-levels-2026-11-12.md).
 
 ## [0.4.0](https://github.com/TovarishN/Nitride/releases/tag/v0.4.0) — 2026-11-09
 
