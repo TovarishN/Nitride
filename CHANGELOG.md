@@ -37,6 +37,10 @@ the original review suggestions and records remaining scope.
   [Documentation index](docs/README.md), [migration map](docs/archive/layout-manifest.json).
 - Investigated the reported macOS CI cancellations: GitHub runner-acquisition
   failures, followed by a passing `main` checkpoint. [CI evidence](docs/testing/macos-runner-capacity.md).
+- Lower per-rule cost in the shared parser: a boxed child-buffer pool, cold-parse
+  fast paths, first-token rejection at rule entry and pass-through rule bodies run
+  in place at generated references. Cold CSharp4 parses run 14–15% faster on valid
+  input and 3–12% faster in recovery, with identical trees and diagnostics. [Results and limits](docs/benchmarks/parser/kept-path-2026-11-12.md).
 
 ## [0.4.0](https://github.com/TovarishN/Nitride/releases/tag/v0.4.0) — 2026-11-09
 

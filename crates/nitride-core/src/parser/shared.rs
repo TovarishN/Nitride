@@ -199,7 +199,10 @@ struct Parser<'a, 'g> {
     cancellation: crate::cancellation::Poll,
     work_budget: u64,
     arena: ArenaBuilder<'g>,
-    edge_buffers: Vec<Children>,
+    /// Boxed so that taking, returning and recycling a buffer moves a pointer
+    /// rather than the whole buffer, once per rule attempt.
+    #[allow(clippy::vec_box)]
+    edge_buffers: Vec<Box<Children>>,
     in_token: u32,
     memo: [FastMap<MemoKey, Memo>; 2],
     memo_capacity: usize,

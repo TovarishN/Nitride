@@ -171,7 +171,8 @@ impl<'a, 'g> Parser<'a, 'g> {
         self.arena.trim_dead_ids();
         debug_assert!(self.arena.cache_only_bytes() + self.memo_storage_bound() <= budget);
     }
-    pub(super) fn recycle(pool: &mut Vec<Children>, mut buffer: Children) {
+    #[allow(clippy::vec_box)] // See `Parser::edge_buffers`.
+    pub(super) fn recycle(pool: &mut Vec<Box<Children>>, mut buffer: Box<Children>) {
         if buffer.allocated() {
             buffer.clear();
             pool.push(buffer);
@@ -182,6 +183,10 @@ impl<'a, 'g> Parser<'a, 'g> {
         rule: u16,
         start: u32,
     ) -> Result<Option<PriorNode>, Diagnostic> {
+        // Without prior nodes there is no scope to search: a cold parse.
+        if self.prior_nodes.is_empty() {
+            return Ok(None);
+        }
         // Nodes record their context origin; prior nodes are construction hints only.
         let rule = self.language.node_rule(rule);
         let approximate = self.reusable.construction_position(start).unwrap_or(start);
@@ -303,7 +308,11 @@ impl<'a, 'g> Parser<'a, 'g> {
         }
         Ok(result)
     }
-    pub(super) fn child_buffer(&mut self, rule: u16, start: usize) -> Result<Children, Diagnostic> {
+    pub(super) fn child_buffer(
+        &mut self,
+        rule: u16,
+        start: usize,
+    ) -> Result<Box<Children>, Diagnostic> {
         let prior = self.find_prior(rule, start as u32)?.and_then(|p| {
             self.arena
                 .sequence(p.node)
@@ -959,6 +968,25 @@ impl<'a, 'g> Parser<'a, 'g> {
         };
         Diagnostic::new("limit", [self.position as u32; 2], message)
     }
+    /// Whether syntax rule `id`, entered at the current trivia-skipped
+    /// position, fails at its first step because its first-token set
+    /// excludes the next character. A rejection records the furthest
+    /// position that step would and observes the character decided on; the
+    /// caller then restores its mark as for any failed attempt.
+    #[inline]
+    pub(super) fn entry_rejects(&mut self, id: u16, rule: &Rule) -> bool {
+        if self.optimize_recognition
+            && !matches!(rule.expr, Expr::Pratt { .. })
+            && !self
+                .dispatch
+                .start(id)
+                .allows(self.source.character(self.position))
+        {
+            self.furthest = self.furthest.max(self.position);
+            return true;
+        }
+        false
+    }
     pub(super) fn match_rule(
         &mut self,
         id: u16,
@@ -974,6 +1002,10 @@ impl<'a, 'g> Parser<'a, 'g> {
         let mark = self.mark();
         if !rule.lexical {
             self.trivia()?;
+            if self.entry_rejects(id, rule) {
+                self.restore(mark);
+                return Ok(None);
+            }
         }
         let start = self.position;
         let prior = self.find_prior(id, start as u32)?;

@@ -58,6 +58,7 @@ are separate claims; see [current status](project/status.md) for remaining limit
 - [Cancellation](benchmarks/reports/benchmark-2026-11-09-cancellation.md), [polling](benchmarks/reports/benchmark-2026-11-09-polling.md) and [active polling](benchmarks/reports/benchmark-2026-11-09-active-polling.md).
 - [Storage baseline](benchmarks/reports/benchmark-2026-11-07.md), [materialization](benchmarks/reports/benchmark-2026-11-08-materialization.md) and [arena reader](benchmarks/reports/benchmark-2026-11-08-arena-reader.md).
 - [C# parser assessment](benchmarks/compiler/compiler-assessment-2026-10-30.md) and [strict JSON comparison](benchmarks/json/json-comparison.md).
+- [Shared-parser per-rule cost](benchmarks/parser/kept-path-2026-11-12.md): boxed child buffers, cold-parse fast paths, first-token rejection and in-place pass-through rules.
 
 ## Historical records
 

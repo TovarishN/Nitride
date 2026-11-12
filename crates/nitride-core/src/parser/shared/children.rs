@@ -95,6 +95,10 @@ impl Children {
         self.first = None;
         self.sink = false;
     }
+    /// Whether this buffer only counts children (a probe's sink).
+    pub(crate) fn is_sink(&self) -> bool {
+        self.sink
+    }
     pub(crate) fn allocated(&self) -> bool {
         self.parts.capacity() != 0 || self.changed.capacity() != 0
     }
@@ -126,6 +130,12 @@ impl Children {
         };
         self.last_end = end;
         self.len += 1;
+        // Without a previous child list nothing can be reused: `changed` is
+        // the whole list and no part descriptors are kept.
+        if self.previous.is_none() {
+            self.changed.push(item);
+            return std::mem::size_of::<Child>();
+        }
         let matched = self.previous.as_ref().and_then(|p| {
             let nearby = (self.cursor..p.items.len().min(self.cursor.saturating_add(4)))
                 .find(|i| p.items.get(*i).is_some_and(|c| c.node == item.node));
@@ -163,6 +173,16 @@ impl Children {
         }
         if self.sink {
             self.len = len;
+            return;
+        }
+        if self.previous.is_none() {
+            self.changed.truncate(len);
+            self.len = len;
+            if len == 0 {
+                self.first = None;
+            }
+            let width: u64 = self.changed.iter().map(|c| u64::from(c.extent)).sum();
+            self.last_end = self.start + width as u32;
             return;
         }
         let mut remaining = len;
@@ -224,6 +244,12 @@ impl Children {
         if self.sink || from >= self.len {
             return;
         }
+        if self.previous.is_none() {
+            for item in &mut self.changed[from..] {
+                item.label = label;
+            }
+            return;
+        }
         let mut before = 0;
         let mut first = 0;
         for i in 0..self.parts.len() {
@@ -278,7 +304,18 @@ impl Children {
         }
         self.parts.truncate(kept);
     }
-    fn get(&self, mut index: usize) -> Child {
+    /// The child at `index`, which must be below `len`.
+    pub(crate) fn child(&self, index: usize) -> Child {
+        self.get(index)
+    }
+    #[inline]
+    fn get(&self, index: usize) -> Child {
+        if self.previous.is_none() {
+            return self.changed[index];
+        }
+        self.get_parts(index)
+    }
+    fn get_parts(&self, mut index: usize) -> Child {
         for part in &self.parts {
             if index < part.len() {
                 return match part {

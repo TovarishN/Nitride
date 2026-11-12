@@ -533,7 +533,7 @@ impl<'a, 'g> SharedProbe<'a, 'g> {
                 Some((node, old_start, items)),
             ))
         } else {
-            self.parser.child_buffer(rule, start as usize)
+            self.parser.child_buffer(rule, start as usize).map(|b| *b)
         }
     }
     pub(crate) fn recovery_push(&mut self, children: &mut Children, label: u16, node: Handle) {
