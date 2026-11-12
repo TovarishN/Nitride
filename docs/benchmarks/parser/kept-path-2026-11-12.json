@@ -1,0 +1,1386 @@
+{
+ "baseline": "origin/main 465f810, scripts/compiler-audit harness, portable release build",
+ "candidate": "claude/parser-kept-path-speed 5febee8, same harness and build settings",
+ "rounds": 9,
+ "work_may_differ": true,
+ "parity": [
+  {
+   "case": "corpus/AttributeUsageAttribute.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "5e95daa3e1a6c07b",
+    "5e95daa3e1a6c07b"
+   ],
+   "work": [
+    20658,
+    20196
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/AttributeUsageAttribute.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "5e95daa3e1a6c07b",
+    "5e95daa3e1a6c07b"
+   ],
+   "work": [
+    20658,
+    20196
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/Boolean.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "a4fdce812577d275",
+    "a4fdce812577d275"
+   ],
+   "work": [
+    71046,
+    68972
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/Boolean.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "a4fdce812577d275",
+    "a4fdce812577d275"
+   ],
+   "work": [
+    71046,
+    68972
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/EventArgs.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "a27561b629addc76",
+    "a27561b629addc76"
+   ],
+   "work": [
+    4924,
+    4588
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/EventArgs.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "a27561b629addc76",
+    "a27561b629addc76"
+   ],
+   "work": [
+    4924,
+    4588
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/EventHandler.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "043886f16115d360",
+    "043886f16115d360"
+   ],
+   "work": [
+    2022,
+    1968
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/EventHandler.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "043886f16115d360",
+    "043886f16115d360"
+   ],
+   "work": [
+    2022,
+    1968
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/ICollection.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "be8f3bbfc7724820",
+    "be8f3bbfc7724820"
+   ],
+   "work": [
+    8125,
+    7909
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/ICollection.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "be8f3bbfc7724820",
+    "be8f3bbfc7724820"
+   ],
+   "work": [
+    8125,
+    7909
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/Version.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "0815c383aeab0a6a",
+    "0815c383aeab0a6a"
+   ],
+   "work": [
+    152486,
+    147738
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/Version.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "0815c383aeab0a6a",
+    "0815c383aeab0a6a"
+   ],
+   "work": [
+    152486,
+    147738
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-001.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "72e58ecd3908edd5",
+    "72e58ecd3908edd5"
+   ],
+   "work": [
+    1391,
+    1227
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-001.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "72e58ecd3908edd5",
+    "72e58ecd3908edd5"
+   ],
+   "work": [
+    1391,
+    1227
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-002.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "001dea6a7e38b2b1",
+    "001dea6a7e38b2b1"
+   ],
+   "work": [
+    1921,
+    1736
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-002.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "001dea6a7e38b2b1",
+    "001dea6a7e38b2b1"
+   ],
+   "work": [
+    1921,
+    1736
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-003.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "cfdd99f603c35803",
+    "cfdd99f603c35803"
+   ],
+   "work": [
+    2407,
+    2210
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-003.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "cfdd99f603c35803",
+    "cfdd99f603c35803"
+   ],
+   "work": [
+    2407,
+    2210
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "2b74c0e82012a532",
+    "2b74c0e82012a532"
+   ],
+   "work": [
+    5095,
+    4913
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "2b74c0e82012a532",
+    "2b74c0e82012a532"
+   ],
+   "work": [
+    5095,
+    4913
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "684ac24926a52779",
+    "684ac24926a52779"
+   ],
+   "work": [
+    9700,
+    9408
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "684ac24926a52779",
+    "684ac24926a52779"
+   ],
+   "work": [
+    9700,
+    9408
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "b3b98fd02fe505d0",
+    "b3b98fd02fe505d0"
+   ],
+   "work": [
+    11519,
+    11082
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-anontype-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "b3b98fd02fe505d0",
+    "b3b98fd02fe505d0"
+   ],
+   "work": [
+    11519,
+    11082
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "b328a88a891c7c08",
+    "b328a88a891c7c08"
+   ],
+   "work": [
+    22697,
+    21752
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "b328a88a891c7c08",
+    "b328a88a891c7c08"
+   ],
+   "work": [
+    22697,
+    21752
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "c3500972a82ee647",
+    "c3500972a82ee647"
+   ],
+   "work": [
+    27845,
+    26914
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "c3500972a82ee647",
+    "c3500972a82ee647"
+   ],
+   "work": [
+    27845,
+    26914
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "2edad751076089b3",
+    "2edad751076089b3"
+   ],
+   "work": [
+    28201,
+    27251
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-autoproperty-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "2edad751076089b3",
+    "2edad751076089b3"
+   ],
+   "work": [
+    28201,
+    27251
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "91a9870a59ccd62f",
+    "91a9870a59ccd62f"
+   ],
+   "work": [
+    40077,
+    38441
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "91a9870a59ccd62f",
+    "91a9870a59ccd62f"
+   ],
+   "work": [
+    40077,
+    38441
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "ec740e8ba9b7de3b",
+    "ec740e8ba9b7de3b"
+   ],
+   "work": [
+    7444,
+    6917
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "ec740e8ba9b7de3b",
+    "ec740e8ba9b7de3b"
+   ],
+   "work": [
+    7444,
+    6917
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "8ea6f61e37983407",
+    "8ea6f61e37983407"
+   ],
+   "work": [
+    6532,
+    6099
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-collectioninit-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "8ea6f61e37983407",
+    "8ea6f61e37983407"
+   ],
+   "work": [
+    6532,
+    6099
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "19d248a93de9b4c6",
+    "19d248a93de9b4c6"
+   ],
+   "work": [
+    15412,
+    15025
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "19d248a93de9b4c6",
+    "19d248a93de9b4c6"
+   ],
+   "work": [
+    15412,
+    15025
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "ae141d7a98e1771a",
+    "ae141d7a98e1771a"
+   ],
+   "work": [
+    5875,
+    5346
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "ae141d7a98e1771a",
+    "ae141d7a98e1771a"
+   ],
+   "work": [
+    5875,
+    5346
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "2e26402dc2ad68be",
+    "2e26402dc2ad68be"
+   ],
+   "work": [
+    29128,
+    28192
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-exmethod-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "2e26402dc2ad68be",
+    "2e26402dc2ad68be"
+   ],
+   "work": [
+    29128,
+    28192
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-implicitarray-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "40923d9656f6bf25",
+    "40923d9656f6bf25"
+   ],
+   "work": [
+    14967,
+    14619
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-implicitarray-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "40923d9656f6bf25",
+    "40923d9656f6bf25"
+   ],
+   "work": [
+    14967,
+    14619
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-implicitarray-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "62b0c716c0a5ff24",
+    "62b0c716c0a5ff24"
+   ],
+   "work": [
+    6210,
+    5812
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-implicitarray-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "62b0c716c0a5ff24",
+    "62b0c716c0a5ff24"
+   ],
+   "work": [
+    6210,
+    5812
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "dc8e1a39c962a1e4",
+    "dc8e1a39c962a1e4"
+   ],
+   "work": [
+    14463,
+    13952
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "dc8e1a39c962a1e4",
+    "dc8e1a39c962a1e4"
+   ],
+   "work": [
+    14463,
+    13952
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "c3aa781367941a04",
+    "c3aa781367941a04"
+   ],
+   "work": [
+    71804,
+    68750
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "c3aa781367941a04",
+    "c3aa781367941a04"
+   ],
+   "work": [
+    71804,
+    68750
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "e121f94892561fc8",
+    "e121f94892561fc8"
+   ],
+   "work": [
+    12281,
+    11268
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-initialize-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "e121f94892561fc8",
+    "e121f94892561fc8"
+   ],
+   "work": [
+    12281,
+    11268
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-01.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "7113079262e717cf",
+    "7113079262e717cf"
+   ],
+   "work": [
+    55431,
+    53623
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-01.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "7113079262e717cf",
+    "7113079262e717cf"
+   ],
+   "work": [
+    55431,
+    53623
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-02.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "75c09ae3c16a986a",
+    "75c09ae3c16a986a"
+   ],
+   "work": [
+    21879,
+    21017
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-02.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "75c09ae3c16a986a",
+    "75c09ae3c16a986a"
+   ],
+   "work": [
+    21879,
+    21017
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-03.cs",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "314754413f853d6a",
+    "314754413f853d6a"
+   ],
+   "work": [
+    11028,
+    10395
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "corpus/gtest-linq-03.cs",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "314754413f853d6a",
+    "314754413f853d6a"
+   ],
+   "work": [
+    11028,
+    10395
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "64k-valid",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "04a994ab874f8775",
+    "04a994ab874f8775"
+   ],
+   "work": [
+    3078701,
+    3003770
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "64k-dense",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "ae1ea26896824739",
+    "ae1ea26896824739"
+   ],
+   "work": [
+    2466019,
+    2466019
+   ],
+   "diagnostics": [
+    185,
+    185
+   ]
+  },
+  {
+   "case": "64k-truncated",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "b41a5bee0d734ec7",
+    "b41a5bee0d734ec7"
+   ],
+   "work": [
+    10567739,
+    10567739
+   ],
+   "diagnostics": [
+    1,
+    1
+   ]
+  },
+  {
+   "case": "256k-valid",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "cad0a88bd0424fa5",
+    "cad0a88bd0424fa5"
+   ],
+   "work": [
+    12146637,
+    11851386
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "256k-one",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "231e7462b9f37304",
+    "231e7462b9f37304"
+   ],
+   "work": [
+    1658544,
+    1658544
+   ],
+   "diagnostics": [
+    1,
+    1
+   ]
+  },
+  {
+   "case": "256k-junk",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "d2f0807723dd3476",
+    "d2f0807723dd3476"
+   ],
+   "work": [
+    1676277,
+    1676277
+   ],
+   "diagnostics": [
+    4,
+    4
+   ]
+  },
+  {
+   "case": "256k-dense",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "ac557ebc3c66bd00",
+    "ac557ebc3c66bd00"
+   ],
+   "work": [
+    9908773,
+    9908773
+   ],
+   "diagnostics": [
+    729,
+    729
+   ]
+  },
+  {
+   "case": "256k-truncated",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "706e6aa8e4817795",
+    "706e6aa8e4817795"
+   ],
+   "work": [
+    41189771,
+    41189771
+   ],
+   "diagnostics": [
+    1,
+    1
+   ]
+  },
+  {
+   "case": "4m-valid",
+   "mode": "strict",
+   "match": true,
+   "fingerprint": [
+    "65e37734de06cda8",
+    "65e37734de06cda8"
+   ],
+   "work": [
+    189454475,
+    184865414
+   ],
+   "diagnostics": [
+    0,
+    0
+   ]
+  },
+  {
+   "case": "4m-one",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "202866a808ff278c",
+    "202866a808ff278c"
+   ],
+   "work": [
+    30482396,
+    30482396
+   ],
+   "diagnostics": [
+    1,
+    1
+   ]
+  },
+  {
+   "case": "4m-junk",
+   "mode": "recover",
+   "match": true,
+   "fingerprint": [
+    "78cf783120ab035b",
+    "78cf783120ab035b"
+   ],
+   "work": [
+    30509415,
+    30509415
+   ],
+   "diagnostics": [
+    4,
+    4
+   ]
+  }
+ ],
+ "timing": [
+  {
+   "case": "256k-valid",
+   "mode": "strict",
+   "baseline_ms": 52.544416,
+   "candidate_ms": 45.52125,
+   "baseline_samples": [
+    51.825584,
+    52.183042,
+    52.087334,
+    52.667167,
+    52.2925,
+    52.5885,
+    52.544416,
+    52.788125,
+    52.875625
+   ],
+   "candidate_samples": [
+    45.41725,
+    45.227916,
+    45.446083,
+    45.805,
+    45.995083,
+    45.693125,
+    45.985416,
+    45.52125,
+    45.267959
+   ]
+  },
+  {
+   "case": "256k-one",
+   "mode": "recover",
+   "baseline_ms": 64.775917,
+   "candidate_ms": 58.36775,
+   "baseline_samples": [
+    64.775917,
+    64.761833,
+    64.201416,
+    64.499667,
+    65.452917,
+    65.041333,
+    65.1945,
+    64.769542,
+    65.557834
+   ],
+   "candidate_samples": [
+    58.36775,
+    58.601875,
+    58.455542,
+    58.039,
+    58.62275,
+    58.184333,
+    57.844667,
+    58.3215,
+    60.153459
+   ]
+  },
+  {
+   "case": "256k-dense",
+   "mode": "recover",
+   "baseline_ms": 363.189042,
+   "candidate_ms": 349.29975,
+   "baseline_samples": [
+    364.987,
+    360.643833,
+    361.140166,
+    364.214,
+    363.189042,
+    363.17575,
+    363.075792,
+    364.951167,
+    364.525292
+   ],
+   "candidate_samples": [
+    348.686667,
+    349.563875,
+    348.879209,
+    349.740375,
+    347.209708,
+    349.29975,
+    352.759709,
+    349.000542,
+    350.119625
+   ]
+  },
+  {
+   "case": "4m-valid",
+   "mode": "strict",
+   "baseline_ms": 808.999708,
+   "candidate_ms": 705.39825,
+   "baseline_samples": [
+    806.935667,
+    805.974541,
+    808.350791,
+    827.235125,
+    808.6605,
+    808.999708,
+    809.053875,
+    809.709083,
+    816.31625
+   ],
+   "candidate_samples": [
+    706.0685,
+    702.858667,
+    704.143333,
+    711.529291,
+    704.558042,
+    707.131583,
+    705.475875,
+    705.092875,
+    705.39825
+   ]
+  },
+  {
+   "case": "4m-one",
+   "mode": "recover",
+   "baseline_ms": 986.671333,
+   "candidate_ms": 886.872208,
+   "baseline_samples": [
+    989.20325,
+    985.313875,
+    986.135417,
+    981.858834,
+    987.576917,
+    986.671333,
+    992.037834,
+    983.382125,
+    988.303542
+   ],
+   "candidate_samples": [
+    882.467333,
+    880.368083,
+    885.592667,
+    886.872208,
+    890.402917,
+    888.217291,
+    882.454917,
+    898.847667,
+    889.58225
+   ]
+  },
+  {
+   "case": "4m-junk",
+   "mode": "recover",
+   "baseline_ms": 988.862959,
+   "candidate_ms": 889.210833,
+   "baseline_samples": [
+    984.927041,
+    996.090083,
+    995.0105,
+    1000.951709,
+    991.255042,
+    986.262166,
+    988.862959,
+    983.58275,
+    983.789666
+   ],
+   "candidate_samples": [
+    886.030167,
+    891.261875,
+    886.328833,
+    887.761042,
+    892.948375,
+    889.95125,
+    890.021709,
+    889.129625,
+    889.210833
+   ]
+  },
+  {
+   "case": "16m-valid",
+   "mode": "strict",
+   "baseline_ms": 3321.27925,
+   "candidate_ms": 2904.783459,
+   "baseline_samples": [
+    3299.174,
+    3301.593375,
+    3292.692875,
+    3330.658583,
+    3318.592917,
+    3342.980375,
+    3321.27925,
+    3348.379792,
+    3323.487625
+   ],
+   "candidate_samples": [
+    2894.149375,
+    2909.999125,
+    2900.262166,
+    2905.253083,
+    2903.048042,
+    2901.970375,
+    2906.662875,
+    2904.783459,
+    2918.70675
+   ]
+  }
+ ],
+ "host": {
+  "machine": "arm64",
+  "system": "macOS-27.2.1",
+  "cpu": "Apple M4 Pro",
+  "rustc": "rustc 1.99.1 (58cf8f9c3 2026-10-13)"
+ },
+ "date": "2026-11-12"
+}
