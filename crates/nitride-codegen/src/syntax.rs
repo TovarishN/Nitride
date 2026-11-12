@@ -1,7 +1,37 @@
 //! Structural syntax specialization. Ranking and storage stay in the runtime.
 use super::*;
 
-pub(super) fn generate(rules: &[Value], ids: &HashMap<&str, u16>) -> Result<String, String> {
+/// Most children a match of `e` can add to its rule's buffer: 0, 1, or 2
+/// for more than one.
+fn most_children(e: &Value) -> u8 {
+    match e["kind"].as_str().unwrap_or("") {
+        "ref" => 1,
+        "label" => most_children(&e["inner"]),
+        "sequence" => e["items"].as_array().map_or(2, |items| {
+            items
+                .iter()
+                .map(most_children)
+                .fold(0u8, u8::saturating_add)
+                .min(2)
+        }),
+        "choice" => e["items"].as_array().map_or(2, |items| {
+            items.iter().map(most_children).max().unwrap_or(0)
+        }),
+        "repeat" => match (e["max"].as_u64(), most_children(&e["inner"])) {
+            (Some(0), _) | (_, 0) => 0,
+            (Some(1), inner) => inner,
+            _ => 2,
+        },
+        "predicate" | "literal" | "class" | "any" => 0,
+        _ => 2,
+    }
+}
+
+pub(super) fn generate(
+    rules: &[Value],
+    ids: &HashMap<&str, u16>,
+    aliases: &[bool],
+) -> Result<String, String> {
     fn bounded(e: &Value, depth: usize, remaining: &mut usize, global: &mut usize) -> bool {
         if depth > 64 || *remaining == 0 || *global == 0 {
             return false;
@@ -32,6 +62,21 @@ pub(super) fn generate(rules: &[Value], ids: &HashMap<&str, u16>) -> Result<Stri
                 .map_or(Ok(id as u16), |o| lookup(ids, text(o)?))
         })
         .collect::<Result<Vec<_>, String>>()?;
+    // Pass-through rules whose one child, if any, always stands in for them:
+    // references to them may run their bodies in place.
+    let inline: Vec<bool> = rules
+        .iter()
+        .enumerate()
+        .map(|(id, r)| {
+            aliases.get(id).copied().unwrap_or(false)
+                && r["lexical"] != true
+                && r["expr"]["kind"] != "pratt"
+                && r["owner"].is_null()
+                && r["except"].as_array().is_none_or(Vec::is_empty)
+                && most_children(&r["expr"]) <= 1
+        })
+        .collect();
+    let points = Tables { points, inline };
     let mut bodies = vec!["None".to_owned(); rules.len()];
     let mut tails = bodies.clone();
     let mut output = String::new();
@@ -74,6 +119,13 @@ pub(super) fn generate(rules: &[Value], ids: &HashMap<&str, u16>) -> Result<Stri
     );
     Ok(output)
 }
+/// Rule facts shared by every emitted body.
+struct Tables {
+    /// Each rule's point identity.
+    points: Vec<u16>,
+    /// References that may run the rule's body in place.
+    inline: Vec<bool>,
+}
 fn as_result(body: &str) -> String {
     if body.starts_with("c.interpret(") {
         body.strip_suffix('?')
@@ -93,7 +145,7 @@ fn function(name: &str, body: &str) -> String {
 fn emit_parts(
     parts: &[Value],
     ids: &HashMap<&str, u16>,
-    points: &[u16],
+    points: &Tables,
     owner: Option<u16>,
     depth: u32,
     serial: &mut usize,
@@ -129,7 +181,7 @@ fn conjunction(parts: Vec<String>) -> String {
 fn emit(
     e: &Value,
     ids: &HashMap<&str, u16>,
-    points: &[u16],
+    points: &Tables,
     owner: Option<u16>,
     depth: u32,
     serial: &mut usize,
@@ -145,8 +197,13 @@ fn emit(
         "ref" => {
             let id = lookup(ids, text(&e["name"])?)?;
             format!(
-                "c.reference({id},{},{d})?",
-                if owner.is_some_and(|o| points[o as usize] == points[id as usize]) {
+                "c.{}({id},{},{d})?",
+                if points.inline[id as usize] {
+                    "alias_reference"
+                } else {
+                    "reference"
+                },
+                if owner.is_some_and(|o| points.points[o as usize] == points.points[id as usize]) {
                     "_minimum"
                 } else {
                     "0"

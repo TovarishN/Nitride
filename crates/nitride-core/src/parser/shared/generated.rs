@@ -102,6 +102,91 @@ impl<'p, 's, 'g> SyntaxContext<'p, 's, 'g> {
     #[inline]
     pub fn reference(&mut self, id: u16, minimum: u32, depth: u32) -> Result<bool, Diagnostic> {
         self.parser.trivia()?;
+        self.call(id, minimum, depth)
+    }
+    /// `reference` to a pass-through (alias) rule with no owner, whose body
+    /// yields at most one child. Outside a checkpoint, with no previous
+    /// snapshot to reuse, the rule's own call would only charge its entry
+    /// tick and trivia, run its body into a fresh buffer and let the one
+    /// child stand in. Run the body into this buffer instead, with the same
+    /// charges, failure position, observations and result. Every other call
+    /// takes `reference`'s path.
+    #[inline]
+    pub fn alias_reference(
+        &mut self,
+        id: u16,
+        minimum: u32,
+        depth: u32,
+    ) -> Result<bool, Diagnostic> {
+        self.parser.trivia()?;
+        let parser = &mut *self.parser;
+        let rule = parser.language.rules.get(id as usize);
+        let body = parser
+            .compiled
+            .filter(|_| parser.optimize_recognition)
+            .and_then(|p| p.bodies.get(id as usize).copied().flatten());
+        let (Some(rule), Some(body)) = (rule, body) else {
+            return self.call(id, minimum, depth);
+        };
+        if !rule.alias
+            || rule.lexical
+            || rule.owner.is_some()
+            || !rule.except.is_empty()
+            || parser.options.alias_nodes
+            || self.children.is_sink()
+            || parser.checkpoint_next
+            || parser.in_token != 0
+            || !parser.reusable.is_empty()
+            || !parser.prior_nodes.is_empty()
+        {
+            return self.call(id, minimum, depth);
+        }
+        // `match_rule` at the rule's call depth.
+        let depth = depth + 1;
+        parser.tick(depth)?;
+        let mark = parser.mark();
+        parser.trivia()?;
+        if parser.entry_rejects(id, rule) {
+            parser.restore(mark);
+            return Ok(false);
+        }
+        // `match_contents`: the body, one level deeper.
+        let from = self.children.len();
+        parser.stats.native_syntax_calls += 1;
+        let matched = body(
+            &mut SyntaxContext::new(parser, self.children),
+            minimum,
+            depth + 1,
+        )?;
+        let parser = &mut *self.parser;
+        if !matched {
+            parser.furthest = parser.furthest.max(parser.position);
+            self.children.truncate(from);
+            parser.restore(mark);
+            return Ok(false);
+        }
+        match self.children.len() - from {
+            0 => {}
+            1 => {
+                // The child stands in, labeled by this reference as pushed.
+                let child = self.children.child(from);
+                self.children.label(from, 0);
+                parser.arena.commit(mark.trail, child.node);
+            }
+            _ => {
+                // Code generation admits no such body. Recognize it again
+                // through the rule, which builds the alias's own node.
+                debug_assert!(false, "inlined alias yielded several children");
+                self.children.truncate(from);
+                parser.restore(mark);
+                return self.call(id, minimum, depth - 1);
+            }
+        }
+        Ok(true)
+    }
+    /// `reference` after its trivia.
+    #[inline]
+    fn call(&mut self, id: u16, minimum: u32, depth: u32) -> Result<bool, Diagnostic> {
         if let Some(node) = self.parser.rule(id, minimum, depth + 1)? {
             if node != NO_NODE {
                 self.children.push(

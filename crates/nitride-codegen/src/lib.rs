@@ -651,6 +651,7 @@ pub fn generate(input: &str) -> Result<String, String> {
         }
     }
     let mut output_rules = Vec::new();
+    let mut aliases = Vec::new();
     for rule in rules {
         let name = text(&rule["name"])?;
         let mut labels = HashSet::new();
@@ -934,6 +935,7 @@ pub fn generate(input: &str) -> Result<String, String> {
             && rule
                 .get("alias")
                 .map_or_else(|| alias_rule(rule), |a| a == true);
+        aliases.push(alias);
         output_rules.push(format!("Rule {{name:{},lexical:{},expr:{},except:{},precedence:{precedence},right_associative:{},transparent:{},alias:{alias},owner:{owner},origin:{origin},action:{action}}}",
             quoted(name), rule["lexical"].as_bool().ok_or("invalid lexical flag")?, emit_expr_with(&pair_surrogates(&rule["expr"]), &ids, rule["expr"]["kind"] == "pratt" && memoize_point(&rule["expr"], rules, &ids))?,
             list(strings(&rule["except"])?.into_iter().map(quoted)), rule["associativity"] == "Right", rule["transparent"] == true));
@@ -990,7 +992,7 @@ pub fn generate(input: &str) -> Result<String, String> {
         _ => return Err("unknown trivia policy; expected nitrogen or json".into()),
     };
     let lexers = lexical::generate(rules, &ids)?;
-    let parser = syntax::generate(rules, &ids)?;
+    let parser = syntax::generate(rules, &ids, &aliases)?;
     Ok(format!(
         "use nitride_core::{{Language, Rule, Expr, Action, Profile}};\npub static LANGUAGE: Language = Language {{trivia:nitride_core::TriviaPolicy::{trivia},rules:{},start:{start},types:{},operations:{},handlers:{},checks:{},helpers:{},rule_checks:{},patterns:{},source_hash:{},profile:Profile::{}}};\n{lexers}{parser}",
         list(output_rules),

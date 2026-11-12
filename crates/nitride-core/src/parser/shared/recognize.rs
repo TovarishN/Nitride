@@ -968,6 +968,25 @@ impl<'a, 'g> Parser<'a, 'g> {
         };
         Diagnostic::new("limit", [self.position as u32; 2], message)
     }
+    /// Whether syntax rule `id`, entered at the current trivia-skipped
+    /// position, fails at its first step because its first-token set
+    /// excludes the next character. A rejection records the furthest
+    /// position that step would and observes the character decided on; the
+    /// caller then restores its mark as for any failed attempt.
+    #[inline]
+    pub(super) fn entry_rejects(&mut self, id: u16, rule: &Rule) -> bool {
+        if self.optimize_recognition
+            && !matches!(rule.expr, Expr::Pratt { .. })
+            && !self
+                .dispatch
+                .start(id)
+                .allows(self.source.character(self.position))
+        {
+            self.furthest = self.furthest.max(self.position);
+            return true;
+        }
+        false
+    }
     pub(super) fn match_rule(
         &mut self,
         id: u16,
@@ -983,17 +1002,7 @@ impl<'a, 'g> Parser<'a, 'g> {
         let mark = self.mark();
         if !rule.lexical {
             self.trivia()?;
-            // A syntax rule whose first-token set excludes the next character
-            // fails at its first step: fail at entry, as that step would, at
-            // the same furthest position, observing the character decided on.
-            if self.optimize_recognition
-                && !matches!(rule.expr, Expr::Pratt { .. })
-                && !self
-                    .dispatch
-                    .start(id)
-                    .allows(self.source.character(self.position))
-            {
-                self.furthest = self.furthest.max(self.position);
+            if self.entry_rejects(id, rule) {
                 self.restore(mark);
                 return Ok(None);
             }

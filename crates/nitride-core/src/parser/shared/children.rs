@@ -95,6 +95,10 @@ impl Children {
         self.first = None;
         self.sink = false;
     }
+    /// Whether this buffer only counts children (a probe's sink).
+    pub(crate) fn is_sink(&self) -> bool {
+        self.sink
+    }
     pub(crate) fn allocated(&self) -> bool {
         self.parts.capacity() != 0 || self.changed.capacity() != 0
     }
@@ -299,6 +303,10 @@ impl Children {
             kept += 1;
         }
         self.parts.truncate(kept);
+    }
+    /// The child at `index`, which must be below `len`.
+    pub(crate) fn child(&self, index: usize) -> Child {
+        self.get(index)
     }
     #[inline]
     fn get(&self, index: usize) -> Child {
