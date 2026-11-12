@@ -431,6 +431,11 @@ impl<'a, 'g> Parser<'a, 'g> {
             minimum: self.key_minimum(id, minimum),
             in_token: self.in_token.min(2) as u8,
         };
+        // Facts are kept for the outermost `FACT_LEVELS` levels of repeated
+        // elements only. A recovery probe that waits for a failure fact here
+        // still gets its checkpoint.
+        let checkpoint = checkpoint
+            && (self.fact_level < FACT_LEVELS || self.failure_checkpoint == Some((at, key)));
         let old = self.reusable.get(at, key);
         let current = checkpoint
             .then(|| self.facts.get(&(at, key)).copied())
@@ -500,7 +505,9 @@ impl<'a, 'g> Parser<'a, 'g> {
         let saved_observed = self.source.replace_observed(u64::from(at));
         let saved_depth = std::mem::replace(&mut self.max_depth, depth);
         let saved_furthest = std::mem::replace(&mut self.furthest, at as usize);
+        self.fact_level += 1;
         let result = self.rule_inner(id, minimum, depth);
+        self.fact_level -= 1;
         if prior.is_some() {
             self.prior_nodes.pop();
         }
