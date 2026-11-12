@@ -20,6 +20,9 @@ their linked reports.
 The [improvement tracker](docs/project/improvement-tracker.md) maps this work to
 the original review suggestions and records remaining scope.
 
+- Opt-in aarch64 NEON ASCII-run classification, direct vector-boundary tests,
+  macOS feature-enabled CI coverage and matched default/scalar/NEON measurements.
+  [ARM results and limits](docs/benchmarks/scanners/neon-2026-11-10.md).
 - Standalone `nitride` Rust facade, optional Cargo build helper, owned calculator
   example and documented source compatibility contract. [Embedding guide](docs/guides/embedding.md).
 - Shared-parser module split, documentation index/architecture guide and a bounded

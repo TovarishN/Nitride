@@ -43,15 +43,17 @@ Parse/check/preflight/execute errors retain diagnostics and invocation traces,
 and whole-program preflight precedes host effects. The guide documents the
 `0.x` source compatibility contract and generated-code version boundaries.
 The facade is not part of the published 0.4.0 checkpoint and has not been
-published to crates.io. Local macOS checks and an external copied-consumer
-acceptance exercise the recipe; hosted cross-platform validation remains pending.
+published to crates.io. Local macOS checks include an external copied-consumer
+acceptance of the recipe. [PR #55](https://github.com/TovarishN/Nitride/pull/55)
+now passes all hosted checks, including Linux, macOS and Windows workspace tests.
 
-## Local robustness and maintenance checkpoint
+## Unreleased robustness and maintenance checkpoint
 
 The [improvement tracker](improvement-tracker.md) records the original eight
 suggestions, their implementation commits, retained verification and remaining
-scope. This work is committed locally on `codex/parser-structure-and-docs` and
-has not been merged or released.
+scope. [PR #55](https://github.com/TovarishN/Nitride/pull/55) contains this work
+on `codex/parser-structure-and-docs`, with [all hosted checks passing](https://github.com/TovarishN/Nitride/actions/runs/42887026311).
+It has not been merged or released.
 
 The shared parser is split into responsibility-based modules. A differential
 [incremental fuzz target](../../fuzz/README.md) checks edits against full parsing
@@ -68,6 +70,12 @@ original bytes and CI checks their manifests. Fresh benchmark output defaults
 to target/reports/. Evidence remains in the repository, so clone size is
 unchanged. The tracker distinguishes historical test results from later
 documentation-only validation.
+
+The separate [ARM NEON follow-up](../benchmarks/scanners/neon-2026-11-10.md)
+adds a 16-byte classifier under the existing opt-in SIMD feature. On the local
+M4 Pro it improves the 1 MiB string case by 26–28% against scalar batching in two
+runs; mixed-code results do not show a consistent gain. Default builds remain
+unchanged, and hosted acceptance of this follow-up is pending.
 
 ## Implemented in merged development
 

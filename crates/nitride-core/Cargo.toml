@@ -7,5 +7,5 @@ rust-version.workspace = true
 
 [features]
 ascii-runs = []
-# Optional runtime-dispatched AVX2 acceleration of generated ASCII runs.
+# Optional runtime-dispatched AVX2/NEON acceleration of generated ASCII runs.
 simd-ascii-runs = ["ascii-runs"]

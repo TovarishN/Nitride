@@ -57,6 +57,7 @@ are separate claims; see [current status](project/status.md) for remaining limit
 - [Editor responsiveness](benchmarks/reports/benchmark-2026-11-09-editor-responsiveness.md), [projection](benchmarks/reports/benchmark-2026-11-09-editor-projection.md) and [projection walks](benchmarks/reports/benchmark-2026-11-09-projection-walk.md).
 - [Cancellation](benchmarks/reports/benchmark-2026-11-09-cancellation.md), [polling](benchmarks/reports/benchmark-2026-11-09-polling.md) and [active polling](benchmarks/reports/benchmark-2026-11-09-active-polling.md).
 - [Storage baseline](benchmarks/reports/benchmark-2026-11-07.md), [materialization](benchmarks/reports/benchmark-2026-11-08-materialization.md) and [arena reader](benchmarks/reports/benchmark-2026-11-08-arena-reader.md).
+- [ARM NEON follow-up](benchmarks/scanners/neon-2026-11-10.md): opt-in classifier, paired scalar comparisons and safety checks.
 - [C# parser assessment](benchmarks/compiler/compiler-assessment-2026-10-30.md) and [strict JSON comparison](benchmarks/json/json-comparison.md).
 
 ## Historical records
