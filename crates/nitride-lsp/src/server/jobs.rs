@@ -14,6 +14,7 @@ struct Active {
     uri: String,
     stamp: Stamp,
     cancelled: Arc<AtomicBool>,
+    disk: bool,
 }
 struct Waiting {
     message: Value,
@@ -50,6 +51,17 @@ impl State {
 }
 
 impl<W: Write> Server<W> {
+    pub(super) fn cancel_disk_job(&self, uri: &str) {
+        if self
+            .jobs
+            .active
+            .as_ref()
+            .is_some_and(|a| a.disk && a.uri == uri)
+        {
+            self.jobs.cancel_active();
+        }
+    }
+
     fn stamp(&self, uri: &str) -> Option<Stamp> {
         self.documents.contains_key(uri).then(|| Stamp {
             document: *self.jobs.epochs.get(uri).unwrap_or(&0),
@@ -80,6 +92,14 @@ impl<W: Write> Server<W> {
         self.reload = true;
         if self.jobs.worker.is_some() {
             self.jobs.workspace = self.jobs.changed();
+            if let Some(active) = self
+                .jobs
+                .active
+                .as_ref()
+                .filter(|a| a.disk && !a.cancelled.load(Ordering::Relaxed))
+            {
+                self.disk_pending.insert(active.uri.clone());
+            }
             self.jobs.cancel_active();
             self.pending.extend(self.documents.keys().cloned());
             self.reject_waiting(CONTENT_MODIFIED, "workspace changed", |_| true)?;
@@ -118,7 +138,9 @@ impl<W: Write> Server<W> {
                     self.pending.contains(uri)
                         || self.jobs.active.as_ref().is_some_and(|a| a.uri == uri)
                 }
-                None => !self.pending.is_empty() || self.jobs.active.is_some(),
+                None => {
+                    !self.pending.is_empty() || self.jobs.active.as_ref().is_some_and(|a| !a.disk)
+                }
             }
     }
     pub(super) fn defer_request(&mut self, message: &Value) -> io::Result<bool> {
@@ -196,44 +218,72 @@ impl<W: Write> Server<W> {
         }
         self.answer_settled()?;
         while self.jobs.active.is_none() {
-            let next = self.timing.pop(&self.pending);
-            if let Some(uri) = next {
+            let next = if let Some(uri) = self.timing.pop(&self.pending) {
                 self.pending.remove(&uri);
-                if let (Some(document), Some(path), Some(stamp)) = (
-                    self.documents.get(&uri),
-                    uri::to_path(&uri),
-                    self.stamp(&uri),
-                ) {
-                    self.jobs.ticket = self
-                        .jobs
-                        .ticket
-                        .checked_add(1)
-                        .expect("analysis ticket capacity");
-                    let ticket = self.jobs.ticket;
-                    let cancelled = Arc::new(AtomicBool::new(false));
-                    let job = Job {
-                        ticket,
-                        uri: uri.clone(),
-                        stamp,
-                        path,
-                        text: document.text.clone(),
-                        registry: self.registry.clone(),
-                        buffers: self.buffers().0,
-                        previous: self.analyses.get(&uri).cloned(),
-                        cancelled: cancelled.clone(),
-                    };
-                    self.jobs.active = Some(Active {
-                        ticket,
-                        uri,
-                        stamp,
-                        cancelled,
-                    });
-                    if !self.jobs.worker.as_ref().unwrap().submit(job) {
-                        return Err(io::Error::other("analysis worker unavailable"));
-                    }
-                }
+                Some((uri, false))
+            } else if !self.reload {
+                self.disk_pending.pop_first().map(|uri| (uri, true))
             } else {
+                None
+            };
+            let Some((uri, disk)) = next else {
                 break;
+            };
+            let path = if disk {
+                let path = self.disk_source(&uri);
+                if path.is_none() {
+                    self.commit_disk_diagnostics(&uri, None)?;
+                }
+                path
+            } else {
+                uri::to_path(&uri)
+            };
+            if let Some(path) = path {
+                let stamp = if disk {
+                    Stamp {
+                        document: 0,
+                        workspace: self.jobs.workspace,
+                    }
+                } else if let Some(stamp) = self.stamp(&uri) {
+                    stamp
+                } else {
+                    continue;
+                };
+                self.jobs.ticket = self
+                    .jobs
+                    .ticket
+                    .checked_add(1)
+                    .expect("analysis ticket capacity");
+                let ticket = self.jobs.ticket;
+                let cancelled = Arc::new(AtomicBool::new(false));
+                let job = Job {
+                    ticket,
+                    uri: uri.clone(),
+                    stamp,
+                    path,
+                    text: self
+                        .documents
+                        .get(&uri)
+                        .map(|document| document.text.clone()),
+                    registry: self.registry.clone(),
+                    buffers: if disk {
+                        HashMap::new()
+                    } else {
+                        self.buffers().0
+                    },
+                    previous: self.analyses.get(&uri).cloned(),
+                    cancelled: cancelled.clone(),
+                };
+                self.jobs.active = Some(Active {
+                    ticket,
+                    uri,
+                    stamp,
+                    cancelled,
+                    disk,
+                });
+                if !self.jobs.worker.as_ref().unwrap().submit(job) {
+                    return Err(io::Error::other("analysis worker unavailable"));
+                }
             }
         }
         // Skipped URIs have no completion wake. Settle their requests now,
@@ -242,6 +292,7 @@ impl<W: Write> Server<W> {
         if self.jobs.shutdown_id.is_some()
             && !self.reload
             && self.pending.is_empty()
+            && self.disk_pending.is_empty()
             && self.jobs.active.is_none()
             && self.jobs.waiting.is_empty()
         {
@@ -261,7 +312,18 @@ impl<W: Write> Server<W> {
             return Ok(());
         }
         let active = self.jobs.active.take().unwrap();
-        if self.stamp(&done.uri) != Some(done.stamp) || active.cancelled.load(Ordering::Relaxed) {
+        if active.cancelled.load(Ordering::Relaxed) {
+            return Ok(());
+        }
+        if active.disk {
+            return match done.outcome {
+                Outcome::Analyzed(result) => {
+                    self.commit_disk_diagnostics(&done.uri, result.as_deref())
+                }
+                Outcome::Failed | Outcome::Cancelled => Ok(()),
+            };
+        }
+        if self.stamp(&done.uri) != Some(done.stamp) {
             return Ok(());
         }
         match done.outcome {
@@ -288,6 +350,10 @@ impl<W: Write> Server<W> {
     }
     pub(super) fn begin_shutdown(&mut self, id: Value) -> io::Result<()> {
         self.shutdown = true;
+        self.disk_pending.clear();
+        if self.jobs.active.as_ref().is_some_and(|a| a.disk) {
+            self.jobs.cancel_active();
+        }
         self.jobs.shutdown_id = Some(id);
         self.flush()
     }

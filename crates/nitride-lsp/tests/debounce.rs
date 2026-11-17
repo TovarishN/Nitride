@@ -147,6 +147,116 @@ fn closing_a_pending_document_cancels_its_diagnostics() {
     );
 }
 
+fn xml_rule_workspace(name: &str) -> (PathBuf, PathBuf) {
+    let root = scratch(name);
+    manifest(
+        &root,
+        "nitride.nproj",
+        "Xml",
+        ".xml",
+        &[repo().join("languages/xml/Xml.ngr")],
+        "Xml.Document",
+        None,
+    );
+    let nested = root.join("nested");
+    std::fs::create_dir(&nested).unwrap();
+    (root, nested.join("sample.xml"))
+}
+
+#[test]
+fn background_worker_reports_rules_for_a_file_that_was_never_opened() {
+    let (root, path) = xml_rule_workspace("closed-rule-worker");
+    std::fs::write(&path, "<root><a></b></root>").unwrap();
+    let messages = run(&root, traffic(), |_| {});
+    assert_error_before_traffic_ends(&messages, &path);
+    assert!(
+        diagnostics(&messages, &path)
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|problem| problem["code"] == "XML0001" && problem["severity"] == 1)
+    );
+}
+
+#[test]
+fn adding_and_removing_a_rule_updates_unopened_files() {
+    let (root, grammar, path) = workspace("closed-rule-reload");
+    let plain = r#"syntax module Simple { syntax P = "o" "k"; }"#;
+    let checked = r#"syntax module Simple {
+        token Letter = ['a'..'z'];
+        syntax P = First:Letter Second:Letter {
+            check SIMPLE001 First.Text == Second.Text : $"expected '{First.Text}'" at Second;
+        }
+    }"#;
+    std::fs::write(&path, "ok").unwrap();
+    let changed = notification(
+        "workspace/didChangeWatchedFiles",
+        json!({"changes":[{"uri":uri(&grammar),"type":2}]}),
+    );
+    let messages = run_with(
+        &root,
+        vec![marker(100), changed.clone(), marker(101), changed],
+        Duration::ZERO,
+        |message| match message["id"].as_u64() {
+            Some(100) => std::fs::write(&grammar, checked).unwrap(),
+            Some(101) => std::fs::write(&grammar, plain).unwrap(),
+            _ => (),
+        },
+    );
+    let published = all_diagnostics(&messages, &path);
+    assert_eq!(published.len(), 2, "{published:?}");
+    assert_eq!(published[0][0]["code"], "SIMPLE001");
+    assert_eq!(published[1], json!([]));
+}
+
+#[test]
+fn closed_rule_diagnostics_follow_saved_file_lifecycle() {
+    let (root, path) = xml_rule_workspace("closed-rule-lifecycle");
+    let bad = "<credentials><password>example</password></credentials>";
+    let clean = "<credentials/>";
+    std::fs::write(&path, bad).unwrap();
+    let watched = |kind| {
+        notification(
+            "workspace/didChangeWatchedFiles",
+            json!({"changes":[{"uri":uri(&path),"type":kind}]}),
+        )
+    };
+    let messages = run_with(
+        &root,
+        vec![
+            open(&path, clean),
+            notification(
+                "textDocument/didClose",
+                json!({"textDocument":{"uri":uri(&path)}}),
+            ),
+            marker(100),
+            watched(2),
+            marker(101),
+            watched(2),
+            marker(102),
+            watched(3),
+            marker(103),
+            watched(1),
+        ],
+        Duration::ZERO,
+        |message| match message["id"].as_u64() {
+            Some(100) => std::fs::write(&path, clean).unwrap(),
+            Some(101 | 103) => std::fs::write(&path, bad).unwrap(),
+            Some(102) => std::fs::remove_file(&path).unwrap(),
+            _ => (),
+        },
+    );
+    let published = all_diagnostics(&messages, &path);
+    assert_eq!(published.len(), 7, "{published:?}");
+    for i in [0, 2, 4, 6] {
+        assert_eq!(published[i][0]["code"], "XML1001");
+        assert_eq!(published[i][0]["severity"], 2);
+    }
+    for i in [1, 3, 5] {
+        assert_eq!(published[i], json!([]));
+    }
+}
+
 #[test]
 fn continuous_edits_to_one_document_do_not_postpone_another() {
     let (root, _, quiet) = workspace("debounce-independent-documents");

@@ -21,7 +21,8 @@ pub(crate) struct Job {
     pub uri: String,
     pub stamp: Stamp,
     pub path: PathBuf,
-    pub text: String,
+    /// The editor buffer, or disk-backed input when absent.
+    pub text: Option<String>,
     pub registry: Registry,
     pub buffers: HashMap<PathBuf, String>,
     pub previous: Option<Arc<Analysis>>,
@@ -40,10 +41,18 @@ impl Job {
             if nitride_core::cancellation_requested() {
                 return None;
             }
+            let disk;
+            let text = match self.text.as_deref() {
+                Some(text) => text,
+                None => {
+                    disk = std::fs::read_to_string(&self.path).ok()?;
+                    &disk
+                }
+            };
             let result = analysis::analyze_incremental(
                 &self.registry,
                 &self.path,
-                &self.text,
+                text,
                 &|p| self.buffers.get(&crate::server::canonical(p)).cloned(),
                 self.previous.as_deref(),
             );
@@ -115,7 +124,7 @@ mod tests {
                 workspace: 0,
             },
             path: "document.txt".into(),
-            text: format!("version-{ticket}"),
+            text: Some(format!("version-{ticket}")),
             registry: Registry::default(),
             buffers: HashMap::new(),
             previous: None,
@@ -144,7 +153,7 @@ mod tests {
         let mut job = job(ticket);
         job.registry = registry;
         job.path = "sample.csharp4".into();
-        job.text = "class Current {}".into();
+        job.text = Some("class Current {}".into());
         job
     }
 
@@ -166,7 +175,7 @@ mod tests {
         let (release, gate) = mpsc::channel();
         let gate = std::sync::Mutex::new(gate);
         let mut obsolete = served_job(1);
-        obsolete.text = "class Obsolete { int field; }\n".repeat(10_000);
+        obsolete.text = Some("class Obsolete { int field; }\n".repeat(10_000));
         let flag = obsolete.cancelled.clone();
         let observed_flag = flag.clone();
         let calls = AtomicUsize::new(0);
@@ -215,7 +224,7 @@ mod tests {
             },
             Box::new(move |job| {
                 assert_ne!(std::thread::current().id(), parent);
-                assert_eq!(job.text, "version-7");
+                assert_eq!(job.text.as_deref(), Some("version-7"));
                 job.analyze()
             }),
         );
