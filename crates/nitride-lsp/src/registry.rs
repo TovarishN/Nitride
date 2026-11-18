@@ -438,16 +438,23 @@ const MAX_GRAMMAR_BYTES: u64 = 1024 * 1024;
 /// A signature lies in the leading trivia: the start of a file is enough to find one.
 const HEAD_BYTES: usize = 4096;
 
-/// Signed grammars (files whose header has a grammar signature) in the
-/// workspace folders, plus open documents that are.
-pub fn discover(
-    folders: &[PathBuf],
-    open: &dyn Fn(&Path) -> Option<String>,
-    open_paths: &[PathBuf],
-) -> Vec<PathBuf> {
-    let signed = |text: &str| crate::signed::declares_grammar(text);
-    let mut found: Vec<PathBuf> = Vec::new();
-    let mut scanned = 0;
+pub(crate) fn workspace_file(folders: &[PathBuf], path: &Path) -> bool {
+    folders.iter().any(|folder| {
+        path.strip_prefix(folder).is_ok_and(|relative| {
+            relative.parent().is_some_and(|parent| {
+                parent
+                    .iter()
+                    .all(|name| !skip_directory(&name.to_string_lossy()))
+            })
+        })
+    })
+}
+
+fn skip_directory(name: &str) -> bool {
+    name.starts_with('.') || SKIPPED.contains(&name)
+}
+
+pub(crate) fn visit_workspace_files(folders: &[PathBuf], mut visit: impl FnMut(std::fs::DirEntry)) {
     let mut pending: Vec<PathBuf> = folders.to_vec();
     let mut listed = 0;
     while let Some(directory) = pending.pop() {
@@ -466,40 +473,57 @@ pub fn discover(
                 continue;
             };
             if kind.is_dir() {
-                if !name.starts_with('.') && !SKIPPED.contains(&name.as_str()) {
+                if !skip_directory(&name) {
                     pending.push(entry.path());
                 }
                 continue;
             }
-            if !kind.is_file() || scanned >= MAX_SCANNED {
-                continue;
-            }
-            scanned += 1;
-            if entry
-                .metadata()
-                .map_or(true, |m| m.len() > MAX_GRAMMAR_BYTES)
-            {
-                continue;
-            }
-            let path = entry.path();
-            let head = match open(&path) {
-                Some(text) => text,
-                None => {
-                    use std::io::Read;
-                    let mut head = Vec::with_capacity(HEAD_BYTES);
-                    let read = std::fs::File::open(&path)
-                        .and_then(|f| f.take(HEAD_BYTES as u64).read_to_end(&mut head));
-                    if read.is_err() {
-                        continue;
-                    }
-                    String::from_utf8_lossy(&head).into_owned()
-                }
-            };
-            if signed(&head) {
-                found.push(path);
+            if kind.is_file() {
+                visit(entry);
             }
         }
     }
+}
+
+/// Signed grammars (files whose header has a grammar signature) in the
+/// workspace folders, plus open documents that are.
+pub fn discover(
+    folders: &[PathBuf],
+    open: &dyn Fn(&Path) -> Option<String>,
+    open_paths: &[PathBuf],
+) -> Vec<PathBuf> {
+    let signed = |text: &str| crate::signed::declares_grammar(text);
+    let mut found: Vec<PathBuf> = Vec::new();
+    let mut scanned = 0;
+    visit_workspace_files(folders, |entry| {
+        if scanned >= MAX_SCANNED {
+            return;
+        }
+        scanned += 1;
+        if entry
+            .metadata()
+            .map_or(true, |m| m.len() > MAX_GRAMMAR_BYTES)
+        {
+            return;
+        }
+        let path = entry.path();
+        let head = match open(&path) {
+            Some(text) => text,
+            None => {
+                use std::io::Read;
+                let mut head = Vec::with_capacity(HEAD_BYTES);
+                let read = std::fs::File::open(&path)
+                    .and_then(|f| f.take(HEAD_BYTES as u64).read_to_end(&mut head));
+                if read.is_err() {
+                    return;
+                }
+                String::from_utf8_lossy(&head).into_owned()
+            }
+        };
+        if signed(&head) {
+            found.push(path);
+        }
+    });
     for path in open_paths {
         let inside = folders.iter().any(|f| path.starts_with(f));
         if inside

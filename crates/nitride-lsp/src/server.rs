@@ -3,6 +3,7 @@ use crate::analysis::{self, Analysis};
 use crate::background;
 mod jobs;
 mod schedule;
+mod workspace_diagnostics;
 use crate::grammar_index::{self, GrammarIndex};
 use crate::lines::LineIndex;
 use crate::navigation::{self, GrammarAt};
@@ -38,6 +39,9 @@ pub struct Server<W: Write> {
     input_documents: std::collections::HashSet<String>,
     /// Documents whose analysis is out of date.
     pending: BTreeSet<String>,
+    disk_pending: BTreeSet<String>,
+    disk_published: BTreeSet<String>,
+    workspace_folders_changed: bool,
     debounce: Duration,
     timing: schedule::Schedule,
     folders: Vec<PathBuf>,
@@ -172,6 +176,9 @@ impl<W: Write> Server<W> {
             documents: HashMap::new(),
             input_documents: Default::default(),
             pending: BTreeSet::new(),
+            disk_pending: BTreeSet::new(),
+            disk_published: BTreeSet::new(),
+            workspace_folders_changed: false,
             debounce,
             timing: schedule::Schedule::default(),
             folders: Vec::new(),
@@ -811,14 +818,16 @@ impl<W: Write> Server<W> {
             "initialized" if self.reload => self.schedule_languages(),
             "workspace/didChangeWatchedFiles" => {
                 // The client watches every file; only some change the languages.
-                let changes = params["changes"].as_array().cloned().unwrap_or_default();
-                let relevant = changes.iter().any(|change| {
-                    let path = change["uri"].as_str().and_then(uri::to_path);
+                let mut relevant = false;
+                for change in params["changes"].as_array().into_iter().flatten() {
+                    let Some(path) = change["uri"].as_str().and_then(uri::to_path) else {
+                        continue;
+                    };
                     let kind = change["type"].as_u64().unwrap_or(2);
-                    path.is_some_and(|p| {
-                        crate::registry::watched_change_matters(&self.registry, &p, kind)
-                    })
-                });
+                    relevant = relevant
+                        || crate::registry::watched_change_matters(&self.registry, &path, kind);
+                    self.queue_disk_source(&path);
+                }
                 self.changed_languages(relevant)?;
                 if relevant {
                     self.schedule_languages();
@@ -836,6 +845,7 @@ impl<W: Write> Server<W> {
                 let removed = folders("removed");
                 self.folders.retain(|f| !removed.contains(f));
                 self.folders.extend(folders("added"));
+                self.workspace_folders_changed = true;
                 self.changed_languages(true)?;
                 self.schedule_languages();
             }
@@ -853,6 +863,11 @@ impl<W: Write> Server<W> {
                         },
                     );
                     self.pending.insert(uri.into());
+                    if let Some(path) = uri::to_path(uri) {
+                        let disk_uri = grammar_index::default_uri(&path);
+                        self.disk_pending.remove(&disk_uri);
+                        self.cancel_disk_job(&disk_uri);
+                    }
                     self.changed_document(uri)?;
                     // Grammars and signed grammars are language inputs.
                     let input = language_input(&self.registry, uri);
@@ -900,9 +915,7 @@ impl<W: Write> Server<W> {
                 self.timing.forget(&uri);
                 if closed.is_some() {
                     self.changed_document(&uri)?;
-                }
-                if self.analyses.remove(&uri).is_some() {
-                    self.publish(&uri, vec![])?;
+                    self.close_document_diagnostics(&uri)?;
                 }
                 // The file on disk replaces the closed buffer.
                 let reload = self.input_documents.remove(&uri)
@@ -930,6 +943,13 @@ impl<W: Write> Server<W> {
         for uri in std::mem::take(&mut self.pending) {
             self.analyze(&uri)?;
         }
+        for uri in std::mem::take(&mut self.disk_pending) {
+            let analysis = self.disk_source(&uri).and_then(|path| {
+                let text = std::fs::read_to_string(&path).ok()?;
+                analysis::analyze(&self.registry, &path, &text, &|_| None)
+            });
+            self.commit_disk_diagnostics(&uri, analysis.as_ref())?;
+        }
         Ok(())
     }
 
@@ -950,16 +970,17 @@ impl<W: Write> Server<W> {
     }
 
     fn commit_analysis(&mut self, uri: &str, analysis: Option<Analysis>) -> io::Result<()> {
+        let had_disk_diagnostics = uri::to_path(uri).is_some_and(|path| {
+            self.disk_published
+                .remove(&grammar_index::default_uri(&path))
+        });
         match analysis {
             Some(analysis) => {
                 let diagnostics = analysis
                     .problems
                     .iter()
                     .map(|p| {
-                        let mut d = diagnostic(&analysis.lines, p.span, p.severity, &p.message);
-                        if let Some(code) = &p.code {
-                            d["code"] = json!(code);
-                        }
+                        let mut d = problem_diagnostic(&analysis.lines, p);
                         if uri.ends_with(".nproj") {
                             let source=nitride_prepare::Source {path:uri::to_path(uri).map(|p|p.display().to_string()).unwrap_or_default(),text:analysis.lines.text().into()};
                             let issues=nitride_prepare::authoring::project_issues(&source,&|p|self.buffers().get(p).is_some()||p.exists());
@@ -974,7 +995,9 @@ impl<W: Write> Server<W> {
                 self.analyses.insert(uri.to_owned(), Arc::new(analysis));
                 self.publish(uri, diagnostics)
             }
-            None if self.analyses.remove(uri).is_some() => self.publish(uri, vec![]),
+            None if self.analyses.remove(uri).is_some() || had_disk_diagnostics => {
+                self.publish(uri, vec![])
+            }
             None => Ok(()),
         }
     }
@@ -1042,6 +1065,10 @@ impl<W: Write> Server<W> {
         if changed {
             self.pending.extend(self.documents.keys().cloned());
         }
+        let folders_changed = std::mem::take(&mut self.workspace_folders_changed);
+        if changed || folders_changed {
+            self.refresh_disk_sources();
+        }
         Ok(())
     }
 
@@ -1080,6 +1107,14 @@ pub fn range(lines: &LineIndex, span: [u32; 2]) -> Value {
     let (sl, sc) = lines.position(span[0]);
     let (el, ec) = lines.position(span[1].max(span[0]));
     json!({"start":{"line":sl,"character":sc},"end":{"line":el,"character":ec}})
+}
+
+fn problem_diagnostic(lines: &LineIndex, problem: &analysis::Problem) -> Value {
+    let mut value = diagnostic(lines, problem.span, problem.severity, &problem.message);
+    if let Some(code) = &problem.code {
+        value["code"] = json!(code);
+    }
+    value
 }
 
 /// An LSP diagnostic; severity 1 is an error, 2 a warning.
