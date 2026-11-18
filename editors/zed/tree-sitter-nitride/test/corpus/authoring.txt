@@ -1,0 +1,98 @@
+==================
+Grammar declarations and character ranges
+==================
+syntax module Demo {
+  token Word = ['a'..'z']+;
+  syntax Program = Value:Word;
+}
+---
+(source_file
+  (module_header (qualified_name (identifier)))
+  (block
+    (declaration_header (identifier)) (operator)
+    (bracket_group (character) (punctuation) (character)) (operator) (punctuation)
+    (declaration_header (identifier)) (operator)
+    (identifier) (punctuation) (identifier) (punctuation)))
+
+==================
+Catalog operations
+==================
+catalog module Demo {
+  type Value;
+  operation Add(Value, Value): Value = host add;
+}
+---
+(source_file
+  (module_header (qualified_name (identifier)))
+  (block
+    (declaration_header (identifier)) (punctuation)
+    (declaration_header (identifier))
+    (parenthesized_group (identifier) (punctuation) (identifier))
+    (punctuation) (identifier) (operator) (keyword) (identifier) (punctuation)))
+
+==================
+Bindings and component names
+==================
+binding Calendar.Gregorian version 3 for wasm component "gregorian.wasm" {
+  ParseDate = parse-iso;
+}
+---
+(source_file
+  (binding_header (qualified_name (identifier) (identifier)))
+  (keyword) (number) (keyword) (keyword) (keyword) (string)
+  (block (identifier) (operator) (keyword) (operator) (identifier) (punctuation)))
+
+==================
+Projects with unquoted relative paths
+==================
+workspace { include ../languages/calls; }
+language Calls { extensions .calls; grammar Calls.ngr; start Calls.Program; }
+---
+(source_file
+  (keyword) (block (keyword) (punctuation) (operator) (identifier) (operator) (identifier) (punctuation))
+  (language_header (identifier))
+  (block (keyword) (punctuation) (identifier) (punctuation)
+    (keyword) (identifier) (punctuation) (identifier) (punctuation)
+    (keyword) (identifier) (punctuation) (identifier) (punctuation)))
+
+==================
+Tests keep raw source opaque, including quotes and brackets
+==================
+tests version 1 {
+  test "arithmetic" {
+    source <[ show "hello"; // source comment
+      list[0]]>;
+    expect run values [1, true];
+  }
+}
+---
+(source_file
+  (keyword) (keyword) (number)
+  (block (keyword) (string)
+    (block (keyword) (raw_string) (punctuation)
+      (keyword) (keyword) (keyword)
+      (bracket_group (number) (punctuation) (boolean)) (punctuation))))
+
+==================
+Comments, signatures and escapes
+==================
+#!nitrogen grammar
+// line comment
+/* block
+comment */
+syntax module Unicode { token Text = "hi\\n"; token Letter = '\\n'; }
+---
+(source_file (signature) (comment) (comment)
+  (module_header (qualified_name (identifier)))
+  (block
+    (declaration_header (identifier)) (operator) (string (escape_sequence)) (punctuation)
+    (declaration_header (identifier)) (operator) (character (escape_sequence)) (punctuation)))
+
+==================
+Comment delimiters inside strings stay strings
+==================
+token Comment = "//" / "/*" / "*/";
+---
+(source_file
+  (declaration_header (identifier)) (operator)
+  (string) (operator) (string) (operator) (string) (punctuation))

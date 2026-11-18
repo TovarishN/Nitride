@@ -31,6 +31,8 @@ enum Incoming {
 
 use crate::document::Document;
 
+type IndexedGrammar = (Arc<GrammarIndex>, usize);
+
 pub struct Server<W: Write> {
     output: W,
     shutdown: bool,
@@ -52,6 +54,10 @@ pub struct Server<W: Write> {
     /// Every workspace grammar, indexed on demand and dropped when languages
     /// or grammar buffers change.
     grammars: Option<GrammarIndex>,
+    /// Parsed grammar sets reused by hover and navigation until inputs change.
+    navigation_grammars: HashMap<String, IndexedGrammar>,
+    definition_links: bool,
+    declaration_links: bool,
     /// The client colours palette token types (`initializationOptions.paletteTokens`).
     palette: bool,
     library_documents: bool,
@@ -186,6 +192,9 @@ impl<W: Write> Server<W> {
             reload: false,
             analyses: HashMap::new(),
             grammars: None,
+            navigation_grammars: HashMap::new(),
+            definition_links: false,
+            declaration_links: false,
             palette: false,
             library_documents: false,
             project_create: false,
@@ -258,6 +267,12 @@ impl<W: Write> Server<W> {
         self.library_documents =
             params["initializationOptions"]["libraryDocuments"].as_bool() == Some(true);
         self.palette = params["initializationOptions"]["paletteTokens"].as_bool() == Some(true);
+        self.definition_links = params["capabilities"]["textDocument"]["definition"]["linkSupport"]
+            .as_bool()
+            == Some(true);
+        self.declaration_links =
+            params["capabilities"]["textDocument"]["declaration"]["linkSupport"].as_bool()
+                == Some(true);
         json!({
             "capabilities": {
                 "positionEncoding": "utf-16",
@@ -483,6 +498,11 @@ impl<W: Write> Server<W> {
                         navigation::rename(analysis, &uri, offset, at, name)?
                     }
                     _ => {
+                        let links = if method == "textDocument/definition" {
+                            self.definition_links
+                        } else {
+                            self.declaration_links
+                        };
                         let location = navigation::definition(analysis, &uri, offset, at);
                         if !self.library_documents
                             && location["uri"]
@@ -490,6 +510,8 @@ impl<W: Write> Server<W> {
                                 .is_some_and(|u| u.starts_with("nitride-lib:"))
                         {
                             Value::Null
+                        } else if links {
+                            navigation::definition_link(analysis, offset, at, location)
                         } else {
                             location
                         }
@@ -675,11 +697,7 @@ impl<W: Write> Server<W> {
 
     /// The byte offset of the request's position in an up-to-date analysis,
     /// with the grammar index when the document is a grammar.
-    fn located(
-        &mut self,
-        uri: &str,
-        params: &Value,
-    ) -> Option<(u32, Option<(GrammarIndex, usize)>)> {
+    fn located(&mut self, uri: &str, params: &Value) -> Option<(u32, Option<IndexedGrammar>)> {
         let line = params["position"]["line"].as_u64()? as u32;
         let character = params["position"]["character"].as_u64()? as u32;
         let analysis = self.current(uri)?;
@@ -687,6 +705,9 @@ impl<W: Write> Server<W> {
             return None;
         }
         let offset = analysis.lines.offset(line, character);
+        if let Some((index, file)) = self.navigation_grammars.get(uri) {
+            return Some((offset, Some((index.clone(), *file))));
+        }
         if uri.starts_with("nitride-lib:") {
             let source = nitride_prepare::stdlib::source(uri)?;
             let library = nitride_prepare::stdlib::libraries()
@@ -695,11 +716,15 @@ impl<W: Write> Server<W> {
             let mut index = grammar_index::build(&[], &|_| None, &|_| String::new());
             index.add_libraries(&[*library]);
             let file = index.files.iter().position(|f| f.uri == uri)?;
+            let index = Arc::new(index);
+            self.navigation_grammars
+                .insert(uri.into(), (index.clone(), file));
             return Some((offset, Some((index, file))));
         }
         let path = uri::to_path(uri)?;
         // A grammar or catalog by name, a grammar by signature, or a signed
         // grammar's declaring file.
+        let analysis = &self.analyses[uri];
         let is_grammar = path
             .extension()
             .is_some_and(|e| e == "ngr" || e == "ncatalog")
@@ -730,13 +755,18 @@ impl<W: Write> Server<W> {
             let mut index = grammar_index::build(&set, &|p: &Path| buffers.get(p), &uri_of);
             index.add_libraries(&libraries);
             let file = index.file(&path)?;
-            Some((index, file))
+            Some((Arc::new(index), file))
         });
-        match grammar {
+        let result = match grammar {
             Some(None) => None,
             Some(Some(grammar)) => Some((offset, Some(grammar))),
             None => Some((offset, None)),
+        };
+        if let Some((_, Some((index, file)))) = &result {
+            self.navigation_grammars
+                .insert(uri.into(), (index.clone(), *file));
         }
+        result
     }
 
     /// The document's analysis, brought up to date first if an edit is pending.
@@ -1029,6 +1059,7 @@ impl<W: Write> Server<W> {
 
     fn reload_languages(&mut self) -> io::Result<()> {
         self.grammars = None;
+        self.navigation_grammars.clear();
         let buffers = self.buffers();
         let open_paths: Vec<PathBuf> = self
             .documents
@@ -1187,3 +1218,50 @@ mod scheduling_tests {
 
 #[cfg(test)]
 mod async_tests;
+
+#[cfg(test)]
+mod navigation_cache_tests {
+    use super::*;
+
+    #[test]
+    fn navigation_reuses_grammar_index_until_document_changes() {
+        let uri = "file:///nitride-navigation-cache.ngr";
+        let text = "syntax module Example { function Identity(word: Grammar.Text): Grammar.Rule = word; token Word = Identity(\"word\"); }";
+        let mut server = Server::new(Vec::new(), Duration::ZERO);
+        server
+            .notification(
+                "textDocument/didOpen",
+                json!({"textDocument":{"uri":uri,"version":1,"text":text}}),
+            )
+            .unwrap();
+        let params =
+            json!({"position":{"line":0,"character":text.find("Identity(\"word\")").unwrap()}});
+        let (_, Some((first, _))) = server.located(uri, &params).unwrap() else {
+            panic!("grammar index")
+        };
+        let (_, Some((second, _))) = server.located(uri, &params).unwrap() else {
+            panic!("grammar index")
+        };
+        assert_eq!(
+            first.files.as_ptr(),
+            second.files.as_ptr(),
+            "repeated navigation should share the parsed grammar files"
+        );
+        let changed = text.replace("Identity", "Changed");
+        server
+            .notification(
+                "textDocument/didChange",
+                json!({"textDocument":{"uri":uri,"version":2},"contentChanges":[{"text":changed}]}),
+            )
+            .unwrap();
+        let (_, Some((third, _))) = server.located(uri, &params).unwrap() else {
+            panic!("updated grammar index")
+        };
+        assert_ne!(
+            first.files.as_ptr(),
+            third.files.as_ptr(),
+            "an edit must invalidate the cached index"
+        );
+        assert!(third.files[0].text.contains("function Changed("));
+    }
+}

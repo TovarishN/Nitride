@@ -61,3 +61,22 @@ fn uses_span_files() {
         assert!(index.files[file].text[span[0] as usize..span[1] as usize].ends_with("Expr"));
     }
 }
+
+#[test]
+fn contextual_function_calls_resolve_in_csharp_lexical_grammar() {
+    let path = repo().join("languages/csharp4/Grammars/Lexical.ngr");
+    let index = grammar_index::build(
+        std::slice::from_ref(&path),
+        &|_| None,
+        &grammar_index::default_uri,
+    );
+    assert!(index.unreadable.is_empty(), "{:?}", index.unreadable);
+    let file = &index.files[0];
+    let call = file.text.find("Contextual(\"add\")").unwrap() as u32;
+    let definition = index.at(0, call + 3).expect("Contextual call definition");
+    assert_eq!(definition.item.kind, "function");
+    assert_eq!(definition.item.name, "Contextual");
+    let span = definition.item.name_span;
+    assert_eq!(&file.text[span[0]..span[1]], "Contextual");
+    assert_eq!(file.text[..span[0]].lines().count(), 64);
+}

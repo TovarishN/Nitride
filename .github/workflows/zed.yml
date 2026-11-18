@@ -1,0 +1,48 @@
+name: Zed extension
+on:
+  push:
+    branches: [main]
+    paths: ["editors/zed/**", ".github/workflows/zed.yml", "languages/**"]
+  pull_request:
+    paths: ["editors/zed/**", ".github/workflows/zed.yml", "languages/**"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  zed:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-python@v7
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-node@v7
+        with:
+          node-version: '22'
+      - name: Install Rust and WASI target
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt --component clippy --target wasm32-wasip2
+          rustup override set stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: editors/zed -> target
+      - run: cargo fmt --manifest-path editors/zed/Cargo.toml --check
+      - run: cargo test --manifest-path editors/zed/Cargo.toml --locked
+      - run: cargo clippy --manifest-path editors/zed/Cargo.toml --all-targets --locked -- -D warnings
+      - run: cargo build --manifest-path editors/zed/Cargo.toml --target wasm32-wasip2 --locked
+      - run: python3 -m unittest discover -s editors/zed/tests -v
+      - name: Install pinned Tree-sitter CLI
+        run: |
+          npm install --prefix "$RUNNER_TEMP/nitride-tree-sitter" --ignore-scripts tree-sitter-cli@0.25.10
+          cd "$RUNNER_TEMP/nitride-tree-sitter/node_modules/tree-sitter-cli"
+          node install.js
+          echo "$RUNNER_TEMP/nitride-tree-sitter/node_modules/.bin" >> "$GITHUB_PATH"
+      - name: Check generated parser and editor queries
+        run: |
+          cd editors/zed/tree-sitter-nitride
+          tree-sitter generate
+          git diff --exit-code -- src
+          cd ../../..
+          python3 editors/zed/check.py

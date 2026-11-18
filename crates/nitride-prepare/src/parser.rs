@@ -382,7 +382,7 @@ fn module_of(modules: &[([usize; 2], String)], span: [usize; 2]) -> String {
         .unwrap_or_default()
 }
 
-/// Helper parameters, match captures and element labels, with their uses.
+/// Locals bound by grammar functions, helpers, matches and rules.
 pub fn locals(source: &Source) -> Result<Vec<crate::GrammarLocal>, PrepareError> {
     let source = &tolerant(source)?;
     let tree = syntax(source)?;
@@ -396,6 +396,9 @@ pub fn locals(source: &Source) -> Result<Vec<crate::GrammarLocal>, PrepareError>
     let mut found = Vec::new();
     for id in 0..tree.nodes.len() as u32 {
         match decoder.kind(id) {
+            "Function" => {
+                decoder.function_scope(id, &mut Vec::new(), &mut found);
+            }
             "Helper" => decoder.helper_locals(id, &mut found),
             "SyntaxRule" | "Alternative" => decoder.label_locals(id, &mut found),
             _ => {}
@@ -577,6 +580,67 @@ impl Decoder<'_> {
                 .join(" "),
             definitions: vec![self.span(self.field(binder, "Name"))],
             uses: vec![],
+        }
+    }
+    /// Walks grammar function syntax in binding order. An initializer or
+    /// comprehension bound sees the outer scope. The newest local wins.
+    fn function_scope(
+        &self,
+        id: u32,
+        scope: &mut Vec<usize>,
+        found: &mut Vec<crate::GrammarLocal>,
+    ) {
+        match self.kind(id) {
+            "Function" | "Block" => {
+                let depth = scope.len();
+                for parameter in self.fields(id, "Parameters") {
+                    scope.push(found.len());
+                    found.push(self.local("parameter", parameter));
+                }
+                for binding in self.fields(id, "Lets") {
+                    self.function_scope(self.field(binding, "Value"), scope, found);
+                    scope.push(found.len());
+                    found.push(self.local("let binding", binding));
+                }
+                if let Some(condition) = self.tree.field(id, "Where") {
+                    self.function_scope(condition, scope, found);
+                }
+                self.function_scope(self.field(id, "Body"), scope, found);
+                scope.truncate(depth);
+            }
+            "Comprehension" => {
+                self.function_scope(self.field(id, "From"), scope, found);
+                if let Some(to) = self.tree.field(id, "To") {
+                    self.function_scope(to, scope, found);
+                }
+                let variable = self.field(id, "Variable");
+                let name = self.text(variable);
+                scope.push(found.len());
+                found.push(crate::GrammarLocal {
+                    kind: "comprehension variable",
+                    name: name.into(),
+                    detail: format!("{} {name}", self.text(self.field(id, "Kind"))),
+                    definitions: vec![self.span(variable)],
+                    uses: vec![],
+                });
+                self.function_scope(self.field(id, "Block"), scope, found);
+                scope.pop();
+            }
+            "Reference" | "NameValue" => {
+                let name = self.field(id, "Name");
+                if let Some(&binding) = scope
+                    .iter()
+                    .rev()
+                    .find(|&&i| found[i].name == self.text(name))
+                {
+                    found[binding].uses.push(self.span(name));
+                }
+            }
+            _ => {
+                for child in self.tree.children(id) {
+                    self.function_scope(child.node, scope, found);
+                }
+            }
         }
     }
     /// A helper's parameters, used by its selector and quotes, and each

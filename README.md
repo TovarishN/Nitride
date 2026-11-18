@@ -205,6 +205,10 @@ the recommended profile and a PGO build script for it.
 bundles it, providing diagnostics, coloring, navigation, rename, completion,
 formatting, hints, and parser-repair quick fixes for supported profiles.
 
+The [Zed extension](editors/zed/README.md) connects to a local Nitride CLI and
+adds Tree-sitter highlighting for `.ngr`, `.ncatalog`, `.nbind`, `.nproj`, and
+`.ntest`, plus a test-suite task. See its README for local installation.
+
 The server reads the workspace's `nitride.nproj` and the `.nproj` language files
 it includes (see `docs/superpowers/specs/2026-10-29-project-language-design.md`),
 falling back to Nitrogen's `nitrogen.json`, and prepares languages from grammar

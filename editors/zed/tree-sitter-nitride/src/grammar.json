@@ -1,0 +1,976 @@
+{
+  "$schema": "https://tree-sitter.github.io/tree-sitter/assets/schemas/grammar.schema.json",
+  "name": "nitride",
+  "word": "identifier",
+  "rules": {
+    "source_file": {
+      "type": "REPEAT",
+      "content": {
+        "type": "SYMBOL",
+        "name": "_item"
+      }
+    },
+    "_item": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "SYMBOL",
+          "name": "module_header"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "binding_header"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "language_header"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "declaration_header"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "block"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "parenthesized_group"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "bracket_group"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "raw_string"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "verbatim_string"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "string"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "character"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "signature"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "boolean"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "keyword"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "identifier"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "number"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "operator"
+        },
+        {
+          "type": "SYMBOL",
+          "name": "punctuation"
+        }
+      ]
+    },
+    "module_header": {
+      "type": "PREC_RIGHT",
+      "value": 3,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "syntax"
+              },
+              {
+                "type": "STRING",
+                "value": "catalog"
+              }
+            ]
+          },
+          {
+            "type": "STRING",
+            "value": "module"
+          },
+          {
+            "type": "FIELD",
+            "name": "name",
+            "content": {
+              "type": "SYMBOL",
+              "name": "qualified_name"
+            }
+          }
+        ]
+      }
+    },
+    "binding_header": {
+      "type": "PREC_RIGHT",
+      "value": 2,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "binding"
+          },
+          {
+            "type": "FIELD",
+            "name": "name",
+            "content": {
+              "type": "SYMBOL",
+              "name": "qualified_name"
+            }
+          }
+        ]
+      }
+    },
+    "language_header": {
+      "type": "PREC_RIGHT",
+      "value": 2,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "language"
+          },
+          {
+            "type": "FIELD",
+            "name": "name",
+            "content": {
+              "type": "SYMBOL",
+              "name": "identifier"
+            }
+          }
+        ]
+      }
+    },
+    "declaration_header": {
+      "type": "PREC_RIGHT",
+      "value": 1,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "syntax"
+              },
+              {
+                "type": "STRING",
+                "value": "token"
+              },
+              {
+                "type": "STRING",
+                "value": "type"
+              },
+              {
+                "type": "STRING",
+                "value": "operation"
+              },
+              {
+                "type": "STRING",
+                "value": "function"
+              },
+              {
+                "type": "STRING",
+                "value": "pattern"
+              },
+              {
+                "type": "STRING",
+                "value": "context"
+              }
+            ]
+          },
+          {
+            "type": "FIELD",
+            "name": "name",
+            "content": {
+              "type": "SYMBOL",
+              "name": "identifier"
+            }
+          }
+        ]
+      }
+    },
+    "qualified_name": {
+      "type": "PREC_RIGHT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "SYMBOL",
+            "name": "identifier"
+          },
+          {
+            "type": "REPEAT",
+            "content": {
+              "type": "SEQ",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "."
+                },
+                {
+                  "type": "SYMBOL",
+                  "name": "identifier"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+    "block": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "{"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_item"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "}"
+        }
+      ]
+    },
+    "parenthesized_group": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "("
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_item"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": ")"
+        }
+      ]
+    },
+    "bracket_group": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "["
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "SYMBOL",
+            "name": "_item"
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "]"
+        }
+      ]
+    },
+    "keyword": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "syntax"
+        },
+        {
+          "type": "STRING",
+          "value": "token"
+        },
+        {
+          "type": "STRING",
+          "value": "type"
+        },
+        {
+          "type": "STRING",
+          "value": "operation"
+        },
+        {
+          "type": "STRING",
+          "value": "function"
+        },
+        {
+          "type": "STRING",
+          "value": "pattern"
+        },
+        {
+          "type": "STRING",
+          "value": "context"
+        },
+        {
+          "type": "STRING",
+          "value": "module"
+        },
+        {
+          "type": "STRING",
+          "value": "catalog"
+        },
+        {
+          "type": "STRING",
+          "value": "binding"
+        },
+        {
+          "type": "STRING",
+          "value": "language"
+        },
+        {
+          "type": "STRING",
+          "value": "workspace"
+        },
+        {
+          "type": "STRING",
+          "value": "include"
+        },
+        {
+          "type": "STRING",
+          "value": "extensions"
+        },
+        {
+          "type": "STRING",
+          "value": "grammar"
+        },
+        {
+          "type": "STRING",
+          "value": "grammars"
+        },
+        {
+          "type": "STRING",
+          "value": "start"
+        },
+        {
+          "type": "STRING",
+          "value": "trivia"
+        },
+        {
+          "type": "STRING",
+          "value": "nitrogen"
+        },
+        {
+          "type": "STRING",
+          "value": "namespace"
+        },
+        {
+          "type": "STRING",
+          "value": "source"
+        },
+        {
+          "type": "STRING",
+          "value": "sources"
+        },
+        {
+          "type": "STRING",
+          "value": "library"
+        },
+        {
+          "type": "STRING",
+          "value": "version"
+        },
+        {
+          "type": "STRING",
+          "value": "using"
+        },
+        {
+          "type": "STRING",
+          "value": "usings"
+        },
+        {
+          "type": "STRING",
+          "value": "symbols"
+        },
+        {
+          "type": "STRING",
+          "value": "symbol"
+        },
+        {
+          "type": "STRING",
+          "value": "property"
+        },
+        {
+          "type": "STRING",
+          "value": "builtin"
+        },
+        {
+          "type": "STRING",
+          "value": "overload"
+        },
+        {
+          "type": "STRING",
+          "value": "extensible"
+        },
+        {
+          "type": "STRING",
+          "value": "extend"
+        },
+        {
+          "type": "STRING",
+          "value": "out"
+        },
+        {
+          "type": "STRING",
+          "value": "in"
+        },
+        {
+          "type": "STRING",
+          "value": "hover"
+        },
+        {
+          "type": "STRING",
+          "value": "expected"
+        },
+        {
+          "type": "STRING",
+          "value": "for"
+        },
+        {
+          "type": "STRING",
+          "value": "except"
+        },
+        {
+          "type": "STRING",
+          "value": "declares"
+        },
+        {
+          "type": "STRING",
+          "value": "references"
+        },
+        {
+          "type": "STRING",
+          "value": "scope"
+        },
+        {
+          "type": "STRING",
+          "value": "dynamic"
+        },
+        {
+          "type": "STRING",
+          "value": "sequential"
+        },
+        {
+          "type": "STRING",
+          "value": "recursive"
+        },
+        {
+          "type": "STRING",
+          "value": "lowers"
+        },
+        {
+          "type": "STRING",
+          "value": "rewrites"
+        },
+        {
+          "type": "STRING",
+          "value": "literal"
+        },
+        {
+          "type": "STRING",
+          "value": "template"
+        },
+        {
+          "type": "STRING",
+          "value": "expand"
+        },
+        {
+          "type": "STRING",
+          "value": "text"
+        },
+        {
+          "type": "STRING",
+          "value": "transparent"
+        },
+        {
+          "type": "STRING",
+          "value": "precedence"
+        },
+        {
+          "type": "STRING",
+          "value": "left"
+        },
+        {
+          "type": "STRING",
+          "value": "right"
+        },
+        {
+          "type": "STRING",
+          "value": "if"
+        },
+        {
+          "type": "STRING",
+          "value": "then"
+        },
+        {
+          "type": "STRING",
+          "value": "else"
+        },
+        {
+          "type": "STRING",
+          "value": "choice"
+        },
+        {
+          "type": "STRING",
+          "value": "seq"
+        },
+        {
+          "type": "STRING",
+          "value": "let"
+        },
+        {
+          "type": "STRING",
+          "value": "where"
+        },
+        {
+          "type": "STRING",
+          "value": "with"
+        },
+        {
+          "type": "STRING",
+          "value": "match"
+        },
+        {
+          "type": "STRING",
+          "value": "inside"
+        },
+        {
+          "type": "STRING",
+          "value": "parent"
+        },
+        {
+          "type": "STRING",
+          "value": "check"
+        },
+        {
+          "type": "STRING",
+          "value": "at"
+        },
+        {
+          "type": "STRING",
+          "value": "error"
+        },
+        {
+          "type": "STRING",
+          "value": "warning"
+        },
+        {
+          "type": "STRING",
+          "value": "show"
+        },
+        {
+          "type": "STRING",
+          "value": "call"
+        },
+        {
+          "type": "STRING",
+          "value": "infer"
+        },
+        {
+          "type": "STRING",
+          "value": "host"
+        },
+        {
+          "type": "STRING",
+          "value": "is"
+        },
+        {
+          "type": "STRING",
+          "value": "wasm"
+        },
+        {
+          "type": "STRING",
+          "value": "component"
+        },
+        {
+          "type": "STRING",
+          "value": "process"
+        },
+        {
+          "type": "STRING",
+          "value": "command"
+        },
+        {
+          "type": "STRING",
+          "value": "arguments"
+        },
+        {
+          "type": "STRING",
+          "value": "timeout"
+        },
+        {
+          "type": "STRING",
+          "value": "tests"
+        },
+        {
+          "type": "STRING",
+          "value": "project"
+        },
+        {
+          "type": "STRING",
+          "value": "test"
+        },
+        {
+          "type": "STRING",
+          "value": "file"
+        },
+        {
+          "type": "STRING",
+          "value": "expect"
+        },
+        {
+          "type": "STRING",
+          "value": "parse"
+        },
+        {
+          "type": "STRING",
+          "value": "compile"
+        },
+        {
+          "type": "STRING",
+          "value": "run"
+        },
+        {
+          "type": "STRING",
+          "value": "accept"
+        },
+        {
+          "type": "STRING",
+          "value": "reject"
+        },
+        {
+          "type": "STRING",
+          "value": "values"
+        },
+        {
+          "type": "STRING",
+          "value": "diagnostic"
+        },
+        {
+          "type": "STRING",
+          "value": "code"
+        },
+        {
+          "type": "STRING",
+          "value": "span"
+        },
+        {
+          "type": "STRING",
+          "value": "none"
+        }
+      ]
+    },
+    "boolean": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "true"
+        },
+        {
+          "type": "STRING",
+          "value": "false"
+        }
+      ]
+    },
+    "identifier": {
+      "type": "PATTERN",
+      "value": "[\\p{L}_][\\p{L}\\p{N}_]*"
+    },
+    "number": {
+      "type": "PATTERN",
+      "value": "[0-9]+(\\.[0-9]+)?([eE][+-]?[0-9]+)?"
+    },
+    "string": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "\""
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "IMMEDIATE_TOKEN",
+                "content": {
+                  "type": "PREC",
+                  "value": 1,
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^\"\\\\\\r\\n]+"
+                  }
+                }
+              },
+              {
+                "type": "SYMBOL",
+                "name": "escape_sequence"
+              }
+            ]
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "\""
+        }
+      ]
+    },
+    "character": {
+      "type": "SEQ",
+      "members": [
+        {
+          "type": "STRING",
+          "value": "'"
+        },
+        {
+          "type": "REPEAT",
+          "content": {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "IMMEDIATE_TOKEN",
+                "content": {
+                  "type": "PREC",
+                  "value": 1,
+                  "content": {
+                    "type": "PATTERN",
+                    "value": "[^'\\\\\\r\\n]+"
+                  }
+                }
+              },
+              {
+                "type": "SYMBOL",
+                "name": "escape_sequence"
+              }
+            ]
+          }
+        },
+        {
+          "type": "STRING",
+          "value": "'"
+        }
+      ]
+    },
+    "escape_sequence": {
+      "type": "IMMEDIATE_TOKEN",
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "\\"
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "PATTERN",
+                "value": "u[0-9a-fA-F]{4}"
+              },
+              {
+                "type": "PATTERN",
+                "value": "[^\\r\\n]"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "verbatim_string": {
+      "type": "TOKEN",
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "@\""
+              },
+              {
+                "type": "STRING",
+                "value": "$@\""
+              },
+              {
+                "type": "STRING",
+                "value": "@$\""
+              }
+            ]
+          },
+          {
+            "type": "REPEAT",
+            "content": {
+              "type": "CHOICE",
+              "members": [
+                {
+                  "type": "STRING",
+                  "value": "\"\""
+                },
+                {
+                  "type": "PATTERN",
+                  "value": "[^\"]"
+                }
+              ]
+            }
+          },
+          {
+            "type": "STRING",
+            "value": "\""
+          }
+        ]
+      }
+    },
+    "raw_string": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PREC",
+        "value": 2,
+        "content": {
+          "type": "SEQ",
+          "members": [
+            {
+              "type": "STRING",
+              "value": "<["
+            },
+            {
+              "type": "PATTERN",
+              "value": "([^\\]]|\\]+[^\\]>])*"
+            },
+            {
+              "type": "PATTERN",
+              "value": "\\]+>"
+            }
+          ]
+        }
+      }
+    },
+    "signature": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PREC",
+        "value": 3,
+        "content": {
+          "type": "PATTERN",
+          "value": "#!nitrogen[^\\r\\n]*"
+        }
+      }
+    },
+    "comment": {
+      "type": "TOKEN",
+      "content": {
+        "type": "CHOICE",
+        "members": [
+          {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "//"
+              },
+              {
+                "type": "PATTERN",
+                "value": "[^\\r\\n]*"
+              }
+            ]
+          },
+          {
+            "type": "SEQ",
+            "members": [
+              {
+                "type": "STRING",
+                "value": "/*"
+              },
+              {
+                "type": "PATTERN",
+                "value": "[^*]*\\*+([^/*][^*]*\\*+)*"
+              },
+              {
+                "type": "STRING",
+                "value": "/"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "operator": {
+      "type": "PATTERN",
+      "value": "[=+\\-*/!?&|<>~^%@$#\\\\`]+"
+    },
+    "punctuation": {
+      "type": "CHOICE",
+      "members": [
+        {
+          "type": "STRING",
+          "value": ".."
+        },
+        {
+          "type": "STRING",
+          "value": "."
+        },
+        {
+          "type": "STRING",
+          "value": ":"
+        },
+        {
+          "type": "STRING",
+          "value": ";"
+        },
+        {
+          "type": "STRING",
+          "value": ","
+        }
+      ]
+    }
+  },
+  "extras": [
+    {
+      "type": "PATTERN",
+      "value": "\\s"
+    },
+    {
+      "type": "SYMBOL",
+      "name": "comment"
+    }
+  ],
+  "conflicts": [],
+  "precedences": [],
+  "externals": [],
+  "inline": [],
+  "supertypes": [],
+  "reserved": {}
+}

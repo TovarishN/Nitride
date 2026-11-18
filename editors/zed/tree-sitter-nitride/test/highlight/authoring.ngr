@@ -1,0 +1,14 @@
+syntax module Demo {
+// <- keyword
+//            ^^^^ type
+  token Text = "hello\n";
+//^^^^^ keyword
+//      ^^^^ type
+//             ^^^^^ string
+//                   ^^ string.escape
+  operation Add(Value): Value = host add;
+//^^^^^^^^^ keyword
+//          ^^^ function
+  // a comment
+//^^^^^^^^^^^^ comment
+}

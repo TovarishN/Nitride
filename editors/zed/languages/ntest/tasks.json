@@ -1,0 +1,10 @@
+[
+  {
+    "label": "Nitride: run test suite",
+    "command": "nitride",
+    "args": ["test", "$ZED_FILE"],
+    "cwd": "$ZED_DIRNAME",
+    "save": "current",
+    "reveal": "always"
+  }
+]

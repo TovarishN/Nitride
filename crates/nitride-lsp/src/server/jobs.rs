@@ -69,6 +69,7 @@ impl<W: Write> Server<W> {
         })
     }
     pub(super) fn changed_document(&mut self, uri: &str) -> io::Result<()> {
+        self.navigation_grammars.clear();
         if self.jobs.worker.is_none() {
             return Ok(());
         }
@@ -90,6 +91,7 @@ impl<W: Write> Server<W> {
             return Ok(());
         }
         self.reload = true;
+        self.navigation_grammars.clear();
         if self.jobs.worker.is_some() {
             self.jobs.workspace = self.jobs.changed();
             if let Some(active) = self
