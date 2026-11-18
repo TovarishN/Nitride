@@ -7,6 +7,7 @@ use crate::server::range;
 use serde_json::{Value, json};
 
 /// A grammar file within the index of its language's grammars.
+#[derive(Clone, Copy)]
 pub struct GrammarAt<'a> {
     pub index: &'a GrammarIndex,
     pub file: usize,
@@ -208,6 +209,49 @@ pub fn definition(
     occurrences(analysis, uri, offset, grammar.as_ref())
         .and_then(|all| all.into_iter().find(|(_, declaration)| *declaration))
         .map_or(Value::Null, |(location, _)| location)
+}
+
+/// Include the source name range for clients that negotiate LocationLinks.
+/// Editors use it to underline and cache the complete command-hover symbol.
+pub fn definition_link(
+    analysis: &Analysis,
+    offset: u32,
+    grammar: Option<GrammarAt<'_>>,
+    location: Value,
+) -> Value {
+    if location.is_null() {
+        return location;
+    }
+    let origin = if let Some(GrammarAt { index, file }) = grammar {
+        index
+            .local_at(file, offset)
+            .map(|(_, span)| span)
+            .or_else(|| rule_at(index, file, offset).map(|(_, span)| span))
+    } else if let Some(Target::Definition(target)) = analysis.index.at(offset) {
+        Some(
+            analysis
+                .index
+                .references
+                .iter()
+                .find(|used| {
+                    used.target == target && used.span[0] <= offset && offset <= used.span[1]
+                })
+                .map_or(analysis.index.definitions[target].name_span, |used| {
+                    used.span
+                }),
+        )
+    } else {
+        None
+    };
+    let Some(origin) = origin else {
+        return location;
+    };
+    json!([{
+        "originSelectionRange": range(&analysis.lines, origin),
+        "targetUri": location["uri"],
+        "targetRange": location["range"],
+        "targetSelectionRange": location["range"],
+    }])
 }
 
 pub fn references(

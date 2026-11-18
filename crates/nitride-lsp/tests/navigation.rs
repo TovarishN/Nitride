@@ -724,3 +724,126 @@ fn incomplete_pattern_keeps_outline() {
     let symbols = response(&messages, 5)["result"].to_string();
     assert!(symbols.contains("Paired"), "{symbols}");
 }
+
+#[test]
+fn contextual_grammar_function_definition() {
+    let root = repo();
+    let path = lang("csharp4/Grammars/Lexical.ngr");
+    let text = std::fs::read_to_string(&path).unwrap();
+    let definition = at(
+        &root,
+        &path,
+        &text,
+        "textDocument/definition",
+        66,
+        24,
+        json!({}),
+    );
+    assert_eq!(definition["result"]["uri"], uri(&path), "{definition}");
+    assert_eq!(
+        definition["result"]["range"],
+        location(63, 9, 19),
+        "{definition}"
+    );
+}
+
+#[test]
+fn grammar_function_definition_link_has_source_symbol_range() {
+    let dir = scratch("function-definition-link");
+    let path = dir.join("Example.ngr");
+    let text = "syntax module Example {\nfunction Identity(word: Grammar.Text): Grammar.Rule = word;\ntoken Word = Identity(\"word\");\n}";
+    let mut input = frame(
+        &json!({"jsonrpc":"2.0","id":1,"method":"initialize","params":{
+            "rootUri":uri(&dir), "capabilities":{"textDocument":{"definition":{"linkSupport":true}}}
+        }}),
+    );
+    for message in [
+        notification("initialized", json!({})),
+        open(&path, text),
+        request(
+            2,
+            "textDocument/definition",
+            json!({"textDocument":{"uri":uri(&path)},"position":{"line":2,"character":15}}),
+        ),
+        request(3, "shutdown", Value::Null),
+        notification("exit", Value::Null),
+    ] {
+        input.extend(frame(&message));
+    }
+    let messages = Session::raw(input);
+    let result = &response(&messages, 2)["result"];
+    assert_eq!(
+        result[0]["originSelectionRange"],
+        location(2, 13, 21),
+        "{result}"
+    );
+    assert_eq!(result[0]["targetUri"], uri(&path), "{result}");
+    assert_eq!(
+        result[0]["targetSelectionRange"],
+        location(1, 9, 17),
+        "{result}"
+    );
+    assert_eq!(result[0]["targetRange"], location(1, 9, 17), "{result}");
+}
+
+#[test]
+fn grammar_function_locals_navigate_with_lexical_scope() {
+    let dir = scratch("grammar-function-locals");
+    let path = dir.join("Example.ngr");
+    let text = concat!(
+        "syntax module Example {\n",
+        "  token item = \"global\";\n",
+        "  function Build(word: Grammar.Text, n: Grammar.Int) : Grammar.Rule =\n",
+        "    let size = n;\n",
+        "    let item = word;\n",
+        "    item seq n in 0 .. size + n {\n",
+        "      let size = size + n;\n",
+        "      where size > 0 : [char(size)]\n",
+        "    } item;\n",
+        "  token Outside = item;\n",
+        "}\n",
+    );
+    let uses = [
+        (3, "n;", 2, "n: Grammar.Int", "n"),
+        (4, "word;", 2, "word:", "word"),
+        (5, "item seq", 4, "item =", "item"),
+        (5, "n {", 2, "n: Grammar.Int", "n"),
+        (6, "size +", 3, "size =", "size"),
+        (6, "n;", 5, "n in", "n"),
+        (7, "size >", 6, "size =", "size"),
+        (7, "size)", 6, "size =", "size"),
+        (8, "item;", 4, "item =", "item"),
+        (9, "item;", 1, "item =", "item"),
+    ];
+    let column = |line: usize, needle: &str| text.lines().nth(line).unwrap().find(needle).unwrap();
+    let mut messages = vec![open(&path, text)];
+    for (id, &(line, use_text, _, _, _)) in uses.iter().enumerate() {
+        messages.push(request(
+            id as u64 + 2,
+            "textDocument/definition",
+            json!({"textDocument":{"uri":uri(&path)},"position":{"line":line,"character":column(line, use_text)}}),
+        ));
+    }
+    messages.push(request(
+        100,
+        "textDocument/references",
+        json!({"textDocument":{"uri":uri(&path)},"position":{"line":1,"character":9},"context":{"includeDeclaration":false}}),
+    ));
+    let responses = Session::run(&dir, messages);
+    for (id, &(line, use_text, def_line, def_text, name)) in uses.iter().enumerate() {
+        let result = &response(&responses, id as u64 + 2)["result"];
+        let start = column(def_line, def_text) as u32;
+        assert_eq!(
+            result["range"],
+            location(def_line as u32, start, start + name.len() as u32),
+            "line {}: {use_text}: {result}",
+            line + 1
+        );
+    }
+    let references = &response(&responses, 100)["result"];
+    assert_eq!(
+        references,
+        &json!([{"uri":uri(&path),"range":location(9, 18, 22)}]),
+        "the global rule must not claim the function-local uses"
+    );
+}

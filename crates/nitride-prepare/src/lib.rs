@@ -181,18 +181,18 @@ pub struct HostHandler {
     pub span: [usize; 2],
 }
 
-/// A name bound inside one member of a grammar file: a helper parameter, a
-/// match capture or an element label, with every use within its scope.
+/// A name bound inside one member of a grammar file, with every use within
+/// its scope.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct GrammarLocal {
-    /// "parameter", "capture" or "field".
+    /// The kind of binder, e.g. "parameter", "let binding" or "field".
     pub kind: &'static str,
     pub name: String,
     /// The binder as written, e.g. `Value: Expr`.
     pub detail: String,
     /// Where the name is bound; a label may bind it more than once.
     pub definitions: Vec<[usize; 2]>,
-    /// `$Name` in quotes (the name only), match selectors and clause fields.
+    /// The span of each use, excluding a quote placeholder's leading `$`.
     pub uses: Vec<[usize; 2]>,
 }
 

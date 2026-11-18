@@ -1,0 +1,25 @@
+id = "nitride"
+name = "Nitride"
+version = "0.1.0"
+schema_version = 1
+authors = ["Nitride contributors"]
+description = "Nitride grammars, catalogs, bindings, projects and tests"
+repository = "https://github.com/TovarishN/Nitride"
+
+[language_servers.nitride]
+name = "Nitride"
+languages = ["Nitride Grammar", "Nitride Catalog", "Nitride Binding", "Nitride Project", "Nitride Program"]
+
+[language_servers.nitride.language_ids]
+"Nitride Grammar" = "ngr"
+"Nitride Catalog" = "ncatalog"
+"Nitride Binding" = "nbind"
+"Nitride Project" = "nproj"
+"Nitride Program" = "nitride-signed"
+
+# For uncommitted/local development, prepare-dev.py replaces this with a local
+# Git snapshot. Pin rev to a published commit containing this parser on release.
+[grammars.nitride]
+repository = "https://github.com/TovarishN/Nitride"
+rev = "main"
+path = "editors/zed/tree-sitter-nitride"

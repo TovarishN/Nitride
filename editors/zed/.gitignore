@@ -1,0 +1,8 @@
+/extension.wasm
+/grammars/
+/tree-sitter-nitride/.cache/
+/tree-sitter-nitride/*.so
+/tree-sitter-nitride/*.dylib
+/tree-sitter-nitride/*.dll
+/tree-sitter-nitride/*.wasm
+/tree-sitter-nitride/node_modules/

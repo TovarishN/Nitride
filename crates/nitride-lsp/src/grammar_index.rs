@@ -1,6 +1,7 @@
 //! Rules across the grammar files of a language, and the members of its
 //! catalog files: where each is defined and every place a file uses it.
 use nitride_prepare::{GrammarItem, GrammarLocal, GrammarReference, HostHandler, Source};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
 pub struct GrammarFile {
@@ -105,17 +106,17 @@ pub fn build(
             unreadable.push(path.clone());
             continue;
         };
+        let locals = if catalog {
+            vec![]
+        } else {
+            nitride_prepare::grammar_locals(&source).unwrap_or_default()
+        };
         files.push(GrammarFile {
             uri: uri_of(path),
             damaged: !if catalog {
                 nitride_prepare::catalog_parses(&source)
             } else {
                 nitride_prepare::grammar_parses(&source)
-            },
-            locals: if catalog {
-                vec![]
-            } else {
-                nitride_prepare::grammar_locals(&source).unwrap_or_default()
             },
             handlers: if catalog {
                 nitride_prepare::catalog_handlers(&source).unwrap_or_default()
@@ -126,7 +127,8 @@ pub fn build(
             library: None,
             text: source.text,
             outline,
-            references,
+            references: nonlocal_references(references, &locals),
+            locals,
         });
     }
     let definitions = definitions(&files);
@@ -135,6 +137,16 @@ pub fn build(
         unreadable,
         definitions,
     }
+}
+
+/// A local that shadows a rule is a separate symbol for references and rename.
+fn nonlocal_references(
+    mut references: Vec<GrammarReference>,
+    locals: &[GrammarLocal],
+) -> Vec<GrammarReference> {
+    let uses: HashSet<_> = locals.iter().flat_map(|local| local.uses.iter()).collect();
+    references.retain(|reference| reference.kind != "rule" || !uses.contains(&reference.span));
+    references
 }
 
 /// Every module and rule definition in `files`, with its module.
@@ -178,6 +190,7 @@ impl GrammarIndex {
                     path: source.uri.into(),
                     text: source.text.into(),
                 };
+                let locals = nitride_prepare::grammar_locals(&input).unwrap_or_default();
                 self.files.push(GrammarFile {
                     path: None,
                     library: Some((library.name.into(), library.version.into())),
@@ -185,8 +198,11 @@ impl GrammarIndex {
                     damaged: false,
                     text: source.text.into(),
                     outline: nitride_prepare::grammar_outline(&input).unwrap_or_default(),
-                    references: nitride_prepare::grammar_references(&input).unwrap_or_default(),
-                    locals: nitride_prepare::grammar_locals(&input).unwrap_or_default(),
+                    references: nonlocal_references(
+                        nitride_prepare::grammar_references(&input).unwrap_or_default(),
+                        &locals,
+                    ),
+                    locals,
                     handlers: vec![],
                 });
             }

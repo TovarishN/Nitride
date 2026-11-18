@@ -1,0 +1,17 @@
+{
+  "grammars": [{
+    "name": "nitride",
+    "camelcase": "Nitride",
+    "scope": "source.nitride",
+    "path": ".",
+    "file-types": ["ngr", "ncatalog", "nbind", "nproj", "ntest"],
+    "highlights": "queries/highlights.scm"
+  }],
+  "metadata": {
+    "version": "0.1.0",
+    "license": "MIT",
+    "description": "Structural syntax highlighting for Nitride authoring languages",
+    "authors": [{"name": "Nitride contributors"}],
+    "links": {"repository": "https://github.com/TovarishN/Nitride"}
+  }
+}
