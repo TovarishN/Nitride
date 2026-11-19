@@ -1,0 +1,29 @@
+{
+  "languages": {
+    "Nitride Program": {
+      "inlay_hints": {
+        "enabled": true,
+        "show_other_hints": true
+      }
+    }
+  },
+  "file_types": {
+    "Nitride Program": [
+      "portable",
+      "powercalc",
+      "composed",
+      "namespaces",
+      "inferred",
+      "calls",
+      "functions",
+      "dates",
+      "rewrites",
+      "nitridegrammar",
+      "csharp4",
+      "context",
+      "calendar",
+      "**/languages/json/sample.json",
+      "**/languages/xml/sample.xml"
+    ]
+  }
+}

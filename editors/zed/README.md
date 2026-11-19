@@ -76,6 +76,14 @@ setting. See [language testing](../../docs/guides/language-testing.md).
 
 The server loads languages from `nitride.nproj`, falling back to `nitrogen.json`.
 Zed cannot dynamically register file associations through this extension API.
+This repository's [`.zed/settings.json`](../../.zed/settings.json) associates
+the example language suffixes with **Nitride Program**, including path-specific
+associations for the JSON and XML samples. Open the repository root in Zed to
+use these settings. Other JSON, XML and C# files keep their usual associations.
+The repository settings also enable inlay hints for **Nitride Program**, so
+evaluated statement values appear inline. Zed disables inlay hints by default;
+in other workspaces, set `languages."Nitride Program".inlay_hints.enabled` to
+`true` in Zed settings to display them.
 For a workspace DSL, associate its file suffix with **Nitride Program** in Zed:
 
 ```json
