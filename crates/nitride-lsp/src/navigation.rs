@@ -206,9 +206,28 @@ pub fn definition(
     if !on_text(analysis, offset) {
         return Value::Null;
     }
+    if let Some(GrammarAt { index, file }) = grammar {
+        if let Some((handler, _)) = index.handler_at(file, offset) {
+            return host_location(handler.kind, &handler.name).unwrap_or(Value::Null);
+        }
+    }
     occurrences(analysis, uri, offset, grammar.as_ref())
         .and_then(|all| all.into_iter().find(|(_, declaration)| *declaration))
         .map_or(Value::Null, |(location, _)| location)
+}
+
+/// The Rust implementation of a built-in host handler, when the source tree
+/// the server was built from is on this machine.
+fn host_location(kind: &str, name: &str) -> Option<Value> {
+    let (line, character) = nitride_core::host::source_position(kind, name)?;
+    let path = std::path::Path::new(nitride_core::host::SOURCE);
+    if !path.is_file() {
+        return None;
+    }
+    let end = character + name.len() as u32 + 2;
+    Some(json!({"uri": crate::uri::from_path(path), "range": {
+        "start": {"line": line, "character": character},
+        "end": {"line": line, "character": end}}}))
 }
 
 /// Include the source name range for clients that negotiate LocationLinks.
@@ -224,8 +243,9 @@ pub fn definition_link(
     }
     let origin = if let Some(GrammarAt { index, file }) = grammar {
         index
-            .local_at(file, offset)
+            .handler_at(file, offset)
             .map(|(_, span)| span)
+            .or_else(|| index.local_at(file, offset).map(|(_, span)| span))
             .or_else(|| rule_at(index, file, offset).map(|(_, span)| span))
     } else if let Some(Target::Definition(target)) = analysis.index.at(offset) {
         Some(
