@@ -89,12 +89,12 @@ pub fn hover(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
     }
     let index = &analysis.index;
     if let Some(used) = index.operation_at(offset) {
-        let word = if used.ids.len() == 1 {
-            "catalog operation"
-        } else {
-            "overload candidates"
+        let (word, shown) = match (used.rewrite, used.ids.len()) {
+            (true, _) => ("rewrite", &used.ids[..1]),
+            (false, 1) => ("catalog operation", &used.ids[..]),
+            (false, _) => ("overload candidates", &used.ids[..]),
         };
-        let ids: Vec<String> = used.ids.iter().map(|id| format!("`{id}`")).collect();
+        let ids: Vec<String> = shown.iter().map(|id| format!("`{id}`")).collect();
         // The type of the smallest expression the literal belongs to.
         let ty = index
             .types
