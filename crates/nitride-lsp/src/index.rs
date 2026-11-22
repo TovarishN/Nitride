@@ -1,7 +1,7 @@
 //! A document's symbols: definitions, the uses that resolve to them,
 //! built-ins and expression types.
 use crate::analysis::DeclaredName;
-use nitride_core::{Language, Program, SyntaxTree};
+use nitride_core::{Action, Language, Program, SyntaxTree};
 use nitride_prepare::Prepared;
 
 #[derive(Clone, Debug, Default)]
@@ -9,6 +9,8 @@ pub struct SymbolIndex {
     pub definitions: Vec<Definition>,
     pub references: Vec<Use>,
     pub builtins: Vec<BuiltinUse>,
+    /// Literals of nodes whose rule lowers to catalog operations.
+    pub operations: Vec<OperationUse>,
     /// Typed expression spans, from the engine's HIR.
     pub types: Vec<([u32; 2], String)>,
 }
@@ -34,6 +36,15 @@ pub struct BuiltinUse {
     pub span: [u32; 2],
     pub kind: String,
     pub name: String,
+}
+
+/// A literal (`addtime`, `+`) of a node whose rule lowers to a catalog
+/// operation, or to an overload's candidates.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct OperationUse {
+    pub span: [u32; 2],
+    /// Catalog ids, as `Module.Name`.
+    pub ids: Vec<String>,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -63,6 +74,72 @@ impl SymbolIndex {
             .iter()
             .position(|b| contains(b.span, offset))
             .map(Target::Builtin)
+    }
+
+    /// The operation literal at `offset` (its end included).
+    pub fn operation_at(&self, offset: u32) -> Option<&OperationUse> {
+        self.operations.iter().find(|o| contains(o.span, offset))
+    }
+
+    /// Records the literals of every node whose rule lowers to catalog
+    /// operations: the node's text outside its children, in runs of visible
+    /// characters other than brackets and separators.
+    pub fn with_operations(mut self, tree: &SyntaxTree<'_>, language: &Language<'_>) -> Self {
+        for (id, node) in tree.nodes.iter().enumerate() {
+            let rule = |r: u16| language.rules.get(r as usize).map(|r| &r.action);
+            let action = match rule(node.rule) {
+                Some(Action::None) | None => rule(language.node_rule(node.rule)),
+                action => action,
+            };
+            let ids: Vec<String> = match action {
+                Some(Action::Operation { id, .. }) => vec![*id],
+                Some(Action::Overload { candidates, .. }) => candidates.to_vec(),
+                _ => continue,
+            }
+            .into_iter()
+            .filter_map(|i| language.operations.get(i as usize).map(|o| o.id.to_owned()))
+            .collect();
+            if ids.is_empty() {
+                continue;
+            }
+            let mut children: Vec<[u32; 2]> = tree
+                .children(id as u32)
+                .iter()
+                .filter_map(|e| tree.nodes.get(e.node as usize).map(|n| n.span))
+                .collect();
+            children.sort_by_key(|s| s[0]);
+            let mut at = node.span[0];
+            let mut gaps = Vec::new();
+            for child in children.iter().chain([&[node.span[1], node.span[1]]]) {
+                if child[0] > at {
+                    gaps.push([at, child[0]]);
+                }
+                at = at.max(child[1]);
+            }
+            let text = tree.source.as_bytes();
+            for [start, end] in gaps {
+                let mut run: Option<u32> = None;
+                for i in start..=end {
+                    let literal = i < end
+                        && text
+                            .get(i as usize)
+                            .is_some_and(|b| !b.is_ascii_whitespace() && !b"()[]{},;".contains(b));
+                    match (literal, run) {
+                        (true, None) => run = Some(i),
+                        (false, Some(from)) => {
+                            self.operations.push(OperationUse {
+                                span: [from, i],
+                                ids: ids.clone(),
+                            });
+                            run = None;
+                        }
+                        _ => {}
+                    }
+                }
+            }
+        }
+        self.operations.sort_by_key(|o| o.span[0]);
+        self
     }
 
     /// A definition's name and every use of it, in text order; true marks

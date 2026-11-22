@@ -88,6 +88,26 @@ pub fn hover(analysis: &Analysis, offset: u32, grammar: Option<GrammarAt<'_>>) -
         };
     }
     let index = &analysis.index;
+    if let Some(used) = index.operation_at(offset) {
+        let word = if used.ids.len() == 1 {
+            "catalog operation"
+        } else {
+            "overload candidates"
+        };
+        let ids: Vec<String> = used.ids.iter().map(|id| format!("`{id}`")).collect();
+        // The type of the smallest expression the literal belongs to.
+        let ty = index
+            .types
+            .iter()
+            .filter(|(s, _)| s[0] <= used.span[0] && used.span[1] <= s[1])
+            .min_by_key(|(s, _)| s[1] - s[0])
+            .map_or_else(String::new, |(_, ty)| format!(" : {ty}"));
+        return json!({
+            "contents": {"kind": "markdown",
+                "value": format!("{}{ty}\n\n*{word}*", ids.join(", "))},
+            "range": range(&analysis.lines, used.span),
+        });
+    }
     match index.at(offset) {
         Some(Target::Definition(i)) => {
             let definition = &index.definitions[i];
@@ -228,6 +248,36 @@ fn host_location(kind: &str, name: &str) -> Option<Value> {
     Some(json!({"uri": crate::uri::from_path(path), "range": {
         "start": {"line": line, "character": character},
         "end": {"line": line, "character": end}}}))
+}
+
+/// Catalog declarations reached from a program: one location, several for an
+/// overload's candidates, or links from the name at `origin`.
+pub fn catalog_links(
+    analysis: &Analysis,
+    origin: [u32; 2],
+    locations: Vec<Value>,
+    links: bool,
+) -> Value {
+    if !links {
+        return match <[Value; 1]>::try_from(locations) {
+            Ok([only]) => only,
+            Err(all) => Value::Array(all),
+        };
+    }
+    let origin = range(&analysis.lines, origin);
+    Value::Array(
+        locations
+            .into_iter()
+            .map(|l| {
+                json!({
+                    "originSelectionRange": origin,
+                    "targetUri": l["uri"],
+                    "targetRange": l["range"],
+                    "targetSelectionRange": l["range"],
+                })
+            })
+            .collect(),
+    )
 }
 
 /// Include the source name range for clients that negotiate LocationLinks.

@@ -257,7 +257,10 @@ pub fn source_position(kind: &str, name: &str) -> Option<(u32, u32)> {
     let entry = format!("name: \"{name}\",");
     let at = start + text[start..end].find(&entry)? + "name: ".len();
     let line_start = text[..at].rfind('\n').map_or(0, |n| n + 1);
-    Some((text[..at].matches('\n').count() as u32, (at - line_start) as u32))
+    Some((
+        text[..at].matches('\n').count() as u32,
+        (at - line_start) as u32,
+    ))
 }
 
 /// The engine's record and list operations, by the handler name codegen

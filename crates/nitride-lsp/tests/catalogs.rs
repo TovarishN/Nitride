@@ -191,6 +191,60 @@ fn hover_and_rename_over_catalog_members() {
 }
 
 #[test]
+fn program_names_go_to_catalog_declarations() {
+    let dir = dates("catalog-program");
+    let program = dir.join("sample.dates");
+    let text = "let start = today;\nlet sprint = 2 * 7 days;\nstart + sprint;\n\
+                (2026-12-25 - start) in days;\n";
+    std::fs::write(&program, text).unwrap();
+    for (line, needle, expected) in [
+        ("7 days", "days", vec!["Days"]),
+        ("in days", "in", vec!["InDays"]),
+        ("in days", "days", vec!["InDays"]),
+        ("= today", "today", vec!["today"]),
+        (
+            "start + sprint",
+            "+",
+            vec!["AddScalar", "Later", "AddDurations"],
+        ),
+    ] {
+        let result = request_at(
+            &dir,
+            &program,
+            "textDocument/definition",
+            find(text, line, needle),
+        );
+        let locations = match &result["result"] {
+            Value::Array(all) => all.clone(),
+            one => vec![one.clone()],
+        };
+        let found: Vec<_> = locations.iter().map(|l| target(&dir, l)).collect();
+        let expected: Vec<_> = expected
+            .into_iter()
+            .map(|n| ("Dates.ncatalog".to_owned(), n.to_owned()))
+            .collect();
+        assert_eq!(found, expected, "{line} / {needle}: {result}");
+    }
+    // A declared name still goes to its declaration in the program.
+    let at = find(text, "start + sprint", "start");
+    let result = request_at(&dir, &program, "textDocument/definition", at);
+    assert_eq!(
+        target(&dir, &result["result"]),
+        ("sample.dates".to_owned(), "start".to_owned())
+    );
+    let hover = request_at(
+        &dir,
+        &program,
+        "textDocument/hover",
+        find(text, "7 days", "days"),
+    );
+    assert_eq!(
+        hover["result"]["contents"]["value"],
+        "`Dates.Days` : Dates.Duration\n\n*catalog operation*"
+    );
+}
+
+#[test]
 fn hover_over_host_handlers() {
     let dir = dates("catalog-host-hover");
     let catalog = dir.join("Dates.ncatalog");
@@ -219,7 +273,10 @@ fn hover_over_host_handlers() {
         let definition = request_at(&dir, &catalog, "textDocument/definition", (line, character));
         let location = &definition["result"];
         assert!(
-            location["uri"].as_str().unwrap().ends_with("nitride-core/src/host.rs"),
+            location["uri"]
+                .as_str()
+                .unwrap()
+                .ends_with("nitride-core/src/host.rs"),
             "{definition}"
         );
         let table_line = host.lines().position(|l| l.starts_with(table)).unwrap();
