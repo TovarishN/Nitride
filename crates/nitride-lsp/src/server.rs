@@ -777,13 +777,15 @@ impl<W: Write> Server<W> {
         result
     }
 
-    /// The catalog declarations a program's operation literal or built-in
-    /// name at `offset` stands for, with the span of that name.
+    /// The declarations a program's literal or built-in name at `offset`
+    /// stands for, with the span of that name: catalog operations, a catalog
+    /// built-in, or a rewrite's grammar function (else its rule alternative).
     fn catalog_definition(&self, uri: &str, offset: u32) -> Option<([u32; 2], Vec<Value>)> {
         let index = &self.analyses.get(uri)?.index;
         let (span, wanted): ([u32; 2], Vec<(&'static str, String)>) =
             if let Some(used) = index.operation_at(offset) {
-                let ids = used.ids.iter().map(|id| ("member", id.clone())).collect();
+                let kind = if used.rewrite { "rule" } else { "member" };
+                let ids = used.ids.iter().map(|id| (kind, id.clone())).collect();
                 (used.span, ids)
             } else if let Some(crate::index::Target::Builtin(i)) = index.at(offset) {
                 let builtin = &index.builtins[i];
@@ -811,6 +813,10 @@ impl<W: Write> Server<W> {
             let Some(member) = grammars.catalog_member(kind, &name) else {
                 continue;
             };
+            // A rewrite goes to the first of its targets that resolves.
+            if kind == "rule" && !locations.is_empty() {
+                break;
+            }
             let file = &grammars.files[member.file];
             if file.uri.starts_with("nitride-lib:") && !self.library_documents {
                 continue;

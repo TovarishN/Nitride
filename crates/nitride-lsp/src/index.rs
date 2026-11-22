@@ -38,13 +38,15 @@ pub struct BuiltinUse {
     pub name: String,
 }
 
-/// A literal (`addtime`, `+`) of a node whose rule lowers to a catalog
-/// operation, or to an overload's candidates.
+/// A literal (`addtime`, `+`, `fortnights`) of a node whose rule lowers to a
+/// catalog operation or an overload's candidates, or rewrites to a template.
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub struct OperationUse {
     pub span: [u32; 2],
-    /// Catalog ids, as `Module.Name`.
+    /// Catalog ids, as `Module.Name`; for a rewrite, its grammar function
+    /// (an inline template's may be synthetic), then the rule alternative.
     pub ids: Vec<String>,
+    pub rewrite: bool,
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -82,7 +84,7 @@ impl SymbolIndex {
     }
 
     /// Records the literals of every node whose rule lowers to catalog
-    /// operations: the node's text outside its children, in runs of visible
+    /// operations or rewrites to a template: the node's text outside its children, in runs of visible
     /// characters other than brackets and separators.
     pub fn with_operations(mut self, tree: &SyntaxTree<'_>, language: &Language<'_>) -> Self {
         for (id, node) in tree.nodes.iter().enumerate() {
@@ -91,14 +93,28 @@ impl SymbolIndex {
                 Some(Action::None) | None => rule(language.node_rule(node.rule)),
                 action => action,
             };
-            let ids: Vec<String> = match action {
-                Some(Action::Operation { id, .. }) => vec![*id],
-                Some(Action::Overload { candidates, .. }) => candidates.to_vec(),
+            let operations = |ids: &[u16]| -> Vec<String> {
+                ids.iter()
+                    .filter_map(|&i| language.operations.get(i as usize).map(|o| o.id.to_owned()))
+                    .collect()
+            };
+            let (ids, rewrite) = match action {
+                Some(Action::Operation { id, .. }) => (operations(&[*id]), false),
+                Some(Action::Overload { candidates, .. }) => (operations(candidates), false),
+                Some(Action::Rewrite { helper, .. }) => {
+                    let rule = language.rules.get(language.node_rule(node.rule) as usize);
+                    let ids = language
+                        .helpers
+                        .get(*helper as usize)
+                        .map(|h| h.name)
+                        .into_iter()
+                        .chain(rule.map(|r| r.name))
+                        .map(str::to_owned)
+                        .collect();
+                    (ids, true)
+                }
                 _ => continue,
-            }
-            .into_iter()
-            .filter_map(|i| language.operations.get(i as usize).map(|o| o.id.to_owned()))
-            .collect();
+            };
             if ids.is_empty() {
                 continue;
             }
@@ -130,6 +146,7 @@ impl SymbolIndex {
                             self.operations.push(OperationUse {
                                 span: [from, i],
                                 ids: ids.clone(),
+                                rewrite,
                             });
                             run = None;
                         }

@@ -447,6 +447,45 @@ pub fn rewrites(name: &str) -> PathBuf {
 }
 
 #[test]
+fn rewrite_literals_go_to_their_templates() {
+    let dir = rewrites("rewrite-definition");
+    let path = dir.join("x.rewrites");
+    let text = "let count = 3;\ncount fortnights;\n~count;\ntwice(2 days);\n";
+    let grammar = std::fs::read_to_string(lang("rewrites/Rewrites.ngr")).unwrap();
+    // A named helper goes to its function; an inline template to its alternative.
+    for (line, character, declared) in [
+        (1, 8, "syntax function FortnightDuration"),
+        (2, 0, "| Soon = \"~\""),
+        (3, 2, "| Twice = \"twice\""),
+    ] {
+        let result = at(
+            &dir,
+            &path,
+            text,
+            "textDocument/definition",
+            line,
+            character,
+            json!({}),
+        );
+        let location = &result["result"];
+        assert!(
+            location["uri"].as_str().unwrap().ends_with("/Rewrites.ngr"),
+            "{result}"
+        );
+        let target = location["range"]["start"]["line"].as_u64().unwrap() as usize;
+        assert!(
+            grammar.lines().nth(target).unwrap().contains(declared),
+            "{declared}: {result}"
+        );
+    }
+    let result = hover(&dir, &path, text, 1, 8);
+    assert_eq!(
+        result["contents"]["value"],
+        "`Rewrites.FortnightDuration` : Core.Scalar\n\n*rewrite*"
+    );
+}
+
+#[test]
 fn quote_placeholders_navigate_to_their_binders() {
     let dir = rewrites("quote-placeholders");
     let path = lang("rewrites/Rewrites.ngr");
