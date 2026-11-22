@@ -232,6 +232,17 @@ impl GrammarIndex {
         })
     }
 
+    /// A catalog member by `Module.Name` (kind "member"), or a catalog
+    /// built-in by name (kind "builtin"), as a program names it.
+    pub fn catalog_member(&self, kind: &'static str, name: &str) -> Option<RuleDef> {
+        self.resolve(&GrammarReference {
+            kind,
+            name: name.into(),
+            span: [0, 0],
+            module: String::new(),
+        })
+    }
+
     /// Resolves a name used in `module`. A grammar or catalog module name
     /// names the first module of that kind so called; a built-in, the catalog
     /// built-in so called. For a rule (or catalog member), `M.R` names `R`

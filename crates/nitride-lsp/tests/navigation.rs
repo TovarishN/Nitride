@@ -259,7 +259,7 @@ fn rule_references_across_files() {
 }
 
 #[test]
-fn definition_of_builtin_is_null() {
+fn definition_of_builtin_is_its_catalog_declaration() {
     let dir = calls("definition-builtin");
     let result = at(
         &dir,
@@ -270,7 +270,24 @@ fn definition_of_builtin_is_null() {
         1,
         json!({}),
     );
-    assert_eq!(result["result"], Value::Null);
+    let location = &result["result"];
+    assert!(
+        location["uri"]
+            .as_str()
+            .unwrap()
+            .ends_with("/Calls.ncatalog"),
+        "{result}"
+    );
+    let catalog = std::fs::read_to_string(lang("calls/Calls.ncatalog")).unwrap();
+    let line = location["range"]["start"]["line"].as_u64().unwrap() as usize;
+    assert!(
+        catalog
+            .lines()
+            .nth(line)
+            .unwrap()
+            .contains("builtin function sum"),
+        "{result}"
+    );
 }
 
 fn symbols(root: &Path, opened: Vec<Value>, query: &str) -> Vec<Value> {

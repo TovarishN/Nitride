@@ -460,7 +460,8 @@ fn program_analysis(
     let index = match &checked.program {
         Some(program) => SymbolIndex::typed(&declarations, program),
         None => SymbolIndex::by_name(&declarations, &loaded.prepared, tree, language),
-    };
+    }
+    .with_operations(tree, language);
     let repairs = fixes(tree);
     let tree = Tree::new(Grammar::Workspace(loaded.clone()), tree);
     Analysis {

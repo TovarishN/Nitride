@@ -503,6 +503,14 @@ impl<W: Write> Server<W> {
                         } else {
                             self.declaration_links
                         };
+                        if at.is_none()
+                            && let Some((origin, locations)) = self.catalog_definition(&uri, offset)
+                        {
+                            let analysis = &self.analyses[&uri];
+                            return Ok(navigation::catalog_links(
+                                analysis, origin, locations, links,
+                            ));
+                        }
                         let location = navigation::definition(analysis, &uri, offset, at);
                         if !self.library_documents
                             && location["uri"]
@@ -767,6 +775,54 @@ impl<W: Write> Server<W> {
                 .insert(uri.into(), (index.clone(), *file));
         }
         result
+    }
+
+    /// The catalog declarations a program's operation literal or built-in
+    /// name at `offset` stands for, with the span of that name.
+    fn catalog_definition(&self, uri: &str, offset: u32) -> Option<([u32; 2], Vec<Value>)> {
+        let index = &self.analyses.get(uri)?.index;
+        let (span, wanted): ([u32; 2], Vec<(&'static str, String)>) =
+            if let Some(used) = index.operation_at(offset) {
+                let ids = used.ids.iter().map(|id| ("member", id.clone())).collect();
+                (used.span, ids)
+            } else if let Some(crate::index::Target::Builtin(i)) = index.at(offset) {
+                let builtin = &index.builtins[i];
+                (builtin.span, vec![("builtin", builtin.name.clone())])
+            } else {
+                return None;
+            };
+        let path = uri::to_path(uri)?;
+        let language = self.registry.for_path(&path)?;
+        let set: Vec<PathBuf> = language
+            .entry
+            .catalogs
+            .iter()
+            .chain(&language.entry.grammars)
+            .cloned()
+            .collect();
+        let buffers = self.buffers();
+        let uri_of = self.uri_of();
+        let mut grammars = grammar_index::build(&set, &|p: &Path| buffers.get(p), &uri_of);
+        if let Some(first) = language.entry.catalogs.first() {
+            grammars.add_libraries(&self.registry.libraries_at(first));
+        }
+        let mut locations = Vec::new();
+        for (kind, name) in wanted {
+            let Some(member) = grammars.catalog_member(kind, &name) else {
+                continue;
+            };
+            let file = &grammars.files[member.file];
+            if file.uri.starts_with("nitride-lib:") && !self.library_documents {
+                continue;
+            }
+            let span = member.item.name_span.map(|v| v as u32);
+            let location =
+                json!({"uri": file.uri, "range": range(&LineIndex::new(&file.text), span)});
+            if !locations.contains(&location) {
+                locations.push(location);
+            }
+        }
+        (!locations.is_empty()).then_some((span, locations))
     }
 
     /// The document's analysis, brought up to date first if an edit is pending.
