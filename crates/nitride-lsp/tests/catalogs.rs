@@ -196,22 +196,44 @@ fn hover_over_host_handlers() {
     let catalog = dir.join("Dates.ncatalog");
     let text = std::fs::read_to_string(&catalog).unwrap();
     let (line, at) = find(&text, "builtin value pi", "host pi");
-    for ((line, character), expected) in [
+    let host = std::fs::read_to_string(nitride_core::host::SOURCE).unwrap();
+    for ((line, character), expected, table, entry) in [
         (
             find(&text, "operation Later", "add"),
             "```ngr\nhost add\n```\n*host operation* — the sum of its two inputs\n\n\
              Supplied by the program running the language, not declared in a catalog.",
+            "pub const OPERATIONS:",
+            "\"add\"",
         ),
         (
             (line, at + 5),
             "```ngr\nhost pi\n```\n*host value* — π\n\n\
              Supplied by the program running the language, not declared in a catalog.",
+            "pub const VALUES:",
+            "\"pi\"",
         ),
     ] {
         let hover = request_at(&dir, &catalog, "textDocument/hover", (line, character));
         assert_eq!(hover["result"]["contents"]["value"], expected);
+        // Go to definition opens the handler's Rust implementation.
         let definition = request_at(&dir, &catalog, "textDocument/definition", (line, character));
-        assert!(definition["result"].is_null(), "{definition}");
+        let location = &definition["result"];
+        assert!(
+            location["uri"].as_str().unwrap().ends_with("nitride-core/src/host.rs"),
+            "{definition}"
+        );
+        let table_line = host.lines().position(|l| l.starts_with(table)).unwrap();
+        let (entry_line, entry_at) = host
+            .lines()
+            .enumerate()
+            .skip(table_line)
+            .find_map(|(n, l)| l.find(&format!("name: {entry},")).map(|c| (n, c + 6)))
+            .unwrap();
+        assert_eq!(
+            location["range"],
+            json!({"start":{"line":entry_line,"character":entry_at},
+                   "end":{"line":entry_line,"character":entry_at + entry.len()}})
+        );
     }
 }
 

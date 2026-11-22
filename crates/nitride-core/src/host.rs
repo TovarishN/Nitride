@@ -237,6 +237,29 @@ pub fn describe(name: &str) -> Option<&'static str> {
         .or_else(|| predicate(name).map(|h| h.description))
 }
 
+/// This file in the source tree the binary was built from, where editors go
+/// to a handler's implementation. It may be absent from an installed binary's
+/// machine.
+pub const SOURCE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/src/host.rs");
+
+/// The zero-based (line, column) of a built-in handler's entry in `SOURCE`,
+/// at its quoted name; `kind` is "operation", "value" or "predicate".
+pub fn source_position(kind: &str, name: &str) -> Option<(u32, u32)> {
+    let text = include_str!("host.rs");
+    let table = match kind {
+        "operation" => "pub const OPERATIONS:",
+        "value" => "pub const VALUES:",
+        "predicate" => "pub const PREDICATES:",
+        _ => return None,
+    };
+    let start = text.find(table)?;
+    let end = start + text[start..].find("];")?;
+    let entry = format!("name: \"{name}\",");
+    let at = start + text[start..end].find(&entry)? + "name: ".len();
+    let line_start = text[..at].rfind('\n').map_or(0, |n| n + 1);
+    Some((text[..at].matches('\n').count() as u32, (at - line_start) as u32))
+}
+
 /// The engine's record and list operations, by the handler name codegen
 /// stores: `record` and `list` build one from their inputs, `field:N` reads
 /// a record's Nth field, `length` counts a list and `item` indexes it.
