@@ -52,6 +52,10 @@
           "named": true
         },
         {
+          "type": "include_directive",
+          "named": true
+        },
+        {
           "type": "keyword",
           "named": true
         },
@@ -140,6 +144,10 @@
           "named": true
         },
         {
+          "type": "include_directive",
+          "named": true
+        },
+        {
           "type": "keyword",
           "named": true
         },
@@ -218,6 +226,22 @@
     }
   },
   {
+    "type": "include_directive",
+    "named": true,
+    "fields": {
+      "path": {
+        "multiple": false,
+        "required": false,
+        "types": [
+          {
+            "type": "include_path",
+            "named": true
+          }
+        ]
+      }
+    }
+  },
+  {
     "type": "keyword",
     "named": true,
     "fields": {}
@@ -288,6 +312,10 @@
         },
         {
           "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "include_directive",
           "named": true
         },
         {
@@ -392,6 +420,10 @@
         },
         {
           "type": "identifier",
+          "named": true
+        },
+        {
+          "type": "include_directive",
           "named": true
         },
         {
@@ -660,6 +692,10 @@
   {
     "type": "include",
     "named": false
+  },
+  {
+    "type": "include_path",
+    "named": true
   },
   {
     "type": "infer",
