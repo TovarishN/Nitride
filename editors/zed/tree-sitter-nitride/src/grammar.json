@@ -31,6 +31,10 @@
         },
         {
           "type": "SYMBOL",
+          "name": "include_directive"
+        },
+        {
+          "type": "SYMBOL",
           "name": "block"
         },
         {
@@ -213,6 +217,46 @@
         ]
       }
     },
+    "include_directive": {
+      "type": "PREC_RIGHT",
+      "value": 0,
+      "content": {
+        "type": "SEQ",
+        "members": [
+          {
+            "type": "STRING",
+            "value": "include"
+          },
+          {
+            "type": "CHOICE",
+            "members": [
+              {
+                "type": "FIELD",
+                "name": "path",
+                "content": {
+                  "type": "SYMBOL",
+                  "name": "include_path"
+                }
+              },
+              {
+                "type": "BLANK"
+              }
+            ]
+          }
+        ]
+      }
+    },
+    "include_path": {
+      "type": "TOKEN",
+      "content": {
+        "type": "PREC",
+        "value": 1,
+        "content": {
+          "type": "PATTERN",
+          "value": "[a-zA-Z0-9_.-]+(\\/[a-zA-Z0-9_.-]+)*"
+        }
+      }
+    },
     "qualified_name": {
       "type": "PREC_RIGHT",
       "value": 0,
@@ -352,10 +396,6 @@
         {
           "type": "STRING",
           "value": "workspace"
-        },
-        {
-          "type": "STRING",
-          "value": "include"
         },
         {
           "type": "STRING",

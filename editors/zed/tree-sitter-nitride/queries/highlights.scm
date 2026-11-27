@@ -1,6 +1,7 @@
 (comment) @comment
 (signature) @preproc
 (keyword) @keyword
+(include_directive "include" @keyword)
 (boolean) @boolean
 (number) @number
 (string) @string

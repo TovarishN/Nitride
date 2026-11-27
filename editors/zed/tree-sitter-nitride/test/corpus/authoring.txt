@@ -45,11 +45,21 @@ binding Calendar.Gregorian version 3 for wasm component "gregorian.wasm" {
 ==================
 Projects with unquoted relative paths
 ==================
-workspace { include ../languages/calls; }
+workspace {
+  include ../languages/calls;
+  include languages/rewrites;
+  include languages/grammar;
+  include languages/context;
+}
 language Calls { extensions .calls; grammar Calls.ngr; start Calls.Program; }
 ---
 (source_file
-  (keyword) (block (keyword) (punctuation) (operator) (identifier) (operator) (identifier) (punctuation))
+  (keyword)
+  (block
+    (include_directive (include_path)) (punctuation)
+    (include_directive (include_path)) (punctuation)
+    (include_directive (include_path)) (punctuation)
+    (include_directive (include_path)) (punctuation))
   (language_header (identifier))
   (block (keyword) (punctuation) (identifier) (punctuation)
     (keyword) (identifier) (punctuation) (identifier) (punctuation)

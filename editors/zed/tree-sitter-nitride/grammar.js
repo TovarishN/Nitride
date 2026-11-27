@@ -3,7 +3,7 @@
 const declarationKinds = ['syntax', 'token', 'type', 'operation', 'function', 'pattern', 'context'];
 const keywords = [
   ...declarationKinds, 'module', 'catalog', 'binding', 'language',
-  'workspace', 'include', 'extensions', 'grammar', 'grammars', 'start',
+  'workspace', 'extensions', 'grammar', 'grammars', 'start',
   'trivia', 'nitrogen', 'namespace', 'source', 'sources', 'library', 'version',
   'using', 'usings', 'symbols', 'symbol', 'property', 'builtin', 'overload',
   'extensible', 'extend', 'out', 'in', 'hover', 'expected', 'for',
@@ -25,6 +25,7 @@ module.exports = grammar({
     source_file: $ => repeat($._item),
     _item: $ => choice(
       $.module_header, $.binding_header, $.language_header, $.declaration_header,
+      $.include_directive,
       $.block, $.parenthesized_group, $.bracket_group,
       $.raw_string, $.verbatim_string, $.string, $.character,
       $.signature, $.boolean, $.keyword, $.identifier, $.number,
@@ -34,6 +35,8 @@ module.exports = grammar({
     binding_header: $ => prec.right(2, seq('binding', field('name', $.qualified_name))),
     language_header: $ => prec.right(2, seq('language', field('name', $.identifier))),
     declaration_header: $ => prec.right(1, seq(choice(...declarationKinds), field('name', $.identifier))),
+    include_directive: $ => prec.right(seq('include', optional(field('path', $.include_path)))),
+    include_path: _ => token(prec(1, /[a-zA-Z0-9_.-]+(\/[a-zA-Z0-9_.-]+)*/)),
     qualified_name: $ => prec.right(seq($.identifier, repeat(seq('.', $.identifier)))),
     block: $ => seq('{', repeat($._item), '}'),
     parenthesized_group: $ => seq('(', repeat($._item), ')'),
